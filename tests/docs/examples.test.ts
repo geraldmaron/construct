@@ -13,13 +13,14 @@ import { dirname, join, normalize } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, sandbox } from '../cli/support.ts';
 
-const DOCS = join(import.meta.dirname, '..', '..', 'docs');
+const ROOT = join(import.meta.dirname, '..', '..');
+const DOCS = join(ROOT, 'docs');
 const SHELL_FENCE = /```(?:bash|sh|shell|zsh|console)\n([\s\S]*?)```/g;
 const FILE_FENCE = /```[\w-]+ file=(\S+)\n([\s\S]*?)```/g;
 
 /** The files a page asks the person to save, by their path in the project. */
 function pageFiles(name: string): { readonly path: string; readonly body: string }[] {
-  return [...readFileSync(join(DOCS, name), 'utf8').matchAll(FILE_FENCE)].map((m) => {
+  return [...readFileSync(join(ROOT, name), 'utf8').matchAll(FILE_FENCE)].map((m) => {
     const path = normalize(m[1]!);
     assert.ok(!path.startsWith('..') && !path.startsWith('/'), `${name}: a file fence names a path inside the project, not ${m[1]!}`);
     return { path, body: m[2]! };
@@ -36,8 +37,9 @@ function splitArgs(line: string): string[] {
 
 function examples(): Example[] {
   const out: Example[] = [];
-  for (const name of readdirSync(DOCS).filter((n) => n.endsWith('.md')).sort()) {
-    const text = readFileSync(join(DOCS, name), 'utf8');
+  const pages = ['README.md', ...readdirSync(DOCS).filter((n) => n.endsWith('.md')).sort().map(n => join('docs', n))];
+  for (const name of pages) {
+    const text = readFileSync(join(ROOT, name), 'utf8');
     for (const fence of text.matchAll(SHELL_FENCE)) {
       const start = text.slice(0, fence.index).split('\n').length;
       fence[1]!.split('\n').forEach((raw, i) => {

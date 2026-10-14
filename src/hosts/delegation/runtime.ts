@@ -61,7 +61,8 @@ export function createDelegationDriver(options: {
         managed.delete(id);
         resolve(result ?? { output: '', code: null, reason: 'supervisor_lost' });
       };
-      child.on('exit', finish);
+      // Exit can precede delivery of the watchdog's final IPC message. Close
+      // waits for the channel to drain before judging whether its receipt exists.
       child.on('close', finish);
     });
     managed.set(id, { process: child, done, groupPid: null });

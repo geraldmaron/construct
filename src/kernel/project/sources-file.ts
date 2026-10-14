@@ -45,6 +45,19 @@ export function emptySourcesFile(): SourcesFile {
   return { format: SOURCES_FORMAT, formatVersion: SOURCES_VERSION, sources: [] };
 }
 
+/** Convert normalized declarations back to the committed file's wire shape. */
+export function serializeSourcesFile(file: SourcesFile): {
+  readonly format: typeof SOURCES_FORMAT;
+  readonly formatVersion: typeof SOURCES_VERSION;
+  readonly sources: readonly (Omit<DeclaredSource, 'read' | 'write'> & { readonly capabilities: { readonly read: boolean; readonly write: boolean } })[];
+} {
+  return {
+    format: file.format,
+    formatVersion: file.formatVersion,
+    sources: file.sources.map(({ read, write, ...source }) => ({ ...source, capabilities: { read, write } })),
+  };
+}
+
 /** A source id: lowercase letters, digits and dashes, starting with a letter, at most 64 characters. */
 export const SOURCE_ID = /^[a-z][a-z0-9-]{0,63}$/;
 const USERINFO = /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i;
@@ -65,6 +78,9 @@ export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
   const sources = list.map((item, i) => {
     const where = `${path} "sources[${String(i)}]"`;
     if (!isRecord(item)) throw new ProjectFileError(where, 'must be an object');
+    if (Object.hasOwn(item, 'read') || Object.hasOwn(item, 'write')) {
+      throw new ProjectFileError(where, 'top-level read/write permissions are ambiguous; explicitly set capabilities.read and capabilities.write to the intended booleans, then remove the top-level read/write fields and retry');
+    }
     const id = str(item, 'id', where);
     if (!SOURCE_ID.test(id)) throw new ProjectFileError(where, '"id" must be lowercase letters, digits, and dashes');
     if (seen.has(id)) throw new ProjectFileError(where, `source id "${id}" appears twice`);

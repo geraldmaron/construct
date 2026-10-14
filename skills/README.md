@@ -122,18 +122,18 @@ Three ways to get a skill into your agent:
    `construct skill update` brings the project's registry lock up to the
    skills and workflows present.
 
-Each method skill is severable: no construct checkout is required for it to
-run. That claim is checked with the naked-folder / naked-file discipline -
-see `docs/internal/skill-runs/` for the recorded runs. `[unverified]` - the
-exact procedure and its output are not reproduced here.
+Method folders are designed to be used without the Construct runtime. Dated
+[standalone skill records](../docs/internal/skill-runs/) document earlier trials;
+they do not qualify the current version on every host. Current qualification
+requires executed evidence bound to the exact digest, host, model and scope.
 
 ## Limits
 
 - Each skill carries its own scope rules and is written to stand down when
   the task does not match. A skill firing on the wrong task is a defect in
   that skill.
-- Portability proves a skill runs across harnesses; it does not prove
-  judgment is good on every task (see Status).
+- A portable instruction format does not establish host effectiveness or good
+  judgment on every task (see Status).
 - The audience these skills target has no formal training in the underlying
   disciplines. Guardrails are load-bearing where present.
 - Coverage is narrow by design: the method lifecycle and the nine
@@ -141,10 +141,9 @@ exact procedure and its output are not reproduced here.
 
 ## Status
 
-Early and actively developed. Method skills ship after a recorded real-work
-run; the records are under `docs/internal/skill-runs/`. Every shipped skill
-carries `evals/activation.json`, requests it should activate on and requests
-it should stand down for, which the test suite validates; skills with
-`evals/behavior.json` are checked against those cases too. In a project,
-`construct skill impact` reports how each skill version's steps did against
-their checks.
+Experimental and actively developed. Shipped activation cases and any behavior
+fixtures are checked by the test suite; filenames and a matching lock alone do
+not qualify a method. In a project, `construct skill impact` reports how each
+version's steps did against their checks. These receipts do not establish causal
+method benefit. See [qualification](../docs/skills-and-packs.md#qualification-and-skill-impact)
+for the current executed-evidence contract and its limits.

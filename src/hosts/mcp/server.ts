@@ -410,17 +410,15 @@ export function serveUnboundMcp(
   return serveHandler(createUnboundMcpHandler(surface, reason, version, next), stdin, stdout);
 }
 
-/** How a lazy server should treat a failed bind: wait and retry, or give up with this advice. */
+/** Why binding was refused; every later call rechecks the unchanged project boundary. */
 export type BindFailure = { readonly busy: true } | { readonly busy: false; readonly reason: string; readonly next: string };
 
 /**
- * A server whose project exists but whose store was busy at launch. The tool
- * list does not depend on the store, so the handshake and the tool list are
- * answered at once without touching it. Each tool call tries to bind; a busy
- * store answers "call again", and once a bind succeeds every later message goes
- * to the bound handler. A bind that fails for any other reason (a newer,
- * older, or foreign store) switches the server to the unbound surface with the
- * advice that fits.
+ * Discovery describes the supported interface independently of disk readiness.
+ * Every recognized call retries an unbound project; incompatible state returns
+ * repair advice without shrinking the catalog or executing the requested tool.
+ * After the first successful bind, the existing handler owns state fencing and
+ * the connection never switches projects or stores.
  */
 export function createLazyMcpHandler(
   surface: BrokerSurface,
@@ -432,8 +430,7 @@ export function createLazyMcpHandler(
   const tools = toolsFor(surface);
   const names = new Set(tools.map((t) => t.name));
   let bound: AsyncMessageHandler | null = null;
-  let gaveUp: AsyncMessageHandler | null = null;
-  let lastBusy = 'the state database is busy';
+  let lastFailure: BindFailure = { busy: true };
   let handshake: JsonRpcRequest | null = null;
   const tryBind = async (): Promise<void> => {
     try {
@@ -443,13 +440,11 @@ export function createLazyMcpHandler(
       bound = handler;
     } catch (error) {
       const failed = classify(error);
-      if (failed.busy) lastBusy = error instanceof Error ? error.message : String(error);
-      else gaveUp = createUnboundMcpHandler(surface, failed.reason, version, failed.next);
+      lastFailure = failed;
     }
   };
   return async (message: JsonRpcRequest) => {
     if (bound) return bound(message);
-    if (gaveUp) return gaveUp(message);
     const { id, method, params } = message;
     switch (method) {
       case 'initialize':
@@ -458,7 +453,7 @@ export function createLazyMcpHandler(
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: SERVER_NAMES[surface], version },
-          instructions: instructionsFor(surface, null),
+          instructions: `${instructionsFor(surface, null)} Tool discovery describes the supported interface; project binding is checked on each call. A refused call records nothing and names the repair.`,
         });
       case 'tools/list':
         return response(id, { tools: tools.map(mcpTool) });
@@ -469,11 +464,13 @@ export function createLazyMcpHandler(
         }
         await tryBind();
         if (bound) return (bound as AsyncMessageHandler)(message);
-        if (gaveUp) return (gaveUp as AsyncMessageHandler)(message);
-        return response(id, { ...text({ bound: false, error: lastBusy, next: 'The store is busy; call again in a moment. Nothing was recorded.' }), isError: true });
+        const diagnostic = lastFailure.busy
+          ? { bound: false, error: 'the state database is busy', next: 'The store is busy; call again in a moment. Nothing was recorded.' }
+          : { bound: false, error: lastFailure.reason, next: lastFailure.next };
+        return response(id, { ...text(diagnostic), isError: true });
       }
       default:
-        return createUnboundMcpHandler(surface, lastBusy, version)(message);
+        return createUnboundMcpHandler(surface, 'Project binding is checked on each tool call.', version)(message);
     }
   };
 }

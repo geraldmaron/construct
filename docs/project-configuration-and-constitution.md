@@ -1,5 +1,7 @@
 # Project configuration and the constitution
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Everything Construct knows about a project lives in the project.
 
 ## The layout
@@ -21,7 +23,9 @@ committed files and uses its one store. Commands that write the committed
 files, such as `construct project refresh`, run only in the main checkout,
 and `construct project validate` notes when a worktree's copies differ.
 
-There is no home database, no shared workspace, and no settings file. A
+There is no home database or global project-state workspace. The retired
+settings-file format is not supported; the per-user presentation defaults below
+remain available for locale and color. A
 file from an earlier alpha is recognized by path or stamp, named exactly,
 and never parsed; `construct reset` shows what it would remove and removes
 only that when you confirm. A state database in format 2, 3 or 4 is different:

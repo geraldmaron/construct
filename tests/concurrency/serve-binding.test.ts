@@ -5,8 +5,8 @@
  * The handshake is answered at once even while another process holds the
  * write lock; a tool call during the lock says to call again and nothing else;
  * the same call binds once the lock is gone. A store written by a newer, older,
- * or foreign build yields an unbound server whose advice fits (upgrade,
- * migrate, ask before reset), and a bound server stops writing when another
+ * or foreign build retains stable discovery and refuses tool execution with
+ * advice that fits (upgrade, migrate, ask before reset), and a bound server stops writing when another
  * build re-stamps the store's format.
  */
 
@@ -14,6 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { sterile, type SterileFixture } from '../harness/sterile.ts';
+import { toolsFor } from '../../src/kernel/broker/tools.ts';
 import { envFor, initProject, INITIALIZE as INIT, Session } from './support.ts';
 
 test('under another process’s write lock the handshake answers at once and a call binds once the lock is gone', { timeout: 60_000 }, async () => {
@@ -49,12 +50,34 @@ test('under another process’s write lock the handshake answers at once and a c
   }
 });
 
-async function unboundAdvice(fx: SterileFixture, dir: string): Promise<string> {
+async function unboundAdvice(fx: SterileFixture, dir: string, db: string): Promise<string> {
+  const snapshot = () => {
+    const store = new DatabaseSync(db, { readOnly: true });
+    try {
+      const tables = store.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[];
+      return { tables, meta: store.prepare('SELECT key, value FROM meta ORDER BY key').all(), work: tables.some(t => t.name === 'work_items') ? store.prepare('SELECT id, title, status FROM work_items ORDER BY id').all() : null };
+    } finally { store.close(); }
+  };
+  const before = snapshot();
   const session = new Session(dir, envFor(fx));
   try {
     const init = await session.request('initialize', INIT);
+    const handshake = init.result as { capabilities?: { tools?: { listChanged?: boolean } } };
+    assert.equal(handshake.capabilities?.tools?.listChanged, false);
+    assert.match(String(init.result?.instructions), /project binding is checked on each call/);
+    const list = await session.request('tools/list');
+    const listed = list.result as { tools: { name: string }[] };
+    assert.deepEqual(listed.tools.map(t => t.name), toolsFor('interactive').map(t => t.name));
     const boot = await session.call('bootstrap');
-    return `${init.result?.instructions ?? ''}\n${String(boot.result?.structuredContent?.next ?? '')}`;
+    assert.equal(boot.result?.isError, true, 'incompatible state is refused without claiming a usable binding');
+    assert.equal(boot.result?.structuredContent?.bound, false);
+    const write = await session.call('work', { action: 'add', title: 'must never be written to incompatible state' });
+    assert.equal(write.result?.isError, true, 'supported mutation is refused as a tool error');
+    assert.equal(write.error, undefined);
+    const after = await session.request('tools/list');
+    assert.deepEqual((after.result as { tools: unknown }).tools, listed.tools, 'refusal never shrinks the advertised interface');
+    assert.deepEqual(snapshot(), before, 'failed binds preserve schema, format metadata and work');
+    return `${String(boot.result?.structuredContent?.error ?? '')}\n${String(boot.result?.structuredContent?.next ?? '')}`;
   } finally {
     await session.close();
   }
@@ -67,7 +90,7 @@ test('a store written by a newer build yields advice to upgrade, never to init o
     const d = new DatabaseSync(db);
     d.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
     d.close();
-    const advice = await unboundAdvice(fx, dir);
+    const advice = await unboundAdvice(fx, dir, db);
     assert.match(advice, /newer version of Construct/);
     assert.match(advice, /Upgrade Construct/);
     assert.doesNotMatch(advice, /construct init|run `construct reset`/i);
@@ -85,12 +108,12 @@ test('an older store yields the migrate step; a foreign one says to ask the pers
     for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) d.exec(`DROP TABLE IF EXISTS ${table}`);
     d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
     d.close();
-    assert.match(await unboundAdvice(fx, dir), /construct migrate/);
+    assert.match(await unboundAdvice(fx, dir, db), /construct migrate/);
 
     const f = new DatabaseSync(db);
     f.prepare(`UPDATE meta SET value = 'someone-else' WHERE key = 'format'`).run();
     f.close();
-    const foreign = await unboundAdvice(fx, dir);
+    const foreign = await unboundAdvice(fx, dir, db);
     assert.match(foreign, /Ask the person whether to run `construct reset`/);
     assert.doesNotMatch(foreign, /construct init/);
   } finally {

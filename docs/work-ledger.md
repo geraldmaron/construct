@@ -1,10 +1,13 @@
 # The work ledger
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct keeps a project's bounded work in its own store, so local mode
 needs no external tracker. Every git worktree of the project reads and
 writes the main checkout's one store. You use `construct work` from a
-terminal; a session uses the `work` tool. Admitting, cancelling, export, and
-restore are on the command line only. Claiming, accepting a handoff, and
+terminal; a session uses the `work` tool. Cancelling, export, and
+restore are on the command line only. Admission is also available through the
+tool, subject to the item's reason and the caller's authority. Claiming, accepting a handoff, and
 taking over from the command line are yours alone; a session does those
 with the tool, where the claim belongs to that session and agent.
 
@@ -43,8 +46,9 @@ active decision, requirement, initiative, or metric it serves, or you filing
 it from a terminal of your own. A session that files work without one,
 outcomes included, gets it back as proposed, with a note saying how to
 admit it. Proposed work is listed but never ready or claimable, so the
-backlog holds only work with a reason to exist. A session roots its own
-work by remembering the outcome or decision behind it and serving that.
+backlog holds only work with a reason to exist. Use an admitted parent or an
+existing active governing record; do not invent a decision or record memory
+merely to make an item ready.
 
 A proposed item is admitted with `construct work admit <id>`.
 
@@ -109,7 +113,9 @@ hold, are in
 - `construct work reopen <id> --reason="a v1 reader turned up"`
 
 A live claim is settled only with its token; one that expired protects
-nothing. Completing an item that has acceptance criteria needs a reason
+nothing. Completion also requires admitted work, finished blocking dependencies,
+current premises, and an unblocked state. Cancellation remains available to retire
+work that cannot proceed. Completing an item that has acceptance criteria needs a reason
 saying how they were met. An item with open children cannot be completed
 or cancelled; finish or cancel the children first. Delegated attempts are
 the exception: they are cancelled with their parent, and one still running
@@ -161,11 +167,16 @@ construct work restore work-snapshot.json
 ```
 
 `export` writes a versioned snapshot of the project's work items,
-dependencies, and history, without claim tokens. `restore` adds the items
+dependencies, history, and the work identities and reason links they use, without
+claim tokens. Older snapshots without reason links report the missing lineage
+when it needs relinking. `restore` adds the items
 the store does not have, skips the ones it has and reports any whose
 revision differs, and brings claimed or in-progress items back as open,
 since claims, reservations, and grants are never restored. A snapshot from
-another project is refused; work moves between projects as new items.
+another project is refused; work moves between projects as new items. Relationships
+are restored after identities, so later-created parents and blockers are valid.
+Invalid cycles or conflicting relationship identities roll back the restore;
+skipped live items keep their own dependencies and history.
 `construct work import-legacy tracker.jsonl --dry-run` previews a one-way
 import of a frozen tracker's JSONL snapshot, reporting the mapping without
 writing; without `--dry-run` it imports.
