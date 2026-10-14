@@ -1,9 +1,13 @@
 # Remaining validation within available tools
 
-Status: partial. Local recovery and a real connector-to-context path are observed;
-independent native assurance and the proposed setup/task facade are not established.
+Status: partial. Local recovery and a real connector-to-context path are observed.
+One authorized native review completed with a failed judgment; its reproduced
+provenance defect is corrected below. Broad native readiness and the proposed
+setup/task facade are not established.
 Checked candidate: `8af839c127c9dd7e4cf41a6c9b29f9c300d6717f`, 2026-10-14.
-No product code, host settings, credentials, remote branch or release was changed.
+The initial validation pass changed no product code. The native-review follow-up
+below changes source evidence admission and adds regressions. Host settings,
+credentials, remote branches and releases were not changed.
 
 ## Results
 
@@ -19,7 +23,7 @@ No product code, host settings, credentials, remote branch or release was change
 | Real GitHub connector | get_repo and fetch_file succeeded for geraldmaron/construct | Actual repository metadata/file read available; no write attempted |
 | Actual connector passage into Construct | README lines 1–35 were reported into a sterile project, then retrieved by context_search | Cited snapshot returned with reported provenance, informative authority and partial-coverage warning |
 | Native desktop UI | Computer-use inventory works; selecting com.openai.codex is denied for safety reasons | Not inspected; no alternative capture used to bypass the denial |
-| Native candidate-review permission | Automatic approval review rejected sending the unreleased diff/verification record without explicit payload/destination authorization | Separate approval requested and still pending when this record was written; nothing from that proposed bundle sent |
+| Native candidate-review permission | Initially rejected for missing payload/destination authorization; the user subsequently explicitly authorized one review | One bounded review completed; actual failure and validated follow-up recorded below |
 
 The retry used the existing invoking-host command adapter and preserved its empty
 artifact-subject limit. Correct submission does not retroactively certify the
@@ -90,4 +94,104 @@ implemented. This pass assessed the current implementation; it did not implement
 The earlier full lint/typecheck/test/smoke gate still applies to unchanged product
 code. It was not rerun as a substitute for these missing native observations. No
 merge, publication, broad connector matrix or real other-device incident test.
-The independent-review follow-up and setup/interface design item remain open.
+The setup/interface design item remains open. The authorized independent-review
+follow-up is recorded below; it does not clear the failed managed generation.
+
+## Authorized native candidate review and follow-up
+
+The user explicitly authorized sending the committed remediation diff and its
+verification record to the native reviewer using the existing subscription. One
+review ran with the qualified `codex-held-text-v1` adapter, `codex-cli 0.145.0`,
+requested model `gpt-6-astra`, read-only sandbox and disabled tools/MCP servers.
+The outer command required permitted host execution to initialize its native
+app-server; the child retained the same qualified read-only profile. No desktop
+access denial was bypassed. The ordered native stream completed with exit 0.
+A model-metadata fallback warning was retained; it is not evidence of model
+substitution. [NATIVE-REVIEW.json](NATIVE-REVIEW.json) retains the exact candidate,
+artifact/evidence hashes, bundle digest, ordered observations and actual judgment.
+Both held files and the frozen candidate diff remained unchanged during review.
+
+The judgment did **not pass**: request and uncertainty failed, support was unknown,
+and reasoning and scope passed. The reviewer identified a carried-item provenance
+defect and a missing explicit reason-relation collision regression. Omitted full
+implementation context limited its assessment of other dependency guarantees;
+this review did not independently replay the reported tests.
+
+The provenance finding was reproduced before changing product code:
+`node --test --test-name-pattern='witnessed partial read' tests/kernel/source/service.test.ts`
+reported one failed test, with actual observed claim locators `carried.md` and
+`returned.md` where only `returned.md` was expected. The fixture first reports both
+items, then witnesses only one in a partial read. The merged inventory was being
+used as the admission set. Its collection-level provenance also allowed carried
+reported content to appear witnessed through citation resolution and retrieval.
+
+The correction separates received items from retained inventory. Only received
+items admit observed claims, using the received revision. If a witnessed partial
+read carries reported inventory, the existing whole-manifest provenance remains
+reported. This reuses the existing source service, manifest record and resolver;
+no alternate admission path or stored-format migration was introduced. Strongest
+failure mode: fixing claims alone would still mislabel citations and retrieval.
+Alternative: per-item provenance throughout manifests, snapshots and retrieval.
+Decision: accepted with conservative collection provenance and tests across all
+three consumers. Newly witnessed items in a mixed collection remain conservatively
+reported when cited through that collection; their observed claims are retained.
+Historical snapshots are not rewritten or silently promoted.
+
+The new regression checks inventory retention, observed-claim admission, current
+and immutable-snapshot citations, retrieval provenance, and repeat-read deduplication.
+The existing full-read reported-to-witnessed regression remains passing. A separate
+reason-relation identity collision test now verifies atomic restore refusal and
+preservation of the live relation; it required no product-code change.
+
+Check: source and work-restore regressions.
+Command: `node --test tests/kernel/source/service.test.ts tests/kernel/work/completion-restore.test.ts`
+Result: pass.
+Observed: 37 passed, zero failed or skipped.
+
+The first full-gate follow-up stopped at typecheck because the new test omitted a
+nullable-snapshot assertion. That assertion was corrected before rerunning; the
+failed attempt is not counted as passing. Final gate result follows below.
+
+The original native judgment remains a failure against its frozen candidate.
+These follow-up changes were not sent for a second native review: authorization
+was for one review. The old main-bound managed run remains unaccepted. Native
+isolation, unavailable desktop journeys and the unimplemented setup/task facade
+remain open; this follow-up does not establish broad release readiness.
+
+Check: complete required gate on the provenance follow-up.
+Command: `npm run lint && npm run typecheck && npm test && npm run smoke`
+Result: pass.
+Observed: 1,127 passed, zero failed, one skipped (1,128 total); packaged smoke passed.
+Retained log: `/private/tmp/construct-native-followup-gate.log`.
+
+Outcome: partial source reads retain unseen inventory without representing it as
+newly witnessed evidence.
+Surface: source refresh, source claims, current and snapshot citation resolver,
+and ranked context retrieval, plus the packaged CLI/server smoke.
+Data: two reported documents followed by a witnessed partial read returning one;
+also a full-read reported-to-witnessed control and conflicting restore relations.
+Observed: only the returned document receives an observed claim; carried text stays
+reported through citation and retrieval; restore collision refuses atomically.
+Verdict: proven for these local paths; native desktop/fresh-user readiness unproven.
+
+Verification record: inspected source admission, manifest storage, resolver and
+retrieval consumers; reused existing helpers; reproduced the defect before fixing;
+ran the real gate; observed the regression's consumer outputs; reviewed the diff.
+Residual risk: collection provenance deliberately understates individually witnessed
+items when mixed with reported inventory; the final follow-up lacks a second native
+review and does not repair the independent canonical-isolation or facade gaps.
+
+Check: original user-facing CLI recovery scenarios on the follow-up revision.
+Command: `node docs/internal/command-remediation/verify-surfaces.mjs`
+Result: pass.
+Observed: ten scenarios plus the sequential control passed; both concurrently
+added sources remained active. Retained `/private/tmp/construct-native-followup-surfaces.log`.
+
+Check: documentation and repository lint after recording the review.
+Command: `npm run lint`
+Result: pass.
+Observed: all configured lint and generated-document checks passed.
+
+No historical claims or snapshots were deleted or reclassified: the correction
+prevents new unsupported admission; it does not assert which old observations
+were received versus carried where the original record omitted that distinction.
