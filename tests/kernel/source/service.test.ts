@@ -16,6 +16,7 @@ import { getSource, listSources, authorityOf, freshnessOf, retireSource, updateS
 import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
 import { projectResolver } from '../../../src/kernel/source/resolver.ts';
 import { listClaims, listEntities } from '../../../src/kernel/state/graph.ts';
+import { searchContext } from '../../../src/kernel/context/retrieval.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
@@ -527,5 +528,34 @@ test('unchanged reported reader content admits witnessed claims later and preser
     await refresh();
     const claims = listClaims(fx.store, { sourceId: 'docs' });
     assert.deepEqual(claims.map(claim => [claim.authority, claim.sensitivity]).sort(([a], [b]) => a!.localeCompare(b!)), [['authoritative', 'internal'], ['informative', 'confidential']], 'new reads carry current trust metadata without rewriting historical claims');
+  } finally { fx.cleanup(); }
+});
+
+test('a witnessed partial read cannot promote carried reported content to observed evidence', async () => {
+  const fx = freshStore();
+  try {
+    let partial = false; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: {
+      digest: partial ? 'partial-witness' : 'reported-inventory', summary: 'documents',
+      evidence: partial ? 'witnessed' : 'reported', coverage: { complete: !partial },
+      items: (partial ? ['returned.md'] : ['carried.md', 'returned.md']).map(externalRef => ({ externalRef, kind: 'document', name: externalRef, attributes: { fingerprint: externalRef, text: `Content of ${externalRef}` } })),
+    } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `partial-trust-${++n}`);
+    await refresh();
+    partial = true;
+    const result = await refresh();
+    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'only returned items were witnessed');
+    assert.deepEqual(currentManifest(fx.store, 'docs')!.map(entry => entry.ref), ['carried.md', 'returned.md'], 'partial inventory still retains unseen items');
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.ok(result.snapshot);
+    for (const ref of ['docs:carried.md', `snapshot:${result.snapshot.id}:carried.md`]) {
+      assert.equal(resolve(ref)?.provenance, 'reported', `${ref} must retain its weaker evidence boundary`);
+    }
+    const search = searchContext(fx.store, { query: 'Content of carried.md', sourceId: 'docs' }, '2026-10-02T00:00:00Z');
+    assert.equal(search.items.find(item => item.ref.endsWith(':carried.md'))?.provenance, 'reported', 'retrieval exposes conservative provenance too');
+    await refresh();
+    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'repeated partial reads neither promote carried items nor duplicate observed claims');
   } finally { fx.cleanup(); }
 });

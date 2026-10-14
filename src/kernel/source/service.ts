@@ -34,7 +34,7 @@ import { markPremisesStale } from '../work/service.ts';
 import { locatorProblem } from './locators.ts';
 import { createHash } from 'node:crypto';
 import type { ReadOutcome, SnapshotReport, SourceReader } from './connector.ts';
-import { currentManifest, describeChanges, diffManifests, toManifest, type ItemChanges } from './manifest.ts';
+import { currentManifest, currentManifestRecord, describeChanges, diffManifests, toManifest, type ItemChanges } from './manifest.ts';
 import { projectResolver } from './resolver.ts';
 import { flagStaleDeliverables } from '../drift/deliverables.ts';
 import { redact } from '../render/redact.ts';
@@ -225,9 +225,12 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       let report = received;
       if (partial && received.items) {
         const seen = new Set(received.items.map((item) => item.externalRef));
-        const carried = (currentManifest(store, id) ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
+        const previous = currentManifestRecord(store, id);
+        const carried = (previous?.entries ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
         const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-        if (carried.length) report = { ...received, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
+        // Provenance describes the whole manifest. Carried reported content was
+        // not witnessed by this read, so a mixed manifest remains reported.
+        if (carried.length) report = { ...received, evidence: previous?.provenance === 'reported' ? 'reported' : received.evidence, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
       }
       const { snapshot, changed } = recordSnapshot(store, {
         id: nextId(),
@@ -243,8 +246,9 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       });
       // What Construct read itself becomes observed claims, each with the content it saw; a host's report is its word.
       const source = getSource(store, id);
-      if (source && report.evidence !== 'reported' && report.items && report.items.length > 0) {
-        for (const item of report.items ?? []) {
+      if (source && received.evidence !== 'reported' && received.items && received.items.length > 0) {
+        // Inventory preservation is separate from admission of observed evidence.
+        for (const item of received.items) {
           const entity =
             findEntityByRef(store, 'artifact', `source:${id}:${item.externalRef}`) ??
             addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: `source:${id}:${item.externalRef}`, attributes: item.attributes, at });
@@ -272,8 +276,8 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
             observedAt: at,
             locator: item.externalRef,
             excerpt: item.name,
-            sourceRevision: report.contentDigest ?? report.digest,
-            contentDigest: typeof attributes?.contentDigest === 'string' ? attributes.contentDigest : typeof attributes?.fingerprint === 'string' ? attributes.fingerprint : report.contentDigest,
+            sourceRevision: received.contentDigest ?? received.digest,
+            contentDigest: typeof attributes?.contentDigest === 'string' ? attributes.contentDigest : typeof attributes?.fingerprint === 'string' ? attributes.fingerprint : received.contentDigest,
             at,
           });
         }
