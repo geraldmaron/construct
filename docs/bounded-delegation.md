@@ -1,5 +1,7 @@
 # Bounded local delegation
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 **Status: guarded implementation, not a verified three-tool release.** Claude,
 Codex, and Cursor adapter paths exist and have synthetic subprocess tests.
 No adapter is enabled by installation. Live permission, authentication, and

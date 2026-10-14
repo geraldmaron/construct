@@ -1,5 +1,7 @@
 # Troubleshooting and recovery
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Every failure leads with the problem and then the safe next step; stack
 traces appear only with `--debug`.
 

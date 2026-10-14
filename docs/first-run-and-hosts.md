@@ -1,7 +1,10 @@
 # First run and how the host behaves
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct is installed once and used from the agent host you already work
-in. Two minutes gets you a bound project and a session that knows it.
+in. Requires Node.js 22.18 or newer. Initialization creates the project binding;
+the host's connection steps and available capabilities determine session readiness.
 
 ## Install and initialize
 
@@ -243,6 +246,11 @@ that the operational skill there is the copy this release ships
 current one. A copy someone edited is left alone, and `doctor` names the
 `construct skill install construct --force --dir=<dir>` that replaces it;
 any edits in it are lost.
+
+`doctor` also reports derived context-index status and recorded deliverable
+counts. A built index, available capability or healthy wiring is not an exercised
+outcome-readiness claim. Use the recorded validation and release limits to assess
+what was actually exercised.
 
 ## Supported hosts
 

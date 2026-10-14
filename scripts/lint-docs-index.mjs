@@ -32,8 +32,8 @@
  * to go and is not indexed; its own README says what it is.
  */
 
-import { readFileSync, readdirSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 
 const DOCS = 'docs';
 const INDEX = join(DOCS, 'README.md');
@@ -59,6 +59,46 @@ const present = readdirSync(DOCS)
   .sort();
 
 const failures = [];
+
+// Check the copyable public documentation graph, not dated internal records.
+// A link into history must resolve, but history is not recursively treated as a guide.
+function markdownFiles(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true }).flatMap(e =>
+    e.isDirectory() ? markdownFiles(join(dir, e.name)) : e.isFile() && e.name.endsWith('.md') ? [join(dir, e.name)] : []);
+}
+function prose(text) { return text.replace(/^(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1[^\n]*$/gm, ''); }
+function anchors(text) {
+  const used = new Map(), out = new Set();
+  for (const m of prose(text).matchAll(/^#{1,6}\s+(.+?)\s*#*\s*$/gm)) {
+    const base = m[1].replace(/<[^>]*>/g, '').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .toLowerCase().replace(/[^\p{L}\p{N}_\-\s]/gu, '').trim().replace(/\s/g, '-');
+    const n = used.get(base) ?? 0; used.set(base, n + 1); out.add(n ? `${base}-${n}` : base);
+  }
+  for (const m of text.matchAll(/<(?:a|span)\b[^>]*(?:id|name)=["']([^"']+)["']/g)) out.add(m[1]);
+  return out;
+}
+const publicFiles = ['README.md', 'SECURITY.md', 'GLOSSARY.md', INDEX,
+  ...present.map(name => join(DOCS, name)), ...markdownFiles('skills')].filter(existsSync);
+let checkedLinks = 0;
+for (const file of publicFiles) {
+  const text = prose(readFileSync(file, 'utf8'));
+  const links = [...text.matchAll(/!?\[[^\]\n]*\]\((<[^>]+>|[^\s)]+)(?:\s+["'][^\n]*["'])?\)/g),
+    ...text.matchAll(/^\s*\[[^\]]+\]:\s*(<[^>]+>|\S+)/gm)];
+  for (const match of links) {
+    let target = match[1].replace(/^<|>$/g, '');
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(target)) continue;
+    checkedLinks++;
+    try { target = decodeURIComponent(target); } catch { failures.push(`${file}: malformed link ${target}`); continue; }
+    const [path, fragment] = target.split('#');
+    const resolved = path ? resolve(dirname(file), path.split('?')[0]) : resolve(file);
+    const rel = relative(process.cwd(), resolved);
+    if (rel.startsWith('..') || !existsSync(resolved)) { failures.push(`${file}: link ${target} names no repository path`); continue; }
+    if (fragment && statSync(resolved).isFile() && resolved.endsWith('.md') && !anchors(readFileSync(resolved, 'utf8')).has(fragment)) {
+      failures.push(`${file}: link ${target} names no heading anchor`);
+    }
+  }
+}
 
 for (const name of present) {
   if (listed.has(name)) continue;
@@ -88,5 +128,5 @@ if (failures.length > 0) {
 }
 
 process.stdout.write(
-  `lint-docs-index: clean — ${String(present.length)} documentation file(s), all listed\n`,
+  `lint-docs-index: clean — ${String(present.length)} documentation file(s), all listed; ${checkedLinks} local links checked\n`,
 );

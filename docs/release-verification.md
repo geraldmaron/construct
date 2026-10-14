@@ -1,5 +1,7 @@
 # Release verification
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 An alpha is cut deliberately and published only under the `alpha` dist-tag;
 `latest` stays on the predecessor until a `3.0.0` is promoted on purpose.
 
@@ -49,8 +51,10 @@ an isolated home, and proves no per-user database appears.
    changelog, and generated references consistent with the release.
 
 Tagging, pushing, merging, and publishing require the person's authorization.
-No GitHub Pages site is configured for this repository as of September 27,
-2026; its public landing surface is the repository README and release pages.
+The docsite is the [GitHub documentation directory](README.md), with its
+rendered index and linked guides. No GitHub Pages deployment was configured
+when checked on October 14, 2026. The repository README, GitHub docs and release
+pages are public documentation surfaces; dated internal records are history.
 An alpha that ships disabled adapter paths must not describe them as verified
 live cross-tool capability.
 
@@ -117,9 +121,10 @@ a gated cell is missing, or when a verdict fails. Claude Code and Codex are
 always measured; only Cursor, VS Code, OpenCode, and Bob may be listed as
 unmeasured.
 
-The runs behind a record are a release step, run by hand outside any host
-session, on subscriptions only. They have not been run yet; no record
-exists, so `check` fails until the first one is made.
+The full runs behind a qualifying record are a release step, driven through
+authorized host access on subscriptions only. No current full qualifying record
+exists. Diagnostic trials and finite experimental controls do not substitute
+for that matrix; `check --cut` fails until its required evidence is present.
 
 The corpus, `skills/evals/intake.json`, is committed, and the suite checks
 every gold reading with classify_request's own validator. Two model families

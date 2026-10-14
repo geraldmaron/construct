@@ -1,10 +1,13 @@
 # The work ledger
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct keeps a project's bounded work in its own store, so local mode
 needs no external tracker. Every git worktree of the project reads and
 writes the main checkout's one store. You use `construct work` from a
-terminal; a session uses the `work` tool. Admitting, cancelling, export, and
-restore are on the command line only. Claiming, accepting a handoff, and
+terminal; a session uses the `work` tool. Cancelling, export, and
+restore are on the command line only. Admission is also available through the
+tool, subject to the item's reason and the caller's authority. Claiming, accepting a handoff, and
 taking over from the command line are yours alone; a session does those
 with the tool, where the claim belongs to that session and agent.
 
@@ -43,8 +46,9 @@ active decision, requirement, initiative, or metric it serves, or you filing
 it from a terminal of your own. A session that files work without one,
 outcomes included, gets it back as proposed, with a note saying how to
 admit it. Proposed work is listed but never ready or claimable, so the
-backlog holds only work with a reason to exist. A session roots its own
-work by remembering the outcome or decision behind it and serving that.
+backlog holds only work with a reason to exist. Use an admitted parent or an
+existing active governing record; do not invent a decision or record memory
+merely to make an item ready.
 
 A proposed item is admitted with `construct work admit <id>`.
 

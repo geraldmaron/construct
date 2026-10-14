@@ -1,5 +1,7 @@
 # Recurring and scheduled operation
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct owns what happens on a firing; an external clock owns time. There
 is no daemon.
 
@@ -21,9 +23,10 @@ the CI job that fires it only after an explicit executor is selected. The genera
 From chat, the host reports a request to keep something up as a
 `classify_request` reading of kind `maintain`, with its schedule: a
 five-field cron expression and an IANA timezone, or an event name. When no
-question blocks, the reply names the workflow that fits and the
-`construct workflow schedule` line the person runs. No tool defines a
-trigger from chat; the person sets the clock.
+question blocks, `start_outcome` saves an idempotent trigger with the mapped
+inputs and original intake, without starting an immediate run. The clock and
+executor remain unprovisioned; the person must configure them before it can run
+after the session exits. The CLI is an alternative definition and inspection path.
 
 ## Firing
 
@@ -67,8 +70,11 @@ window for `changed_during` or `evidence_window` (from and to dates, a year,
 or a quarter with its year), and dates given beside a relative period, since
 each firing would repeat them; a fixed `as_of` date is allowed.
 
-Among the shipped workflows that accept a schedule, only the general carrier,
-`managed-outcome`, declares a period; a project workflow can declare one too.
+Shipped workflows with both schedule triggers and a period input include
+`guided-outcome`, `decision-support` and `managed-outcome`.
+See [the catalog](catalog.md) and inspect
+`construct workflow show <id>` for a path's actual inputs and triggers;
+a project workflow can declare a period too.
 This one is saved as
 `.construct/workflows/weekly-digest/workflow.json`:
 
@@ -113,4 +119,6 @@ The last line is refused: a fixed window on a standing trigger would cover
 the same dates on every firing.
 
 
-A normal scheduled request can now pass `kind: maintain` through `classify_request` and `start_outcome`. Construct saves an idempotent trigger containing the mapped inputs and original intake, and creates no immediate run. Repeating the identical definition does not duplicate it or re-enable a disabled trigger. The response states that the clock and executor are unprovisioned. This is a saved standing intent, not a promise that work will run after the session exits. The same boundary applies to event triggers, which need an authorized event sender.
+Repeating an identical standing definition does not duplicate it or re-enable
+a disabled trigger. A saved standing intent is not a promise that work will run
+after the session exits. Event triggers likewise need an authorized event sender.

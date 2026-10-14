@@ -1,5 +1,7 @@
 # Sources and authority
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 A source is a system or a collection of documents the project reads. Every
 source has a purpose, a locator (or a host-resolved reference), an authority
 level, the claim types it is authoritative for and the ones it explicitly is
@@ -109,3 +111,44 @@ recorded for the person reach those steps on a separate line, as
 information to check with them rather than an instruction. A rule-out or
 supersession recorded before statements kept their channel has no record of
 how it arrived, and restricts nothing until the person confirms it again.
+
+## Relevant context and optional vectors
+
+The `context_search` host tool ranks admitted source passages and project
+statements, decisions, entities, work, runs and outcomes using local SQLite
+FTS5, exact lookup and explicit relationships. The host can infer up to eight
+bounded query expansions; expansions are labeled host-reported. Results include
+citations, passage digests, source revisions, provenance, status, freshness,
+retrieval reasons and coverage gaps. Relevance does not establish authority,
+permission or entailment. Use `project_context` for targeted history and paging.
+
+The serialized returned items have a declared character budget; coverage
+information is bounded separately. Unsupported, inaccessible, truncated and
+omitted content is reported. Directory refreshes retain bounded redacted text
+for supported files, skip private host/credential directories, and suppress text
+from named credential files. This is not a universal secret detector.
+
+`context_index` inspects/rebuilds the derived cache, explicitly configures or
+disables embeddings, and accepts supplied document vectors. Vectors name the
+returned `embeddingRef`, exact passage digest, configured model and dimensions;
+query vectors must match that identity. Changed bytes discard incompatible
+cached vectors. Construct invokes no embedding model, downloads no runtime and
+uses no external vector service or paid fallback. Text retrieval works without
+vectors; quality at organizational scale or across languages remains unqualified.
+
+## Immutable historical citations
+
+Search results for source passages use
+`snapshot:<encoded snapshot id>:<encoded item id>`. They resolve to captured
+bytes even after a source changes; revoked read access is still enforced.
+An older generation is historical evidence. A submission must acknowledge its
+historical use under `historicalEvidence` entries `{ref, why}` rather than
+silently cite it as current support. Changed current evidence invalidates
+applicable prior receipts without erasing historical generations.
+
+Host-reported reads retain reported provenance; adapter-witnessed reads retain
+witnessed provenance. Professional-method references inform procedure and do
+not support project factual claims. Method reports can bind obligations to
+output sections and project evidence; receipt presence alone establishes no
+method effectiveness. See [skills](skills-and-packs.md#qualification-and-skill-impact)
+and the [host-tool reference](broker-reference.md#context_search).
