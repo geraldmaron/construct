@@ -559,3 +559,80 @@ test('a witnessed partial read cannot promote carried reported content to observ
     assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'repeated partial reads neither promote carried items nor duplicate observed claims');
   } finally { fx.cleanup(); }
 });
+
+test('partial reads preserve retained supersession and metadata until a full replacement', async () => {
+  const fx = freshStore();
+  try {
+    let phase: 'initial' | 'partial' | 'replacement' = 'initial'; let n = 0;
+    const old = { externalRef: 'old.md', kind: 'document', name: 'Old', attributes: {
+      fingerprint: 'old', text: 'Old policy', supersededBy: 'new.md', schema: { type: 'string' },
+      url: 'https://example.com/old', truncated: true, updatedAt: '2026-10-01', weak: true, via: 'fixture',
+      size: 100, mtimeMs: 1, supersedes: ['older.md'], declaredSupersededBy: 'new.md',
+    } };
+    const current = { externalRef: 'new.md', kind: 'document', name: 'New', attributes: { fingerprint: 'new', text: 'Current policy' } };
+    const reader: SourceReader = async () => ({ outcome: 'read', report: {
+      digest: phase, summary: 'policies', evidence: 'witnessed', coverage: { complete: phase !== 'partial' },
+      items: phase === 'partial' ? [current] : phase === 'replacement' ? [{ ...old, attributes: { ...old.attributes, supersededBy: undefined, declaredSupersededBy: undefined } }, current] : [old, current],
+    } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
+    const first = await refresh();
+    const original = currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md');
+    const claims = listClaims(fx.store, { sourceId: 'docs' }).length;
+    phase = 'partial';
+    for (let repeat = 0; repeat < 2; repeat++) {
+      const result = await refresh();
+      assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'retention round-trips every manifest field');
+      const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+      for (const ref of ['docs:old.md', `snapshot:${result.snapshot!.id}:old.md`, `snapshot:${first.snapshot!.id}:old.md`]) {
+        assert.equal(resolve(ref)?.supersededBy, 'new.md', `${ref} retains supersession`);
+      }
+      assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+      assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims, 'unread retained items do not become new claims');
+    }
+    const host = createSourceService(fx.store, { readers: new Map() });
+    const reported = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'Current policy' }] }, '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
+    assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'a host partial read preserves every retained manifest field too');
+    const reportedResolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    for (const ref of ['docs:old.md', `snapshot:${reported.snapshot!.id}:old.md`]) assert.equal(reportedResolve(ref)?.supersededBy, 'new.md');
+    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims);
+    phase = 'replacement';
+    const replacement = await refresh();
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.equal(resolve('docs:old.md')?.supersededBy, undefined, 'a full replacement can clear current supersession');
+    assert.equal(resolve(`snapshot:${replacement.snapshot!.id}:old.md`)?.supersededBy, undefined);
+    assert.equal(resolve(`snapshot:${first.snapshot!.id}:old.md`)?.supersededBy, 'new.md', 'historical supersession remains immutable');
+    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
+  } finally { fx.cleanup(); }
+});
+
+test('a complete host report clears retained supersession even when all content fingerprints match', async () => {
+  const fx = freshStore();
+  try {
+    let n = 0;
+    const next = () => `host-replacement-${++n}`;
+    const at = '2026-10-02T00:00:00Z';
+    const fingerprint = (text: string) => createHash('sha256').update(text).digest('hex');
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'original', summary: 'policies', evidence: 'witnessed', items: [
+      { externalRef: 'old.md', kind: 'item', name: 'Old', attributes: { text: 'Old', fingerprint: fingerprint('Old'), supersededBy: 'new.md' } },
+      { externalRef: 'new.md', kind: 'item', name: 'New', attributes: { text: 'New', fingerprint: fingerprint('New') } },
+    ] } });
+    const native = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    native.syncDeclarations(file([docs]), at);
+    const original = await native.refresh('docs', at, next);
+    const host = createSourceService(fx.store, { readers: new Map() });
+    const partial = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'New' }] }, at, next);
+    const report = { items: [{ ref: 'old.md', text: 'Old' }, { ref: 'new.md', text: 'New' }] };
+    const complete = host.reportRead('docs', report, at, next);
+    assert.equal(complete.outcome, 'changed', 'removing retained metadata changes the persisted manifest');
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.equal(resolve('docs:old.md')?.supersededBy, undefined);
+    assert.equal(resolve(`snapshot:${complete.snapshot!.id}:old.md`)?.supersededBy, undefined);
+    for (const result of [original, partial]) assert.equal(resolve(`snapshot:${result.snapshot!.id}:old.md`)?.supersededBy, 'new.md');
+    assert.equal(searchContext(fx.store, { query: 'Old', sourceId: 'docs' }, at).items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
+    assert.equal(host.reportRead('docs', report, at, next).outcome, 'unchanged', 'identical complete reports still deduplicate');
+    assert.equal(host.reportRead('docs', { items: report.items.map(item => ({ ...item, title: 'Display only' })) }, at, next).outcome, 'unchanged', 'titles absent from persisted manifest do not create revisions');
+  } finally { fx.cleanup(); }
+});

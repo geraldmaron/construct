@@ -226,7 +226,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       if (partial && received.items) {
         const seen = new Set(received.items.map((item) => item.externalRef));
         const previous = currentManifestRecord(store, id);
-        const carried = (previous?.entries ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
+        const carried = (previous?.entries ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, supersededBy: entry.supersededBy, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
         const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
         // Provenance describes the whole manifest. Carried reported content was
         // not witnessed by this read, so a mixed manifest remains reported.
@@ -476,11 +476,12 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const weakSeen = new Set(report.items.filter((i) => i.weak).map((i) => i.ref));
       const before = [...prior.values()].filter((entry) => report.partial || weakSeen.has(entry.ref));
       const seen = new Set(reported.map((r) => r.externalRef));
-      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.schema !== undefined ? { schema: e.schema } : {}), ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
+      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { ...e.attributes, fingerprint: e.fingerprint, ...(e.supersededBy ? { supersededBy: e.supersededBy } : {}), ...(e.schema !== undefined ? { schema: e.schema } : {}), ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-      // The digest covers what was kept, not only versions, so fuller text or an address for the same version is
-      // recorded; item changes are still judged by fingerprint, so that recording opens no drift.
-      const digest = `sha256:${createHash('sha256').update(items.map((i) => { const a = i.attributes as { fingerprint: string; text?: string; url?: string }; return `${i.externalRef}\t${a.fingerprint}\t${createHash('sha256').update(a.text ?? '').digest('hex')}${a.url ? `\t${a.url}` : ''}`; }).join('\n')).digest('hex')}`;
+      // Identity covers every persisted manifest field, including retained
+      // supersession and metadata. Display titles are not persisted there.
+      // Item drift remains judged by fingerprint rather than metadata alone.
+      const digest = `sha256:${createHash('sha256').update(canonicalSchema(toManifest(items))).digest('hex')}`;
       setReachability(store, id, 'reachable', at);
       const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, coverage: report.coverage, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
       access(id, 'read', at, nextId, { ...(descriptor ?? {}), provenance: 'reported', operation: descriptor?.operation ?? 'read', refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref), sessionId: report.sessionId ?? null, scope: descriptor?.scope ?? report.scope ?? null, partial: report.partial === true, coverage: report.coverage ?? null });
