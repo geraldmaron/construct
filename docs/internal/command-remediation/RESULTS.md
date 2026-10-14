@@ -1,5 +1,14 @@
 # Command remediation verification
 
+Historical local-verification record for candidate `8af839c1`. It is preserved as
+the input to the subsequent failed native review, not a current readiness verdict.
+The native reviewer found an uncovered provenance defect and missing explicit
+reason-relation collision coverage, qualifying the coverage claim below. Later
+corrections and current observations are in [remaining validation](REMAINING-VALIDATION.md)
+and [the subagent review](SUBAGENT-REVIEW.md). The old "pending input recovery"
+status below was superseded by a corrected retry and failed native generation;
+that generation remains unaccepted.
+
 Status: implemented and locally verified in `codex/source-activation-cli`,
 2026-10-14. Adversarial verdict: accepted with controls for the thirteen demonstrated
 command-audit defects. Five agents implemented disjoint slices; two then reviewed

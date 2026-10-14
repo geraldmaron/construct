@@ -1,5 +1,9 @@
 # Remaining validation within available tools
 
+For the subsequent four-subagent review, additional reproduced fixes and latest
+integrated validation, see [SUBAGENT-REVIEW.md](SUBAGENT-REVIEW.md). This record
+preserves the earlier native-review attempt and follow-up chronology.
+
 Status: partial. Local recovery and a real connector-to-context path are observed.
 One authorized native review completed with a failed judgment; its reproduced
 provenance defect is corrected below. Broad native readiness and the proposed
