@@ -1,7 +1,10 @@
 # First run and how the host behaves
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct is installed once and used from the agent host you already work
-in. Two minutes gets you a bound project and a session that knows it.
+in. Requires Node.js 22.18 or newer. Initialization creates the project binding;
+the host's connection steps and available capabilities determine session readiness.
 
 ## Install and initialize
 
@@ -227,8 +230,10 @@ construct doctor
 
 `status` reads one state universe: setup completeness, work in flight,
 decisions waiting on you, source health, registry lock, drift. `doctor`
-never reports healthy for a missing or broken project, and it says what to
-run next.
+reports installation health and says what to run next for a missing or broken
+project. It marks live host connection and task execution as unverified: wiring
+files and this shell cannot establish either. A successful `bootstrap` in the
+host observes its project connection; actual task evidence establishes execution.
 
 `doctor` also checks, for each wired host, that the command its file starts
 can be found from this shell (`host-launch:<host>`), and says whether that
@@ -243,6 +248,11 @@ that the operational skill there is the copy this release ships
 current one. A copy someone edited is left alone, and `doctor` names the
 `construct skill install construct --force --dir=<dir>` that replaces it;
 any edits in it are lost.
+
+`doctor` also reports derived context-index status and recorded deliverable
+counts. A built index, available capability or healthy wiring is not an exercised
+outcome-readiness claim. Use the recorded validation and release limits to assess
+what was actually exercised.
 
 ## Supported hosts
 

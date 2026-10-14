@@ -1,5 +1,7 @@
 # Troubleshooting and recovery
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Every failure leads with the problem and then the safe next step; stack
 traces appear only with `--debug`.
 
@@ -30,8 +32,9 @@ Init and doctor name any earlier-alpha settings file or format-1
 exactly what it would remove; `construct reset --confirm` removes those
 paths and recreates clean state, keeping the committed project files unless
 you pass `--include-project-files`. It refuses while another process has the
-state database open and names the process (`--force` removes it anyway), and
-in a git worktree it refuses and names the main checkout to run it in.
+state database open and names the process. If OS holder inspection is unavailable
+or fails, it also refuses. Restore `lsof` and retry; `--force` explicitly bypasses
+both safeguards. In a git worktree it refuses and names the main checkout to run it in.
 
 ```bash
 construct reset
@@ -50,7 +53,8 @@ construct migrate
 ```
 
 It refuses while another process has the store open and names the process;
-`--force` upgrades anyway. It copies the store to
+unavailable or failed OS holder inspection also refuses. Restore `lsof` and retry.
+`--force` explicitly bypasses these safeguards. It copies the store to
 `.construct/state/construct.pre-v<format>-<time>-<id>.sqlite` under the
 upgrade's own write lock, upgrades it in place, and prints the backup's path.
 If the upgrade fails without changing the store, the copy is removed and
@@ -107,7 +111,10 @@ when you name it with `--confirm`.
 
 ## The host does not see Construct
 
-`construct doctor` reports host wiring, and fails when no host is wired.
+`construct doctor` checks installation and host wiring, and fails when no host is wired.
+Its installation health does not establish a live host connection or successful task
+execution; those states are reported as unverified. Run `bootstrap` through the host
+to observe its project connection, then inspect the evidence from the actual task.
 `construct init --client=<host>` writes the host's project MCP file and plants
 the operational skill where that host reads it; `construct serve
 --client=<host> --describe` prints what the server would serve without
@@ -129,12 +136,13 @@ exists (another machine's, or an old Node's), `doctor` reports it broken, and
 repoints the hooks' launcher; `construct init --client=claude-code` repairs
 them.
 
-The server starts even when it cannot bind. While another process holds
-the store, it answers the host at once and binds on the first tool call
-after the lock clears; until then a call says the store is busy and records
-nothing. When there is no project, or the state is in an older or newer
-format, `bootstrap` says so and names the step to run, such as
-`construct init` or `construct migrate`.
+The server starts even when it cannot bind and discovers the supported tools.
+Each recognized tool call checks binding; a refusal reports the actual repair and
+executes none of the requested operation. After `construct init`, an authorized
+migration, or a released store lock, call again on the same connection. Discovery
+stays stable during repair. The connection pins the intended project root and any
+observed identity; switching projects requires a new connection. A newer-format
+store still requires a compatible Construct build and a server restart.
 
 ## Something ran that should not have
 

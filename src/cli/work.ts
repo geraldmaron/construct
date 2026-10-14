@@ -7,6 +7,7 @@
 
 import {
   acceptWork,
+  WORK_STATUSES,
   cancelWork,
   claimWork,
   completeWork,
@@ -225,7 +226,14 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         if (args.json) writeJson(page);
         else if (page.items.length === 0) say('no work matches');
         else {
-          for (const w of page.items) say(`${esc(w.id)}  ${w.status}  ${w.kind}  ${esc(w.title)}`);
+          say(`Work: showing ${String(page.items.length)} of ${String(page.total)}`);
+          for (const state of [...new Set<WorkStatus>(['blocked', 'in_progress', 'claimed', 'ready', 'open', 'proposed', ...WORK_STATUSES])]) {
+            const group = page.items.filter((w) => w.status === state);
+            if (!group.length) continue;
+            say();
+            say(`${state} (${String(group.length)})`);
+            for (const w of group) say(`${esc(w.id)}  ${w.status}  ${w.kind}  ${esc(w.title)}`);
+          }
           if (page.truncated) say(`… ${String(page.total - page.items.length)} more (pass --limit and a query)`);
         }
         return 0;

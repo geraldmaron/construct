@@ -184,6 +184,7 @@ test('a server whose store was busy at launch lists its real tools and binds on 
       return fx.broker;
     }, '3.0.0-alpha.25', bindFailureFor);
     const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { instructions: string } };
+    assert.ok(init.result.instructions.length <= HOST_TEXT_LIMIT);
     assert.match(init.result.instructions, /bound to this project/);
     assert.doesNotMatch(init.result.instructions, /construct init/);
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
@@ -230,8 +231,13 @@ test('a lazy server rejects an unknown tool without trying to bind', async () =>
   assert.equal(attempts, 0);
 });
 
-test('a lazy server that finds a newer store switches to the unbound surface with upgrade advice', async () => {
+test('a refused lazy bind keeps discovery stable and retries after compatible repair', async () => {
+  const fx = brokerFixture();
+  let repaired = false;
+  let attempts = 0;
   const handle = createLazyMcpHandler('interactive', () => {
+    attempts += 1;
+    if (repaired) return fx.broker;
     throw new UnsupportedStateError('construct-state', 99, 'newer');
   }, '3.0.0-alpha.25', bindFailureFor);
   const first = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { structuredContent: { bound: boolean; next: string } } };
@@ -239,7 +245,15 @@ test('a lazy server that finds a newer store switches to the unbound surface wit
   assert.match(first.result.structuredContent.next, /Upgrade Construct/);
   assert.doesNotMatch(first.result.structuredContent.next, /call again|construct init/);
   const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
-  assert.deepEqual(list.result.tools.map((t) => t.name), ['bootstrap'], 'from then on it is the unbound surface');
+  assert.deepEqual(list.result.tools.map((t) => t.name), toolsFor('interactive').map(t => t.name));
+  repaired = true;
+  try {
+    const recovered = await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
+    assert.notEqual((recovered?.result as { isError?: boolean }).isError, true);
+    assert.equal(attempts, 2);
+    const stable = await handle({ jsonrpc: '2.0', id: 4, method: 'tools/list' });
+    assert.deepEqual(stable?.result, list.result);
+  } finally { fx.cleanup(); }
 });
 
 test('a message whose handling throws gets an error reply, and the server keeps answering', async () => {

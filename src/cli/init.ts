@@ -13,6 +13,7 @@ import { existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { gatherProjectMaterial } from '../hosts/repo/material.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
+import { emptySourcesFile, validateSourcesFile } from '../kernel/project/sources-file.ts';
 import { initializeProject } from '../kernel/project/initialize.ts';
 import { draftFromMaterial, SCALE_CHOICES } from '../kernel/project/discovery.ts';
 import { applyDiscoveryDraft, applyOnboardingAnswers, composeConstitution, onboardingStatus, scaleFromAnswer, SIDE_PROJECT_NEEDS_PERSON } from '../kernel/project/onboarding.ts';
@@ -25,7 +26,7 @@ import { listShippedSkills, readShippedSkill, plantSkill, skillState, OPERATIONA
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { updateLock } from '../kernel/registry/lockfile.ts';
-import { writeJsonFile } from '../kernel/project/files.ts';
+import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
 import { inspectWiring, installWiring, type WiringState } from '../hosts/wiring/wire.ts';
 import { HOOK_SETTINGS_PATH, inspectHooks, installHooks, type HookWiringState } from '../hosts/wiring/hooks.ts';
 import { inspectStartup, installStartup, type StartupState } from '../hosts/wiring/startup.ts';
@@ -346,8 +347,11 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     });
     saveConstitution(result.layout.constitutionFile, composeConstitution(result.store, result.constitution));
     const sources = createSourceService(result.store, { readers: new Map() });
-    const synced = sources.syncDeclarations(result.sources, at);
-    ensureSourceEntities(result.store, at, ctx.nextId);
+    const synced = result.store.transaction(() => {
+      const sync = sources.syncDeclarations(() => readJsonFile(root, result.layout.sourcesFile, validateSourcesFile) ?? emptySourcesFile(), at);
+      ensureSourceEntities(result.store, at, ctx.nextId);
+      return sync;
+    });
     const skillRegistry = createSkillRegistry({ projectDir: result.layout.skillsDir });
     const workflowRegistry = createWorkflowRegistry({ projectDir: result.layout.workflowsDir });
     const locked = updateLock(result.lock, skillRegistry.list(), workflowRegistry.list());

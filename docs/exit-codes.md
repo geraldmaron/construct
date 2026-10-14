@@ -1,7 +1,9 @@
 # Exit codes
 
-Every `construct` command returns one of three codes, and no command has ever
-returned a fourth. A script driving Construct needs only these three branches.
+[Documentation index](README.md) · [Project README](../README.md)
+
+The current CLI returns one of three codes. A script driving Construct can
+handle these three branches; process signals are described separately below.
 
 | Code | Meaning | Examples |
 | ---- | ------- | -------- |

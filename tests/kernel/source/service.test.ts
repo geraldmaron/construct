@@ -12,10 +12,11 @@ import { createSourceService, REPORTED_TEXT_CAP } from '../../../src/kernel/sour
 import { locatorProblem, parseDocsLocator } from '../../../src/kernel/source/locators.ts';
 import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS, type SourceReader } from '../../../src/kernel/source/connector.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
-import { getSource, listSources, authorityOf, freshnessOf } from '../../../src/kernel/state/sources.ts';
+import { getSource, listSources, authorityOf, freshnessOf, retireSource, updateSource } from '../../../src/kernel/state/sources.ts';
 import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
 import { projectResolver } from '../../../src/kernel/source/resolver.ts';
-import { listEntities } from '../../../src/kernel/state/graph.ts';
+import { listClaims, listEntities } from '../../../src/kernel/state/graph.ts';
+import { searchContext } from '../../../src/kernel/context/retrieval.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
@@ -139,7 +140,7 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     let fail = false;
     const reader: SourceReader = async ({ locator }) => {
       if (fail) throw new Error('401 from Jira');
-      return { outcome: 'read', report: { digest, summary: `read ${locator ?? ''}`, evidence: 'witnessed', items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship' }] } };
+      return { outcome: 'read', report: { digest, summary: `read ${locator ?? ''}`, evidence: 'witnessed', items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship', attributes: { fingerprint: digest } }] } };
     };
     const svc = createSourceService(fx.store, { readers: new Map([['jira', reader]]) });
     svc.syncDeclarations(file([jira, docs]), at());
@@ -147,13 +148,20 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     const first = await svc.refresh('jira', at(), nextId);
     assert.equal(first.outcome, 'changed');
     assert.equal(getSource(fx.store, 'jira')?.reachability, 'reachable');
+    const claimsAfterFirst = listClaims(fx.store, { sourceId: 'jira' }).length;
     const second = await svc.refresh('jira', at(), nextId);
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst, 'unchanged reads keep one evidence revision');
+    assert.equal(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.access').length, 2, 'each read still records access');
     assert.equal(second.outcome, 'unchanged');
     assert.equal(second.snapshot?.id, first.snapshot?.id);
     digest = 'bbb';
     const third = await svc.refresh('jira', at(), nextId);
     assert.equal(third.outcome, 'changed');
-    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed']);
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst + 1, 'a changed revision is recorded');
+    digest = 'aaa';
+    assert.equal((await svc.refresh('jira', at(), nextId)).outcome, 'changed', 'returning to an earlier revision remains a change');
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst + 2);
+    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed', 'source.changed']);
 
     fail = true;
     const down = await svc.refresh('jira', at(), nextId);
@@ -440,5 +448,191 @@ test('witnessed unchanged local rereads renew observation freshness without inve
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
     assert.equal((await svc.refresh('docs', '2026-10-01T02:00:00Z', next)).outcome, 'unchanged');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
+  } finally { fx.cleanup(); }
+});
+
+
+test('declared source kind is immutable and a refused reconciliation is atomic', () => {
+  const fx = freshStore();
+  try {
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    assert.throws(() => svc.syncDeclarations(file([jira, { ...jira, id: 'docs' }]), '2026-10-02T00:00:00Z'), /docs exists on this machine as a docs source/);
+    assert.equal(getSource(fx.store, 'jira'), null, 'earlier declarations in the failed batch roll back');
+    assert.equal(getSource(fx.store, 'docs')?.kind, 'docs');
+    assert.equal(getSource(fx.store, 'docs')?.locator, docs.locator);
+  } finally { fx.cleanup(); }
+});
+
+
+test('a changed collection records only changed items and an earlier item revision returning is new evidence', async () => {
+  const fx = freshStore();
+  try {
+    let revision = 'A'; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: revision, summary: 'two documents', evidence: 'witnessed', items: [
+      { externalRef: 'stable.md', kind: 'document', name: 'Stable', attributes: { fingerprint: 'stable', text: 'unchanged' } },
+      { externalRef: 'edited.md', kind: 'document', name: 'Edited', attributes: { fingerprint: revision, text: revision } },
+    ] } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    for (const [digest, expectedClaims] of [['A', 2], ['B', 3], ['A', 4]] as const) {
+      revision = digest;
+      const result = await svc.refresh('docs', '2026-10-02T00:00:00Z', () => `item-${++n}`);
+      assert.equal(result.outcome, 'changed');
+      assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, expectedClaims);
+    }
+  } finally { fx.cleanup(); }
+});
+
+
+test('a source retired or read-revoked during reader I/O cannot admit the completed read', async () => {
+  for (const action of ['retire', 'revoke'] as const) {
+    const fx = freshStore();
+    try {
+      let release!: () => void;
+      const reader: SourceReader = async () => {
+        await new Promise<void>(resolve => { release = resolve; });
+        return { outcome: 'read', report: { digest: 'read-after-revoke', summary: 'late read', evidence: 'witnessed' } };
+      };
+      const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+      svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+      let n = 0;
+      const reading = svc.refresh('docs', '2026-10-02T00:00:00Z', () => `late-${++n}`);
+      if (action === 'retire') retireSource(fx.store, 'docs', '2026-10-02T00:00:00Z');
+      else updateSource(fx.store, 'docs', { canRead: false }, '2026-10-02T00:00:00Z');
+      release();
+      await assert.rejects(reading, action === 'retire' ? /retired/ : /read permission is disabled/);
+      assert.equal(getSource(fx.store, 'docs')?.lastSnapshotId, null);
+      assert.equal(listObservations(fx.store, { sourceId: 'docs' }).length, 0);
+    } finally { fx.cleanup(); }
+  }
+});
+
+
+test('unchanged reported reader content admits witnessed claims later and preserves earlier trust metadata', async () => {
+  const fx = freshStore();
+  try {
+    let evidence: 'reported' | 'witnessed' = 'reported'; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'same', summary: 'one item', evidence, items: [{ externalRef: 'same.md', kind: 'document', name: 'Same', attributes: { fingerprint: 'same', absent: undefined } }] } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `trust-${++n}`);
+    await refresh();
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 0);
+    evidence = 'witnessed';
+    assert.equal((await refresh()).outcome, 'unchanged');
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1, 'first witnessed observation admits evidence even without a content change');
+    await refresh();
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1);
+    svc.syncDeclarations(file([{ ...docs, authorityLevel: 'informative', sensitivity: 'confidential' }]), '2026-10-03T00:00:00Z');
+    await refresh();
+    const claims = listClaims(fx.store, { sourceId: 'docs' });
+    assert.deepEqual(claims.map(claim => [claim.authority, claim.sensitivity]).sort(([a], [b]) => a!.localeCompare(b!)), [['authoritative', 'internal'], ['informative', 'confidential']], 'new reads carry current trust metadata without rewriting historical claims');
+  } finally { fx.cleanup(); }
+});
+
+test('a witnessed partial read cannot promote carried reported content to observed evidence', async () => {
+  const fx = freshStore();
+  try {
+    let partial = false; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: {
+      digest: partial ? 'partial-witness' : 'reported-inventory', summary: 'documents',
+      evidence: partial ? 'witnessed' : 'reported', coverage: { complete: !partial },
+      items: (partial ? ['returned.md'] : ['carried.md', 'returned.md']).map(externalRef => ({ externalRef, kind: 'document', name: externalRef, attributes: { fingerprint: externalRef, text: `Content of ${externalRef}` } })),
+    } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `partial-trust-${++n}`);
+    await refresh();
+    partial = true;
+    const result = await refresh();
+    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'only returned items were witnessed');
+    assert.deepEqual(currentManifest(fx.store, 'docs')!.map(entry => entry.ref), ['carried.md', 'returned.md'], 'partial inventory still retains unseen items');
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.ok(result.snapshot);
+    for (const ref of ['docs:carried.md', `snapshot:${result.snapshot.id}:carried.md`]) {
+      assert.equal(resolve(ref)?.provenance, 'reported', `${ref} must retain its weaker evidence boundary`);
+    }
+    const search = searchContext(fx.store, { query: 'Content of carried.md', sourceId: 'docs' }, '2026-10-02T00:00:00Z');
+    assert.equal(search.items.find(item => item.ref.endsWith(':carried.md'))?.provenance, 'reported', 'retrieval exposes conservative provenance too');
+    await refresh();
+    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'repeated partial reads neither promote carried items nor duplicate observed claims');
+  } finally { fx.cleanup(); }
+});
+
+test('partial reads preserve retained supersession and metadata until a full replacement', async () => {
+  const fx = freshStore();
+  try {
+    let phase: 'initial' | 'partial' | 'replacement' = 'initial'; let n = 0;
+    const old = { externalRef: 'old.md', kind: 'document', name: 'Old', attributes: {
+      fingerprint: 'old', text: 'Old policy', supersededBy: 'new.md', schema: { type: 'string' },
+      url: 'https://example.com/old', truncated: true, updatedAt: '2026-10-01', weak: true, via: 'fixture',
+      size: 100, mtimeMs: 1, supersedes: ['older.md'], declaredSupersededBy: 'new.md',
+    } };
+    const current = { externalRef: 'new.md', kind: 'document', name: 'New', attributes: { fingerprint: 'new', text: 'Current policy' } };
+    const reader: SourceReader = async () => ({ outcome: 'read', report: {
+      digest: phase, summary: 'policies', evidence: 'witnessed', coverage: { complete: phase !== 'partial' },
+      items: phase === 'partial' ? [current] : phase === 'replacement' ? [{ ...old, attributes: { ...old.attributes, supersededBy: undefined, declaredSupersededBy: undefined } }, current] : [old, current],
+    } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
+    const first = await refresh();
+    const original = currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md');
+    const claims = listClaims(fx.store, { sourceId: 'docs' }).length;
+    phase = 'partial';
+    for (let repeat = 0; repeat < 2; repeat++) {
+      const result = await refresh();
+      assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'retention round-trips every manifest field');
+      const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+      for (const ref of ['docs:old.md', `snapshot:${result.snapshot!.id}:old.md`, `snapshot:${first.snapshot!.id}:old.md`]) {
+        assert.equal(resolve(ref)?.supersededBy, 'new.md', `${ref} retains supersession`);
+      }
+      assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+      assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims, 'unread retained items do not become new claims');
+    }
+    const host = createSourceService(fx.store, { readers: new Map() });
+    const reported = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'Current policy' }] }, '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
+    assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'a host partial read preserves every retained manifest field too');
+    const reportedResolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    for (const ref of ['docs:old.md', `snapshot:${reported.snapshot!.id}:old.md`]) assert.equal(reportedResolve(ref)?.supersededBy, 'new.md');
+    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims);
+    phase = 'replacement';
+    const replacement = await refresh();
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.equal(resolve('docs:old.md')?.supersededBy, undefined, 'a full replacement can clear current supersession');
+    assert.equal(resolve(`snapshot:${replacement.snapshot!.id}:old.md`)?.supersededBy, undefined);
+    assert.equal(resolve(`snapshot:${first.snapshot!.id}:old.md`)?.supersededBy, 'new.md', 'historical supersession remains immutable');
+    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
+  } finally { fx.cleanup(); }
+});
+
+test('a complete host report clears retained supersession even when all content fingerprints match', async () => {
+  const fx = freshStore();
+  try {
+    let n = 0;
+    const next = () => `host-replacement-${++n}`;
+    const at = '2026-10-02T00:00:00Z';
+    const fingerprint = (text: string) => createHash('sha256').update(text).digest('hex');
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'original', summary: 'policies', evidence: 'witnessed', items: [
+      { externalRef: 'old.md', kind: 'item', name: 'Old', attributes: { text: 'Old', fingerprint: fingerprint('Old'), supersededBy: 'new.md' } },
+      { externalRef: 'new.md', kind: 'item', name: 'New', attributes: { text: 'New', fingerprint: fingerprint('New') } },
+    ] } });
+    const native = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    native.syncDeclarations(file([docs]), at);
+    const original = await native.refresh('docs', at, next);
+    const host = createSourceService(fx.store, { readers: new Map() });
+    const partial = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'New' }] }, at, next);
+    const report = { items: [{ ref: 'old.md', text: 'Old' }, { ref: 'new.md', text: 'New' }] };
+    const complete = host.reportRead('docs', report, at, next);
+    assert.equal(complete.outcome, 'changed', 'removing retained metadata changes the persisted manifest');
+    const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
+    assert.equal(resolve('docs:old.md')?.supersededBy, undefined);
+    assert.equal(resolve(`snapshot:${complete.snapshot!.id}:old.md`)?.supersededBy, undefined);
+    for (const result of [original, partial]) assert.equal(resolve(`snapshot:${result.snapshot!.id}:old.md`)?.supersededBy, 'new.md');
+    assert.equal(searchContext(fx.store, { query: 'Old', sourceId: 'docs' }, at).items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
+    assert.equal(host.reportRead('docs', report, at, next).outcome, 'unchanged', 'identical complete reports still deduplicate');
+    assert.equal(host.reportRead('docs', { items: report.items.map(item => ({ ...item, title: 'Display only' })) }, at, next).outcome, 'unchanged', 'titles absent from persisted manifest do not create revisions');
   } finally { fx.cleanup(); }
 });

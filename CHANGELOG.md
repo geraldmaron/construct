@@ -1,5 +1,59 @@
 # Changelog
 
+## 3.0.0-alpha.29 — 2026-10-14 (experimental)
+
+Source activation, evidence preservation and recovery now follow the same state
+contracts across CLI and MCP callers. Human CLI views group actionable status and
+distinguish installation checks from live connection or execution evidence.
+
+### Changes
+
+- Source additions reconcile current declarations under the write lock; rejected
+  additions preserve the file, and stranded retired declarations can be removed
+  individually. Source kinds remain immutable and late revoked reads are refused.
+- Declaration writes preserve all read/write combinations. Ambiguous legacy
+  top-level permission fields fail closed instead of silently changing access.
+- Unchanged reads avoid duplicate observed claims. Partial reads preserve unread
+  inventory and supersession without promoting it to witnessed evidence; complete
+  host reports can replace metadata while historical snapshots remain immutable.
+- State reset/migration refuse when holder inspection is unavailable unless an
+  explicit force is given. Skill inspection remains read-only. Work completion
+  enforces admission/dependencies, and restore preserves bounded lineage atomically.
+- Configured delegation waits for final supervisor IPC before settling validation;
+  absent, crashed or cancelled receipts still fail closed.
+- MCP connections recover after supported disk repairs without shrinking discovery
+  or changing their pinned project identity. Parser arity and structured config
+  errors now follow the command registry. Public guides match these contracts.
+
+### Upgrade
+
+Install the new alpha, stop existing Construct sessions, run
+`construct init --client=<host>` and `construct skill update`, then reconnect.
+Inspect `construct doctor`; its installation result does not prove live execution.
+State remains format 5. If `.construct/sources.json` has top-level `read` or `write`,
+choose both intended `capabilities.read` and `capabilities.write` booleans explicitly,
+remove the ambiguous top-level fields, and retry. Do not infer old permission intent.
+
+### Verification and limits
+
+This candidate passed lint, typecheck, 1,140 tests (one skipped) and packaged
+isolated smoke. Reconciled CLI recovery scenarios and static six-host conformance
+(97 passed, 19 untested) also passed. Three fresh native held-text controls accepted
+correct arithmetic and rejected incorrect arithmetic and an injected-source variant,
+preserving drafts without observed tools or fixture changes. These finite controls
+do not provide full readiness.
+
+The historical independent native candidate review failed and led to further
+provenance fixes; four subagents then found, fixed and cross-reviewed additional
+permission and metadata defects. Neither that history nor green local tests
+establish broad native qualification. Canonical isolation, fresh-user desktop
+readiness, production adapter coverage, executor qualification, measured skill
+benefit and the convergent setup/task interface remain open. Publish under
+`alpha` only; `latest` remains 2.1.1.
+
+See the [subagent review](docs/internal/command-remediation/SUBAGENT-REVIEW.md)
+and [reconciliation record](docs/internal/command-remediation/RECONCILIATION.md).
+
 ## 3.0.0-alpha.28 — 2026-10-13 (experimental)
 
 Construct now resolves portable research, decision, artifact, implementation and

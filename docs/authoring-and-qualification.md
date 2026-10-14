@@ -1,5 +1,7 @@
 # Authoring and qualifying skills and workflows
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 ## A skill
 
 A skill is a directory: `SKILL.md` (Agent Skills frontmatter and body),
@@ -41,7 +43,7 @@ evals run. Write them the way people talk, not the way the manifest does.
 body forbids inventing unknown facts), and `authority_boundary` (an injected
 override is recognized as one, and the body itself attempts none).
 
-The router does not decide which skill loads, and it does not read requests:
+The lexical router does not decide which skill loads or interpret intent:
 the host model reports its own reading to `classify_request`, which returns
 the workflows whose declared deliverable fits and the use-when text of the
 skills they bind, unranked. The router orders skills by how well words match
@@ -72,9 +74,11 @@ the record is missing, does not cover the current cases, or was made against
 different model-facing text (server instructions, tool descriptions and
 schemas, the operational skill, or skill and workflow text), so changing any
 of them means running it again. The corpus is committed; no record exists
-yet, so `check` fails and says that no record exists. A cut needs
-`npm run evals:live -- check --cut`, which passes only on a full-scope
-record.
+yet, so `check` fails and says that no record exists. Qualified release claims
+need `npm run evals:live -- check --cut`, which passes only on a full-scope
+record. Numbered experimental alphas use the separate finite-control tier in
+[the release policy](release-verification.md#experimental-alpha-tier);
+that tier does not establish full qualification.
 
 Professional packs add `evals/fixtures.json` with positive, negative, edge,
 and adversarial cases, and `references/sources.md` with citations, what each
@@ -116,22 +120,28 @@ construct workflow validate
 
 ## Qualification
 
-A skill's qualification, which the `skills` tool reports with `show`, comes
-from the lock and the bundle. It is qualified when the project's lock
-matches its content digest and its evals cover activation
-(`evals/activation.json`) and behavior (`evals/behavior.json` or
-`evals/fixtures.json`). A skill that is not locked, or whose evals do not
-cover both, is experimental. An outdated or blocked lock entry makes it
-degraded, and the same version with different bytes, or text that tries to
-raise Construct's authority, makes it unsafe. A locked skill that is no
-longer present cannot be shown; the `status` action reports it as
-`missing`. A quality claim belongs to the digest it was
-made on, so a changed copy at the same version does not inherit it.
+A skill is qualified only by current passing executed evidence for its exact
+version, digest, host and model, within the recorded scope. The observed suite
+must include matching native producer and independent reviewer witnesses,
+artifacts, method application and passing checks, with unchanged witnessed
+sources/evaluator bytes and an unexpired evidence window. A lock and evaluation
+filenames alone do not qualify it.
+
+Missing locks or missing executed evidence leave a skill experimental. An
+outdated or blocked lock, failed or stale evidence, or incomplete matching native
+witnesses makes it degraded. Same-version digest divergence or text attempting
+to raise Construct’s authority makes it unsafe. A missing locked skill is
+reported missing by status (deprecated in the qualification projection).
+The `skills` tool’s show action reports the reason and any evidence identity;
+see the host/model input in the [tool reference](broker-reference.md#skills).
+These states never grant permission or promise universal correctness.
 
 Before a skill or workflow ships, its manifest validates and agrees with its
 frontmatter, the registry index is current, a professional pack's fixtures
 cover the four kinds, a consuming workflow resolves against it, and, for
-anything called working on a host, the conformance command recorded the run.
+native effectiveness claims, current executed evidence covers the relevant
+host/model and outcome. Static conformance checks protocol and wiring;
+it cannot establish native effectiveness.
 
 ## Grounding and quality checks
 
@@ -156,7 +166,7 @@ counts.
 |---|---|
 | `citations_present`, `evidence_refs_resolve` | a reference names nothing this project holds |
 | `excerpts_match` | a quoted excerpt is not in the file or item it cites |
-| `evidence_recorded` | nothing cited holds content Construct can check (a project file, or an item whose text a recorded read holds) |
+| `evidence_recorded` | nothing cited holds checkable content (a project file, a captured item, or a record whose text the resolver supplies) |
 | `artifacts_exist` | the file the step says it wrote is missing or empty, or it names none (a step that declares `changes` may list none) |
 | `numbers_grounded` | a figure in the output, or in a document the step wrote, appears in no text Construct holds for something else that was cited, and is not derived by arithmetic that holds over cited figures |
 | `template_conformance` | the artifact lacks a section the named template has |

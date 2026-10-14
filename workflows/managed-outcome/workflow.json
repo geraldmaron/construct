@@ -4,8 +4,8 @@
   "evals": [],
   "id": "managed-outcome",
   "title": "Managed outcome with verification",
-  "version": "2.1.0",
-  "purpose": "The general carrier for an outcome no other workflow names: plan it, do it in this session citing what was read (inside the period when one is given, from the sources the run names), verify it with the project's own checks, and hand back the deliverable with its evidence and the file it produced.",
+  "version": "2.1.1",
+  "purpose": "The implementation path: plan the change, produce project files with cited evidence, run the project's own verification command, and hold the deliverable for independent semantic review. General research, decisions and chat artifacts use portable paths whose verification fits their outcome.",
   "activation": [
     "do this piece of work and hand it back",
     "manage this outcome",

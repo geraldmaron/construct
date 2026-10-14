@@ -19,11 +19,11 @@ import { FORMAT4_COLUMNS } from '../../src/kernel/state/migrate.ts';
 
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
-function cli(fx: SterileFixture, cwd: string, args: string[]): { status: number | null; out: string } {
+function cli(fx: SterileFixture, cwd: string, args: string[], overrides: NodeJS.ProcessEnv = {}): { status: number | null; out: string } {
   const r = spawnSync(process.execPath, [LAUNCHER, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { PATH: process.env.PATH, HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, NO_COLOR: '1' },
+    env: { PATH: process.env.PATH, HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, NO_COLOR: '1', ...overrides },
   });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
@@ -324,4 +324,23 @@ test('the backup is taken under the upgrade’s write lock: a write that lands w
   } finally {
     fx.cleanup();
   }
+});
+
+test('migration refuses unavailable holder inspection without backup or writes; force preserves backup contract', () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = project(fx);
+    toFormat3(db);
+    const before = readFileSync(db);
+    const unavailable = { PATH: join(fx.root, 'missing-tools') };
+    const refused = cli(fx, dir, ['migrate'], unavailable);
+    assert.equal(refused.status, 1);
+    assert.match(refused.out, /cannot inspect other processes holding the state database/);
+    assert.deepEqual(readFileSync(db), before);
+    assert.deepEqual(backupsIn(dir), []);
+    const forced = cli(fx, dir, ['migrate', '--force'], unavailable);
+    assert.equal(forced.status, 0, forced.out);
+    assert.equal(formatOf(db), '5');
+    assert.equal(backupsIn(dir).length, 1);
+  } finally { fx.cleanup(); }
 });

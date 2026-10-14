@@ -7,17 +7,17 @@ import { appendActivity } from '../kernel/state/activity.ts';
  * sources live in the committed sources file; local ones stay in state.
  */
 
-import { AUTHORITY_LEVELS, SENSITIVITIES, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
+import { AUTHORITY_LEVELS, SENSITIVITIES, getSource, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
 import { RELATION_KINDS, addRelation, type RelationKind } from '../kernel/state/graph.ts';
-import { validateSourcesFile, type DeclaredSource, type SourcesFile } from '../kernel/project/sources-file.ts';
-import { writeJsonFile } from '../kernel/project/files.ts';
+import { serializeSourcesFile, validateSourcesFile, type DeclaredSource } from '../kernel/project/sources-file.ts';
+import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
 import { SOURCE_KINDS, locatorProblem } from '../kernel/source/locators.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities, sourceEntity } from '../kernel/source/entities.ts';
 import { hostReaders } from '../hosts/sources/readers.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, openProject, requireMainCheckout, withProject, type CliContext } from './context.ts';
-import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { esc, say, shellWord, writeJson, UsageError, OperationError } from './output.ts';
 import { isAbsolute, resolve } from 'node:path';
 
 const group = 'Sources';
@@ -123,7 +123,18 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           say('no sources declared. `construct source add <id> --kind ... --purpose ...` declares one.');
           return 0;
         }
-        for (const r of rows) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+        say(`Sources: ${String(rows.length)} active`);
+        const groupOf = (r: typeof rows[number]) => r.source.reachability === 'unreachable' || r.freshness === 'stale' ? 'Needs attention' : r.source.reachability === 'unknown' || r.freshness === 'never_read' ? 'Not yet checked' : 'Read successfully';
+        for (const label of ['Needs attention', 'Not yet checked', 'Read successfully']) {
+          const group = rows.filter((r) => groupOf(r) === label).sort((a, b) => a.source.id.localeCompare(b.source.id));
+          if (!group.length) continue;
+          say();
+          say(`${label} (${String(group.length)})`);
+          say('ID  KIND  ORIGIN  REACHABILITY  FRESHNESS  PURPOSE');
+          for (const r of group) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+        }
+        say();
+        say('Next: construct source show <id> for details; construct source refresh <id> to read it.');
         return 0;
       });
     case 'show': {
@@ -137,6 +148,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           return 0;
         }
         say(`${esc(r.source.id)} (${r.source.kind}, ${r.source.origin})`);
+        say(`  status: ${r.source.status}`);
         say(`  purpose: ${esc(r.source.purpose)}`);
         say(`  locator: ${r.source.locator ? esc(r.source.locator) : 'none'}`);
         say(`  authority: ${r.source.authorityLevel}; settles ${r.authoritativeFor.length ? r.authoritativeFor.map(esc).join(', ') : 'nothing declared'}; must not settle ${r.notAuthoritativeFor.length ? r.notAuthoritativeFor.map(esc).join(', ') : 'nothing declared'}`);
@@ -148,7 +160,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
     case 'add': {
       const id = args.positionals[0]!;
       return withProject(ctx, (project) => {
-        const { store, layout, files, root } = project;
+        const { store, layout, root } = project;
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
         // A source only this machine knows (added with --local, or declared from a session) is committed under its own
@@ -158,21 +170,38 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const declared = local && stringFlag(args, 'sensitivity') === undefined ? { ...given, sensitivity: local.sensitivity } : given;
         if (boolFlag(args, 'local')) {
           if (svc.list().some((s) => s.id === id)) throw new OperationError(`source ${id} already exists`, '`construct source show ' + id + '` shows it.');
-          svc.addLocal({ ...declared }, at);
+          store.transaction(() => {
+            svc.addLocal({ ...declared }, at);
+            ensureSourceEntities(store, at, ctx.nextId);
+          });
         } else {
-          const current: SourcesFile = files.sources ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
-          if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
-          if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
           requireMainCheckout(project, 'source add (without --local)');
-          const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
-          writeJsonFile(layout.sourcesFile, next);
-          svc.syncDeclarations(next, at);
+          store.transaction(() => {
+            // Binding reads are only a snapshot. Read again after acquiring the
+            // write lock so simultaneous commands cannot overwrite one another.
+            const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
+            if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
+            if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
+            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: [...current.sources, declared] }), layout.sourcesFile);
+            for (const d of next.sources) {
+              if (getSource(store, d.id)?.status === 'retired') {
+                throw new OperationError(`source ${d.id} was retired; declare it under a new id`,
+                  current.sources.some((s) => s.id === d.id)
+                    ? `Run construct source retire ${shellWord(d.id)} to remove its stranded declaration, then retry. No declarations were changed.`
+                    : 'Choose a new source id. No declarations were changed.');
+              }
+            }
+            svc.syncDeclarations(next, at);
+            ensureSourceEntities(store, at, ctx.nextId);
+            // A failed file write rolls back registry changes as well.
+            writeJsonFile(layout.sourcesFile, serializeSourcesFile(next));
+          });
         }
-        ensureSourceEntities(store, at, ctx.nextId);
         const r = svc.status(id, at);
         if (args.json) writeJson(r);
         else {
           say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ` in .construct/sources.json${local ? '; what was already read from it on this machine carries over' : ''}`}`);
+          say(`Status: ${r.source.status}; reachability: ${r.source.reachability}; freshness: ${r.freshness}.`);
           say(`Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`);
         }
         return 0;
@@ -181,22 +210,46 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
     case 'retire': {
       const id = args.positionals[0]!;
       return withProject(ctx, (project) => {
-        const { store, layout, files } = project;
+        const { store, layout, root } = project;
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
-        const source = svc.list().find((s) => s.id === id);
-        if (!source) throw new OperationError(`no active source ${id}`);
-        if (source.origin === 'declared') {
-          requireMainCheckout(project, 'source retire of a declared source');
-          const current = files.sources!;
-          const next = validateSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }, layout.sourcesFile);
-          writeJsonFile(layout.sourcesFile, next);
-          svc.syncDeclarations(next, at);
-        } else {
-          retireSource(store, id, at);
+        const remainingRetired: string[] = [];
+        let reconciliationError: string | undefined;
+        store.transaction(() => {
+          const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
+          const source = getSource(store, id);
+          const declared = current.sources.some((s) => s.id === id);
+          if (!declared && source?.status !== 'active') throw new OperationError(`no active source ${id}`);
+          if (declared || source?.origin === 'declared') {
+            requireMainCheckout(project, 'source retire of a declared source');
+            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }), layout.sourcesFile);
+            // Retirement is a recovery operation. Other stranded declarations
+            // cannot prevent removal of this one, and must never reactivate IDs.
+            const recoverable = next.sources.filter((s) => {
+              if (getSource(store, s.id)?.status !== 'retired') return true;
+              remainingRetired.push(s.id);
+              return false;
+            });
+            try {
+              svc.syncDeclarations({ ...next, sources: recoverable }, at);
+            } catch (error) {
+              // syncDeclarations has its own savepoint; a failed reconciliation
+              // changes nothing. Still complete the selected retirement.
+              reconciliationError = (error as Error).message;
+            }
+            if (getSource(store, id)?.status === 'active') retireSource(store, id, at);
+            ensureSourceEntities(store, at, ctx.nextId);
+            writeJsonFile(layout.sourcesFile, serializeSourcesFile(next));
+          } else {
+            retireSource(store, id, at);
+          }
+        });
+        if (args.json) writeJson({ id, retired: true, ...(remainingRetired.length ? { remainingRetired } : {}), ...(reconciliationError ? { reconciliationError } : {}) });
+        else {
+          say(`retired source ${esc(id)}; its snapshots and claims stay on the record`);
+          if (remainingRetired.length) say(`Recovery remains: retire stranded declarations ${remainingRetired.map(esc).join(', ')}.`);
+          if (reconciliationError) say(`Other declarations were not reconciled: ${esc(reconciliationError)}`);
         }
-        if (args.json) writeJson({ id, retired: true });
-        else say(`retired source ${esc(id)}; its snapshots and claims stay on the record`);
         return 0;
       });
     }
@@ -206,6 +259,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
       try {
         const svc = createSourceService(project.store, { readers: readers(), root: project.root });
         if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`);
+        if (!args.json) say(`Reading source ${esc(id)}…`);
         const result = await svc.refresh(id, ctx.now(), () => ctx.nextId('snap'));
         if (args.json) writeJson(result);
         else if (result.outcome === 'unreachable') say(`${esc(id)}: unreachable (${esc(result.reason ?? '')})`);

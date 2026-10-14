@@ -1,13 +1,55 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fork } from 'node:child_process';
-import { once } from 'node:events';
+import childProcess, { fork, type ChildProcess } from 'node:child_process';
+import { EventEmitter, once } from 'node:events';
+import { syncBuiltinESMExports } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDelegationDriver } from '../../../src/hosts/delegation/runtime.ts';
 import { repository, fakeExecutor } from './support.ts';
+
+test('supervisor settlement drains terminal IPC after exit and fails closed without a successful receipt', async () => {
+  const fixture = repository();
+  const originalFork = childProcess.fork;
+  try {
+    for (const scenario of ['delayed-result', 'missing-result', 'launch-error', 'cancelled'] as const) {
+      childProcess.fork = (() => {
+        const child = new EventEmitter() as ChildProcess;
+        child.send = (() => {
+          queueMicrotask(() => {
+            if (scenario === 'launch-error') child.emit('error', new Error('fixture launch error'));
+            else child.emit('exit', 0, null);
+            // Process exit does not establish that the parent handled pending
+            // IPC. Model delivery in a later turn before the channel closes.
+            setImmediate(() => {
+              if (scenario === 'delayed-result' || scenario === 'cancelled') {
+                child.emit('message', { output: '', code: 0, reason: scenario === 'cancelled' ? 'cancelled' : null });
+              }
+              child.emit('disconnect');
+              child.emit('close', scenario === 'launch-error' ? -1 : 0, null);
+            });
+          });
+          return true;
+        }) as ChildProcess['send'];
+        return child;
+      }) as typeof fork;
+      syncBuiltinESMExports();
+      const driver = createDelegationDriver({
+        configDir: fixture.home, artifactsDir: fixture.artifactsDir, env: fixture.env, machine: 'fixture', processAlive: () => false,
+        config: { executors: {}, maxWorkers: 1, maxRepairCycles: 0, maxTimeoutMs: 30_000, validation: [['fixture-validation']] },
+      });
+      const result = await driver.validate(fixture.execution, 'integrated');
+      assert.deepEqual(result, [{ command: ['fixture-validation'], passed: scenario === 'delayed-result',
+        ...(scenario === 'delayed-result' ? {} : { why: scenario === 'launch-error' ? 'supervisor_launch_failed' : scenario === 'cancelled' ? 'cancelled' : 'supervisor_lost' }) }], scenario);
+    }
+  } finally {
+    childProcess.fork = originalFork;
+    syncBuiltinESMExports();
+    fixture.cleanup();
+  }
+});
 
 for (const executor of ['claude', 'codex', 'cursor'] as const) {
   test(`${executor} adapter exercises snapshot, actual subprocess, result, review and local integration using a sterile fake CLI`, async () => {

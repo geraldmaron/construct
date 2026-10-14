@@ -24,7 +24,7 @@ import { explainConfig } from '../kernel/project/config.ts';
 import type { BrokerContext } from '../kernel/broker/context.ts';
 import { normalizeClient, type ClientId } from '../hosts/wiring/clients.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { configInputs, openProject, projectWorktrees, type CliContext, type OpenProject } from './context.ts';
+import { configInputs, openProject, projectWorktrees, type CliContext, type ExpectedProject, type OpenProject } from './context.ts';
 import { UsageError } from './output.ts';
 import { packageVersion } from './version.ts';
 
@@ -148,9 +148,13 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
   return { surface: binding.surface, version: packageVersion(), root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root), sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
 }
 
-export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {
+export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }, binding: BrokerBinding = bindingFor(ctx, flags), expected?: ExpectedProject): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {
   if (ctx.env.CONSTRUCT_DELEGATED_WORKER) throw new UsageError('delegated workers receive only their supplied context, not another Construct surface');
-  const project = openProject(ctx);
-  const binding = bindingFor(ctx, flags);
-  return { project, binding, broker: createBrokerContext(ctx, project, binding) };
+  const project = openProject(ctx, expected);
+  try {
+    return { project, binding, broker: createBrokerContext(ctx, project, binding) };
+  } catch (error) {
+    project.store.close();
+    throw error;
+  }
 }

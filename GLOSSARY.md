@@ -32,8 +32,8 @@ synonym appears in `src/`; a retired word surfacing there is a drift signal.
 | lesson | ring | A proposed learning that walks proposed, checked, approved, admitted, and later superseded or invalidated. A run never admits one. |
 | staff member | — | A named holder of capabilities and skills for the project. |
 | host | harness | The agent runtime the person is in (Claude Code, Cursor, VS Code, OpenCode, Codex, Bob). Construct speaks to it over MCP and does the work there. |
-| interactive surface | — | The broker tools a person's session uses: bootstrap, classify, context, remember, workflows, skills, start, claim, submit, status, inbox, decide, sources, check answer, staff, promote, work, delegate, heartbeat. |
-| headless surface | — | The broker tools a configured runner uses: bootstrap, claim step, heartbeat, submit, status. It cannot decide, grant, remember, start, or finalize. |
+| interactive surface | — | The broker surface a person's project session uses. Exact tools and schemas are generated in the [broker reference](docs/broker-reference.md#interactive-surface). |
+| headless surface | — | The limited broker surface a configured runner uses. It cannot decide, grant, remember, start outcomes, or finalize. Exact tools are generated in the [broker reference](docs/broker-reference.md#headless-surface). |
 | intake | namer | The host's typed reading of a request, reported to `classify_request`: the kind (answer, remember, manage, maintain, or coordinate), the person's words verbatim, and for work the deliverable, period, sources, destination, and schedule it heard. Construct checks the reading and never reads intent from the words. |
 | lockfile | — | `registry.lock.json`: the resolved skill and workflow versions, digests, and origins this project runs against. |
 | registry index | — | `registry/index.json`: the shipped catalog of built-in skills and workflows with versions and digests, regenerated and checked in CI. |

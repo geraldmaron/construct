@@ -1,138 +1,144 @@
 # Construct
 
-Construct is a project-bound, capability-aware operating layer for agent
-hosts. Installed into a project, it learns what the project is, remembers
-authoritative context and constraints, resolves the skills and workflows an
-outcome needs, detects material drift, does permitted work through the agent
-host you already use, and surfaces only the decisions that are yours.
+Construct is a project-bound operating layer for the agent host you already use.
+It stores admitted context and work, resolves versioned methods and workflows,
+and keeps delivery, verification, review and your acceptance separate. Your host
+provides the model, tools and sandbox.
 
-This is the `3.0.0` alpha line of `@geraldmaron/construct`, under
-architectural cutover. Alphas publish under the `alpha` tag; `latest` stays on
-the predecessor. Nothing here is promised stable.
+**Experimental: 3.0.0-alpha.29.** Available under npm’s `alpha` tag; `latest`
+remains on the 2.x line. Installation and static host wiring are tested;
+broad host effectiveness, canonical native isolation and measured skill benefit
+remain unqualified. See [verification and limits](#verification-and-limits).
 
-## Alpha.28 — experimental
+## Install and start
 
-This candidate adds portable outcome paths, ranked local context, optional supplied
-vectors, immutable source citations and durable checkpoints. Research, decisions
-and chat artifacts can be delivered with explicit structural assurance without
-code-test requirements or an independent reviewer. Paths requiring independent
-review retain their held drafts until that review is observed. One ordinary native
-decision trial completed; native isolation, broad host effectiveness and measured
-skill benefit remain unqualified. See the [release notes](CHANGELOG.md) and
-[validation record](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md).
-
-- One native work ledger across project worktrees, with fenced claims, path
-  reservations, handoffs, and peer awareness.
-- Person-only approval and acceptance boundaries, explicit state upgrades,
-  and recovery that preserves existing work.
-- Opt-in bounded delegation through Claude, Codex, and Cursor adapter paths:
-  isolated patch proposals, independent review, cancellation, and serial
-  integration with combined-result validation.
-- Typed intake: the host reports its own reading of each request to
-  `classify_request`, and Construct checks that reading instead of
-  classifying your words. Every host reads the same short contract first.
-  Finite native trials exercise it; reliable fresh-user outcomes remain unqualified.
-- Grounding that is checked: a citation must resolve to something the
-  project holds (a project file, a declared source or an item a recorded
-  read holds, a deliverable, or a Construct record), quotes and figures are
-  checked against what was cited, and only passing checks make a
-  deliverable validated.
-- Portable wiring for all six hosts: no committed host file names a path on
-  your machine.
-
-**Delegation remains disabled by default and is not live-verified across the
-three tools.** Synthetic tests exercise all six directions; real subscription,
-permission, and interoperability evidence is still required before enabling
-an executor. This alpha does not claim production-ready three-tool delegation.
-
-Read the [changelog](CHANGELOG.md), [delegation guide](docs/bounded-delegation.md),
-and [verification record](docs/internal/multi-agent-coordination/DELEGATION-VERIFICATION.md)
-for the shipped behavior and remaining release gates.
-
-## First run
+Requires **Node.js 22.18 or newer**. In your project:
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
-construct init
+construct init --client=cursor
+construct doctor
 ```
 
-Init writes `.construct/` (project, constitution, sources, and registry lock
-files, committed) and one runtime database under `.construct/state/`
-(ignored). It reads the project's own files and proposes what it can, each
-proposal naming where it came from. Proposed statements wait in
-`construct inbox` until you confirm or retire them.
+Replace `cursor` with `claude-code`, `vscode`, `opencode`, `codex` or `bob`.
+You can comma-separate hosts. Follow the one-time connection steps printed by
+`init`, then start a new host session in the project.
 
-Init then connects the agent host you use. It wires the host you ran it
-from (it can detect Claude Code, Cursor, and Bob), the hosts already wired
-in this project, or the only one installed on this machine; when it finds
-several and you are at your own terminal, it asks which you use. Otherwise it
-names the hosts it found, wires none, and says so: run
-`construct init --client=<host>` (claude-code, cursor, vscode, opencode,
-codex, or bob; comma-separate for more than one). For each host it writes
-the project MCP file and plants the operational `construct` skill in the
-project, where that host reads it. For Claude Code it also puts Construct's
-hooks in `.claude/settings.local.json`, which stays on this machine.
+`init` writes committed configuration under `.construct/`, an ignored runtime
+store under `.construct/state/`, project MCP wiring and the operating skill for
+your selected hosts. It proposes context from local project files; proposals
+retain provenance and wait for confirmation. Setup questions should be asked
+only when their answers affect your request. [First-run guide](docs/first-run-and-hosts.md).
 
-Do the one-time step init prints for your host (in Claude Code: start a new
-session, approve the `construct` server, and allow its tools), then ask for
-what you want in your own words. Construct tells the session to handle your
-request first and to ask the three setup questions (what this project is to
-you, what result matters most now, and what must not be violated) only when
-an answer changes that work, or all in one message when you have asked for
-nothing yet; `--scale`, `--outcome`, and `--constraint` answer them at init
-instead.
+## Use it in your host
 
-After that, work in your agent session. The command line is for setup,
-inspection, scripting, and recovery: `construct status`, `construct doctor`,
-`construct config explain <key>`, `construct source add`, `construct reset`,
-and `construct migrate` when an upgrade of Construct needs the state upgraded
-too (stop every Construct session on the project first).
-`construct help` lists everything.
+Ask in your own words, for example:
 
-When upgrading an existing project, stop its Construct sessions before running
-`construct migrate`. Alpha.26 uses state format 5; older state must be upgraded
-explicitly. Migration takes a backup under its upgrade lock. Then run
-`construct init --client=<host>` for each host you use and commit the
-rewritten files: host files an earlier alpha wrote name this machine's Node
-and install, and `construct doctor` reports one whose path no longer exists
-as broken. For Claude Code, init also moves Construct's hooks from
-`.claude/settings.json` to `.claude/settings.local.json`. Run
-`construct doctor` afterward and follow any skill-update instructions before
-reopening agent sessions. Installing this package does not authorize workers.
+- “Remember that public API changes need a migration plan.”
+- “Use our architecture and prior decisions to compare these options.”
+- “Review this change and show what was actually verified.”
+- “What work remains, and where should we resume?”
 
-Limits that are load-bearing: legal, compliance, and other licensed
-judgments are research and preparation, never advice or sign-off. This alpha
-is its author's dogfood; nothing here claims to work for anyone else.
+The operating skill directs the host to retrieve relevant context, interpret
+managed requests, choose a path, claim work and submit evidence. A plain question
+creates no managed run; memory is recorded only when requested. Source text and
+other agents’ output are data, never permission.
+
+The CLI is for setup, inspection, scripting and recovery:
+
+```bash
+construct status
+construct work ready
+construct help
+```
+
+See the [CLI reference](docs/cli-reference.md) and
+[host-tool reference](docs/broker-reference.md) for exact commands and inputs.
+
+## What it provides
+
+- **Project context:** a local SQLite FTS5 index over admitted source passages,
+  decisions, work and prior outcomes. Exact lookup, bounded host query expansion
+  and explicit relationships supplement text ranking. Optional supplied vectors
+  require an explicitly configured model, dimensions and matching content digests.
+  Construct downloads no embedding model and invokes no paid embedding fallback.
+- **Portable execution paths:** research, decisions, artifacts, implementation and
+  review reuse the same resolver and ledger. General chat delivery needs no code
+  tests or file writer. Code work uses the project’s validation path.
+- **Evidence and continuity:** immutable source-generation citations, provenance,
+  freshness, coverage gaps, fenced work claims and durable partial checkpoints.
+  Similarity establishes relevance, not authority or factual support.
+- **Explicit assurance:** structural validation, observed commands, semantic review
+  and person acceptance are separate. Paths requiring independent review retain
+  drafts until a supported adapter observes that review. Self-review stays labeled.
+- **Host wiring:** shared protocol and project configuration for Claude Code,
+  Cursor, VS Code, OpenCode, Codex and IBM Bob. Static conformance covers all six;
+  it does not establish native execution parity.
+
+[Sources and retrieval](docs/sources-and-authority.md) ·
+[Workflows](docs/workflows-and-resolution.md) ·
+[Skills](docs/skills-and-packs.md) · [Work ledger](docs/work-ledger.md).
+
+## Verification and limits
+
+Alpha.29 adds source activation, permission preservation, state recovery and stable
+MCP discovery fixes. Its local regression and review evidence is recorded in the
+[remediation review](docs/internal/command-remediation/SUBAGENT-REVIEW.md) and
+[reconciliation](docs/internal/command-remediation/RECONCILIATION.md). Native
+isolation, fresh-user desktop readiness and the setup/task facade remain open.
+
+Alpha.29 passed lint, typecheck, the full test suite and packaged isolated smoke.
+Three fresh finite native held-text controls accepted correct arithmetic and
+rejected incorrect arithmetic and an injected source. Static six-host conformance
+passed with native boundaries untested. The earlier alpha.28 ordinary decision
+trial completed after a citation repair; its 218 seconds and 13 Construct calls
+remain a single historical diagnostic. These observations do not establish
+general effectiveness, injection resistance or causal skill benefit.
+
+Delegation is disabled until explicitly configured and live-verified. A saved
+standing outcome does not install a clock or executor. External sources depend
+on available authorized host tools or configured readers; declaring a source
+is not proof that it can be read. Licensed judgments remain preparation for a
+qualified person, never professional sign-off.
+
+[Release notes](CHANGELOG.md) · [Release policy](docs/release-verification.md) ·
+[Measured alpha.28 observations](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md) ·
+[Delegation](docs/bounded-delegation.md) · [Recurring operation](docs/recurring-operation.md).
+
+## Upgrade
+
+Install the new package, stop the project’s Construct sessions, then follow
+`construct doctor`. Current state format is **5**; run `construct migrate` only
+when an older supported store needs upgrading. Migration backs up the store;
+do not reset it to upgrade. Run `construct init --client=<host>` to reconcile
+wiring and `construct skill update` to reconcile the registry, then restart
+sessions. Existing runs keep their frozen bindings; re-resolve an outcome to
+use new workflow or method versions while preserving its prior work.
+
+[Upgrade and recovery guide](docs/troubleshooting-and-recovery.md).
+
+## Documentation
+
+The [GitHub documentation index](docs/README.md) is the docsite. It links the
+user guides and generated CLI, tool, configuration, catalog and state references.
+[Dated internal records](docs/internal/README.md) are history, not current usage
+instructions. Report documentation or behavior issues in
+[GitHub Issues](https://github.com/geraldmaron/construct/issues).
 
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run lint && npm run typecheck && npm test && npm run smoke
+npm run conformance
 ```
 
-That line is the whole gate. `npm run lint` is a chain of small checks: no
-absolute paths, glossary parity, no tracker ids in code, skill-spec and
-skill-policy conformance, terminal-escape safety, a documentation index, a
-check that every command printed in the documentation is one the CLI accepts,
-a check that every tracker id the documentation cites exists, lockfile version
-parity, and checks that the registry index and the generated reference pages
-are current. `npm test`
-is the sterile suite through `node --test`. `npm run smoke` packs the
-package, installs it into a scratch project, and runs the spine from packaged
-bytes.
-
-Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, run
-natively by Node's type stripping; `npm run build` produces `dist/` for
-packaging.
+Source is TypeScript with erasable syntax, run by Node’s native type stripping.
+`npm run build` compiles `dist/` for packaging. Generated references come from
+code definitions: use `npm run registry:index` and `npm run docs:generate`, not
+hand edits. See [architecture](docs/architecture-and-state-model.md) and
+[authoring and qualification](docs/authoring-and-qualification.md).
 
 ## License
 
-Apache-2.0
-
-
-This candidate uses the explicitly approved experimental-alpha release tier:
-full deterministic code/security checks and bounded native review controls,
-with known fresh-user and unsupported-path limitations retained. It does not
-have full live-matrix qualification or a general readiness claim. See the
-[release policy](docs/release-verification.md#experimental-alpha-tier).
+[Apache-2.0](LICENSE).

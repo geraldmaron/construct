@@ -161,8 +161,8 @@
       "interactionClass": "manage"
     },
     "managed-outcome": {
-      "version": "2.1.0",
-      "digest": "sha256:061fc7a1d7a300254f9b2d59830b94ec613129f0d0e83d9dd4f58758cc81351e",
+      "version": "2.1.1",
+      "digest": "sha256:107e7302e70982a3796ebeb41c3b90250c4f523910988fa4bafb7460177ae9b9",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },

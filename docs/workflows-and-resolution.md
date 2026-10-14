@@ -1,5 +1,7 @@
 # Workflows and dependency resolution
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 A workflow is a versioned manifest: typed inputs, ordered DAG steps with
 stable ids and `needs`, per-step skill and version range, capability
 requirements, source and freshness requirements, an action tier, input
@@ -25,10 +27,13 @@ Construct checks the reading, works the period out from the calendar,
 resolves the named systems to declared source ids, and names every
 workflow whose declared deliverable fits, in a fixed order: a workflow the
 reading names, then the exact kind, then the rest of its family, with
-workflows that bind the chosen skill first in each group. `other` goes to the
-general carrier, `managed-outcome`, then the workflows that bind the chosen
-skill; for maintain those come first and the carrier last, when it can be
-scheduled. Manage work nothing else fits also goes to the carrier. Maintain
+workflows that bind the chosen skill first in each group. For `other`, an
+explicit `intent.path` selects matching execution paths before the general
+carrier, `guided-outcome`, and workflows that bind the chosen skill; for
+maintain the skill-bound workflows precede the carrier, when it can be
+scheduled. Manage readings also expose implementation alternatives. If no
+deliverable match exists, the reported execution path is tried before the
+manage fallback to the general carrier. Maintain
 work nothing fits gets no match, and the host is told to offer to run it
 once now instead. Each match comes with whether it can run here, what it
 still needs, and the use-when text of the skills it binds. Construct asks
@@ -245,7 +250,7 @@ deliverable holds now. Then come the facts Construct holds, one per line:
 the checks waived and whether the person or their assistant answered, the
 checks that passed, how many of the things it rests on Construct opened,
 how many are the assistant's report and how many could not be checked, any
-verification the assistant reports running (Construct runs none), the
+verification reports and any adapter-observed command receipts, the
 highest sensitivity cited and how many citations have no known
 sensitivity, the sources the assistant declared, the systems the request
 named that are not registered, where the citations fall against the
@@ -262,18 +267,37 @@ question, relayed or the person's own, moves nothing: a relayed one puts
 the current question to the person instead, and the person's own answer
 (`construct inbox resolve`) is refused with the id of the current question.
 
-The general carrier, `managed-outcome`, runs plan, do, and verify for any
-outcome no other workflow names. It takes the request, a target, a period,
-and source ids. Its do step returns the summary, findings, the files it
-changed, and `artifact` (the file it produced, or null), and is checked for
-citations, the period, the named sources, grounded figures, and the files
-it says it wrote. Its verify step runs the project's own checks and hands
-the outcome back.
+The general carrier is `guided-outcome`: plan, produce and inspect a grounded
+result, with chat delivery requiring neither a file writer nor code-test
+execution. `intent.path` can select research, decision, artifact, implementation
+or review when an exact deliverable or named workflow does not take precedence.
+`decision-support` binds decision framing; existing specialist workflows remain
+available. `managed-outcome` is the explicit implementation path with actual
+project-command verification and required independent semantic review.
+
+Report outcome, audience, acceptance, constraints, assumptions and prior work
+under `intent`. The selected manifest's `execution` metadata carries checkpoints,
+evidence obligations, gathering limits, stop conditions and assurance. A run
+freezes these with the workflow and method versions. Changed assumptions require
+explicit cancellation/replanning, retaining prior drafts and completed work.
+
+`checkpoint_work` saves partial progress on the current step lease, with unknowns,
+remaining actions and host-reported gathering counts. An artifact must already be
+a readable file inside the project on a project-write step. A checkpoint is not
+verification or completion. `run_status` separates available delivery, recorded
+deterministic checks, semantic review and person acceptance. Gathering counts are
+reports, not enforcement over arbitrary host tools.
+
+Structural paths can deliver with semantic support unverified. Independent-review
+paths hold their exact draft until a supported adapter observes review of the
+held evidence bundle. Same-session checks are self-review. Review availability
+never grants a permission or justifies claiming that a draft was accepted.
 
 ## Built-in workflows
 
 Project bootstrap and constitution review, minimal remember, managed
-outcome with verification, design-principle conformance review, source
+portable grounded outcomes and decision support, implementation
+outcome with command verification, design-principle conformance review, source
 freshness and drift review, adversarial deliverable review,
 strategy-to-execution and capacity review, the standing review wrapper, one
 review per professional pack, PRD, RFC, and proposal authoring, a research
