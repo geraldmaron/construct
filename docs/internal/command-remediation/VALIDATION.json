@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "date": "2026-10-14",
+  "gate": {
+    "command": "npm run lint && npm run typecheck && npm test && npm run smoke",
+    "exitStatus": 0,
+    "tests": {
+      "total": 1126,
+      "passed": 1125,
+      "failed": 0,
+      "skipped": 1
+    },
+    "packagedSmoke": "pass",
+    "outputSha256": "b9cd44298a7664bd02fec9207a19903dc8c4c24fd2e8170b61a6922febde408c"
+  },
+  "conformance": {
+    "command": "npm run conformance -- --out=/private/tmp/construct-remediation-conformance.json",
+    "exitStatus": 0,
+    "passed": 97,
+    "failed": 0,
+    "untested": 19,
+    "scope": "static; native host/model boundaries untested"
+  },
+  "originalAuditSurfaces": {
+    "command": "node docs/internal/command-remediation/verify-surfaces.mjs",
+    "exitStatus": 0,
+    "findingsVerified": 10
+  },
+  "assurance": "observed local commands and independent subagent challenge; not native desktop or adapter-observed semantic assurance"
+}
