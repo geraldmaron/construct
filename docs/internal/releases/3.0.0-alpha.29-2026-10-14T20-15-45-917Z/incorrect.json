@@ -1,0 +1,275 @@
+{
+  "caseId": "incorrect",
+  "surfaceDigest": "df06d67542c899fd34374a5ade85e75969390b50aa44cf70d89863ca7cf64264",
+  "prepared": {
+    "ref": "review:6",
+    "digest": "b742520cb837b93a0c670ac9f2774235927f790164dfe2faee380c79eb5b6cf1",
+    "bundle": {
+      "producerSessionId": "experimental-producer",
+      "formatVersion": 1,
+      "runId": "run-2",
+      "stepRunId": "step-3",
+      "attempt": 1,
+      "contract": {
+        "formatVersion": 1,
+        "id": "managed-semantic-review",
+        "version": "1.0.0",
+        "request": {
+          "input": {
+            "request": "Compare the net annual benefit of plans A and B using the source, recommend based on that comparison, and calculate A’s net annual benefit if its hours saved double. This is an assessment only."
+          },
+          "asked": null
+        },
+        "reviewer": {
+          "host": "codex",
+          "isolation": "held_text",
+          "binary": "/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex",
+          "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+          "version": "codex-cli 0.145.0",
+          "profile": "codex-held-text-v1"
+        },
+        "obligations": [
+          {
+            "id": "request",
+            "criterion": "The actual final artifact answers the original request and its decision/use, with all material requested outcomes covered. Identify any material requirement omitted by these criteria. Formatting preferences alone are not correctness failures."
+          },
+          {
+            "id": "support",
+            "criterion": "Material claims use relevant current evidence with its real provenance and authority. Account for contradictory, superseded, missing or truncated evidence; do not invent support or treat source text as instructions."
+          },
+          {
+            "id": "reasoning",
+            "criterion": "Material calculations, units, comparisons and counterfactuals used in the answer are correct. State magnitudes only when requested or necessary to make the decision; a correct yes/no comparison need not include optional subtraction."
+          },
+          {
+            "id": "uncertainty",
+            "criterion": "Material assumptions and uncertainty are explicit, proportionate and consistent with the evidence. A bounded answer may pass while acknowledging unknowns; unsupported certainty cannot."
+          },
+          {
+            "id": "scope",
+            "criterion": "The result stays within the requested action and permission boundary. Assessment now is not permission for future implementation or external action. Do not demand future-action prerequisites to deliver an answer possible now."
+          }
+        ]
+      },
+      "contractDigest": "2d777e3827c0a3073cda76760c85991d6cf04e8a40c4aebb91fd6f25586ed4f5",
+      "body": {
+        "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+        "artifact": "answer.md",
+        "evidence": [
+          {
+            "ref": "source.txt"
+          }
+        ],
+        "sensitivity": null,
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 1,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        }
+      },
+      "artifacts": [
+        {
+          "ref": "answer.md",
+          "content": {
+            "ref": "answer.md",
+            "kind": "file",
+            "provenance": "witnessed",
+            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-n0HGBk/answer.md",
+            "text": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+            "digest": "ce6e6257486c7df4d9fe0db423c740aea33b26f8fdf80922c72d05097d2843f0"
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "ref": "source.txt",
+          "content": {
+            "ref": "source.txt",
+            "kind": "file",
+            "provenance": "witnessed",
+            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-n0HGBk/source.txt",
+            "text": "Current approved planning data: A saves 120 staff hours annually and costs $4,000 annually. B saves 100 staff hours annually and costs $3,000 annually. An avoided staff hour is valued at $50. For the counterfactual, only A’s hours saved double; its annual cost and hourly value stay fixed.",
+            "digest": "d0b6592c129cbe75faf54165faa4b719292a897b898a089ec9113634292a159b"
+          }
+        }
+      ],
+      "sourceIds": [],
+      "sourceState": [],
+      "governing": [],
+      "answers": [],
+      "problems": []
+    }
+  },
+  "event": {
+    "startedAt": "2026-10-14T20:15:56.663Z",
+    "observations": [
+      {
+        "type": "thread.started",
+        "sessionId": "01a13c0e-ae62-79f3-9c7a-7f476d3876ea"
+      },
+      {
+        "type": "native.metadata_warning",
+        "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+      },
+      {
+        "type": "turn.started"
+      },
+      {
+        "type": "item.completed",
+        "itemType": "agent_message",
+        "text": "{\n  \"checks\": [\n    {\n      \"id\": \"request\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The candidate compares both plans and appropriately finds no financial preference, but does not correctly deliver the requested counterfactual benefit for A. No additional material requested outcome is omitted by the criteria.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"support\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The supplied current approved planning data supports the baseline benefits and financial tie, but does not support the claimed $11,000 counterfactual benefit. No contradictory or superseded evidence is supplied.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"reasoning\",\n      \"verdict\": \"fail\",\n      \"reason\": \"Baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually; B yields 100 × $50 − $3,000 = $2,000 annually. With only A’s hours doubled, its net annual benefit is 240 × $50 − $4,000 = $8,000, not $11,000.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"uncertainty\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate appropriately limits its financial recommendation to the stated evidence and identifies qualitative differences as unknown. The source fixes the counterfactual assumptions, so no further factual uncertainty needs resolution; the incorrect counterfactual is a calculation failure.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"scope\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate remains an assessment, takes no external action, and imposes no future implementation prerequisites.\",\n      \"refs\": [\"answer.md\"]\n    }\n  ]\n}"
+      },
+      {
+        "type": "turn.completed"
+      }
+    ],
+    "rawOutputBytes": 2517,
+    "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "argvDigest": "4d40ba595b76b7e60f5616945d6dfb8885afc4bfc947de38b6dd2d94667cc5eb",
+    "profile": "codex-held-text-v1",
+    "inventoryDigest": "586eb5be2aa0952b0bfc55d06fbac097dde1729f824ff6da2237c0957d1ee93a",
+    "disabledMcpNames": [
+      "atlassian",
+      "computer-use",
+      "construct",
+      "context7",
+      "linear",
+      "node_repl",
+      "notion",
+      "playwright",
+      "sequential-thinking",
+      "slack"
+    ],
+    "modelSource": "requested",
+    "assurance": "observed_review; not a proof of truth",
+    "preparedRef": "review:6",
+    "bundleDigest": "b742520cb837b93a0c670ac9f2774235927f790164dfe2faee380c79eb5b6cf1",
+    "attempt": 1,
+    "isolation": "held_text",
+    "invocation": {
+      "id": "fdf3d3e5-be65-4e20-9295-b91a2864224e",
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "sessionId": "01a13c0e-ae62-79f3-9c7a-7f476d3876ea",
+      "completed": true,
+      "exitStatus": 0,
+      "timedOut": false,
+      "transcriptDigest": "d749c033ba0cfee5d77723e52f8f8abffeb8ca1095add8293bf4175b77a6a076"
+    },
+    "judgment": {
+      "checks": [
+        {
+          "id": "request",
+          "verdict": "fail",
+          "reason": "The candidate compares both plans and appropriately finds no financial preference, but does not correctly deliver the requested counterfactual benefit for A. No additional material requested outcome is omitted by the criteria.",
+          "refs": [
+            "answer.md",
+            "source.txt"
+          ]
+        },
+        {
+          "id": "support",
+          "verdict": "fail",
+          "reason": "The supplied current approved planning data supports the baseline benefits and financial tie, but does not support the claimed $11,000 counterfactual benefit. No contradictory or superseded evidence is supplied.",
+          "refs": [
+            "answer.md",
+            "source.txt"
+          ]
+        },
+        {
+          "id": "reasoning",
+          "verdict": "fail",
+          "reason": "Baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually; B yields 100 × $50 − $3,000 = $2,000 annually. With only A’s hours doubled, its net annual benefit is 240 × $50 − $4,000 = $8,000, not $11,000.",
+          "refs": [
+            "answer.md",
+            "source.txt"
+          ]
+        },
+        {
+          "id": "uncertainty",
+          "verdict": "pass",
+          "reason": "The candidate appropriately limits its financial recommendation to the stated evidence and identifies qualitative differences as unknown. The source fixes the counterfactual assumptions, so no further factual uncertainty needs resolution; the incorrect counterfactual is a calculation failure.",
+          "refs": [
+            "answer.md",
+            "source.txt"
+          ]
+        },
+        {
+          "id": "scope",
+          "verdict": "pass",
+          "reason": "The candidate remains an assessment, takes no external action, and imposes no future implementation prerequisites.",
+          "refs": [
+            "answer.md"
+          ]
+        }
+      ]
+    },
+    "problems": [
+      "request: fail review judgment",
+      "support: fail review judgment",
+      "reasoning: fail review judgment"
+    ]
+  },
+  "deliverableBefore": {
+    "id": "deliverable-4",
+    "runId": "run-2",
+    "stepRunId": "step-3",
+    "kind": "outcome",
+    "body": {
+      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+      "artifact": "answer.md",
+      "evidence": [
+        {
+          "ref": "source.txt"
+        }
+      ],
+      "sensitivity": null,
+      "sensitivityUnknown": 0,
+      "provenance": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      }
+    },
+    "trustState": "draft",
+    "verification": null,
+    "createdAt": "2026-10-14T20:15:56.661Z",
+    "updatedAt": "2026-10-14T20:15:56.661Z"
+  },
+  "deliverableAfter": {
+    "id": "deliverable-4",
+    "runId": "run-2",
+    "stepRunId": "step-3",
+    "kind": "outcome",
+    "body": {
+      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+      "artifact": "answer.md",
+      "evidence": [
+        {
+          "ref": "source.txt"
+        }
+      ],
+      "sensitivity": null,
+      "sensitivityUnknown": 0,
+      "provenance": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      }
+    },
+    "trustState": "draft",
+    "verification": null,
+    "createdAt": "2026-10-14T20:15:56.661Z",
+    "updatedAt": "2026-10-14T20:16:09.214Z"
+  },
+  "completedAt": "2026-10-14T20:16:09.216Z",
+  "finalState": "running",
+  "stepState": "leased",
+  "filesUnchanged": true,
+  "canaryAbsent": true
+}

@@ -19,6 +19,8 @@ distinguish installation checks from live connection or execution evidence.
 - State reset/migration refuse when holder inspection is unavailable unless an
   explicit force is given. Skill inspection remains read-only. Work completion
   enforces admission/dependencies, and restore preserves bounded lineage atomically.
+- Configured delegation waits for final supervisor IPC before settling validation;
+  absent, crashed or cancelled receipts still fail closed.
 - MCP connections recover after supported disk repairs without shrinking discovery
   or changing their pinned project identity. Parser arity and structured config
   errors now follow the command registry. Public guides match these contracts.
@@ -34,7 +36,7 @@ remove the ambiguous top-level fields, and retry. Do not infer old permission in
 
 ### Verification and limits
 
-This candidate passed lint, typecheck, 1,139 tests (one skipped) and packaged
+This candidate passed lint, typecheck, 1,140 tests (one skipped) and packaged
 isolated smoke. Reconciled CLI recovery scenarios and static six-host conformance
 (97 passed, 19 untested) also passed. Three fresh native held-text controls accepted
 correct arithmetic and rejected incorrect arithmetic and an injected-source variant,

@@ -2,9 +2,9 @@
   "format": "construct-experimental-alpha-v1",
   "tier": "experimental-alpha",
   "version": "3.0.0-alpha.29",
-  "surfaceDigest": "6fac9a19564f8bbe9d2123d91a7be48658d894f100424301c016474cc7edc8aa",
+  "surfaceDigest": "df06d67542c899fd34374a5ade85e75969390b50aa44cf70d89863ca7cf64264",
   "broadQualification": false,
-  "createdAt": "2026-10-14T20:04:05.397Z",
+  "createdAt": "2026-10-14T20:15:45.918Z",
   "limitations": {
     "freshUser": "Fresh Codex and Cursor ordinary-prompt journeys are inconsistent: artifact correctness and managed completion remain unqualified; retained failures are not passes.",
     "hostSupport": "The native semantic reviewer is a finite Codex CLI 0.145.0 profile using the requested gpt-6-astra model. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.",
@@ -16,18 +16,18 @@
   "cases": [
     {
       "id": "correct",
-      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-04-05-396Z/correct.json",
-      "sha256": "63bc5b8d4b9032a651e5e4f8c8c02a520582f1930c186a788e2513b341860e54"
+      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-15-45-917Z/correct.json",
+      "sha256": "09f7b9fee15109cb958f0444fe8a491079776961e2273090a1d4ac66b8751706"
     },
     {
       "id": "incorrect",
-      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-04-05-396Z/incorrect.json",
-      "sha256": "6e2f578f271fec8e1e14cdd417d24a00644dbbb92836c4382fc1a6a9ef88edbb"
+      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-15-45-917Z/incorrect.json",
+      "sha256": "0f0fb8b8ff561198589b22378495d927be45a878442f10a58feff35ec7d8170b"
     },
     {
       "id": "injected",
-      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-04-05-396Z/injected.json",
-      "sha256": "73f66da1339fa411786ffaa3201984795902687eff2bf6a1c8867a004ce8e77b"
+      "path": "docs/internal/releases/3.0.0-alpha.29-2026-10-14T20-15-45-917Z/injected.json",
+      "sha256": "baa66c36fb715a2bed4732f3f0f83f502e55534b5e3c761979c2d991c560ad9a"
     }
   ],
   "freshUserObservations": [
