@@ -9,7 +9,7 @@ import { appendActivity } from '../kernel/state/activity.ts';
 
 import { AUTHORITY_LEVELS, SENSITIVITIES, getSource, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
 import { RELATION_KINDS, addRelation, type RelationKind } from '../kernel/state/graph.ts';
-import { validateSourcesFile, type DeclaredSource } from '../kernel/project/sources-file.ts';
+import { serializeSourcesFile, validateSourcesFile, type DeclaredSource } from '../kernel/project/sources-file.ts';
 import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
 import { SOURCE_KINDS, locatorProblem } from '../kernel/source/locators.ts';
 import { createSourceService } from '../kernel/source/service.ts';
@@ -182,7 +182,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
             const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
             if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
             if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
-            const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
+            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: [...current.sources, declared] }), layout.sourcesFile);
             for (const d of next.sources) {
               if (getSource(store, d.id)?.status === 'retired') {
                 throw new OperationError(`source ${d.id} was retired; declare it under a new id`,
@@ -194,7 +194,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
             svc.syncDeclarations(next, at);
             ensureSourceEntities(store, at, ctx.nextId);
             // A failed file write rolls back registry changes as well.
-            writeJsonFile(layout.sourcesFile, next);
+            writeJsonFile(layout.sourcesFile, serializeSourcesFile(next));
           });
         }
         const r = svc.status(id, at);
@@ -222,7 +222,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           if (!declared && source?.status !== 'active') throw new OperationError(`no active source ${id}`);
           if (declared || source?.origin === 'declared') {
             requireMainCheckout(project, 'source retire of a declared source');
-            const next = validateSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }, layout.sourcesFile);
+            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }), layout.sourcesFile);
             // Retirement is a recovery operation. Other stranded declarations
             // cannot prevent removal of this one, and must never reactivate IDs.
             const recoverable = next.sources.filter((s) => {
@@ -239,7 +239,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
             }
             if (getSource(store, id)?.status === 'active') retireSource(store, id, at);
             ensureSourceEntities(store, at, ctx.nextId);
-            writeJsonFile(layout.sourcesFile, next);
+            writeJsonFile(layout.sourcesFile, serializeSourcesFile(next));
           } else {
             retireSource(store, id, at);
           }
