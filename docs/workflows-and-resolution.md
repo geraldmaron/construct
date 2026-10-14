@@ -27,10 +27,13 @@ Construct checks the reading, works the period out from the calendar,
 resolves the named systems to declared source ids, and names every
 workflow whose declared deliverable fits, in a fixed order: a workflow the
 reading names, then the exact kind, then the rest of its family, with
-workflows that bind the chosen skill first in each group. `other` goes to the
-general carrier, `managed-outcome`, then the workflows that bind the chosen
-skill; for maintain those come first and the carrier last, when it can be
-scheduled. Manage work nothing else fits also goes to the carrier. Maintain
+workflows that bind the chosen skill first in each group. For `other`, an
+explicit `intent.path` selects matching execution paths before the general
+carrier, `guided-outcome`, and workflows that bind the chosen skill; for
+maintain the skill-bound workflows precede the carrier, when it can be
+scheduled. Manage readings also expose implementation alternatives. If no
+deliverable match exists, the reported execution path is tried before the
+manage fallback to the general carrier. Maintain
 work nothing fits gets no match, and the host is told to offer to run it
 once now instead. Each match comes with whether it can run here, what it
 still needs, and the use-when text of the skills it binds. Construct asks
