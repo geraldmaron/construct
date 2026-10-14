@@ -227,8 +227,10 @@ construct doctor
 
 `status` reads one state universe: setup completeness, work in flight,
 decisions waiting on you, source health, registry lock, drift. `doctor`
-never reports healthy for a missing or broken project, and it says what to
-run next.
+reports installation health and says what to run next for a missing or broken
+project. It marks live host connection and task execution as unverified: wiring
+files and this shell cannot establish either. A successful `bootstrap` in the
+host observes its project connection; actual task evidence establishes execution.
 
 `doctor` also checks, for each wired host, that the command its file starts
 can be found from this shell (`host-launch:<host>`), and says whether that

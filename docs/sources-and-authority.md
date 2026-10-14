@@ -28,7 +28,11 @@ and informative, and never a directory or git source (see
 Committing a local source with `construct source add <id>` under the same
 kind makes it declared and keeps what was read from it. It keeps its
 sensitivity unless `--sensitivity` names another, and a local locator stays
-local when the committed declaration names none.
+local when the committed declaration names none. An existing ID cannot change
+source kind or be reused after retirement; declare the new identity under a new
+ID. Additions read the latest declarations inside the serialized reconciliation
+boundary. To remove stranded retired declarations, run `construct source retire
+<id>` for each; the output names any remaining recovery work.
 
 A relative directory locator is taken relative to the project. `relate`
 records how two sources stand to each other; relations are typed (governs,
