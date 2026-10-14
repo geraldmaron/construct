@@ -13,8 +13,7 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import { lockStatus, updateLock } from '../kernel/registry/lockfile.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
-import { bindProject } from './context.ts';
-import { openStateStore } from '../kernel/state/open.ts';
+import { bindProject, openProject } from './context.ts';
 import { skillQuality } from '../kernel/state/quality.ts';
 import { listFlag } from './commands.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
@@ -73,8 +72,7 @@ export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContex
       } finally { project.store.close(); }
     }
     case 'impact': {
-      const project = bindProject(ctx);
-      const store = openStateStore(project.layout.dbPath);
+      const { store } = openProject({ ...ctx, readOnly: true });
       try {
         const rows = skillQuality(store, { skill: stringFlag(args, 'skill') });
         if (args.json) { writeJson(rows); return 0; }
