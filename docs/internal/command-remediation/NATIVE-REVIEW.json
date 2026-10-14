@@ -1,0 +1,214 @@
+{
+  "format": "construct-held-candidate-review-v1",
+  "candidate": "8af839c127c9dd7e4cf41a6c9b29f9c300d6717f",
+  "baseline": "362812b2d95b44b86a86cbb53c933ffc961b8106",
+  "artifactSha256": "f1ad02d4920de502d687d6fe8c57ec08266cf2e1b7d40311147ac6dd2b228e81",
+  "evidenceSha256": "3ec234d1cd55244ba5e4dc4a18121cfa9446a4182ee66ce2078bc719c5e21417",
+  "bundleBytes": 160084,
+  "startedAt": "2026-10-14T17:24:11.705Z",
+  "completedAt": "2026-10-14T17:24:40.558Z",
+  "reviewer": {
+    "host": "codex",
+    "isolation": "held_text",
+    "binary": "/opt/homebrew/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "execution": {
+    "reviewRef": "semantic:8",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "26cd8061b805d49db899caff42c0d2b7d20ec8db18a1d3fd48a5ee6f2be42183",
+      "attempt": 1,
+      "isolation": "held_text",
+      "invocation": {
+        "id": "9bb8b24a-cf4a-4b60-a67e-6a8a22dcad70",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a13b71-7294-7290-948f-7eb7b032edef",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "dac76bdc228e096e1ce6a69e951c67c191e4b0b52985be4b2fd58a51988423c4"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "fail",
+            "reason": "The patch addresses all thirteen named remediation areas, but evidence admission retains a concrete defect. In recordRead, a partial read merges unseen items from currentManifest into report.items, then creates source-provenance claims for every merged item whenever the incoming report is not reported evidence. Consequently, an item known only from an earlier reported manifest can receive an observed claim during a later witnessed partial read that never returned that item. The added reported-to-witnessed regression exercises a returned item, not this carried-item case. Preserving partial inventory must not promote unobserved carried content to witnessed evidence.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "unknown",
+            "reason": "The supplied verification record reports the full local gate, packaged smoke, static conformance and negative controls, and the patch contains relevant regression tests. Those are meaningful recorded local results, not independently replayed results. Full implementations of the transaction wrapper, readiness calculation, graph validators and bound-handler fencing are omitted, so their dependency guarantees cannot be independently established from this diff. The record's assertion that final regressions cover relation identity collisions is also not demonstrated by the supplied new tests: dependency identity collisions are tested, whereas reason-relation identity collisions are not explicitly exercised.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "pass",
+            "reason": "The recorded test totals reconcile: 1,125 passed plus one skipped equals 1,126 total, with zero failures. Static conformance separately reports 97 passes and 19 untested boundaries rather than counting untested boundaries as passes. The record distinguishes earlier failed attempts and pre-fix controls from final passing runs and later-added regressions. No unsupported production magnitude or efficacy comparison is supplied.",
+            "refs": [
+              "verification.md"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "fail",
+            "reason": "The record explicitly bounds native-host readiness, original-device diagnosis, holder-inspection races, cross-resource durability and missing legacy lineage. However, its claim that first witnessed claims are admitted while manifest provenance remains conservative omits the partial-read promotion defect: carried items can acquire observed claims without being witnessed by that read. The blanket statement that unchanged trust/provenance cases are covered therefore exceeds the supplied implementation and regressions.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate and verification record remain within command remediation and recorded local validation. Doctor explicitly limits health to installation and leaves connection and execution unverified. The record does not claim native GUI readiness, broad connector coverage, publication, merge or release, and identifies the managed independent-review workflow as pending rather than successful. No external action or future implementation prerequisite is needed for this held-text assessment.",
+            "refs": [
+              "body",
+              "candidate.patch",
+              "verification.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "request: fail review judgment",
+        "support: unknown review judgment",
+        "uncertainty: fail review judgment"
+      ]
+    },
+    "passed": false,
+    "preparedRef": "review:6"
+  },
+  "events": [
+    {
+      "startedAt": "2026-10-14T17:24:11.894Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a13b71-7294-7290-948f-7eb7b032edef"
+        },
+        {
+          "type": "native.metadata_warning",
+          "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "agent_message"
+        },
+        {
+          "type": "turn.completed"
+        }
+      ],
+      "rawOutputBytes": 4431,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "179605e80ba25afde4dce127d4cf63ec7a0397b7898e479e38ceb426e6788108",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "586eb5be2aa0952b0bfc55d06fbac097dde1729f824ff6da2237c0957d1ee93a",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth",
+      "preparedRef": "review:6",
+      "bundleDigest": "26cd8061b805d49db899caff42c0d2b7d20ec8db18a1d3fd48a5ee6f2be42183",
+      "attempt": 1,
+      "isolation": "held_text",
+      "invocation": {
+        "id": "9bb8b24a-cf4a-4b60-a67e-6a8a22dcad70",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a13b71-7294-7290-948f-7eb7b032edef",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "dac76bdc228e096e1ce6a69e951c67c191e4b0b52985be4b2fd58a51988423c4"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "fail",
+            "reason": "The patch addresses all thirteen named remediation areas, but evidence admission retains a concrete defect. In recordRead, a partial read merges unseen items from currentManifest into report.items, then creates source-provenance claims for every merged item whenever the incoming report is not reported evidence. Consequently, an item known only from an earlier reported manifest can receive an observed claim during a later witnessed partial read that never returned that item. The added reported-to-witnessed regression exercises a returned item, not this carried-item case. Preserving partial inventory must not promote unobserved carried content to witnessed evidence.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "unknown",
+            "reason": "The supplied verification record reports the full local gate, packaged smoke, static conformance and negative controls, and the patch contains relevant regression tests. Those are meaningful recorded local results, not independently replayed results. Full implementations of the transaction wrapper, readiness calculation, graph validators and bound-handler fencing are omitted, so their dependency guarantees cannot be independently established from this diff. The record's assertion that final regressions cover relation identity collisions is also not demonstrated by the supplied new tests: dependency identity collisions are tested, whereas reason-relation identity collisions are not explicitly exercised.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "pass",
+            "reason": "The recorded test totals reconcile: 1,125 passed plus one skipped equals 1,126 total, with zero failures. Static conformance separately reports 97 passes and 19 untested boundaries rather than counting untested boundaries as passes. The record distinguishes earlier failed attempts and pre-fix controls from final passing runs and later-added regressions. No unsupported production magnitude or efficacy comparison is supplied.",
+            "refs": [
+              "verification.md"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "fail",
+            "reason": "The record explicitly bounds native-host readiness, original-device diagnosis, holder-inspection races, cross-resource durability and missing legacy lineage. However, its claim that first witnessed claims are admitted while manifest provenance remains conservative omits the partial-read promotion defect: carried items can acquire observed claims without being witnessed by that read. The blanket statement that unchanged trust/provenance cases are covered therefore exceeds the supplied implementation and regressions.",
+            "refs": [
+              "candidate.patch",
+              "verification.md"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate and verification record remain within command remediation and recorded local validation. Doctor explicitly limits health to installation and leaves connection and execution unverified. The record does not claim native GUI readiness, broad connector coverage, publication, merge or release, and identifies the managed independent-review workflow as pending rather than successful. No external action or future implementation prerequisite is needed for this held-text assessment.",
+            "refs": [
+              "body",
+              "candidate.patch",
+              "verification.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "request: fail review judgment",
+        "support: unknown review judgment",
+        "uncertainty: fail review judgment"
+      ]
+    }
+  ],
+  "filesUnchanged": true,
+  "candidateUnchanged": true,
+  "limits": [
+    "One authorized held-text review of the frozen candidate; follow-up modifications were not resubmitted.",
+    "Observed native judgment, not independently replayed tests or proof of broad readiness.",
+    "Separate isolated review; does not clear the failed main-bound managed generation."
+  ]
+}

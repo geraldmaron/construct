@@ -529,8 +529,19 @@ export interface OpenProject extends BoundProject {
  * instruction; a newer one with the upgrade instruction; a busy one with a
  * retry, never with an instruction that would discard state.
  */
-export function openProject(ctx: CliContext): OpenProject {
+export interface ExpectedProject {
+  readonly root: string;
+  readonly id: string | null;
+}
+
+export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenProject {
   const bound = bindProject(ctx);
+  if (expected && (realpathOr(bound.root) !== realpathOr(expected.root) || (expected.id !== null && bound.files.config?.id !== expected.id))) {
+    throw new OperationError(
+      'The project binding changed while this connection was waiting to bind.',
+      'Restart the MCP server after checking the intended project root and identity. Nothing was recorded.',
+    );
+  }
   if (!existsSync(bound.layout.dbPath)) {
     throw new OperationError(
       `this project has no state database at ${bound.layout.dbPath}`,

@@ -21,10 +21,14 @@ export function ensureSourceEntity(
   store: StateStore,
   input: { readonly sourceId: string; readonly kind: string; readonly name: string; readonly at: string; readonly nextId: (prefix: string) => string },
 ): Entity {
-  const kind = sourceEntityKind(input.kind);
-  const existing = findEntityByRef(store, kind, sourceEntityRef(input.sourceId));
-  if (existing) return existing;
-  return addEntity(store, { id: input.nextId('ent'), kind, name: input.name, externalRef: sourceEntityRef(input.sourceId), at: input.at });
+  return store.transaction(() => {
+    // Lookup and insert are one write boundary for every caller, including
+    // callers that do not already hold a source-declaration transaction.
+    const kind = sourceEntityKind(input.kind);
+    const existing = findEntityByRef(store, kind, sourceEntityRef(input.sourceId));
+    if (existing) return existing;
+    return addEntity(store, { id: input.nextId('ent'), kind, name: input.name, externalRef: sourceEntityRef(input.sourceId), at: input.at });
+  });
 }
 
 export function ensureSourceEntities(store: StateStore, at: string, nextId: (prefix: string) => string): Entity[] {

@@ -113,7 +113,9 @@ hold, are in
 - `construct work reopen <id> --reason="a v1 reader turned up"`
 
 A live claim is settled only with its token; one that expired protects
-nothing. Completing an item that has acceptance criteria needs a reason
+nothing. Completion also requires admitted work, finished blocking dependencies,
+current premises, and an unblocked state. Cancellation remains available to retire
+work that cannot proceed. Completing an item that has acceptance criteria needs a reason
 saying how they were met. An item with open children cannot be completed
 or cancelled; finish or cancel the children first. Delegated attempts are
 the exception: they are cancelled with their parent, and one still running
@@ -165,11 +167,16 @@ construct work restore work-snapshot.json
 ```
 
 `export` writes a versioned snapshot of the project's work items,
-dependencies, and history, without claim tokens. `restore` adds the items
+dependencies, history, and the work identities and reason links they use, without
+claim tokens. Older snapshots without reason links report the missing lineage
+when it needs relinking. `restore` adds the items
 the store does not have, skips the ones it has and reports any whose
 revision differs, and brings claimed or in-progress items back as open,
 since claims, reservations, and grants are never restored. A snapshot from
-another project is refused; work moves between projects as new items.
+another project is refused; work moves between projects as new items. Relationships
+are restored after identities, so later-created parents and blockers are valid.
+Invalid cycles or conflicting relationship identities roll back the restore;
+skipped live items keep their own dependencies and history.
 `construct work import-legacy tracker.jsonl --dry-run` previews a one-way
 import of a frozen tracker's JSONL snapshot, reporting the mapping without
 writing; without `--dry-run` it imports.

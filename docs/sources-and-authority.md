@@ -30,7 +30,17 @@ and informative, and never a directory or git source (see
 Committing a local source with `construct source add <id>` under the same
 kind makes it declared and keeps what was read from it. It keeps its
 sensitivity unless `--sensitivity` names another, and a local locator stays
-local when the committed declaration names none.
+local when the committed declaration names none. An existing ID cannot change
+source kind or be reused after retirement; declare the new identity under a new
+ID. Additions read the latest declarations inside the serialized reconciliation
+boundary. To remove stranded retired declarations, run `construct source retire
+<id>` for each; the output names any remaining recovery work.
+
+The committed file stores permissions under `capabilities.read` and
+`capabilities.write`. Additions, retirements and initialization preserve those
+values. If a file from an earlier CLI contains top-level `read` or `write`,
+Construct refuses it rather than guessing permissions. Set both nested capabilities
+to the intended booleans, remove the top-level fields, then retry the refused command.
 
 A relative directory locator is taken relative to the project. `relate`
 records how two sources stand to each other; relations are typed (governs,
@@ -51,8 +61,9 @@ declared, declared not authoritative).
 `refresh` reads a source through a reader the session has. Only directory
 reading ships inside Construct; other kinds read through the host's own
 tools in an interactive session or are reported unreachable, never faked. A
-snapshot is recorded once per content digest, so an unchanged source records
-nothing new, and freshness is judged against the declared expectation.
+snapshot is recorded when its capture digest changes, including retained item
+metadata. Identical captures do not duplicate snapshots; read-access observations
+continue, and freshness is judged against the declared expectation.
 
 ## Identity and organization
 
@@ -72,6 +83,11 @@ Superseded` / `Superseded by: newer.md` in the older one. A directory read
 records that on the item, a citation of the older document resolves with
 what replaced it, and the `superseded_acknowledged` check sends back any
 output that leans on it without saying so.
+
+A partial read preserves unread items and their supersession metadata without
+admitting new observed claims for them. A complete replacement can change that
+metadata even when document text is unchanged. Historical snapshot citations keep
+the metadata captured at their generation.
 
 ## What changed, and what it touched
 

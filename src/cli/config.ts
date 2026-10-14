@@ -13,7 +13,7 @@ import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { stringFlag } from './commands.ts';
-import { bindProject, configInputs, createContext, requireMainCheckout, type CliContext, type BoundProject } from './context.ts';
+import { bindProject, configInputs, createContext, locateProject, requireMainCheckout, type CliContext, type BoundProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
@@ -46,6 +46,27 @@ function requireKey(key: string | undefined): string {
 }
 
 export function configCommand(sub: string, args: ParsedArgs, argv: readonly string[], ctx: CliContext = createContext()): number {
+  // Validation owns these reads: binding and effective-value resolution would
+  // throw on the very malformed files this command must report. Locate through
+  // the shared checkout rules, but collect user and project failures separately.
+  if (sub === 'validate') {
+    const problems: string[] = [];
+    const userPath = userDefaultsPath(ctx.paths);
+    try {
+      readJsonFile(ctx.paths.configDir, userPath, validateUserDefaults);
+    } catch (error) {
+      problems.push((error as Error).message);
+    }
+    try {
+      readProjectFiles(locateProject(ctx).root);
+    } catch (error) {
+      if (!(error instanceof NoProjectError)) problems.push((error as Error).message);
+    }
+    if (args.json) writeJson({ ok: problems.length === 0, problems });
+    else if (problems.length === 0) say('configuration files validate');
+    else for (const p of problems) say(`problem: ${esc(p)}`);
+    return problems.length === 0 ? 0 : 1;
+  }
   const bound = tryBind(ctx);
   const inputs = configInputs(ctx, bound, configFlagsFrom(argv));
   switch (sub) {
@@ -89,26 +110,6 @@ export function configCommand(sub: string, args: ParsedArgs, argv: readonly stri
         say(`project config: ${record.project ? esc(record.project) : 'no project bound here'}`);
       }
       return 0;
-    }
-    case 'validate': {
-      const problems: string[] = [];
-      const userPath = userDefaultsPath(ctx.paths);
-      try {
-        readJsonFile(ctx.paths.configDir, userPath, validateUserDefaults);
-      } catch (error) {
-        problems.push((error as Error).message);
-      }
-      if (bound) {
-        try {
-          readProjectFiles(bound.root);
-        } catch (error) {
-          problems.push((error as Error).message);
-        }
-      }
-      if (args.json) writeJson({ ok: problems.length === 0, problems });
-      else if (problems.length === 0) say('configuration files validate');
-      else for (const p of problems) say(`problem: ${esc(p)}`);
-      return problems.length === 0 ? 0 : 1;
     }
     case 'set':
     case 'unset': {

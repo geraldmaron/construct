@@ -32,7 +32,7 @@ export const MIGRATE_SPEC: CommandSpec = {
   gloss: 'upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first',
   group: 'Recover',
   positionals: [],
-  flags: [{ name: 'force', gloss: 'upgrade even while another process has the state open', takesValue: false }],
+  flags: [{ name: 'force', gloss: 'upgrade despite live holders or unavailable holder inspection', takesValue: false }],
   readOnly: false,
 };
 
@@ -99,7 +99,14 @@ export function migrate(args: ParsedArgs, ctx: CliContext = createContext()): nu
     if (!(error instanceof UnsupportedStateError) || error.kind !== 'older') throw error;
   }
 
-  const holders = processesHolding(dbPath);
+  const inspection = processesHolding(dbPath);
+  if (!inspection.inspected && !boolFlag(args, 'force')) {
+    throw new OperationError(
+      `cannot inspect other processes holding the state database: ${inspection.reason}`,
+      'Stop every Construct session on this project first. Restore lsof and retry, or use --force to explicitly bypass holder inspection.',
+    );
+  }
+  const holders = inspection.inspected ? inspection.pids : [];
   if (holders.length > 0 && !boolFlag(args, 'force')) {
     throw new OperationError(
       `the state database is open in ${String(holders.length)} other process(es) (pid ${holders.join(', ')}), most likely an agent session’s MCP server; one running an older Construct would go on writing to the store after the upgrade, without format ${String(STATE_FORMAT_VERSION)}’s protections`,

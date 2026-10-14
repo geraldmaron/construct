@@ -63,7 +63,16 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         const rows = listRuns(project.store, { state: state as RunState | undefined, limit: 100 });
         if (args.json) writeJson(rows);
         else if (rows.length === 0) say('no runs yet');
-        else for (const r of rows) say(`${esc(r.id)}  ${esc(r.workflowId)}@${r.workflowVersion}  ${r.state}  ${r.triggerKind}  ${r.createdAt}${r.stateReason ? `  ${esc(r.stateReason)}` : ''}`);
+        else {
+          say(`Runs: ${String(rows.length)} most recent matches`);
+          for (const state of [...new Set<RunState>(['waiting_for_decision', 'blocked', 'failed', 'running', 'ready', ...RUN_STATES])]) {
+            const group = rows.filter((r) => r.state === state);
+            if (!group.length) continue;
+            say();
+            say(`${state} (${String(group.length)})`);
+            for (const r of group) say(`${esc(r.id)}  ${esc(r.workflowId)}@${r.workflowVersion}  ${r.state}  ${r.triggerKind}  ${r.createdAt}${r.stateReason ? `  ${esc(r.stateReason)}` : ''}`);
+          }
+        }
         return 0;
       }
       case 'show': {
@@ -75,6 +84,7 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         }
         say(`run ${esc(v.run.id)}: ${esc(v.run.workflowId)} ${v.run.workflowVersion}, ${v.run.state}${v.run.stateReason ? ` (${esc(v.run.stateReason)})` : ''}`);
         say(`  started ${v.run.createdAt} by ${esc(v.run.executorId)} (${v.run.triggerKind})`);
+        say(`  progress: ${String(v.steps.filter((s) => s.state === 'succeeded').length)} of ${String(v.steps.length)} steps succeeded`);
         for (const s of v.steps) say(`  step ${esc(s.stepId)}: ${s.state}${s.attempts ? ` after ${String(s.attempts)} attempt(s)` : ''}${s.stateReason ? ` (${esc(s.stateReason)})` : ''}`);
         for (const d of v.deliverables) say(`  deliverable ${esc(d.id)}: ${d.kind}, ${d.trustState}`);
         // One line per decision: its question's first line, with the rest in construct inbox show.

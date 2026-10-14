@@ -788,7 +788,7 @@ upgrade this project’s state from an older format, after writing a backup besi
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
-| `--force` | no | upgrade even while another process has the state open |
+| `--force` | no | upgrade despite live holders or unavailable holder inspection |
 
 Reads only: no.
 
@@ -801,7 +801,7 @@ name the Construct-owned files that would be removed; with --confirm, remove exa
 | `--confirm` | no | remove the named targets |
 | `--include-project-files` | no | also remove the committed .construct files, not only runtime state |
 | `--keep-state` | no | do not recreate state after removing |
-| `--force` | no | remove the state even while another process has it open |
+| `--force` | no | remove the state despite live holders or unavailable holder inspection |
 
 Reads only: no.
 
