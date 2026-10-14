@@ -12,10 +12,10 @@ import { createSourceService, REPORTED_TEXT_CAP } from '../../../src/kernel/sour
 import { locatorProblem, parseDocsLocator } from '../../../src/kernel/source/locators.ts';
 import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS, type SourceReader } from '../../../src/kernel/source/connector.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
-import { getSource, listSources, authorityOf, freshnessOf } from '../../../src/kernel/state/sources.ts';
+import { getSource, listSources, authorityOf, freshnessOf, retireSource, updateSource } from '../../../src/kernel/state/sources.ts';
 import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
 import { projectResolver } from '../../../src/kernel/source/resolver.ts';
-import { listEntities } from '../../../src/kernel/state/graph.ts';
+import { listClaims, listEntities } from '../../../src/kernel/state/graph.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
@@ -139,7 +139,7 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     let fail = false;
     const reader: SourceReader = async ({ locator }) => {
       if (fail) throw new Error('401 from Jira');
-      return { outcome: 'read', report: { digest, summary: `read ${locator ?? ''}`, evidence: 'witnessed', items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship' }] } };
+      return { outcome: 'read', report: { digest, summary: `read ${locator ?? ''}`, evidence: 'witnessed', items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship', attributes: { fingerprint: digest } }] } };
     };
     const svc = createSourceService(fx.store, { readers: new Map([['jira', reader]]) });
     svc.syncDeclarations(file([jira, docs]), at());
@@ -147,13 +147,20 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     const first = await svc.refresh('jira', at(), nextId);
     assert.equal(first.outcome, 'changed');
     assert.equal(getSource(fx.store, 'jira')?.reachability, 'reachable');
+    const claimsAfterFirst = listClaims(fx.store, { sourceId: 'jira' }).length;
     const second = await svc.refresh('jira', at(), nextId);
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst, 'unchanged reads keep one evidence revision');
+    assert.equal(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.access').length, 2, 'each read still records access');
     assert.equal(second.outcome, 'unchanged');
     assert.equal(second.snapshot?.id, first.snapshot?.id);
     digest = 'bbb';
     const third = await svc.refresh('jira', at(), nextId);
     assert.equal(third.outcome, 'changed');
-    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed']);
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst + 1, 'a changed revision is recorded');
+    digest = 'aaa';
+    assert.equal((await svc.refresh('jira', at(), nextId)).outcome, 'changed', 'returning to an earlier revision remains a change');
+    assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst + 2);
+    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed', 'source.changed']);
 
     fail = true;
     const down = await svc.refresh('jira', at(), nextId);
@@ -440,5 +447,85 @@ test('witnessed unchanged local rereads renew observation freshness without inve
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
     assert.equal((await svc.refresh('docs', '2026-10-01T02:00:00Z', next)).outcome, 'unchanged');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
+  } finally { fx.cleanup(); }
+});
+
+
+test('declared source kind is immutable and a refused reconciliation is atomic', () => {
+  const fx = freshStore();
+  try {
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    assert.throws(() => svc.syncDeclarations(file([jira, { ...jira, id: 'docs' }]), '2026-10-02T00:00:00Z'), /docs exists on this machine as a docs source/);
+    assert.equal(getSource(fx.store, 'jira'), null, 'earlier declarations in the failed batch roll back');
+    assert.equal(getSource(fx.store, 'docs')?.kind, 'docs');
+    assert.equal(getSource(fx.store, 'docs')?.locator, docs.locator);
+  } finally { fx.cleanup(); }
+});
+
+
+test('a changed collection records only changed items and an earlier item revision returning is new evidence', async () => {
+  const fx = freshStore();
+  try {
+    let revision = 'A'; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: revision, summary: 'two documents', evidence: 'witnessed', items: [
+      { externalRef: 'stable.md', kind: 'document', name: 'Stable', attributes: { fingerprint: 'stable', text: 'unchanged' } },
+      { externalRef: 'edited.md', kind: 'document', name: 'Edited', attributes: { fingerprint: revision, text: revision } },
+    ] } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    for (const [digest, expectedClaims] of [['A', 2], ['B', 3], ['A', 4]] as const) {
+      revision = digest;
+      const result = await svc.refresh('docs', '2026-10-02T00:00:00Z', () => `item-${++n}`);
+      assert.equal(result.outcome, 'changed');
+      assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, expectedClaims);
+    }
+  } finally { fx.cleanup(); }
+});
+
+
+test('a source retired or read-revoked during reader I/O cannot admit the completed read', async () => {
+  for (const action of ['retire', 'revoke'] as const) {
+    const fx = freshStore();
+    try {
+      let release!: () => void;
+      const reader: SourceReader = async () => {
+        await new Promise<void>(resolve => { release = resolve; });
+        return { outcome: 'read', report: { digest: 'read-after-revoke', summary: 'late read', evidence: 'witnessed' } };
+      };
+      const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+      svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+      let n = 0;
+      const reading = svc.refresh('docs', '2026-10-02T00:00:00Z', () => `late-${++n}`);
+      if (action === 'retire') retireSource(fx.store, 'docs', '2026-10-02T00:00:00Z');
+      else updateSource(fx.store, 'docs', { canRead: false }, '2026-10-02T00:00:00Z');
+      release();
+      await assert.rejects(reading, action === 'retire' ? /retired/ : /read permission is disabled/);
+      assert.equal(getSource(fx.store, 'docs')?.lastSnapshotId, null);
+      assert.equal(listObservations(fx.store, { sourceId: 'docs' }).length, 0);
+    } finally { fx.cleanup(); }
+  }
+});
+
+
+test('unchanged reported reader content admits witnessed claims later and preserves earlier trust metadata', async () => {
+  const fx = freshStore();
+  try {
+    let evidence: 'reported' | 'witnessed' = 'reported'; let n = 0;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'same', summary: 'one item', evidence, items: [{ externalRef: 'same.md', kind: 'document', name: 'Same', attributes: { fingerprint: 'same', absent: undefined } }] } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `trust-${++n}`);
+    await refresh();
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 0);
+    evidence = 'witnessed';
+    assert.equal((await refresh()).outcome, 'unchanged');
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1, 'first witnessed observation admits evidence even without a content change');
+    await refresh();
+    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1);
+    svc.syncDeclarations(file([{ ...docs, authorityLevel: 'informative', sensitivity: 'confidential' }]), '2026-10-03T00:00:00Z');
+    await refresh();
+    const claims = listClaims(fx.store, { sourceId: 'docs' });
+    assert.deepEqual(claims.map(claim => [claim.authority, claim.sensitivity]).sort(([a], [b]) => a!.localeCompare(b!)), [['authoritative', 'internal'], ['informative', 'confidential']], 'new reads carry current trust metadata without rewriting historical claims');
   } finally { fx.cleanup(); }
 });
