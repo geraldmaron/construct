@@ -1,6 +1,9 @@
 # Documentation
 
-Everything here is written for someone using or integrating Construct. The
+This GitHub directory is the Construct docsite. Start with the install guide,
+then choose the guide or reference for your task. Current guides describe
+alpha.28 code; static wiring and structural checks are not broad effectiveness
+qualification. [Release notes](../CHANGELOG.md) carry measured limits. The
 records of how it was built live in [`internal/`](internal/), separately and
 labeled as history, so a reader can tell which they are holding. A lint holds
 this list to the directory: a new file here is added below, which is the
@@ -13,7 +16,7 @@ moment someone decides it is documentation rather than a record.
 
 ## Using it
 
-- [`sources-and-authority.md`](sources-and-authority.md) — declaring sources, authority per claim type, freshness, identity, organization.
+- [`sources-and-authority.md`](sources-and-authority.md) — declaring sources, ranked retrieval and optional vectors, immutable citations, authority and freshness.
 - [`skills-and-packs.md`](skills-and-packs.md) — method skills, professional packs, progressive loading, versions and the lock.
 - [`workflows-and-resolution.md`](workflows-and-resolution.md) — workflows, resolution before running, runs, deliverables and trust.
 - [`permissions-and-autonomy.md`](permissions-and-autonomy.md) — the action lattice, approvals, standing grants, break-glass, the headless runner.

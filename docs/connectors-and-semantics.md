@@ -1,5 +1,7 @@
 # Connectors and system semantics
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Construct builds no live connectors of its own beyond reading a directory.
 It preserves the host-first ladder: in an interactive session the host's own
 tools read and write the systems the person already has open, and Construct

@@ -1,5 +1,7 @@
 # Skills and professional packs
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 A skill is a portable `SKILL.md` (Agent Skills format) beside a Construct
 manifest, `construct.skill.json`, that declares what the portable file
 cannot: activation and stand-down conditions, interaction classes, outcomes
@@ -32,14 +34,14 @@ given.
 which are out of step with the lock. `classify_request` returns the
 workflows whose deliverable fits the host's reading and the use-when line of
 each skill they bind, unranked (every method skill and pack when the best
-fit is `managed-outcome` and the reading names no skill). The host model
+fit is `guided-outcome` and the reading names no skill). The host model
 judges which method fits and names it as `skill` in its reading; Construct
 does not pick for it. A workflow step binds its own skill by id and version
 range, and the run keeps the version and digest it bound. `claim_work` names
-the step's skill and returns its full text only with `includeSkillBody`; a
+the step's skill and returns its full text by default (`includeSkillBody=false`
+requests metadata only); a
 judgment step that binds no skill is told to load the method the reading
-chose. A host session gets a skill's text only when it asks for it, and
-never the whole library.
+chose. A claim supplies the current step's bound method, not the whole library.
 
 The `skills` tool lists the project's skills with their activation and
 stand-down conditions, shows one with its digest, files, and qualification
@@ -95,17 +97,21 @@ version bump fails the release check.
 
 ## Qualification and skill impact
 
-The `skills` tool's `show` action reports a skill's qualification:
-`qualified` when the lock matches its digest and it carries evals for both
-activation (`evals/activation.json`) and behavior (`evals/behavior.json` or
-`evals/fixtures.json`); `experimental` when it is not locked or its evals do
-not cover both yet; `degraded` when its lock is outdated or blocked; and
-`unsafe` when the same version's bytes differ from the lock or its text
-tries to raise Construct's authority. A locked skill that is no longer
-present cannot be shown; the `status` action reports it as `missing`. A
-quality claim follows the content digest, so the same version with different
-bytes does not inherit it. The checks a skill must pass before release are
-in [authoring-and-qualification.md](authoring-and-qualification.md).
+A skill is qualified only by current passing executed evidence for its exact
+version, digest, host and model, within the recorded scope. The observed suite
+must include matching native producer and independent reviewer witnesses,
+artifacts, method application and passing checks, with unchanged witnessed
+sources/evaluator bytes and an unexpired evidence window. A lock and evaluation
+filenames alone do not qualify it.
+
+Missing locks or missing executed evidence leave a skill experimental. An
+outdated or blocked lock, failed or stale evidence, or incomplete matching native
+witnesses makes it degraded. Same-version digest divergence or text attempting
+to raise Construct’s authority makes it unsafe. A missing locked skill is
+reported missing by status (deprecated in the qualification projection).
+The `skills` tool’s show action reports the reason and any evidence identity;
+see the host/model input in the [tool reference](broker-reference.md#skills).
+These states never grant permission or promise universal correctness.
 
 ```bash
 construct skill impact

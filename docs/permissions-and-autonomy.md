@@ -1,5 +1,7 @@
 # Permissions and autonomy
 
+[Documentation index](README.md) · [Project README](../README.md)
+
 Every action Construct or a workflow step takes sits on one of six tiers:
 
 | Tier | Default |
@@ -115,7 +117,8 @@ binds the receipt to the current leased attempt and artifact bytes. Additional
 commands. An expired lease, failed command, changed subject, or another run's
 receipt cannot satisfy execution verification.
 
-Submit the returned `executionRef` under `verification`. Work may retain
+Submit the returned `executionRef`, `command` and `exitStatus` under
+`verification`, exactly as the adapter returned them. Work may retain
 structural validation and an assistant's inspection report, but acceptance
 and finalization of a workflow that requires `run_tests` also require valid
 observed execution. Receipt fields in an output cannot forge this observation.
