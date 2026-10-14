@@ -7,6 +7,7 @@ import { fork, spawnSync } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 import { inProject } from './support.ts';
 import type { CliContext } from '../../src/cli/context.ts';
+import { validateSourcesFile } from '../../src/kernel/project/sources-file.ts';
 
 const launcher = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 const observer = fileURLToPath(new URL('../harness/source-read-observer.mjs', import.meta.url));
@@ -150,5 +151,96 @@ test('init repairs declaration changes if a process dies after file replacement 
       json(ctx, ['init', '--no-wire', '--json']);
       assert.equal(db.prepare('SELECT status FROM sources WHERE id=?').get('recoverable')!.status, 'retired');
     } finally { db.close(); }
+  });
+});
+
+test('source write permission survives declaration persistence and later reconciliation', async () => {
+  await inProject((ctx, box) => {
+    assert.equal(json(ctx, [...add('writable'), '--write']).source.canWrite, true);
+    json(ctx, ['init', '--no-wire', '--json']);
+    assert.equal(json(ctx, ['source', 'show', 'writable', '--json']).source.canWrite, true);
+    json(ctx, add('other'));
+    json(ctx, ['source', 'retire', 'other', '--json']);
+    json(ctx, ['init', '--no-wire', '--json']);
+    assert.equal(json(ctx, ['source', 'show', 'writable', '--json']).source.canWrite, true);
+    const persisted = JSON.parse(readFileSync(join(box.cwd, '.construct/sources.json'), 'utf8')).sources[0];
+    assert.deepEqual(persisted.capabilities, { read: true, write: true });
+    assert.equal(Object.hasOwn(persisted, 'read'), false);
+    assert.equal(Object.hasOwn(persisted, 'write'), false);
+  });
+});
+
+for (const mutation of ['add', 'retire'] as const) {
+  test(`unrelated source ${mutation} preserves all declared read and write permissions`, async () => {
+    await inProject((ctx, box) => {
+      for (const id of ['neither', 'read-only', 'write-only', 'both', 'other']) json(ctx, add(id));
+      const file = join(box.cwd, '.construct/sources.json');
+      const declarations = JSON.parse(readFileSync(file, 'utf8'));
+      const permissions = new Map([
+        ['neither', { read: false, write: false }], ['read-only', { read: true, write: false }],
+        ['write-only', { read: false, write: true }], ['both', { read: true, write: true }],
+      ]);
+      for (const declaration of declarations.sources) declaration.capabilities = permissions.get(declaration.id) ?? { read: true, write: false };
+      writeFileSync(file, JSON.stringify(declarations));
+      json(ctx, ['init', '--no-wire', '--json']);
+      const beforeRefusal = readFileSync(file, 'utf8');
+      assert.equal(cli(ctx, add('other')).code, 1, 'duplicate add is refused');
+      assert.equal(cli(ctx, ['source', 'retire', 'missing', '--json']).code, 1, 'absent retirement is refused');
+      assert.equal(readFileSync(file, 'utf8'), beforeRefusal, 'refused mutations preserve exact declaration bytes');
+      if (mutation === 'add') json(ctx, add('new'));
+      else json(ctx, ['source', 'retire', 'other', '--json']);
+      for (const reconcile of [false, true]) {
+        if (reconcile) json(ctx, ['init', '--no-wire', '--json']);
+        for (const [id, expected] of permissions) {
+          const { source } = json(ctx, ['source', 'show', id, '--json']);
+          assert.deepEqual({ read: source.canRead, write: source.canWrite }, expected, `${id}; reconciled=${String(reconcile)}`);
+        }
+      }
+      const refused = cli(ctx, ['source', 'refresh', 'write-only', '--json']);
+      assert.equal(refused.code, 1);
+      assert.match(refused.err, /read.*not permitted|not.*read|read.*disabled/i);
+    });
+  });
+}
+
+test('ambiguous top-level source permissions require explicit capabilities repair', () => {
+  const source = { id: 'docs', kind: 'directory', purpose: 'docs', locator: '.', authorityLevel: 'informative', sensitivity: 'internal', read: false, write: true };
+  const raw = { format: 'construct-sources', formatVersion: 2, sources: [source] };
+  assert.throws(() => validateSourcesFile(raw, 'sources.json'), /capabilities.read.*capabilities.write/);
+  assert.throws(() => validateSourcesFile({ ...raw, sources: [{ ...source, capabilities: { read: false, write: false } }] }, 'sources.json'), /capabilities.read.*capabilities.write/);
+});
+
+test('legacy serialized permissions refuse commands without mutation until explicitly repaired', async () => {
+  await inProject((ctx, box) => {
+    json(ctx, add('restricted')); json(ctx, add('other'));
+    const file = join(box.cwd, '.construct/sources.json');
+    const declarations = JSON.parse(readFileSync(file, 'utf8'));
+    declarations.sources[0].capabilities = { read: false, write: true };
+    writeFileSync(file, JSON.stringify(declarations));
+    json(ctx, ['init', '--no-wire', '--json']);
+    const legacy = structuredClone(declarations);
+    for (const source of legacy.sources) {
+      Object.assign(source, source.capabilities);
+      delete source.capabilities;
+    }
+    writeFileSync(file, JSON.stringify(legacy));
+    const beforeFile = readFileSync(file, 'utf8');
+    const dbFile = join(box.cwd, '.construct/state/construct.sqlite');
+    const beforeDb = readFileSync(dbFile);
+    for (const args of [['init', '--no-wire', '--json'], add('new'), ['source', 'retire', 'other', '--json']]) {
+      const result = cli(ctx, args);
+      assert.equal(result.code, 1, JSON.stringify(args));
+      assert.match(result.err, /capabilities.read.*capabilities.write/);
+      assert.equal(readFileSync(file, 'utf8'), beforeFile);
+      assert.deepEqual(readFileSync(dbFile), beforeDb);
+    }
+    // The person repairs the ambiguous file explicitly; no permission is inferred.
+    writeFileSync(file, JSON.stringify(declarations));
+    json(ctx, ['init', '--no-wire', '--json']);
+    json(ctx, add('new'));
+    json(ctx, ['source', 'retire', 'other', '--json']);
+    const { source } = json(ctx, ['source', 'show', 'restricted', '--json']);
+    assert.equal(source.canRead, false);
+    assert.equal(source.canWrite, true);
   });
 });
