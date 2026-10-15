@@ -1,9 +1,9 @@
 {
-  "caseId": "incorrect",
-  "surfaceDigest": "1eea4451ded49967b2e9d773a955725b84b5340623d1e5a0fdf9b3306b7bf3fa",
+  "caseId": "correct",
+  "surfaceDigest": "4fdd7508f1166e6fca1fc69652020f2d666044b3fed0e4f60c4d5a2fbb2093d1",
   "prepared": {
     "ref": "review:6",
-    "digest": "e78b6faafbb06a461e385ddccf54476d5bff88cac79ae09f576a03845c026ba8",
+    "digest": "78c14fca550b760cf266c03b6f7c3f33fd33e551a9307593eb830ff13eb41e74",
     "bundle": {
       "producerSessionId": "experimental-producer",
       "formatVersion": 1,
@@ -54,7 +54,7 @@
       },
       "contractDigest": "f1e6be2f5da62da505300baf74c98a40034a05320fa8f7e4ba20df3aed590c69",
       "body": {
-        "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+        "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $8,000 annually. Other qualitative differences are unknown from the supplied data.",
         "artifact": "answer.md",
         "evidence": [
           {
@@ -77,9 +77,9 @@
             "ref": "answer.md",
             "kind": "file",
             "provenance": "witnessed",
-            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-ltKZJh/answer.md",
-            "text": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
-            "digest": "ce6e6257486c7df4d9fe0db423c740aea33b26f8fdf80922c72d05097d2843f0"
+            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-WAj165/answer.md",
+            "text": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $8,000 annually. Other qualitative differences are unknown from the supplied data.",
+            "digest": "5668f0077f0cfcf0a5f4921a069ec8681539c19730c839ba4743bab0bd680c1f"
           }
         }
       ],
@@ -90,7 +90,7 @@
             "ref": "source.txt",
             "kind": "file",
             "provenance": "witnessed",
-            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-ltKZJh/source.txt",
+            "path": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-registry-WAj165/source.txt",
             "text": "Current approved planning data: A saves 120 staff hours annually and costs $4,000 annually. B saves 100 staff hours annually and costs $3,000 annually. An avoided staff hour is valued at $50. For the counterfactual, only A’s hours saved double; its annual cost and hourly value stay fixed.",
             "digest": "d0b6592c129cbe75faf54165faa4b719292a897b898a089ec9113634292a159b"
           }
@@ -105,17 +105,17 @@
     }
   },
   "event": {
-    "startedAt": "2026-10-15T20:10:54.424Z",
+    "startedAt": "2026-10-15T20:53:55.417Z",
     "observations": [
       {
         "type": "thread.started",
-        "sessionId": "01a14130-6d4c-7440-81f6-458bae179580"
+        "sessionId": "01a14157-d00b-7262-9bf6-1062a1e51d9c"
       },
       {
         "type": "native.evidence_staged",
-        "sessionId": "01a14130-6d4c-7440-81f6-458bae179580",
-        "characters": 4816,
-        "digest": "e7acbd8dce94c91d4b8165449fac7e1240215baaf2f491c8d51e692add7d5300"
+        "sessionId": "01a14157-d00b-7262-9bf6-1062a1e51d9c",
+        "characters": 4814,
+        "digest": "14081f0403c5e94ff7fee97362bc0a250738ad4a9986db1ea0ff6867b1f85b93"
       },
       {
         "type": "native.metadata_warning",
@@ -127,13 +127,13 @@
       {
         "type": "item.completed",
         "itemType": "agent_message",
-        "text": "{\"checks\":[{\"id\":\"request\",\"verdict\":\"fail\",\"reason\":\"The candidate covers the baseline comparison and gives a bounded recommendation that neither plan leads financially, but it does not correctly deliver the requested doubled-hours calculation for A: the stated $11,000 should be $8,000 net annually.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"support\",\"verdict\":\"fail\",\"reason\":\"The supplied witnessed source supports both baseline net benefits of $2,000 annually and the financial tie. It does not support the candidate's $11,000 counterfactual. The source and candidate texts are supplied in full with no recorded truncation or explicit evidence limitations; no host disposition is relied on as proof of support.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"reasoning\",\"verdict\":\"fail\",\"reason\":\"Baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling only A's hours gives 240 × $50 − $4,000 = $8,000 annually, not $11,000.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"uncertainty\",\"verdict\":\"pass\",\"reason\":\"The candidate appropriately limits its recommendation to the stated financial evidence and identifies qualitative differences as unknown. The source explicitly fixes costs and hourly value for the counterfactual, so no additional assumption is needed; the incorrect counterfactual is a calculation error rather than an unresolved evidence gap.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"scope\",\"verdict\":\"pass\",\"reason\":\"The candidate remains an assessment of the two plans and the requested counterfactual. It neither takes external action nor demands future implementation prerequisites.\",\"refs\":[\"answer.md\"]}]}"
+        "text": "{\"checks\":[{\"id\":\"request\",\"verdict\":\"pass\",\"reason\":\"The candidate compares both net annual benefits, concludes that neither plan merits preference on the stated financial evidence, and supplies A’s doubled-hours net benefit. This covers the requested assessment and recommendation; no material requested outcome is omitted.\",\"refs\":[\"answer.md\"]},{\"id\":\"support\",\"verdict\":\"pass\",\"reason\":\"The supplied source identifies its figures as current approved planning data and directly supports the candidate’s financial claims. Both the source and candidate texts are included with witnessed provenance. No truncated or unread content or explicit evidence limitations are recorded; this judgment relies on the supplied text, not a host disposition or an assumption of external verification.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"reasoning\",\"verdict\":\"pass\",\"reason\":\"A’s annual net benefit is 120 × $50 − $4,000 = $2,000; B’s is 100 × $50 − $3,000 = $2,000. Doubling only A’s hours yields 240 × $50 − $4,000 = $8,000 annually. The candidate’s amounts, units, comparison, and counterfactual are correct.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"uncertainty\",\"verdict\":\"pass\",\"reason\":\"The candidate limits its no-preference conclusion to the stated financial evidence and explicitly identifies qualitative differences as unknown. Its counterfactual follows the source’s express instruction that annual cost and hourly value remain fixed, so no material unsupported assumption is introduced.\",\"refs\":[\"answer.md\",\"source.txt\"]},{\"id\":\"scope\",\"verdict\":\"pass\",\"reason\":\"The candidate provides only the requested assessment. It neither undertakes nor authorizes implementation or external action, and it introduces no future-action prerequisites.\",\"refs\":[\"answer.md\"]}]}"
       },
       {
         "type": "turn.completed"
       }
     ],
-    "rawOutputBytes": 104226,
+    "rawOutputBytes": 102738,
     "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
     "argvDigest": "0f027d6dafd429272765a0039ce9e6d4b41f2c4cd266a735d5f83b3b941a8d7c",
     "profile": "codex-app-server-held-text-v1",
@@ -153,35 +153,34 @@
     "modelSource": "requested",
     "assurance": "observed_review; not a proof of truth",
     "preparedRef": "review:6",
-    "bundleDigest": "e78b6faafbb06a461e385ddccf54476d5bff88cac79ae09f576a03845c026ba8",
+    "bundleDigest": "78c14fca550b760cf266c03b6f7c3f33fd33e551a9307593eb830ff13eb41e74",
     "attempt": 1,
     "isolation": "held_text",
     "invocation": {
-      "id": "8c2b950e-321c-40c7-9efa-353a0aa1e74c",
+      "id": "d056f822-2fd1-40d3-9e90-9250c91760c6",
       "host": "codex",
       "hostVersion": "codex-cli 0.145.0",
       "model": "gpt-6-astra",
-      "sessionId": "01a14130-6d4c-7440-81f6-458bae179580",
+      "sessionId": "01a14157-d00b-7262-9bf6-1062a1e51d9c",
       "completed": true,
       "exitStatus": 0,
       "timedOut": false,
-      "transcriptDigest": "1bbbc559eb93ae8cda3f7f7e1fb415826e576bdb9d5be8d53d071e73673fe936"
+      "transcriptDigest": "fceaffc01e676eef0644c785ead159d0b4df5ed36cbf74ceb7716819c0abf20d"
     },
     "judgment": {
       "checks": [
         {
           "id": "request",
-          "verdict": "fail",
-          "reason": "The candidate covers the baseline comparison and gives a bounded recommendation that neither plan leads financially, but it does not correctly deliver the requested doubled-hours calculation for A: the stated $11,000 should be $8,000 net annually.",
+          "verdict": "pass",
+          "reason": "The candidate compares both net annual benefits, concludes that neither plan merits preference on the stated financial evidence, and supplies A’s doubled-hours net benefit. This covers the requested assessment and recommendation; no material requested outcome is omitted.",
           "refs": [
-            "answer.md",
-            "source.txt"
+            "answer.md"
           ]
         },
         {
           "id": "support",
-          "verdict": "fail",
-          "reason": "The supplied witnessed source supports both baseline net benefits of $2,000 annually and the financial tie. It does not support the candidate's $11,000 counterfactual. The source and candidate texts are supplied in full with no recorded truncation or explicit evidence limitations; no host disposition is relied on as proof of support.",
+          "verdict": "pass",
+          "reason": "The supplied source identifies its figures as current approved planning data and directly supports the candidate’s financial claims. Both the source and candidate texts are included with witnessed provenance. No truncated or unread content or explicit evidence limitations are recorded; this judgment relies on the supplied text, not a host disposition or an assumption of external verification.",
           "refs": [
             "answer.md",
             "source.txt"
@@ -189,8 +188,8 @@
         },
         {
           "id": "reasoning",
-          "verdict": "fail",
-          "reason": "Baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling only A's hours gives 240 × $50 − $4,000 = $8,000 annually, not $11,000.",
+          "verdict": "pass",
+          "reason": "A’s annual net benefit is 120 × $50 − $4,000 = $2,000; B’s is 100 × $50 − $3,000 = $2,000. Doubling only A’s hours yields 240 × $50 − $4,000 = $8,000 annually. The candidate’s amounts, units, comparison, and counterfactual are correct.",
           "refs": [
             "answer.md",
             "source.txt"
@@ -199,7 +198,7 @@
         {
           "id": "uncertainty",
           "verdict": "pass",
-          "reason": "The candidate appropriately limits its recommendation to the stated financial evidence and identifies qualitative differences as unknown. The source explicitly fixes costs and hourly value for the counterfactual, so no additional assumption is needed; the incorrect counterfactual is a calculation error rather than an unresolved evidence gap.",
+          "reason": "The candidate limits its no-preference conclusion to the stated financial evidence and explicitly identifies qualitative differences as unknown. Its counterfactual follows the source’s express instruction that annual cost and hourly value remain fixed, so no material unsupported assumption is introduced.",
           "refs": [
             "answer.md",
             "source.txt"
@@ -208,18 +207,14 @@
         {
           "id": "scope",
           "verdict": "pass",
-          "reason": "The candidate remains an assessment of the two plans and the requested counterfactual. It neither takes external action nor demands future implementation prerequisites.",
+          "reason": "The candidate provides only the requested assessment. It neither undertakes nor authorizes implementation or external action, and it introduces no future-action prerequisites.",
           "refs": [
             "answer.md"
           ]
         }
       ]
     },
-    "problems": [
-      "request: fail review judgment",
-      "support: fail review judgment",
-      "reasoning: fail review judgment"
-    ]
+    "problems": []
   },
   "deliverableBefore": {
     "id": "deliverable-4",
@@ -227,7 +222,7 @@
     "stepRunId": "step-3",
     "kind": "outcome",
     "body": {
-      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $8,000 annually. Other qualitative differences are unknown from the supplied data.",
       "artifact": "answer.md",
       "evidence": [
         {
@@ -245,8 +240,8 @@
     },
     "trustState": "draft",
     "verification": null,
-    "createdAt": "2026-10-15T20:10:54.422Z",
-    "updatedAt": "2026-10-15T20:10:54.422Z"
+    "createdAt": "2026-10-15T20:53:55.410Z",
+    "updatedAt": "2026-10-15T20:53:55.410Z"
   },
   "deliverableAfter": {
     "id": "deliverable-4",
@@ -254,7 +249,7 @@
     "stepRunId": "step-3",
     "kind": "outcome",
     "body": {
-      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $11,000 annually. Other qualitative differences are unknown from the supplied data.",
+      "summary": "Plans A and B each save $2,000 net annually, so neither leads on the stated financial evidence. If A saves twice as many hours, its net benefit becomes $8,000 annually. Other qualitative differences are unknown from the supplied data.",
       "artifact": "answer.md",
       "evidence": [
         {
@@ -272,12 +267,12 @@
     },
     "trustState": "draft",
     "verification": null,
-    "createdAt": "2026-10-15T20:10:54.422Z",
-    "updatedAt": "2026-10-15T20:11:08.852Z"
+    "createdAt": "2026-10-15T20:53:55.410Z",
+    "updatedAt": "2026-10-15T20:54:09.987Z"
   },
-  "completedAt": "2026-10-15T20:11:08.858Z",
-  "finalState": "running",
-  "stepState": "leased",
+  "completedAt": "2026-10-15T20:54:09.994Z",
+  "finalState": "succeeded",
+  "stepState": "succeeded",
   "filesUnchanged": true,
   "canaryAbsent": true
 }
