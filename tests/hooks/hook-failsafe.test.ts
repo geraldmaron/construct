@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, copyFileSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { sterile } from '../harness/sterile.ts';
 import { envFor, LAUNCHER } from '../concurrency/support.ts';
@@ -148,4 +149,26 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
   } finally {
     fx.cleanup();
   }
+});
+
+
+test('installed coordination hooks do not wait for the unrelated general CLI graph', async () => {
+  const fx = sterile();
+  try {
+    const repo = join(fx.root, 'repo');
+    mkdirSync(repo, { recursive: true });
+    mkdirSync(join(fx.root, 'home'), { recursive: true });
+    const env = envFor(fx, { GIT_CONFIG_NOSYSTEM: '1' });
+    assert.equal(spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=startup-budget', '--scale=solo'], { cwd: repo, env }).status, 0);
+    assert.equal(spawnSync(process.execPath, [LAUNCHER, 'hooks', 'install', '--host=claude-code'], { cwd: repo, env }).status, 0);
+    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.local.json'), 'utf8'));
+    const command = settings.hooks.PostToolUse.at(-1).hooks[0].command;
+    const loader = join(fx.root, 'slow-general-cli.mjs'), preload = join(fx.root, 'register-loader.mjs');
+    writeFileSync(loader, `export async function load(url, context, nextLoad) { if (/\\/cli\\/index\\.(?:ts|js)$/.test(url)) await new Promise(resolve => setTimeout(resolve, 3000)); return nextLoad(url, context); }`);
+    writeFileSync(preload, `import { register } from 'node:module'; register(${JSON.stringify(pathToFileURL(loader).href)}, import.meta.url);`);
+    const result = await runHook(command, repo, { ...env, NODE_OPTIONS: `--import=${pathToFileURL(preload).href}` }, '{}');
+    assert.equal(result.code, 0);
+    assert.equal(result.out, '');
+    assert.ok(result.ms <= LIMIT_MS, `unrelated CLI loading consumed ${String(result.ms)}ms of the installed hook deadline`);
+  } finally { fx.cleanup(); }
 });

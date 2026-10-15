@@ -95,8 +95,8 @@ accepted correct arithmetic and rejected incorrect arithmetic and an injected
 source. These observations do not establish general effectiveness, injection
 resistance or causal skill benefit. Canonical native isolation, fresh-user
 desktop readiness and broader production adapter qualification remain open.
-Earlier intermittent hook/reset timing failures did not reproduce in the final
-gates; their cause remains unproven.
+Installed coordination hooks avoid the general CLI startup graph while keeping
+their existing time budget. Earlier intermittent reset failures remain unattributed.
 
 Delegation is disabled until explicitly configured and live-verified. A saved
 standing outcome does not install a clock or executor. External sources depend

@@ -25,10 +25,9 @@ import { projectDbPath, projectStateDir } from '../kernel/project/layout.ts';
 import { createContext, locateProject, worktreeHolding, type CliContext, type ProjectLocation } from './context.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
-import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { parseArgs, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { UsageError } from './output.ts';
-import { openBroker } from './broker-context.ts';
-import { onPostTool, onSessionStart, onStop } from '../hosts/hooks/handlers.ts';
+import type { openBroker } from './broker-context.ts';
 
 export const HOOK_SPEC: CommandSpec = {
   path: ['hook'],
@@ -271,6 +270,8 @@ async function groundingHook(args: ParsedArgs, ctx: CliContext, stdin: () => Pro
   }
   let opened: ReturnType<typeof openBroker> | null = null;
   try {
+    const { openBroker } = await import('./broker-context.ts');
+    const { onPostTool, onSessionStart, onStop } = await import('../hosts/hooks/handlers.ts');
     const project = stringFlag(args, 'project');
     const bound = project ? { ...ctx, cwd: project } : typeof input.cwd === 'string' ? { ...ctx, cwd: input.cwd } : ctx;
     opened = openBroker(bound, { client: stringFlag(args, 'client') ?? 'claude-code' });
@@ -300,4 +301,12 @@ async function groundingHook(args: ParsedArgs, ctx: CliContext, stdin: () => Pro
 export async function hook(args: ParsedArgs, ctx: CliContext = createContext(), stdin: () => Promise<string> = readAllStdin): Promise<number> {
   if ((HOOK_HOSTS as readonly string[]).includes(args.positionals[0] ?? '')) return coordinationHook(args, ctx);
   return groundingHook(args, ctx, stdin);
+}
+
+
+/** The installed pack has exactly these operands. Other invocations retain
+ * the ordinary registry's help, global flags and usage-error behavior. */
+export async function installedCoordinationHook(argv: readonly string[]): Promise<number | null> {
+  if (argv.length !== 2 || !(HOOK_HOSTS as readonly string[]).includes(argv[0] ?? '') || !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(argv[1] ?? '')) return null;
+  return hook(parseArgs(HOOK_SPEC, argv));
 }

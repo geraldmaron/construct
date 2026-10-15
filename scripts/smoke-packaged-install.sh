@@ -75,9 +75,16 @@ expect_contains "init" "$init_out" "Initialized Construct project"
 [ -f "$project/.construct/constitution.json" ] || fail "init wrote no constitution.json"
 [ -f "$project/.construct/sources.json" ] || fail "init wrote no sources.json"
 [ -f "$project/.construct/registry.lock.json" ] || fail "init wrote no registry.lock.json"
+
 [ -f "$project/.construct/state/construct.sqlite" ] || fail "the spine did not create its database"
 state_files="$(ls "$project/.construct/state" | sort | tr '\n' ' ')"
 [ "$state_files" = "construct.sqlite installed.json launcher " ] || fail "the state directory holds something other than the database, the hooks' launcher, and the record of what Construct installed" "$state_files"
+
+echo "== installed coordination hook runs from packaged bytes =="
+npx --no-install construct hooks install --host=claude-code >/dev/null
+hook_command="$(node -e 'const fs=require("node:fs"); const s=JSON.parse(fs.readFileSync(".claude/settings.local.json","utf8")); process.stdout.write(s.hooks.PostToolUse.at(-1).hooks[0].command)')"
+printf '{}' | CONSTRUCT_HOOKS= /bin/sh -c "$hook_command"
+node -e 'const fs=require("node:fs"); const h=JSON.parse(fs.readFileSync(".construct/state/hook-health.json","utf8")); if (!(h["claude-code:post-tool-use"]?.runs >= 1)) process.exit(1)'
 [ -f "$project/.claude/skills/construct/SKILL.md" ] || fail "init did not plant the operational skill in the project" "$init_out"
 cmp -s "$project/.claude/skills/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
