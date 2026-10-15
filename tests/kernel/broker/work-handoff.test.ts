@@ -11,6 +11,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { mkdirSync, symlinkSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import { createBrokerContext } from '../../../src/cli/broker-context.ts';
@@ -187,6 +189,8 @@ test('MCP acceptance recovers a lost response only with the retained private cap
     const other = call(b, { action: 'add', serves: await reasonFor(b), title: 'another held item' }) as { id: string };
     call(b, { action: 'claim', id: other.id });
     fx.broker.store.db.prepare('INSERT INTO work_legacy_ids (legacy_id, work_id, source, created_at) VALUES (?, ?, ?, ?)').run('legacy-recovery', added.id, 'fixture', now);
+    mkdirSync(join(fx.box.cwd, 'briefs'), { recursive: true });
+    symlinkSync(join(fx.box.cwd, 'README.md'), join(fx.box.cwd, 'briefs', 'later-alias.md'));
     now = '2026-10-15T12:16:00.000Z';
     assert.equal((await accept({ id: 'legacy-recovery', acceptanceKey: randomBytes(32).toString('hex') })).isError, true);
     assert.equal(fx.broker.store.db.prepare('SELECT claim_until FROM work_items WHERE id = ?').get(added.id)!.claim_until, lost.structuredContent.claimUntil);
@@ -210,5 +214,25 @@ test('MCP acceptance recovers a lost response only with the retained private cap
     const expired = await accept();
     assert.equal(expired.isError, true);
     assert.ok(!JSON.stringify(expired).includes(lost.structuredContent.claimToken));
+  } finally { fx.cleanup(); }
+});
+
+
+test('new acceptance validates inherited paths before granting authority, regardless of caller paths', async () => {
+  const fx = brokerFixture();
+  try {
+    const a = fx.broker, b = peer(fx, 'ses_recipient');
+    const item = call(a, { action: 'add', serves: await reasonFor(a), title: 'Guard inherited paths' }) as { id: string };
+    const claimed = call(a, { action: 'claim', id: item.id, paths: ['briefs/'] }) as { claimToken: string };
+    call(a, { action: 'handoff', id: item.id, token: claimed.claimToken, to: 'ses_recipient', packet: { state: 'ready', next: 'verify' } });
+    const prepared = call(b, { action: 'prepare_accept', id: item.id }) as { acceptanceKey: string; offerId: string };
+    mkdirSync(join(fx.box.cwd, 'briefs'), { recursive: true });
+    const alias = join(fx.box.cwd, 'briefs', 'alias.md');
+    symlinkSync(join(fx.box.cwd, 'README.md'), alias);
+    const before = fx.broker.store.db.prepare('SELECT * FROM work_items WHERE id = ?').get(item.id);
+    assert.throws(() => call(b, { action: 'accept', id: item.id, acceptanceKey: prepared.acceptanceKey, offerId: prepared.offerId, paths: ['safe.md'] }), /contains symbolic or hard links/);
+    assert.deepEqual(fx.broker.store.db.prepare('SELECT * FROM work_items WHERE id = ?').get(item.id), before);
+    rmSync(alias);
+    assert.ok((call(b, { action: 'accept', id: item.id, acceptanceKey: prepared.acceptanceKey, offerId: prepared.offerId }) as { claimToken: string }).claimToken);
   } finally { fx.cleanup(); }
 });

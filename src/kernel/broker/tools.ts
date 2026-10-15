@@ -1795,14 +1795,14 @@ const work = define<WorkToolInput, unknown>({
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
     const renewing = action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
     const who = claimantFor(ctx, agent, at, renewing ?? where);
-    if (['claim', 'accept', 'takeover'].includes(action)) assertLeasePaths({ root: ctx.root, lane: who.lane, paths: paths?.length ? paths : leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at });
+    if (['claim', 'takeover'].includes(action)) assertLeasePaths({ root: ctx.root, lane: who.lane, paths: paths?.length ? paths : leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at });
     if (action === 'handoff') {
       if (!token) throw new ToolInputError('"token" is required for handoff: the one your claim returned', { field: 'token' });
       if (!packet) throw new ToolInputError('"packet" is required for handoff: at least state and next', { field: 'packet' });
       return handoffWork(ctx.store, { id: item.id, owner: who.owner, token, packet, to, now: at });
     }
     if (action === 'accept') {
-      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at, acceptanceKey, offerId });
+      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at, acceptanceKey, offerId }, () => assertLeasePaths({ root: ctx.root, lane: who.lane, paths: leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at }));
       return { ...taken, handoff: handoffAsData(taken.handoff) };
     }
     if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });

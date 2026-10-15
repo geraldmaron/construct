@@ -22,7 +22,8 @@ across common copied formats, partial captures and lost acceptance responses.
   Filesystem aliases and changed reservation ancestry refuse unsafe writes.
 - Lost handoff acceptance responses recover only the same live generation using
   a private pre-dispatch capability and immutable offer identity. CLI retention
-  is automatic; keyed MCP retries do not extend the target's expiry.
+  is automatic on POSIX; Windows CLI acceptance remains keyless and explicitly
+  reports private-file recovery unavailable. Keyed MCP retries do not extend the target's expiry.
 - Shared host conformance covers recovery, output paths, deadlines and contract
   parity. Public guides and generated references describe the same interfaces.
 

@@ -11,14 +11,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, inProject } from './support.ts';
 import { withProject } from '../../src/cli/context.ts';
 import { claimWork, createWork, handoffWork } from '../../src/kernel/work/service.ts';
 
-test('CLI acceptance retains a private capability before dispatch and recovers lost stdout with the same command', async () => {
+test('POSIX CLI acceptance retains a private capability before dispatch and recovers lost stdout with the same command', { skip: process.platform === 'win32' ? 'Private POSIX recovery cache is unavailable on Windows' : false }, async () => {
   await inProject(async (ctx) => {
     const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
     withProject(ctx, project => {
@@ -29,6 +29,8 @@ test('CLI acceptance retains a private capability before dispatch and recovers l
     });
     const lost = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
     assert.equal(lost.code, 0, lost.err);
+    mkdirSync(join(ctx.cwd, 'docs'), { recursive: true });
+    symlinkSync(join(ctx.cwd, 'README.md'), join(ctx.cwd, 'docs', 'later-alias.md'));
     const retry = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
     assert.equal(retry.code, 0, retry.err);
     const accepted = last(lost.out) as { claimToken: string; claimUntil: string; revision: number };
@@ -70,6 +72,44 @@ test('CLI acceptance retains a private capability before dispatch and recovers l
       assert.match(refused.stderr, /private regular file/);
       assert.ok(!refused.stderr.includes(retained));
     }
+  });
+});
+
+test('Windows CLI policy preserves keyless acceptance without touching unqualified recovery storage', async () => {
+  await inProject(async (ctx) => {
+    let originalToken = '';
+    withProject(ctx, project => {
+      const at = ctx.now();
+      createWork(project.store, { id: 'windows-accept', kind: 'task', title: 'Windows acceptance', description: 'Platform policy fixture', at });
+      const first = claimWork(project.store, { id: 'windows-accept', owner: 'offerer', paths: ['docs/'], now: at, until: new Date(Date.parse(at) + 30 * 60_000).toISOString() });
+      originalToken = first.claimToken;
+      handoffWork(project.store, { id: 'windows-accept', owner: 'offerer', token: first.claimToken, packet: { state: 'ready', next: 'verify' }, now: at });
+    });
+    const directory = join(ctx.paths.stateDir, 'handoff-acceptance');
+    assert.equal(existsSync(directory), false);
+    mkdirSync(directory, { recursive: true, mode: 0o777 });
+    const sentinel = join(directory, 'untrusted-entry');
+    writeFileSync(sentinel, 'not recovery material');
+    const source = `import { run } from ${JSON.stringify(new URL('../../src/cli/index.ts', import.meta.url).href)}; import { createContext } from ${JSON.stringify(new URL('../../src/cli/context.ts', import.meta.url).href)}; const ctx = { ...createContext(), now: () => ${JSON.stringify(ctx.now())}, terminal: { interactive: true, agentAncestor: null } }; Object.defineProperty(process, 'platform', { value: 'win32' }); process.exitCode = await run(['work', 'accept', 'windows-accept', '--json'], ctx);`;
+    const invoke = () => spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 5000 });
+    const accepted = invoke();
+    assert.equal(accepted.status, 0, accepted.stderr);
+    const result = last(accepted.stdout) as { claimToken: string; claimUntil: string; revision: number; recovery: { available: boolean; reason: string }; leases: { path: string }[] };
+    assert.ok(result.claimToken && result.claimToken !== originalToken);
+    assert.deepEqual(result.leases.map(l => l.path), ['docs/']);
+    assert.equal(result.recovery.available, false);
+    assert.match(result.recovery.reason, /not qualified on Windows/);
+    assert.match(accepted.stderr, /recovery is unavailable on Windows/);
+    assert.deepEqual(readdirSync(directory), ['untrusted-entry']);
+    assert.equal(readFileSync(sentinel, 'utf8'), 'not recovery material');
+    const retry = invoke();
+    assert.equal(retry.status, 1);
+    assert.ok(!(retry.stdout + retry.stderr).includes(result.claimToken));
+    withProject(ctx, project => {
+      const row = project.store.db.prepare('SELECT claim_until, revision FROM work_items WHERE id = ?').get('windows-accept');
+      assert.equal(row!.claim_until, result.claimUntil);
+      assert.equal(row!.revision, result.revision);
+    });
   });
 });
 

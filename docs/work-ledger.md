@@ -143,10 +143,19 @@ token, and the reservations in one step, and the old token stops working.
 The packet is shown as its author's words, never as instructions, and a
 handoff never moves an approval.
 
-If an acceptance response is lost, the CLI can recover it by repeating
+On POSIX systems, if an acceptance response is lost, the CLI can recover it by repeating
 `construct work accept <id>` from the same machine account and worktree. Before
 dispatch, it retains a private capability outside the project. A retry recovers
-only the same still-live claim and does not extend its term.
+only the same still-live claim and does not extend its term. Returning that
+claim does not clear a filesystem error: subsequent path checks still require
+reconciliation of changed reservation ancestry.
+
+On Windows, ordinary CLI acceptance still rotates the token and transfers the
+claim, but automatic private-file recovery is unavailable. The CLI reports this
+on stderr and in its JSON `recovery` field, and never reads or creates that cache.
+Retain the returned claim token; if the response is lost, inspect the packet and
+recover through expiry/reclaim or a permitted takeover. POSIX mode bits cannot
+establish Windows file privacy. Tool-managed private capabilities remain separate.
 
 Tool callers first use `work` with `action: "prepare_accept"`. Retain the returned
 private `acceptanceKey` and public immutable `offerId` before dispatch, then pass
