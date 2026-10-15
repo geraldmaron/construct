@@ -43,7 +43,7 @@ import {
   recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord,
 } from '../src/kernel/skills/routing.ts';
 import {
-  EVAL_HOSTS, HOST_BINARY, PROJECT_SKILLS_DIR, codexProviderArgs, codexProviderFromConfig, constructEnv, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand,
+  EVAL_HOSTS, HOST_BINARY, PROJECT_SKILLS_DIR, codexEvaluationIsolationArgs, codexProviderArgs, codexProviderFromConfig, constructEnv, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand,
 } from './host-cli.mjs';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -803,7 +803,7 @@ async function cmdLabel(f) {
       const prompt = `Read this request the way an assistant in a software project would, and report your reading as one JSON object that matches this input schema. Reply with the JSON object only.\n\nSchema:\n${JSON.stringify(schema)}\n\nThe project's systems: ${corpus.situation.connectors.join(', ')}.\n\n${promptFor(c.turns)}`;
       const args = host === 'claude-code'
         ? ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--model', model, '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', 'project', '--no-session-persistence', '--max-turns', '1']
-        : ['exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', '-s', 'read-only', '-m', model, ...provider, prompt];
+        : ['exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', ...codexEvaluationIsolationArgs(), '-s', 'read-only', '-m', model, ...provider, prompt];
       const r = await superviseHost({ binary, args, env: hostEnv(host, { runHome: empty }), cwd: empty, stopOnWrite: false, timeoutMs: 120_000 });
       const facts = parseHostStream(host, r.lines);
       const json = (facts.finalText ?? '').match(/\{[\s\S]*\}/);

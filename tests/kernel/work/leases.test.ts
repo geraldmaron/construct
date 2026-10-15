@@ -206,3 +206,31 @@ test('a reserved path is spelled plainly; a checked one keeps its spelling', () 
   assert.equal(normalizeLeasePath('docs/my notes.md', 'check'), 'docs/my notes.md');
   assert.equal(normalizeLeasePath('src/ñandú.ts'), 'src/ñandú.ts', 'letters beyond ASCII are fine');
 });
+
+test('repository-root normalization remains idempotent through real reservation and collision checks', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store, 'root'); item(fx.store, 'other');
+    assert.equal(normalizeLeasePath(normalizeLeasePath('./')), '/');
+    claimWork(fx.store, { id: 'root', owner: 'a', until: t(30), now: t(1), paths: ['./'] });
+    assert.deepEqual(leasesFor(fx.store, 'root').map(lease => lease.path), ['/']);
+    assert.throws(() => claimWork(fx.store, { id: 'other', owner: 'b', until: t(30), now: t(2), paths: ['README.md'] }), /reserved by other work/);
+    assert.throws(() => normalizeLeasePath('/etc/passwd'), /relative to the repository/);
+  } finally { fx.cleanup(); }
+});
+
+test('root-wide exclusive reservations cover every project lane in both acquisition orders', () => {
+  for (const rootFirst of [true, false]) {
+    const fx = freshStore();
+    try {
+      item(fx.store, 'root'); item(fx.store, 'other');
+      const root = { id: 'root', owner: 'a', until: t(30), now: t(1), paths: ['./'] };
+      const scoped = { id: 'other', owner: 'b', lane: LANE_B, until: t(30), now: t(2), paths: ['docs/shared.md'] };
+      claimWork(fx.store, rootFirst ? root : scoped);
+      assert.throws(() => claimWork(fx.store, rootFirst ? scoped : root), /reserved by other work/);
+      const check = findOverlaps(fx.store, { paths: rootFirst ? scoped.paths : root.paths, laneRoot: rootFirst ? LANE_B : 'main', now: t(3) });
+      assert.equal(check[0]!.kind, 'collision');
+      assert.equal(listLiveLeases(fx.store, t(3)).length, 1);
+    } finally { fx.cleanup(); }
+  }
+});

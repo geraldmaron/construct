@@ -15,7 +15,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { sterile, type SterileFixture } from '../../harness/sterile.ts';
 import { openStateStore } from '../../../src/kernel/state/open.ts';
 import { UnsupportedStateError } from '../../../src/kernel/state/format.ts';
-import { completeWork, getWork, releaseWork } from '../../../src/kernel/work/service.ts';
+import { claimWork, completeWork, getWork, releaseWork } from '../../../src/kernel/work/service.ts';
 
 type Fixture = 'format-4' | 'format-2' | 'format-3' | 'format-3-upgraded-from-2';
 
@@ -177,8 +177,10 @@ test('a claim held across the upgrade stays held, and the format-3 token anyone 
       assert.throws(() => completeWork(store, { id: 'w-held', owner: 'person via cli', token: rebuilt, at: during }), /held by person via cli/);
       assert.throws(() => releaseWork(store, { id: 'w-held', owner: 'person via cli', token: rebuilt, at: during }), /not held under that token/);
       assert.equal(getWork(store, 'w-held')!.status, 'claimed');
-      // Once the claim expires it protects nothing, so the item is not stranded.
-      assert.equal(completeWork(store, { id: 'w-held', owner: 'someone else', at: '2026-09-01T12:00:00.000Z' }).status, 'completed');
+      // Expiry permits fresh acquisition, never settlement by an old attempt.
+      assert.throws(() => completeWork(store, { id: 'w-held', owner: 'someone else', at: '2026-09-01T12:00:00.000Z' }), /claim expired/);
+      const reclaimed = claimWork(store, { id: 'w-held', owner: 'someone else', now: '2026-09-01T12:00:00.000Z', until: '2026-09-01T12:30:00.000Z' });
+      assert.equal(completeWork(store, { id: 'w-held', owner: 'someone else', token: reclaimed.claimToken, at: '2026-09-01T12:01:00.000Z' }).status, 'completed');
     } finally {
       store.close();
     }

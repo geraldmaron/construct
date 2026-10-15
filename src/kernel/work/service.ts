@@ -13,12 +13,12 @@
 import { getRun } from '../state/runs.ts';
 import { runExecutionProblems } from '../workflow/verification.ts';
 import type { RefResolver } from '../project/evidence.ts';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { normalizePacket, offeredTo, parseHandoff, type Handoff } from './handoff.ts';
-import { MAIN_LANE, findOverlaps, releasePaths, reservePaths, transferPaths, type CrossLanePolicy, type LeaseMode, type Overlap, type PathLease } from './leases.ts';
+import { MAIN_LANE, findOverlaps, leasesFor, releasePaths, reservePaths, transferPaths, type CrossLanePolicy, type LeaseMode, type Overlap, type PathLease } from './leases.ts';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity } from '../state/activity.ts';
-import { parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from '../state/rows.ts';
+import { canonicalInstant, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from '../state/rows.ts';
 import { addEntity, getEntity, listRelations, validateRelationEndpoints, type Entity, type Relation } from '../state/graph.ts';
 
 export const WORK_KINDS = ['outcome', 'task', 'defect', 'plan'] as const;
@@ -564,6 +564,20 @@ function setClaim(store: StateStore, id: string, who: Claimant, token: string, u
     .run(who.owner, token, until, who.session ?? null, who.agent ?? null, who.lane ?? null, now, now, id);
 }
 
+/** Every acquisition uses the same time and readiness contract. */
+function claimBounds<T extends { readonly owner: string; readonly now: string; readonly until: string }>(input: T): T {
+  requireNonEmpty(input.owner, 'claim.owner');
+  const now = canonicalInstant(input.now, 'claim.now');
+  const until = canonicalInstant(input.until, 'claim.until');
+  if (until <= now) throw new Error('claim.until must be after now');
+  return { ...input, now, until };
+}
+
+function requireReadyForClaim(store: StateStore, current: WorkItem, now: string): void {
+  const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, now);
+  if (!ready.ready) throw new Error(`work ${current.id} is not ready: ${ready.blockers.join('; ')}`);
+}
+
 /**
  * Claim a work item. The claim is exclusive until it expires: another owner is
  * refused, and so is the same owner without the token its first claim
@@ -574,10 +588,7 @@ export function claimWork(
   store: StateStore,
   input: Claimant & Reservation & { readonly id: string; readonly until: string; readonly now: string; readonly token?: string; readonly expectedRevision?: number },
 ): ClaimedWork {
-  requireNonEmpty(input.owner, 'work.claim.owner');
-  requireInstant(input.until, 'work.claim.until');
-  requireInstant(input.now, 'work.claim.now');
-  if (input.until <= input.now) throw new Error('claim.until must be after now');
+  input = claimBounds(input);
   return store.transaction(() => {
     const row = rowOf(store, input.id);
     if (!row) throw new Error(`no work ${input.id}`);
@@ -593,15 +604,22 @@ export function claimWork(
       if (input.token !== row.claim_token) {
         throw new Error(`you already hold ${input.id} until ${row.claim_until}; pass the token your claim returned to renew it`);
       }
-      // An offered handoff keeps the longer hold it was given.
-      const until = openOffer(row, input.now) && row.claim_until! > input.until ? row.claim_until! : input.until;
+      // Renewals never shorten either an ordinary claim or a handoff hold.
+      const until = row.claim_until! > input.until ? row.claim_until! : input.until;
+      const held = leasesFor(store, input.id);
+      const moving = laneKey(input.lane) !== laneKey(row.claim_lane ?? undefined);
+      // Preserve inherited paths on an explicit worktree move. reserveFor uses
+      // the existing collision engine inside this transaction; refusal rolls
+      // back the owner metadata, term and reservations together.
+      const reservation = moving && !input.paths?.length && held.length
+        ? { ...input, until, paths: held.map(l => l.path), mode: input.mode ?? held[0]!.mode }
+        : { ...input, until };
       setClaim(store, input.id, input, row.claim_token!, until, input.now);
       extendPaths(store, input.id, until);
       recordEvent(store, input.id, input.now, 'renewed', input.owner, current.revision + 1, { until });
-      return { ...withToken(getWork(store, input.id)!, row.claim_token!), ...reserveFor(store, input) };
+      return { ...withToken(getWork(store, input.id)!, row.claim_token!), ...reserveFor(store, reservation) };
     }
-    const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, input.now);
-    if (!ready.ready) throw new Error(`work ${input.id} is not ready: ${ready.blockers.join('; ')}`);
+    requireReadyForClaim(store, current, input.now);
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
     // A new claim starts with no reservations: an expired holder's go with its claim.
@@ -662,14 +680,14 @@ export function takeoverWork(
   },
 ): ClaimedWork {
   requireNonEmpty(input.reason, 'work.takeover.reason');
-  requireInstant(input.now, 'work.takeover.now');
+  input = claimBounds(input);
   return store.transaction(() => {
     const row = rowOf(store, input.id);
     if (!row) throw new Error(`no work ${input.id}`);
     const current = toWork(row);
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
     const live = liveClaim(row, input.now);
-    const offer = openOffer(row, input.now);
+    const offer = openOffer(store, row, input.now);
     if (offer && row.claim_owner !== input.owner) {
       // An offered handoff is taken by accepting it, and only by whom it names, until its hold ends.
       throw new Error(
@@ -699,6 +717,7 @@ export function takeoverWork(
         }
       }
     }
+    requireReadyForClaim(store, current, input.now);
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
     takeHandoff(store, row, input.owner, input.now, 'takeover');
@@ -733,10 +752,16 @@ function withMoved(store: StateStore, claimed: ClaimedWork, moved: { readonly le
 export const HANDOFF_HOLD_MS = 2 * 60 * 60_000;
 
 /** An offer still waiting: the claim is live, still the offerer's, and nobody has taken it. */
-function openOffer(row: Row, now: string): Handoff | null {
+function identifiedHandoff(store: StateStore, id: string, h: Handoff): Handoff {
+  if (h.offerId) return h;
+  const event = store.db.prepare("SELECT id FROM work_events WHERE work_id = ? AND kind = 'handoff_offered' ORDER BY id DESC LIMIT 1").get(id) as { id: number } | undefined;
+  return { ...h, offerId: createHash('sha256').update(JSON.stringify([id, event?.id ?? null, h.from, h.offeredAt, h.packet])).digest('hex') };
+}
+
+function openOffer(store: StateStore, row: Row, now: string): Handoff | null {
   const h = parseHandoff(row.handoff_json);
   if (!h || h.takenBy !== null || !liveClaim(row, now) || row.claim_owner !== h.from) return null;
-  return h;
+  return identifiedHandoff(store, row.id, h);
 }
 
 /** Record who took on handed-off work when it was claimed or taken over rather than accepted. */
@@ -749,7 +774,8 @@ function takeHandoff(store: StateStore, row: Row, owner: string, now: string, vi
 /** The latest handoff recorded on a work item: offered, taken, or lapsed. */
 export function handoffOf(store: StateStore, id: string): Handoff | null {
   const row = rowOf(store, id);
-  return row ? parseHandoff(row.handoff_json) : null;
+  const h = row ? parseHandoff(row.handoff_json) : null;
+  return h ? identifiedHandoff(store, id, h) : null;
 }
 
 /**
@@ -763,7 +789,7 @@ export function handoffWork(
   store: StateStore,
   input: { readonly id: string; readonly owner: string; readonly token: string; readonly packet: Record<string, unknown>; readonly to?: string | null; readonly now: string },
 ): WorkItem & { readonly handoff: Handoff } {
-  requireInstant(input.now, 'work.handoff.now');
+  input = { ...input, now: canonicalInstant(input.now, 'work.handoff.now') };
   const packet = normalizePacket(input.packet);
   const to = input.to?.trim() ? input.to.trim() : null;
   if (to === input.owner) throw new Error('a handoff goes to someone else; you already hold this work');
@@ -776,7 +802,7 @@ export function handoffWork(
     }
     const hold = new Date(Date.parse(input.now) + HANDOFF_HOLD_MS).toISOString();
     const until = row.claim_until! > hold ? row.claim_until! : hold;
-    const handoff: Handoff = { from: input.owner, to, offeredAt: input.now, packet, takenBy: null, takenAt: null, takenVia: null };
+    const handoff: Handoff = { offerId: randomUUID(), from: input.owner, to, offeredAt: input.now, packet, takenBy: null, takenAt: null, takenVia: null };
     store.db
       .prepare('UPDATE work_items SET handoff_json = ?, claim_until = ?, revision = revision + 1, updated_at = ? WHERE id = ?')
       .run(JSON.stringify(handoff), until, input.now, input.id);
@@ -793,17 +819,47 @@ export function handoffWork(
  * Approvals and step leases never move with it; whatever the work needs next
  * is asked for again by whoever holds it.
  */
+export function prepareAcceptance(store: StateStore, input: { readonly id: string; readonly owner: string; readonly session?: string; readonly now: string }): { offerId: string; acceptanceKey: string } {
+  const now = canonicalInstant(input.now, 'work.accept.now');
+  return store.transaction(() => {
+    const row = rowOf(store, input.id);
+    const offer = row ? openOffer(store, row, now) : null;
+    if (!row || !offer || offer.from === input.owner || !offeredTo(offer, input.owner, input.session)) throw new Error('work has no open handoff offered to this claimant');
+    requireReadyForClaim(store, toWork(row), now);
+    // No authority changes, and no capability is stored or logged here. If
+    // this response is lost, preparing again has no acceptance side effects.
+    return { offerId: offer.offerId!, acceptanceKey: randomBytes(32).toString('hex') };
+  });
+}
+
 export function acceptWork(
   store: StateStore,
-  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly branch?: string | null },
+  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly branch?: string | null; readonly acceptanceKey?: string; readonly offerId?: string },
 ): ClaimedWork & { readonly handoff: Handoff } {
-  requireInstant(input.now, 'work.accept.now');
-  if (input.until <= input.now) throw new Error('claim.until must be after now');
+  input = claimBounds(input);
+  if (input.acceptanceKey !== undefined && !/^[a-f0-9]{64}$/i.test(input.acceptanceKey)) throw new Error('acceptanceKey must be 32 cryptographically random bytes encoded as 64 hex characters, retained privately before accepting');
+  if (input.acceptanceKey !== undefined && (typeof input.offerId !== 'string' || !/^[A-Za-z0-9:_-]{1,160}$/.test(input.offerId))) throw new Error('acceptance recovery needs offerId from the observed handoff before dispatch');
+  const digest = (value: string): string => createHash('sha256').update(value).digest('hex');
+  const keyDigest = input.acceptanceKey === undefined ? null : digest(input.acceptanceKey.toLowerCase());
   return store.transaction(() => {
     const row = rowOf(store, input.id);
     if (!row) throw new Error(`no work ${input.id}`);
     const current = toWork(row);
-    const h = openOffer(row, input.now);
+    // Check prior use before considering a newer offer. A delayed request must
+    // never consume a later handoff under an old capability.
+    if (keyDigest) {
+      const receipt = store.db.prepare("SELECT work_id, actor, payload_json FROM work_events WHERE kind = 'handoff_acceptance_receipt' AND json_extract(payload_json, '$.keyDigest') = ? LIMIT 1").get(keyDigest) as { work_id: string; actor: string; payload_json: string } | undefined;
+      if (receipt) {
+        const saved = JSON.parse(receipt.payload_json) as { offerId: string; session: string | null; lane: string; tokenDigest: string; offerDigest: string; dropped: Overlap[] };
+        const handoff = parseHandoff(row.handoff_json);
+        const original = handoff ? { ...handoff, takenBy: null, takenAt: null, takenVia: null } : null;
+        if (saved.offerId !== input.offerId || receipt.work_id !== input.id || receipt.actor !== input.owner || saved.session !== (input.session ?? null) || row.claim_session !== saved.session || saved.lane !== laneKey(input.lane) || laneKey(row.claim_lane ?? undefined) !== saved.lane || !liveClaim(row, input.now) || row.claim_owner !== input.owner || !row.claim_token || digest(row.claim_token) !== saved.tokenDigest || !handoff || handoff.takenBy !== input.owner || handoff.takenVia !== 'accept' || digest(JSON.stringify(original)) !== saved.offerDigest) {
+          throw new Error('acceptance recovery is unavailable for this claimant or generation; inspect the current handoff and use a fresh capability for a new acceptance');
+        }
+        return { ...withMoved(store, withToken(current, row.claim_token), { leases: leasesFor(store, input.id), dropped: saved.dropped }, laneKey(input.lane), input.now), handoff };
+      }
+    }
+    const h = openOffer(store, row, input.now);
     if (!h) {
       const left = parseHandoff(row.handoff_json);
       if (left && left.takenBy === null && !liveClaim(row, input.now) && !TERMINAL.includes(current.status)) {
@@ -812,13 +868,16 @@ export function acceptWork(
       }
       throw new Error(`work ${input.id} has no open handoff`);
     }
+    if (input.offerId !== undefined && input.offerId !== h.offerId) throw new Error('handoff offer generation changed before acceptance; inspect the current handoff before accepting it');
     if (h.from === input.owner) throw new Error(`you offered ${input.id}; release or settle it with your token instead`);
     if (!offeredTo(h, input.owner, input.session)) throw new Error(`the handoff of ${input.id} is offered to ${h.to}`);
+    requireReadyForClaim(store, current, input.now);
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
     const taken: Handoff = { ...h, takenBy: input.owner, takenAt: input.now, takenVia: 'accept' };
     store.db.prepare('UPDATE work_items SET handoff_json = ? WHERE id = ?').run(JSON.stringify(taken), input.id);
     const moved = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until, now: input.now });
+    if (keyDigest) recordEvent(store, input.id, input.now, 'handoff_acceptance_receipt', input.owner, current.revision + 1, { keyDigest, offerId: h.offerId, session: input.session ?? null, lane: laneKey(input.lane), tokenDigest: digest(token), offerDigest: digest(JSON.stringify(h)), dropped: moved.dropped });
     recordEvent(store, input.id, input.now, 'handoff_accepted', input.owner, current.revision + 1, { from: h.from });
     appendActivity(store, { at: input.now, kind: 'work.handoff_accepted', actor: input.owner, payload: { workId: input.id, from: h.from } });
     return { ...withMoved(store, withToken(getWork(store, input.id)!, token), moved, laneKey(input.lane), input.now), handoff: taken };
@@ -835,7 +894,7 @@ export function listOffers(store: StateStore, now: string, who?: { readonly owne
     .all(now) as unknown as Row[];
   const out: { work: WorkItem; handoff: Handoff }[] = [];
   for (const row of rows) {
-    const h = openOffer(row, now);
+    const h = openOffer(store, row, now);
     if (!h) continue;
     if (who && (h.from === who.owner || !offeredTo(h, who.owner, who.session))) continue;
     out.push({ work: toWork(row), handoff: h });
@@ -848,36 +907,43 @@ export function listOffers(store: StateStore, now: string, who?: { readonly owne
  * that keeps calling Construct never loses work to expiry. Returns how many
  * were extended.
  */
-export function renewSessionClaims(store: StateStore, input: { readonly session: string; readonly now: string; readonly termMs: number }): number {
-  const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
-  const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
-  const changed = Number(
-    store.db
-      .prepare(
-        `UPDATE work_items SET claim_until = ?, claim_touched_at = ?
-          WHERE claim_session = ? AND status = 'claimed' AND claim_until > ? AND claim_until < ?`,
-      )
-      .run(until, input.now, input.session, input.now, halfway).changes,
-  );
-  if (changed > 0) {
-    store.db
-      .prepare(
-        `UPDATE path_leases SET until = ?
-          WHERE released_at IS NULL AND work_id IN (SELECT id FROM work_items WHERE claim_session = ? AND status = 'claimed' AND claim_until = ?)`,
-      )
-      .run(until, input.session, until);
-  }
-  return changed;
+export function renewSessionClaims(store: StateStore, input: { readonly session: string; readonly now: string; readonly termMs: number; readonly excludeWorkId?: string }): number {
+  input = { ...input, now: canonicalInstant(input.now, 'claim.now') };
+  if (!Number.isFinite(input.termMs) || input.termMs <= 0) throw new Error('claim.termMs must be positive and finite');
+  return store.transaction(() => {
+    const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
+    const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
+    const changed = Number(
+      store.db
+        .prepare(
+          `UPDATE work_items SET claim_until = ?, claim_touched_at = ?
+            WHERE claim_session = ? AND status = 'claimed' AND claim_until > ? AND claim_until < ? AND (? IS NULL OR id <> ?)`,
+        )
+        .run(until, input.now, input.session, input.now, halfway, input.excludeWorkId ?? null, input.excludeWorkId ?? null).changes,
+    );
+    if (changed > 0) {
+      store.db
+        .prepare(
+          `UPDATE path_leases SET until = ?
+            WHERE released_at IS NULL AND work_id IN (SELECT id FROM work_items WHERE claim_session = ? AND status = 'claimed' AND claim_until = ? AND (? IS NULL OR id <> ?))`,
+        )
+        .run(until, input.session, until, input.excludeWorkId ?? null, input.excludeWorkId ?? null);
+    }
+    return changed;
+  });
 }
 
 export function releaseWork(
   store: StateStore,
   input: { readonly id: string; readonly owner: string; readonly token: string; readonly at: string },
 ): WorkItem {
+  input = { ...input, at: canonicalInstant(input.at, 'work.release.at') };
   return store.transaction(() => {
     const row = rowOf(store, input.id);
     if (!row) throw new Error(`no work ${input.id}`);
     const current = toWork(row);
+    // Releasing this exact expired generation is safe cleanup; it cannot
+    // settle results or release a successor's different token.
     if (row.claim_owner !== input.owner || row.claim_token !== input.token) {
       throw new Error(`work ${input.id} is not held under that token`);
     }
@@ -968,7 +1034,7 @@ function setTerminal(
     readonly status: 'completed' | 'cancelled';
   },
 ): WorkItem {
-  requireInstant(input.at, 'work.at');
+  input = { ...input, at: canonicalInstant(input.at, 'work.at') };
   return store.transaction(() => {
     const row = rowOf(store, input.id);
     if (!row) throw new Error(`no work ${input.id}`);
@@ -998,10 +1064,16 @@ function setTerminal(
       const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, input.at);
       if (!ready.ready) throw new Error(`work ${input.id} cannot complete: ${ready.blockers.join('; ')}`);
     }
-    // A live claim is settled only with its token; a claim that expired no
-    // longer protects anything.
+    // Expiry frees acquisition, never settlement by a stale generation.
+    if (row.status === 'claimed' && !liveClaim(row, input.at) && (input.status === 'completed' || input.token !== undefined)) {
+      throw new Error(`work ${input.id} claim expired; claim the work again before settling it`);
+    }
+    // A live claim is settled only with both its owner and token.
     if (liveClaim(row, input.at) && (input.token !== row.claim_token || input.owner !== row.claim_owner)) {
       throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}; ${input.token ? 'that owner and token do not hold it' : 'settle it with the token its claim returned, or take it over once it is free'}`);
+    }
+    if (input.token !== undefined && row.status !== 'claimed') {
+      throw new Error(`work ${input.id} is not held under that token; claim it before settling it`);
     }
     store.db
       .prepare(

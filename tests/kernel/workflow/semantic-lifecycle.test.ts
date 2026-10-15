@@ -114,13 +114,13 @@ test('resolved user clarification reaches producer and reviewer with answer prov
 test('oversized final body preserves the exact draft and lease without a fake prepared packet', () => {
   const f = fixture([step('final', { outputs: ['summary'] })]);
   try {
-    const result = f.service.submit({ leased: f.claim().packet!.leased, output: { summary: 'x'.repeat(600_000) } });
+    const result = f.service.submit({ leased: f.claim().packet!.leased, output: { summary: 'x'.repeat(2_200_000) } });
     assert.equal(result.semanticReview!.preparedRef, null);
-    assert.match(result.semanticReview!.problems.join(), /512 KiB/);
+    assert.match(result.semanticReview!.problems.join(), /2 MiB/);
     const status = f.service.status(f.run.id)!;
     assert.equal(status.steps[0]!.state, 'leased');
     assert.equal(status.deliverables.length, 1);
-    assert.equal((status.deliverables[0]!.body as any).summary.length, 600_000);
+    assert.equal((status.deliverables[0]!.body as any).summary.length, 2_200_000);
   } finally { f.cleanup(); }
 });
 

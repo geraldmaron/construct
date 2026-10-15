@@ -181,3 +181,8 @@ test('today is resolved from each firing in its own timezone, not the definition
   assert.deepEqual(window(spec, '2026-10-09T23:30:00Z', 'Pacific/Auckland'), [null, '2026-10-10']);
   assert.deepEqual(window(spec, '2026-10-12T23:30:00Z', 'Pacific/Auckland'), [null, '2026-10-13']);
 });
+
+test('timestamp calendar dates cannot roll into another month before period evaluation', () => {
+  for (const value of ['2026-02-30T12:00:00Z', '2027-02-29T12:00:00+00:00', '2026-04-31T12:00:00-04:00']) assert.equal(dayOf(value, 'UTC'), null, value);
+  assert.equal(dayOf('2028-02-29T23:30:00-04:00', 'UTC'), '2028-03-01');
+});

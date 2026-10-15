@@ -11,6 +11,7 @@ import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
 import {
   assertTransition,
+  canonicalInstant,
   isTerminal,
   parseJson,
   requireInstant,
@@ -220,7 +221,7 @@ export function transitionStep(
     readonly reason?: string;
   },
 ): StepRun {
-  requireInstant(input.at, 'step.at');
+  input = { ...input, at: canonicalInstant(input.at, 'step.at') };
   return store.transaction(() => {
     const current = getStep(store, input.id);
     if (!current) throw new Error(`no step ${input.id}`);
@@ -278,8 +279,7 @@ export function claimStep(
   },
 ): LeasedStep | null {
   requireNonEmpty(claim.owner, 'claim.owner');
-  requireInstant(claim.now, 'claim.now');
-  requireInstant(claim.leaseUntil, 'claim.leaseUntil');
+  claim = { ...claim, now: canonicalInstant(claim.now, 'claim.now'), leaseUntil: canonicalInstant(claim.leaseUntil, 'claim.leaseUntil') };
   if (claim.leaseUntil <= claim.now) throw new Error('claim.leaseUntil must be after claim.now');
   const nonce = randomUUID();
   return store.transaction(() => {
@@ -333,7 +333,7 @@ export function claimStep(
  * walked away is named in the payload.
  */
 export function expireDeadLeases(store: StateStore, now: string, runId?: string): number {
-  requireInstant(now, 'expire.now');
+  now = canonicalInstant(now, 'expire.now');
   return store.transaction(() => {
     const spent = store.db
       .prepare(
@@ -413,7 +413,7 @@ function settle(
   to: 'succeeded' | 'failed' | 'ready',
   payload: { readonly output?: unknown; readonly error?: unknown; readonly reason?: string },
 ): StepRun {
-  requireInstant(input.at, 'step.at');
+  input = { ...input, at: canonicalInstant(input.at, 'step.at') };
   return store.transaction(() => {
     const finished = to === 'ready' ? null : input.at;
     const result = store.db
@@ -536,8 +536,10 @@ export function heldLease(store: StateStore, input: { readonly id: string; reado
 
 /** Extend a held lease, proving it with the lease's secret. False when it is no longer held. */
 export function extendLease(store: StateStore, input: { readonly id: string; readonly owner: string; readonly nonce: string; readonly until: string; readonly at: string }): boolean {
+  input = { ...input, at: canonicalInstant(input.at, 'lease.at'), until: canonicalInstant(input.until, 'lease.until') };
+  if (input.until <= input.at) throw new Error('lease.until must be after lease.at');
   const result = store.db
-    .prepare(`UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ? AND lease_until > ?`)
+    .prepare(`UPDATE step_runs SET lease_until = MAX(lease_until, ?), updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ? AND lease_until > ?`)
     .run(input.until, input.at, input.id, input.owner, input.nonce, input.at);
   return Number(result.changes) > 0;
 }
@@ -547,6 +549,8 @@ export function extendLease(store: StateStore, input: { readonly id: string; rea
  * executor that keeps calling Construct does not lose a long step to expiry.
  */
 export function renewExecutorLeases(store: StateStore, input: { readonly owner: string; readonly now: string; readonly termMs: number }): number {
+  input = { ...input, now: canonicalInstant(input.now, 'lease.now') };
+  if (!Number.isFinite(input.termMs) || input.termMs <= 0) throw new Error('lease.termMs must be positive and finite');
   const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
   const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
   return Number(

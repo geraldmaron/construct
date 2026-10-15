@@ -135,7 +135,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     sources: available,
     projectWritePolicy,
     semanticReviewer: pinSemanticReviewer(binding.client, ctx.env, project.root),
-    resolveEvidence: (ref) => projectResolver(project.store, project.root, null, { hostReads: policy.hostReads })(ref),
+    resolveEvidence: (ref, use) => projectResolver(project.store, project.root, null, { hostReads: policy.hostReads })(ref, use),
     now: ctx.now,
     nextId: ctx.nextId,
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),

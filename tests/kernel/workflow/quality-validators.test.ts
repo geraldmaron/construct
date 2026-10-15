@@ -228,7 +228,7 @@ test('text cut at the cap: a quote past the cut is unchecked, and a figure past 
   const by = Object.fromEntries(r.map((x) => [x.validator, x.problems]));
   assert.deepEqual(by.excerpts_match, []);
   assert.equal(by.numbers_grounded!.length, 1);
-  assert.match(by.numbers_grounded![0]!, /the recorded text of wiki:long was cut at 16 KiB; report the part you rely on as its own item/);
+  assert.match(by.numbers_grounded![0]!, /the recorded text of wiki:long is partial; report the exact passage under the same stable item ref with truncated:true, and explain the unread remainder in referenceDispositions/);
 });
 
 test('sources_diverse counts only places that hold content: not unverified refs, surfaces, or whole sources, and two pages of one site once', () => {

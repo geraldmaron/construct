@@ -31,8 +31,8 @@ export interface VerificationReceipt {
   readonly checks: readonly { readonly validator: string; readonly ok: boolean }[];
 }
 
-export function contentReceipt(ref: string, resolve?: RefResolver): ContentReceipt {
-  const hit = resolve?.(ref);
+export function contentReceipt(ref: string, resolve?: RefResolver, use?: 'artifact'): ContentReceipt {
+  const hit = resolve?.(ref, use);
   return { ...(hit?.snapshotId ? { snapshotId: hit.snapshotId, historical: hit.historical } : {}), ref, digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null, provenance: hit?.provenance ?? 'unresolved' };
 }
 export function namedArtifactPath(value: unknown): string | null {
@@ -60,7 +60,7 @@ export function verificationReceipt(input: {
   return {
     formatVersion: 1, runId: input.runId, stepRunId: input.stepRunId, observedAt: input.observedAt, actor: input.actor,
     assurance: 'structural', executionVerified: false, semanticSupportVerified: false,
-    subjects: [...new Set(input.subjects)].map((ref) => contentReceipt(ref, input.resolve)),
+    subjects: [...new Set(input.subjects)].map((ref) => contentReceipt(ref, input.resolve, 'artifact')),
     evidence: [...held.values()],
     ...(prior.some((e) => produced(e.ref)) ? { baselines: prior.filter((e) => produced(e.ref)) } : {}),
     checks: input.checks.map(({ validator, ok }) => ({ validator, ok })),
@@ -82,7 +82,7 @@ export function inheritedEvidence(steps: readonly StepRun[]): ContentReceipt[] {
 function sameProducedFile(ref: string, subjects: readonly string[], resolve?: RefResolver): boolean {
   const hit = resolve?.(ref);
   return hit?.kind === 'file' && subjects.some((subject) => {
-    const output = resolve?.(subject);
+    const output = resolve?.(subject, 'artifact');
     return output?.kind === 'file' && (hit.path && output.path ? hit.path === output.path : subject.replace(/^\.\//, '') === ref.replace(/^\.\//, ''));
   });
 }
@@ -98,12 +98,16 @@ export function stalePriorEvidence(prior: readonly ContentReceipt[], subjects: r
 
 /** Missing or changed content cannot inherit a receipt for previously observed bytes. */
 export function staleReceiptSubjects(receipt: VerificationReceipt, resolve: RefResolver): string[] {
-  return [...new Set([...receipt.subjects, ...receipt.evidence.filter((entry) => entry.digest !== null)].filter((subject) => subject.digest === null || contentReceipt(subject.ref, resolve).digest !== subject.digest || (subject.snapshotId !== undefined && contentReceipt(subject.ref, resolve).historical !== subject.historical)).map((subject) => subject.ref))];
+  const stale = (subject: ContentReceipt, use?: 'artifact') => {
+    const current = contentReceipt(subject.ref, resolve, use);
+    return subject.digest === null || current.digest !== subject.digest || (subject.snapshotId !== undefined && current.historical !== subject.historical);
+  };
+  return [...new Set([...receipt.subjects.filter(s => stale(s, 'artifact')), ...receipt.evidence.filter(s => s.digest !== null && stale(s))].map(s => s.ref))];
 }
 
 
 /** Only a host command adapter observation for this step/attempt can witness execution. */
-export function executionCheck(store: StateStore, input: { runId: string; stepRunId: string; attempt: number; output: unknown; resolve?: RefResolver; subjects: readonly string[] }): { ok: boolean; problems: string[]; ref: string | null; observed?: { argv: readonly string[]; exitStatus: number | null } } {
+export function executionCheck(store: StateStore, input: { runId: string; stepRunId: string; attempt: number; output: unknown; resolve?: RefResolver; subjects: readonly string[] }): { ok: boolean; problems: string[]; ref: string | null; observed?: { argv: readonly string[]; exitStatus: number | null }; receipt?: unknown } {
   const out = input.output && typeof input.output === 'object' ? input.output as Record<string, unknown> : {};
   const v = out.verification && typeof out.verification === 'object' ? out.verification as Record<string, unknown> : out;
   const ref = typeof v.executionRef === 'string' ? v.executionRef : null;
@@ -123,8 +127,8 @@ export function executionCheck(store: StateStore, input: { runId: string; stepRu
   if (receipt.exitStatus !== 0 || receipt.timedOut || receipt.signal) problems.push('observed verification command did not complete successfully');
   if (!receipt.subjectsStable) problems.push('verification subject changed while the command ran');
   if (input.subjects.some((ref) => !receipt.subjects.some((s) => s.ref === ref))) problems.push('execution receipt does not cover every current artifact');
-  if (receipt.subjects.some((s) => s.digest === null || !input.resolve || contentReceipt(s.ref, input.resolve).digest !== s.digest)) problems.push('execution receipt is stale or its subject no longer resolves');
-  return { ok: problems.length === 0, problems, ref, observed: { argv: receipt.argv, exitStatus: receipt.exitStatus } };
+  if (receipt.subjects.some((s) => s.digest === null || !input.resolve || contentReceipt(s.ref, input.resolve, 'artifact').digest !== s.digest)) problems.push('execution receipt is stale or its subject no longer resolves');
+  return { ok: problems.length === 0, problems, ref, observed: { argv: receipt.argv, exitStatus: receipt.exitStatus }, ...(problems.length === 0 ? { receipt: JSON.parse(row.payload_json) as unknown } : {}) };
 }
 
 
@@ -155,7 +159,7 @@ export function requestedFileProblems(destination: { kind: string; ref: string |
   const path = destination.ref.replace(/^\.\//, '');
   const problems: string[] = [];
   if (!artifacts.some((ref) => ref.replace(/^\.\//, '') === path)) problems.push(`requested local destination ${destination.ref} is not named by a produced artifact; write it and submit its artifact path`);
-  const hit = resolve?.(destination.ref);
+  const hit = resolve?.(destination.ref, 'artifact');
   if (!hit || hit.kind !== 'file' || typeof hit.text !== 'string' || !hit.text.trim()) problems.push(`requested local destination ${destination.ref} is missing, empty or not verifiable as held text`);
   return problems;
 }

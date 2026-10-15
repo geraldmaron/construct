@@ -375,7 +375,8 @@ test('readable text keeps what a person reads in an issue: quotes, line breaks, 
   assert.match(text, /Sam said "ship v1 to Enterprise only" on the call\./, 'inline runs with marks join into one line, quotes intact');
   assert.match(text, /\nRevisit Pro in Q3\.\n/, 'a block goes on its own line');
   assert.match(text, /First line\nsecond line/);
-  for (const markup of ['paragraph', 'strong', 'bulletList', 'hardBreak', 'https://x.example', '{', '\\"']) assert.ok(!text.includes(markup), `no ${markup} in the text`);
+  for (const markup of ['paragraph', 'strong', 'bulletList', 'hardBreak', '{', '\\"']) assert.ok(!text.includes(markup), `no ${markup} in the text`);
+  assert.match(text, /https:\/\/x.example/, 'observed hyperlink destinations remain available for reference closure');
   assert.equal(readableText(JSON.stringify({ a: 'one', b: [2, { c: 'three' }], d: true, e: null })), 'one\n2\nthree', 'JSON inside a string is opened; booleans and nulls are not words');
 
   const fx = brokerFixture();
@@ -387,6 +388,63 @@ test('readable text keeps what a person reads in an issue: quotes, line breaks, 
   } finally {
     fx.cleanup();
   }
+});
+
+test('Jira hook preserves documented ADF attr-only text and marks unresolved display content partial', () => {
+  const fx = brokerFixture();
+  try {
+    addSource(fx.broker.store, { id: 'jira-adf', kind: 'jira', locator: 'APP', purpose: 'tickets', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    const description = { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [
+      { type: 'text', text: 'Owner ' }, { type: 'mention', attrs: { id: 'account', text: '@Sam' } },
+      { type: 'text', text: ' says ' }, { type: 'status', attrs: { text: 'Blocked', color: 'red' } },
+      { type: 'emoji', attrs: { shortName: ':warning:', text: '⚠️' } },
+      { type: 'text', text: ' ' }, { type: 'emoji', attrs: { shortName: ':custom:' } },
+      { type: 'inlineCard', attrs: { url: 'https://records.example/dependency' } },
+      { type: 'date', attrs: { timestamp: '1582152559' } },
+    ] }] };
+    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: { key: 'APP-1', fields: { updated: '2026-10-15T12:00:00Z', description } } });
+    const entry = currentManifest(fx.broker.store, 'jira-adf')![0]!;
+    assert.match(entry.text!, /Owner @Sam says Blocked⚠️ :custom:/);
+    assert.match(entry.text!, /https:\/\/records.example\/dependency/);
+    assert.match(entry.text!, /date timestamp: 1582152559/);
+    assert.equal(entry.truncated, true, 'card display and locale date are not invented from identifiers');
+    assert.ok(!entry.text!.includes('account'));
+  } finally { fx.cleanup(); }
+});
+
+test('unknown, missing-label and depth-limited ADF cannot silently imply complete captured content', () => {
+  for (const omitted of [
+    { type: 'mention', attrs: { id: 'account-without-name' } },
+    { type: 'futureWidget', attrs: { text: 'Arbitrary unverified metadata' } },
+    { type: 'media', attrs: { id: 'opaque-media-id', type: 'file', collection: 'external' } },
+  ]) {
+    const issue = { key: 'APP-1', fields: { updated: '2026-10-15T12:00:00Z', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'left' }, omitted, { type: 'text', text: 'right' }] }] } } };
+    const item = jiraItemsIn(issue, 'APP')[0]!;
+    assert.equal(item.truncated, true);
+    assert.ok(!item.text!.includes('leftright'));
+    assert.ok(!item.text!.includes('Arbitrary unverified metadata'));
+    assert.ok(!item.text!.includes('opaque-media-id'));
+  }
+  let nested: unknown = { type: 'text', text: 'Unreached tail.' };
+  for (let i = 0; i < 70; i += 1) nested = { type: 'panel', content: [nested] };
+  assert.equal(jiraItemsIn({ key: 'APP-2', fields: { updated: '2026-10-15T12:00:00Z', description: nested } }, 'APP')[0]!.truncated, true);
+  assert.equal(jiraItemsIn(adfIssue, 'PLAT')[0]!.truncated, false, 'fully supported text does not acquire partial status');
+});
+
+test('non-ADF provider envelopes with type and attrs preserve their readable payload', () => {
+  assert.match(readableText({ type: 'message', text: 'The rollout is approved.' }), /The rollout is approved\./);
+  const issue = { type: 'issue', attrs: { kind: 'ticket' }, key: 'APP-1', fields: { summary: 'Fix deployment', updated: '2026-10-15T12:00:00Z', description: 'The rollout is approved.' } };
+  const item = jiraItemsIn(issue, 'APP')[0]!;
+  assert.match(item.text!, /Fix deployment/);
+  assert.match(item.text!, /The rollout is approved\./);
+  assert.equal(item.truncated, false);
+});
+
+test('an explicitly unsupported ADF document version retains observed words as partial evidence', () => {
+  const issue = { key: 'APP-4', fields: { updated: '2026-10-15T12:00:00Z', description: { type: 'doc', version: 2, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Observed future-format text.' }] }] } } };
+  const item = jiraItemsIn(issue, 'APP')[0]!;
+  assert.match(item.text!, /Observed future-format text\./);
+  assert.equal(item.truncated, true);
 });
 
 test('an issue is recorded under the browse page its REST self link names, unless it gives its own address', () => {

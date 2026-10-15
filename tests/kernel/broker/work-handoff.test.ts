@@ -10,6 +10,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import { createBrokerContext } from '../../../src/cli/broker-context.ts';
@@ -116,4 +117,98 @@ test('a session files work with its structure: unrooted work is proposed, a pare
   } finally {
     fx.cleanup();
   }
+});
+
+test('MCP handoff issues a new token, refuses replay disclosure, and fences the former holder after expiry', async () => {
+  const { createMcpHandler } = await import('../../../src/hosts/mcp/server.ts');
+  let now = '2026-10-15T12:00:00.000Z';
+  const fx = brokerFixture('interactive', { now: () => now });
+  try {
+    const a = createMcpHandler('interactive', fx.broker);
+    const b = createMcpHandler('interactive', peer(fx, 'ses_b'));
+    let sequence = 0;
+    const request = async (handler: typeof a, args: Record<string, unknown>) => {
+      const response = await handler({ jsonrpc: '2.0', id: ++sequence, method: 'tools/call', params: { name: 'work', arguments: args } });
+      assert.ok(response && 'result' in response);
+      return response.result as { isError?: boolean; structuredContent: Record<string, any> };
+    };
+    const reason = await reasonFor(fx.broker);
+    const loose = await request(a, { action: 'add', title: 'not admitted' });
+    assert.equal((await request(a, { action: 'takeover', id: loose.structuredContent.id, reason: 'recover' })).isError, true);
+    const item = await request(a, { action: 'add', title: 'handoff candidate', serves: reason });
+    const id = item.structuredContent.id;
+    const first = await request(a, { action: 'claim', id, paths: ['briefs/'] });
+    const oldToken = first.structuredContent.claimToken;
+    const descriptivePaths = ['briefs/Release Notes.md', 'Team Briefs/Review Notes.md'];
+    const offered = await request(a, { action: 'handoff', id, token: oldToken, to: 'ses_b', packet: { state: 'ready', next: 'verify', where: { paths: descriptivePaths } } });
+    assert.equal(offered.isError, undefined);
+    const accepted = await request(b, { action: 'accept', id });
+    assert.equal(accepted.isError, undefined);
+    assert.deepEqual(accepted.structuredContent.handoff.content.packet.where.paths, descriptivePaths);
+    assert.deepEqual(accepted.structuredContent.leases.map((lease: { path: string }) => lease.path), ['briefs/']);
+    const newToken = accepted.structuredContent.claimToken;
+    assert.ok(newToken && newToken !== oldToken);
+    const replay = await request(b, { action: 'accept', id });
+    assert.equal(replay.isError, true);
+    assert.ok(!JSON.stringify(replay).includes(newToken));
+    const shown = await request(b, { action: 'show', id });
+    assert.equal(shown.structuredContent.claimToken, null);
+    now = '2026-10-15T12:31:00.000Z';
+    assert.equal((await request(a, { action: 'complete', id, token: oldToken })).isError, true);
+    const reclaimed = await request(b, { action: 'claim', id, paths: ['src/parser/'] });
+    assert.notEqual(reclaimed.structuredContent.claimToken, newToken);
+    assert.equal((await request(b, { action: 'complete', id, token: reclaimed.structuredContent.claimToken })).structuredContent.status, 'completed');
+  } finally { fx.cleanup(); }
+});
+
+test('MCP acceptance recovers a lost response only with the retained private capability', async () => {
+  const { createMcpHandler } = await import('../../../src/hosts/mcp/server.ts');
+  let now = '2026-10-15T12:00:00.000Z';
+  const fx = brokerFixture('interactive', { now: () => now });
+  try {
+    const a = fx.broker, b = peer(fx, 'ses_b');
+    const added = call(a, { action: 'add', serves: await reasonFor(a), title: 'recoverable handoff' }) as { id: string };
+    const first = call(a, { action: 'claim', id: added.id, paths: ['briefs/'] }) as { claimToken: string };
+    const offered = call(a, { action: 'handoff', id: added.id, token: first.claimToken, to: 'ses_b', packet: { state: 'ready', next: 'verify' } }) as { handoff: { offerId: string } };
+    const handler = createMcpHandler('interactive', b);
+    let sequence = 0;
+    const preparation = await handler({ jsonrpc: '2.0', id: ++sequence, method: 'tools/call', params: { name: 'work', arguments: { action: 'prepare_accept', id: added.id } } });
+    assert.ok(preparation && 'result' in preparation);
+    const prepared = (preparation.result as { structuredContent: { acceptanceKey: string; offerId: string } }).structuredContent;
+    const acceptanceKey = prepared.acceptanceKey;
+    assert.equal(prepared.offerId, offered.handoff.offerId);
+    const accept = async (patch = {}) => {
+      const r = await handler({ jsonrpc: '2.0', id: ++sequence, method: 'tools/call', params: { name: 'work', arguments: { action: 'accept', id: added.id, acceptanceKey, offerId: offered.handoff.offerId, ...patch } } });
+      assert.ok(r && 'result' in r);
+      return r.result as { isError?: boolean; structuredContent: Record<string, any> };
+    };
+    const lost = await accept();
+    assert.equal(lost.isError, undefined);
+    const other = call(b, { action: 'add', serves: await reasonFor(b), title: 'another held item' }) as { id: string };
+    call(b, { action: 'claim', id: other.id });
+    fx.broker.store.db.prepare('INSERT INTO work_legacy_ids (legacy_id, work_id, source, created_at) VALUES (?, ?, ?, ?)').run('legacy-recovery', added.id, 'fixture', now);
+    now = '2026-10-15T12:16:00.000Z';
+    assert.equal((await accept({ id: 'legacy-recovery', acceptanceKey: randomBytes(32).toString('hex') })).isError, true);
+    assert.equal(fx.broker.store.db.prepare('SELECT claim_until FROM work_items WHERE id = ?').get(added.id)!.claim_until, lost.structuredContent.claimUntil);
+    assert.equal(fx.broker.store.db.prepare('SELECT claim_until FROM work_items WHERE id = ?').get(other.id)!.claim_until, '2026-10-15T12:46:00.000Z');
+    const retry = await accept();
+    assert.equal(retry.isError, undefined);
+    assert.equal(retry.structuredContent.claimToken, lost.structuredContent.claimToken);
+    assert.equal(retry.structuredContent.claimUntil, lost.structuredContent.claimUntil);
+    assert.equal(retry.structuredContent.revision, lost.structuredContent.revision);
+    const latePreparation = await handler({ jsonrpc: '2.0', id: ++sequence, method: 'tools/call', params: { name: 'work', arguments: { action: 'prepare_accept', id: added.id } } });
+    assert.ok(latePreparation && 'result' in latePreparation && (latePreparation.result as { isError?: boolean }).isError);
+    assert.ok(!JSON.stringify(latePreparation).includes(acceptanceKey));
+    for (const patch of [{ acceptanceKey: undefined }, { acceptanceKey: randomBytes(32).toString('hex') }, { agent: 'other' }]) {
+      const refused = await accept(patch);
+      assert.equal(refused.isError, true);
+      assert.ok(!JSON.stringify(refused).includes(lost.structuredContent.claimToken));
+    }
+    assert.ok(!JSON.stringify(call(b, { action: 'show', id: added.id })).includes(acceptanceKey));
+    assert.ok(!JSON.stringify(fx.broker.store.db.prepare('SELECT payload_json FROM activity_events').all()).includes(acceptanceKey));
+    now = lost.structuredContent.claimUntil;
+    const expired = await accept();
+    assert.equal(expired.isError, true);
+    assert.ok(!JSON.stringify(expired).includes(lost.structuredContent.claimToken));
+  } finally { fx.cleanup(); }
 });

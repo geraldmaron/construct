@@ -24,6 +24,8 @@ import { INTERACTION_CLASSES, type RegisteredSkill, type RegisteredWorkflow } fr
 import { checkSlot, PERIOD_KEYS, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSemantics, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
 import { parseDocsLocator } from '../source/locators.ts';
 import { normalizeLeasePath } from '../work/leases.ts';
+import { symlinkBetween } from '../project/files.ts';
+import { resolve } from 'node:path';
 import type { Assumption, NamedSource } from './asked.ts';
 import { STAKE_AREAS, type StakeArea, type Stakes } from './consequence.ts';
 import { isValidTimezone, nextCronAfter, parseCron } from './cron.ts';
@@ -695,8 +697,10 @@ function projectPath(ref: string, root: string): string | null {
   if (base && path.startsWith(`${base}/`)) path = path.slice(base.length + 1);
   try {
     const normalizedPath = normalizeLeasePath(path, 'check');
+    if (normalizedPath !== '/' && symlinkBetween(root, resolve(root, normalizedPath))) throw new IntakeError('cannot use a symbolic link; use the canonical file path inside the project', 'destination.ref');
     return normalizedPath === '/' ? null : normalizedPath;
-  } catch {
+  } catch (error) {
+    if (error instanceof IntakeError) throw error;
     return null;
   }
 }
