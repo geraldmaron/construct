@@ -5,7 +5,7 @@ It stores admitted context and work, resolves versioned methods and workflows,
 and keeps delivery, verification, review and your acceptance separate. Your host
 provides the model, tools and sandbox.
 
-**Experimental: 3.0.0-alpha.29.** Available under npm’s `alpha` tag; `latest`
+**Experimental: 3.0.0-alpha.30.** Available under npm’s `alpha` tag; `latest`
 remains on the 2.x line. Installation and static host wiring are tested;
 broad host effectiveness, canonical native isolation and measured skill benefit
 remain unqualified. See [verification and limits](#verification-and-limits).
@@ -81,19 +81,22 @@ See the [CLI reference](docs/cli-reference.md) and
 
 ## Verification and limits
 
-Alpha.29 adds source activation, permission preservation, state recovery and stable
-MCP discovery fixes. Its local regression and review evidence is recorded in the
-[remediation review](docs/internal/command-remediation/SUBAGENT-REVIEW.md) and
-[reconciliation](docs/internal/command-remediation/RECONCILIATION.md). Native
-isolation, fresh-user desktop readiness and the setup/task facade remain open.
+Alpha.30 improves Jira and Slack evidence admission, bounded text capture and
+handoff recovery. Copied citation wrappers retain source identity; unsupported
+rich-text content stays explicitly partial. A lost handoff acceptance response
+can recover the same live claim using a private capability retained before
+dispatch, without extending its expiry. See [source reporting](docs/connectors-and-semantics.md)
+and [handoffs](docs/work-ledger.md#handing-off-and-taking-over).
 
-Alpha.29 passed lint, typecheck, the full test suite and packaged isolated smoke.
-Three fresh finite native held-text controls accepted correct arithmetic and
-rejected incorrect arithmetic and an injected source. Static six-host conformance
-passed with native boundaries untested. The earlier alpha.28 ordinary decision
-trial completed after a citation repair; its 218 seconds and 13 Construct calls
-remain a single historical diagnostic. These observations do not establish
-general effectiveness, injection resistance or causal skill benefit.
+The repair candidate passed lint, typecheck, the full test suite, packaged
+isolated smoke and static six-host conformance. Independent subagent checks and
+an exact-candidate native review covered the repairs. Three finite native controls
+accepted correct arithmetic and rejected incorrect arithmetic and an injected
+source. These observations do not establish general effectiveness, injection
+resistance or causal skill benefit. Canonical native isolation, fresh-user
+desktop readiness and broader production adapter qualification remain open.
+Earlier intermittent hook/reset timing failures did not reproduce in the final
+gates; their cause remains unproven.
 
 Delegation is disabled until explicitly configured and live-verified. A saved
 standing outcome does not install a clock or executor. External sources depend
@@ -102,7 +105,6 @@ is not proof that it can be read. Licensed judgments remain preparation for a
 qualified person, never professional sign-off.
 
 [Release notes](CHANGELOG.md) · [Release policy](docs/release-verification.md) ·
-[Measured alpha.28 observations](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md) ·
 [Delegation](docs/bounded-delegation.md) · [Recurring operation](docs/recurring-operation.md).
 
 ## Upgrade
@@ -121,8 +123,7 @@ use new workflow or method versions while preserving its prior work.
 
 The [GitHub documentation index](docs/README.md) is the docsite. It links the
 user guides and generated CLI, tool, configuration, catalog and state references.
-[Dated internal records](docs/internal/README.md) are history, not current usage
-instructions. Report documentation or behavior issues in
+Report documentation or behavior issues in
 [GitHub Issues](https://github.com/geraldmaron/construct/issues).
 
 ## Development
