@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { safeEnvironment } from '../src/hosts/delegation/workspace.ts';
 import { PREREGISTRATION } from '../src/kernel/skills/routing.ts';
 import { codexProviderArgs } from '../src/hosts/codex-provider.ts';
+import { REVIEW_DISABLED_FEATURES, disableReviewMcp } from '../src/hosts/semantic-review.ts';
 export { CODEX_PROVIDER_KEYS, codexProvider, codexProviderFromConfig, codexProviderArgs } from '../src/hosts/codex-provider.ts';
 
 /** Hosts the live runner can drive headlessly here. */
@@ -135,12 +136,27 @@ export function pinHookEnvironment(path, env) {
 }
 
 function codexServer(name, server) {
+  // Apply the same name validation as the native reviewer before constructing
+  // dotted native-CLI config keys; punctuation must not alter their scope.
+  disableReviewMcp([name]);
   const key = `mcp_servers.${name}`;
   return [
+    '-c', `${key}.enabled=true`,
     '-c', `${key}.command=${toml(server.command[0])}`,
     '-c', `${key}.args=${toml(server.command.slice(1))}`,
     ...(server.env ? ['-c', `${key}.env=${toml(server.env)}`] : []),
     '-c', `${key}.default_tools_approval_mode="approve"`,
+  ];
+}
+
+/** Reuse the pinned reviewer capability boundary while retaining the local
+ * shell and skill tools the evaluation actually measures. This does not
+ * suppress CODEX_HOME/AGENTS.md or claim personal-instruction isolation. */
+export function codexEvaluationIsolationArgs(mcpNames = []) {
+  const retained = new Set(['shell_tool', 'unified_exec', 'skill_search']);
+  return [
+    ...REVIEW_DISABLED_FEATURES.filter((name) => !retained.has(name)).flatMap((name) => ['--disable', name]),
+    ...disableReviewMcp(mcpNames),
   ];
 }
 
@@ -152,8 +168,9 @@ function codexServer(name, server) {
  *   called. Construct's hooks are in the project or the local settings
  *   file, so both load; the person's user settings never do.
  * - codex: ephemeral, read-only, the person's config ignored except the
- *   provider keys above; Construct and the stubs attached with -c; earlier
- *   turns are written into the prompt.
+ *   provider keys above; unrelated app/plugin capabilities disabled,
+ *   Construct and the stubs attached with -c; earlier turns are written into
+ *   the prompt. Global AGENTS remains a separate preflight prerequisite.
  * - cursor: print mode with MCP approval and the sandbox on; never --force.
  */
 export function hostArgs(host, opts) {
@@ -179,6 +196,7 @@ export function hostArgs(host, opts) {
   if (host === 'codex') {
     return [
       'exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config',
+      ...codexEvaluationIsolationArgs(opts.disabledMcpNames ?? []),
       '-s', 'read-only',
       '-m', model,
       ...(effort ? ['-c', `model_reasoning_effort=${toml(effort)}`] : []),

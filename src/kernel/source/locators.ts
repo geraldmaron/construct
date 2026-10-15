@@ -5,6 +5,8 @@
  * expected, so a person fixes the declaration rather than guessing.
  */
 
+import { locatorCarriesCredentials } from '../project/sources-file.ts';
+
 export const SOURCE_KINDS = ['directory', 'git', 'github', 'jira', 'docs', 'hris', 'other'] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -84,7 +86,7 @@ export function directoryLocatorProblem(locator: string): string | null {
 export function gitLocatorProblem(locator: string): string | null {
   const trimmed = locator.trim();
   if (trimmed === '') return 'a git locator names no repository';
-  if (/^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i.test(trimmed) || /^[^@\s/]+@[^:\s]+:/.test(trimmed) && /:[^@]*@/.test(trimmed)) {
+  if (locatorCarriesCredentials(trimmed) || /^[^@\s/]+@[^:\s]+:/.test(trimmed) && /:[^@]*@/.test(trimmed)) {
     return 'a git locator carries no credentials; the host or connector holds them';
   }
   return null;
@@ -93,6 +95,7 @@ export function gitLocatorProblem(locator: string): string | null {
 /** The problem with a locator for its kind, or null when it is well-formed. */
 export function locatorProblem(kind: SourceKind | string, locator: string | null): string | null {
   if (locator === null) return null;
+  if (locatorCarriesCredentials(locator)) return 'a source locator carries no credentials; the host or connector holds them';
   switch (kind) {
     case 'github':
       return githubLocatorProblem(locator);

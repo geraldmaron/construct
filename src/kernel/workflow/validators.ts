@@ -18,7 +18,7 @@ import { namedArtifactPath } from './verification.ts';
  * quality, not a judge of it.
  */
 
-import { realpathSync } from 'node:fs';
+import { realpathSync, statSync } from 'node:fs';
 import { researchCoverage } from '../source/research.ts';
 import { holdsContent, normalizeQuote, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
 import { normalizeUrl } from '../project/urls.ts';
@@ -283,7 +283,8 @@ function isDocument(path: string): boolean {
 /** Where a file really lives, so a symlink to it or the same name in another letter case is the same file. */
 function realPath(path: string): string {
   try {
-    return realpathSync.native(path);
+    const stat = statSync(path);
+    return stat.isFile() ? `file:${String(stat.dev)}:${String(stat.ino)}` : realpathSync.native(path);
   } catch {
     return path;
   }
@@ -593,7 +594,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (!resolve) return ['nothing was supplied to check that the artifact exists'];
     const problems: string[] = [];
     for (const p of paths) {
-      const r = resolve(p);
+      const r = resolve(p, 'artifact');
       if (!r || r.kind !== 'file') problems.push(`artifact "${p}" was not found in the project`);
       // Text is only loaded under a size cap; a file too large to load is not empty.
       else if (r.text !== undefined ? r.text.trim() === '' : (r.size ?? 0) === 0) problems.push(`artifact "${p}" is empty`);
@@ -608,7 +609,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     // is read is what is being checked, so citing it, by any name for the same file, grounds nothing.
     const artifact = isRecord(output) ? namedPath(output.artifact) : null;
     const read = [...new Set([...changedPaths(output), ...(artifact ? [artifact] : [])])].filter(isDocument);
-    const own = new Set(read.map((p) => resolve?.(p)?.path).filter((p): p is string => p !== undefined).map(realPath));
+    const own = new Set(read.map((p) => resolve?.(p, 'artifact')?.path).filter((p): p is string => p !== undefined).map(realPath));
     const cited: string[] = [];
     const cut: string[] = [];
     const selfCited: string[] = [];
@@ -674,13 +675,13 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     const texts = strings(output);
     for (const p of read) {
-      const t = resolve?.(p)?.text;
+      const t = resolve?.(p, 'artifact')?.text;
       if (t) texts.push(t);
     }
     const unsupported = new Set<string>();
     const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
     for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
-    const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} was cut at 16 KiB; report the part you rely on as its own item)` : '';
+    const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} is partial; report the exact passage under the same stable item ref with truncated:true, and explain the unread remainder in referenceDispositions)` : '';
     const selfNote = selfCited.length > 0 ? ` (citing ${selfCited.join(', ')}, which this step wrote, grounds nothing in it)` : '';
     return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}${selfNote}`)];
   },
@@ -692,7 +693,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (!t?.text) return [`template "${template}" was not found`];
     const [artifact] = artifactPaths(output);
     if (!artifact) return ['a template was named but the output names no artifact to check against it'];
-    const a = resolve(artifact)?.text;
+    const a = resolve(artifact, 'artifact')?.text;
     if (!a) return [`artifact "${artifact}" could not be read`];
     const have = headings(a);
     const want = headings(t.text).filter((h) => h !== '');
@@ -779,7 +780,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   },
   decision_ask_present: ({ output, input, resolve }) => {
     const [artifact] = artifactPaths(output);
-    const text = artifact ? resolve?.(artifact)?.text : undefined;
+    const text = artifact ? resolve?.(artifact, 'artifact')?.text : undefined;
     if (!text) return ['the output names no readable artifact to check for the decision being asked'];
     const lines = text.split('\n');
     const start = lines.findIndex((l) => /^#{1,6}\s.*\bdecision\b/i.test(l));
@@ -819,7 +820,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   settled_not_contradicted: ({ output, settled, resolve }) => {
     if (!settled || settled.length === 0) return [];
     const texts = strings(output);
-    for (const p of artifactPaths(output)) { const t = resolve?.(p)?.text; if (t) texts.push(t); }
+    for (const p of artifactPaths(output)) { const t = resolve?.(p, 'artifact')?.text; if (t) texts.push(t); }
     const problems: string[] = [];
     for (const { term, statementId } of settled) {
       const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]')}\\b`, 'i');

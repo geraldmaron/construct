@@ -1,3 +1,7 @@
+import { assertLeasePaths } from '../kernel/work/lanes.ts';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { closeSync, constants, fstatSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 /**
  * cli/work.ts — native work ledger: file work with its parent, reason,
  * dependencies, and acceptance criteria; query, ready, claim, check reserved
@@ -33,6 +37,7 @@ import {
 import { admitProposedWork, fileWork, linkWork, unlinkWork, workStructure } from '../kernel/work/structure.ts';
 import { HandoffPacketError, asPeerData, type HandoffPacket } from '../kernel/work/handoff.ts';
 import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type Overlap } from '../kernel/work/leases.ts';
+import { canonicalInstant } from '../kernel/state/rows.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
 import { processAlive } from './broker-context.ts';
 import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
@@ -40,8 +45,6 @@ import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } fro
 import { createContext, type CliContext } from './context.ts';
 import { withProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const group = 'Work';
@@ -81,6 +84,38 @@ function describeOverlap(o: Overlap): string {
 
 /** The longest a claim made from the command line may run, whatever --until asks. */
 const CLI_CLAIM_CEILING_MS = 24 * 60 * 60_000;
+
+/** A private capability is published atomically before dispatch. Keeping it
+ * outside the project makes ordinary `accept` retries survive lost stdout
+ * without putting a secret in shell arguments, snapshots or project history. */
+function acceptanceCapability(stateDir: string, identity: string): string {
+  const directory = join(stateDir, 'handoff-acceptance');
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const dir = lstatSync(directory);
+  if (!dir.isDirectory() || (dir.mode & 0o077) !== 0) throw new Error('handoff recovery directory must be private to this user');
+  const path = join(directory, createHash('sha256').update(identity).digest('hex'));
+  const temporary = join(directory, `.pending-${randomUUID()}`);
+  try {
+    const fd = openSync(temporary, 'wx', 0o600);
+    try {
+      writeFileSync(fd, randomBytes(32).toString('hex'));
+      fsyncSync(fd);
+    } finally { closeSync(fd); }
+    try { linkSync(temporary, path); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+  } finally { try { unlinkSync(temporary); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; } }
+  if (process.platform !== 'win32') {
+    const published = openSync(directory, 'r');
+    try { fsyncSync(published); } finally { closeSync(published); }
+  }
+  const retained = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | constants.O_NONBLOCK);
+  try {
+    const stat = fstatSync(retained);
+    if (!stat.isFile() || stat.size !== 64 || (stat.mode & 0o077) !== 0) throw new Error('handoff recovery capability must be a private regular file');
+    const key = readFileSync(retained, 'utf8');
+    if (!/^[a-f0-9]{64}$/.test(key)) throw new Error('handoff recovery capability is malformed; preserve it and inspect the current handoff');
+    return key;
+  } finally { closeSync(retained); }
+}
 
 /** Where an item sits: shared by add and link. */
 const STRUCTURE_FLAGS = [
@@ -173,7 +208,7 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     { name: 'branch', gloss: 'the branch the work is on', takesValue: true },
     { name: 'commit', gloss: 'the commit it stands at', takesValue: true },
   ], readOnly: false },
-  { path: ['work', 'accept'], gloss: 'accept a handoff: the claim and a new token become yours', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['work', 'accept'], gloss: 'accept a handoff; retry safely after a lost response using private local recovery', group, positionals: ['<id>'], flags: [], readOnly: false },
   { path: ['work', 'offers'], gloss: 'handoffs waiting to be accepted', group, positionals: [], flags: [], readOnly: true },
   { path: ['work', 'takeover'], gloss: 'take over a claim whose holder expired, ended, or went quiet', group, positionals: ['<id>'], flags: [
     { name: 'reason', gloss: 'why the claim is being taken over', takesValue: true },
@@ -360,7 +395,9 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'claim': {
         personOnly('Claiming work');
-        const requested = (args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString();
+        const paths = pathsFlag(args, 'reserve');
+        assertLeasePaths({ root: project.root, lane: project.lane?.root, paths: paths?.length ? paths : leasesFor(project.store, args.positionals[0]!).map(l => l.path), store: project.store, now: at });
+        const requested = canonicalInstant((args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString(), 'claim.until');
         const ceiling = new Date(Date.parse(at) + CLI_CLAIM_CEILING_MS).toISOString();
         const w = claimWork(project.store, {
           id: args.positionals[0]!,
@@ -371,7 +408,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
           now: at,
           token: args.flags.token as string | undefined,
           expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
-          paths: pathsFlag(args, 'reserve'),
+          paths,
           mode: boolFlag(args, 'shared') ? 'shared' : 'exclusive',
         });
         if (args.json) writeJson(w);
@@ -385,8 +422,10 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       case 'check': {
         const paths = boolFlag(args, 'staged') ? stagedPaths(ctx.cwd, ctx.env) : pathsFlag(args, 'check');
         if (!paths) throw new UsageError('work check needs --paths or --staged');
+        assertLeasePaths({ root: project.root, lane: project.lane?.root, paths, store: project.store, now: at });
         const own = args.flags.work as string | undefined;
-        const exclude = own ? (getWork(project.store, own) ?? getWorkByLegacyId(project.store, own))?.id ?? own : undefined;
+        const named = own ? getWork(project.store, own) ?? getWorkByLegacyId(project.store, own) : null;
+        const exclude = named?.status === 'claimed' && named.claimOwner === actor && named.claimUntil && named.claimUntil > at ? named.id : undefined;
         const overlaps = paths.length === 0 ? [] : findOverlaps(project.store, { paths, laneRoot: project.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: exclude });
         const collisions = overlaps.filter((o) => o.kind === 'collision');
         if (args.json) writeJson({ clear: collisions.length === 0, collisions, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') });
@@ -418,7 +457,11 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'accept': {
         personOnly('Accepting a handoff');
-        const w = acceptWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at });
+        assertLeasePaths({ root: project.root, lane: project.lane?.root, paths: leasesFor(project.store, args.positionals[0]!).map(l => l.path), store: project.store, now: at });
+        const id = args.positionals[0]!;
+        const offerId = handoffOf(project.store, id)?.offerId;
+        const acceptanceKey = offerId ? acceptanceCapability(ctx.paths.stateDir, JSON.stringify([project.root, id, offerId, actor, project.lane?.root ?? MAIN_LANE])) : undefined;
+        const w = acceptWork(project.store, { id, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, acceptanceKey, offerId });
         if (args.json) writeJson(w);
         else {
           say(`accepted ${esc(w.id)} from ${esc(w.handoff.from)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
@@ -435,6 +478,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'takeover': {
         personOnly('Taking over work');
+        assertLeasePaths({ root: project.root, lane: project.lane?.root, paths: leasesFor(project.store, args.positionals[0]!).map(l => l.path), store: project.store, now: at });
         const reason = args.flags.reason as string | undefined;
         if (!reason) throw new UsageError('work takeover needs --reason');
         const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason, processAlive });

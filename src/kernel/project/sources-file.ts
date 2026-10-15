@@ -8,6 +8,7 @@
  */
 
 import { AUTHORITY_LEVELS, SENSITIVITIES, type AuthorityLevel, type Sensitivity } from '../state/sources.ts';
+import { urlCarriesCredentials } from './urls.ts';
 import {
   ProjectFileError,
   expectFormat,
@@ -64,6 +65,11 @@ const USERINFO = /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i;
 
 /** Whether a locator carries credentials in its address (`scheme://user:secret@host`). */
 export function locatorCarriesCredentials(locator: string): boolean {
+  if (urlCarriesCredentials(locator)) return true;
+  try {
+    const parsed = new URL(locator.trim());
+    if (parsed.username || parsed.password) return true;
+  } catch { /* Opaque provider locators retain their existing grammar. */ }
   return USERINFO.test(locator.trim());
 }
 

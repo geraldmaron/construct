@@ -53,7 +53,7 @@ export class UnsupportedProjectFileError extends Error {
 /** The first symbolic link on the way from `root` to `file`, or null. */
 export function symlinkBetween(root: string, file: string): string | null {
   const rel = relative(root, file);
-  if (rel.startsWith('..') || rel === '') return null;
+  if (rel === '..' || rel.startsWith(`..${sep}`) || rel === '') return null;
   let current = root;
   for (const part of rel.split(sep)) {
     current = join(current, part);

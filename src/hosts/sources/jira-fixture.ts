@@ -17,11 +17,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
 import { redact } from '../../kernel/render/redact.ts';
-import { issueUrl, readableText } from '../hooks/handlers.ts';
+import { issueUrl, readableCapture } from '../hooks/handlers.ts';
+import { captureSourceText, SOURCE_TEXT_CAP_BYTES } from '../../kernel/source/text.ts';
 
 export const JIRA_FIXTURES_ENV = 'CONSTRUCT_JIRA_FIXTURES';
 /** Text kept per issue so numbers and wording can be checked against it. */
-export const FIXTURE_TEXT_CAP = 16 * 1024;
+export const FIXTURE_TEXT_CAP = SOURCE_TEXT_CAP_BYTES;
 
 function issuesOf(raw: unknown): Record<string, unknown>[] {
   const list = Array.isArray(raw) ? raw : (raw as { issues?: unknown } | null)?.issues;
@@ -53,18 +54,20 @@ export function createJiraFixtureReader(dir: string): SourceReader {
     const items: SnapshotItem[] = issues
       .map((issue) => {
         const key = String(issue.key);
-        const text = redact(readableText(issue));
+        const readable = readableCapture(issue);
+        const capture = captureSourceText(readable.text);
         const url = issueUrl(issue, key);
         return {
           externalRef: key,
           kind: 'work_item',
           name: redact(titleOf(issue)),
           // The version is the whole issue as exported; what is kept is what a person would read in it.
-          attributes: { fingerprint: createHash('sha256').update(JSON.stringify(issue)).digest('hex'), text: text.slice(0, FIXTURE_TEXT_CAP), ...(text.length > FIXTURE_TEXT_CAP ? { truncated: true } : {}), ...(url ? { url } : {}) },
+          attributes: { fingerprint: createHash('sha256').update(JSON.stringify(issue)).digest('hex'), text: capture.text, ...(capture.truncated || readable.truncated ? { truncated: true } : {}), ...(url ? { url } : {}) },
         };
       })
       .sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-    const digest = `sha256:${createHash('sha256').update(items.map((i) => `${i.externalRef}\t${String(i.attributes?.fingerprint)}`).join('\n')).digest('hex')}`;
+    const content = items.map((i) => `${i.externalRef}\t${String(i.attributes?.fingerprint)}`).join('\n');
+    const digest = `sha256:${createHash('sha256').update(`jira-text-v3:${content}`).digest('hex')}`;
     return { outcome: 'read', report: { digest, summary: `${String(items.length)} issue(s) in fixture ${locator}`, evidenceRef: `jira:${locator}`, evidence: 'reported', items } };
   };
 }

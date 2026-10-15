@@ -509,7 +509,7 @@ Reads only: no.
 
 ### `construct work accept <id>`
 
-accept a handoff: the claim and a new token become yours
+accept a handoff; retry safely after a lost response using private local recovery
 
 Reads only: no.
 

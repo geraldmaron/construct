@@ -98,3 +98,18 @@ test('a runner cannot take an id Construct minted for another runner or session'
     fx.cleanup();
   }
 });
+
+test('heartbeat validates bounds, preserves a longer lease and never resurrects expiry', async () => {
+  const { extendLease } = await import('../../src/kernel/state/steps.ts');
+  const fx = brokerFixture();
+  const now = '2026-10-15T12:00:00.000Z';
+  try {
+    createRun(fx.broker.store, { workflowId: 'test', workflowVersion: '1.0.0', interactionClass: 'manage', triggerKind: 'manual', executorKind: 'interactive', executorId: 'owner', input: {}, id: 'bounds-run', idempotencyKey: 'bounds', at: now });
+    addStep(fx.broker.store, { id: 'bounds-step', runId: 'bounds-run', stepId: 'a', ordinal: 0, permissionTier: 'draft', ready: true, at: now });
+    const lease = claimStep(fx.broker.store, { owner: 'owner', now, leaseUntil: '2026-10-15T13:00:00.000Z', runId: 'bounds-run' })!;
+    assert.throws(() => extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: 'not-a-date' }), /instant/);
+    assert.equal(extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: '2026-10-15T12:30:00.000Z' }), true);
+    assert.equal(getStep(fx.broker.store, lease.id)!.leaseUntil, '2026-10-15T13:00:00.000Z');
+    assert.equal(extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: '2026-10-15T09:00:00-04:00', until: '2026-10-15T14:00:00.000Z' }), false);
+  } finally { fx.cleanup(); }
+});

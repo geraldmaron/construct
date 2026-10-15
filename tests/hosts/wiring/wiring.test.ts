@@ -31,6 +31,34 @@ function writtenEntry(w: (typeof CLIENT_WIRINGS)[number], path: string): Record<
   return file[w.serversKey]!.construct!;
 }
 
+test('doctor wiring inspection identifies host-disabled servers and recognizes re-enabling', () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-disabled-wiring-'));
+  try {
+    for (const id of ['opencode', 'codex', 'bob'] as const) {
+      const w = CLIENT_WIRINGS.find((candidate) => candidate.id === id)!;
+      const installed = installWiring(id, root);
+      assert.equal(installed.status, 'installed');
+      if (w.format === 'toml') {
+        writeFileSync(installed.path, readFileSync(installed.path, 'utf8') + '\nenabled = false\n');
+      } else {
+        const config = JSON.parse(readFileSync(installed.path, 'utf8')) as Record<string, Record<string, Record<string, unknown>>>;
+        const entry = config[w.serversKey]!.construct!;
+        if (id === 'bob') entry.disabled = true;
+        else entry.enabled = false;
+        writeFileSync(installed.path, JSON.stringify(config));
+      }
+      const disabled = inspectWiring(id, root);
+      assert.equal(disabled.status, 'broken', `${id}: a disabled server cannot serve the host`);
+      assert.match(disabled.detail, /disabled.*[Ee]nable.*restart/);
+      const text = readFileSync(installed.path, 'utf8');
+      writeFileSync(installed.path, w.format === 'toml' ? text.replace('enabled = false', 'enabled = true') : text.replace(id === 'bob' ? '"disabled":true' : '"enabled":false', id === 'bob' ? '"disabled":false' : '"enabled":true'));
+      assert.equal(inspectWiring(id, root).status, 'installed');
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('every wirable client writes its documented file with a portable serve entry', () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-wiring-'));
   try {

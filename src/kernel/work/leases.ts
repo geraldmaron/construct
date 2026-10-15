@@ -91,6 +91,9 @@ export const LEASE_PATH_MAX_BYTES = 512;
 export function normalizeLeasePath(raw: string, use: 'reserve' | 'check' = 'reserve'): string {
   const trimmed = raw.trim().replaceAll('\\', '/');
   if (!trimmed) throw new Error('a reserved path cannot be empty');
+  // Canonical repository-root sentinel returned for ./; normalization must
+  // remain idempotent when reservations pass through multiple consumers.
+  if (trimmed === '/') return '/';
   if (use === 'reserve') {
     if (/[\s\p{C}]/u.test(trimmed)) throw new Error(`a reserved path is spelled without spaces or control characters; reserve the directory that holds it instead of ${JSON.stringify(trimmed.slice(0, 80))}`);
     if (Buffer.byteLength(trimmed) > LEASE_PATH_MAX_BYTES) throw new Error(`a reserved path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; reserve a directory instead`);
@@ -162,7 +165,10 @@ export function findOverlaps(
     if (row.work_id === input.excludeWorkId) continue;
     for (const path of wanted) {
       if (!pathsOverlap(path, row.path)) continue;
-      const sameLane = row.lane_root === input.laneRoot;
+      // A root-wide hold cannot prove that links inside it stay in this
+      // checkout. Keep it exclusive across lanes; narrower worktree overlaps
+      // retain their ordinary merge-risk contract.
+      const sameLane = row.lane_root === input.laneRoot || path === '/' || row.path === '/';
       if (sameLane && mode === 'shared' && row.mode === 'shared') continue;
       out.push({
         path,

@@ -10,11 +10,91 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
+import { randomBytes } from 'node:crypto';
+import { Worker } from 'node:worker_threads';
+import { freshStore } from '../kernel/state/support.ts';
+import { claimWork, createWork, handoffWork } from '../../src/kernel/work/service.ts';
 import { sterile } from '../harness/sterile.ts';
 import { envFor, initProject, INITIALIZE, Session } from './support.ts';
 
 const OFFERS = 250;
 const RACERS = 4;
+
+test('stdio capability acceptance fences a delayed unused request and recovers duplicate responses', { timeout: 30_000 }, async () => {
+  const fx = sterile();
+  try {
+    const { dir } = initProject(fx);
+    const a = new Session(dir, envFor(fx)), b = new Session(dir, envFor(fx));
+    try {
+      await Promise.all([a.request('initialize', INITIALIZE), b.request('initialize', INITIALIZE)]);
+      const reason = await a.ok('remember', { kind: 'outcome', text: 'Recover a lost acceptance response safely' });
+      const item = await a.ok('work', { action: 'add', title: 'Recoverable handoff', serves: (reason.remembered as { id: string }).id });
+      const held = await a.ok('work', { action: 'claim', id: item.id, paths: ['src/'] });
+      const offer = { action: 'handoff', id: item.id, token: held.claimToken, packet: { state: 'Ready', next: 'Review' } };
+      await a.ok('work', offer);
+      const stale = await b.ok('work', { action: 'prepare_accept', id: item.id });
+      await a.ok('work', offer);
+      const delayed = await b.call('work', { action: 'accept', id: item.id, offerId: stale.offerId, acceptanceKey: stale.acceptanceKey });
+      assert.equal(delayed.result?.isError, true);
+      const prepared = await b.ok('work', { action: 'prepare_accept', id: item.id });
+      const request = { action: 'accept', id: item.id, offerId: prepared.offerId, acceptanceKey: prepared.acceptanceKey };
+      const responses = await Promise.all([b.ok('work', request), b.ok('work', request)]);
+      assert.equal(responses[0]!.claimToken, responses[1]!.claimToken);
+      assert.equal(responses[0]!.claimUntil, responses[1]!.claimUntil);
+      assert.equal(responses[0]!.revision, responses[1]!.revision);
+      assert.ok(!JSON.stringify(await b.ok('work', { action: 'show', id: item.id })).includes(String(prepared.acceptanceKey)));
+    } finally { await Promise.all([a.close(), b.close()]); }
+  } finally { fx.cleanup(); }
+});
+
+test('concurrent acceptance retries share one generation while another recipient cannot recover it', { timeout: 30_000 }, async () => {
+  const fx = freshStore();
+  try {
+    for (const competing of [false, true]) {
+      const id = `recover-${String(competing)}`, now = '2026-10-15T12:00:00.000Z', until = '2026-10-15T13:00:00.000Z';
+      createWork(fx.store, { id, kind: 'task', title: id, description: id, at: now });
+      const held = claimWork(fx.store, { id, owner: 'offerer', paths: [`src/${id}.ts`], now, until });
+      const offerId = handoffWork(fx.store, { id, owner: 'offerer', token: held.claimToken, packet: { state: 'Ready', next: 'Review' }, now }).handoff.offerId;
+      const acceptanceKey = randomBytes(32).toString('hex'), barrier = new SharedArrayBuffer(4);
+      const inputs = [{ owner: 'acceptor', acceptanceKey }, { owner: 'acceptor', acceptanceKey }, ...(competing ? [{ owner: 'competitor', acceptanceKey: randomBytes(32).toString('hex') }] : [])];
+      const jobs = inputs.map(input => {
+        const worker = new Worker(`
+          const { parentPort, workerData } = require('node:worker_threads');
+          (async () => {
+            const { openStateStore } = await import(workerData.open);
+            const { acceptWork } = await import(workerData.service);
+            const { createHash } = await import('node:crypto');
+            const store = openStateStore(workerData.db);
+            parentPort.postMessage({ ready: true });
+            Atomics.wait(new Int32Array(workerData.barrier), 0, 0);
+            try {
+              const accepted = acceptWork(store, workerData.input);
+              parentPort.postMessage({ owner: accepted.claimOwner, digest: createHash('sha256').update(accepted.claimToken).digest('hex') });
+            } catch (error) { parentPort.postMessage({ error: error.message }); }
+            finally { store.close(); }
+          })().catch(error => { throw error; });
+        `, { eval: true, workerData: { db: fx.dbPath, open: new URL('../../src/kernel/state/open.ts', import.meta.url).href, service: new URL('../../src/kernel/work/service.ts', import.meta.url).href, barrier, input: { id, now, until, offerId, ...input } } });
+        let ready!: () => void, result!: (value: { owner?: string; digest?: string; error?: string }) => void;
+        const started = new Promise<void>((resolve, reject) => { ready = resolve; worker.once('error', reject); });
+        const completed = new Promise<{ owner?: string; digest?: string; error?: string }>((resolve, reject) => { result = resolve; worker.on('error', reject); });
+        worker.on('message', message => { if (message.ready) ready(); else result(message); });
+        return { started, completed, worker };
+      });
+      try {
+        await Promise.all(jobs.map(job => job.started));
+        Atomics.store(new Int32Array(barrier), 0, 1); Atomics.notify(new Int32Array(barrier), 0);
+        const results = await Promise.all(jobs.map(job => job.completed));
+        const successes = results.filter(result => result.digest);
+        assert.equal(new Set(successes.map(result => result.owner)).size, 1);
+        assert.equal(new Set(successes.map(result => result.digest)).size, 1);
+        assert.equal(successes.length, successes[0]!.owner === 'acceptor' ? 2 : 1);
+        assert.ok(!results.some(result => /locked|busy/.test(result.error ?? '')));
+        const receipts = fx.store.db.prepare("SELECT COUNT(*) AS n FROM work_events WHERE work_id = ? AND kind = 'handoff_acceptance_receipt'").get(id) as { n: number };
+        assert.equal(receipts.n, 1);
+      } finally { await Promise.all(jobs.map(job => job.worker.terminate())); }
+    }
+  } finally { fx.cleanup(); }
+});
 
 /** A fixed, per-racer shuffle, so a failure replays. */
 function shuffled<T>(items: readonly T[], seed: number): T[] {

@@ -38,7 +38,8 @@ import { currentManifest, currentManifestRecord, describeChanges, diffManifests,
 import { projectResolver } from './resolver.ts';
 import { flagStaleDeliverables } from '../drift/deliverables.ts';
 import { redact } from '../render/redact.ts';
-import { urlProblem } from '../project/urls.ts';
+import { urlProblem, urlCarriesCredentials } from '../project/urls.ts';
+import { captureSourceText, SOURCE_TEXT_CAP_BYTES } from './text.ts';
 
 export const SOURCE_READ_OUTCOMES = ['read', 'no_results', 'permission_denied', 'auth_required', 'unsupported', 'unreachable'] as const;
 export type SourceReadOutcome = (typeof SOURCE_READ_OUTCOMES)[number];
@@ -83,7 +84,7 @@ export interface RefreshResult {
 }
 
 /** Text kept per reported item, enough to check quotes and figures against. */
-export const REPORTED_TEXT_CAP = 16 * 1024;
+export const REPORTED_TEXT_CAP = SOURCE_TEXT_CAP_BYTES;
 
 export interface HostReportItem {
   /** Observed schema/units metadata; part of content identity, never authority. */
@@ -95,6 +96,8 @@ export interface HostReportItem {
   readonly updatedAt?: string;
   /** What the host read; kept (credentials removed, capped) so excerpts and figures can be checked against it. */
   readonly text?: string;
+  /** True when the supplied passage omits item content; false only after a complete read. */
+  readonly truncated?: boolean;
   /** The http(s) address a person would open for this item; a citation of it means this item. */
   readonly url?: string;
   /** The host tool whose response carried this item, when a hook recorded it rather than the host reporting it. */
@@ -231,6 +234,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         // Provenance describes the whole manifest. Carried reported content was
         // not witnessed by this read, so a mixed manifest remains reported.
         if (carried.length) report = { ...received, evidence: previous?.provenance === 'reported' ? 'reported' : received.evidence, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
+      }
+      for (const item of report.items ?? []) {
+        const url = item.attributes?.url;
+        if (urlCarriesCredentials(item.externalRef) || (typeof url === 'string' && urlCarriesCredentials(url))) throw new Error('source item address carries credentials; give the address without them');
       }
       const { snapshot, changed } = recordSnapshot(store, {
         id: nextId(),
@@ -432,6 +439,8 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         return { sourceId: id, outcome, snapshot: null, reason: redact(report.reason) };
       }
 
+      if (report.items.some(i => urlCarriesCredentials(i.ref))) throw new Error('item reference carries credentials; give the address without them');
+      if (report.items.some(i => i.truncated !== undefined && typeof i.truncated !== 'boolean')) throw new Error('item truncated must be a boolean');
       if (new Set(report.items.map((i) => i.ref)).size !== report.items.length) throw new Error('a report cannot contain duplicate item references');
       const prior = new Map((currentManifest(store, id) ?? []).map((e) => [e.ref, e]));
       const contentHash = (ref: string, text: string | undefined, title: string | undefined) => createHash('sha256').update(text ?? `${ref}\t${title ?? ''}`).digest('hex');
@@ -455,20 +464,23 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
         // What is kept is what was read with credentials removed, then capped; truncated says the cut happened. The cut
         // text is cleaned once more, so text kept from one report to the next reads the same when it is cleaned again.
-        const clean = typeof i.text === 'string' ? redact(i.text) : undefined;
-        const stored = clean === undefined ? undefined : redact(clean.slice(0, REPORTED_TEXT_CAP));
+        const capture = typeof i.text === 'string' ? captureSourceText(i.text) : undefined;
+        const stored = capture?.text;
         // An identical content identity keeps any fuller text recorded before, and where it came
         // from. Partial sightings must be marked weak; length alone cannot prove they are unchanged. Text carried forward is kept without credentials too, whenever it was recorded.
         const wasText = was?.text !== undefined ? redact(was.text) : undefined;
         const keepWas = was !== undefined && was.fingerprint === fingerprint && (wasText?.length ?? 0) > (stored?.length ?? 0);
         const keptText = keepWas ? wasText : stored;
-        const truncated = keepWas ? was.truncated === true : clean !== undefined && clean.length > REPORTED_TEXT_CAP;
+        // An omitted flag cannot erase an already-known unread remainder.
+        // Weak sightings above preserve the entire prior capture unchanged.
+        const truncated = capture?.truncated === true || i.truncated === true || (was?.truncated === true && i.truncated !== false);
         const via = keepWas ? was.via : i.via;
         if (i.url !== undefined) {
           const problem = urlProblem(i.url);
           if (problem) throw new Error(`item ${i.ref}: url ${problem}`);
         }
         const url = i.url?.trim() ?? was?.url;
+        if (url !== undefined && urlCarriesCredentials(url)) throw new Error('item url carries credentials; give the address without them');
         if (truncated) cut.push(i.ref);
         return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title !== undefined ? redact(i.title) : i.ref, attributes: { fingerprint, ...(schema !== undefined ? { schema } : {}), ...(keptText !== undefined ? { text: keptText } : {}), ...(url ? { url } : {}), ...(truncated ? { truncated: true } : {}), ...(via ? { via } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
       });

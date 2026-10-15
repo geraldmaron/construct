@@ -56,6 +56,21 @@ export function requireInstant(value: string, label: string): string {
   return value;
 }
 
+/** Canonical UTC spelling for lease bounds compared by SQLite as text. */
+export function canonicalInstant(value: string, label: string): string {
+  requireInstant(value, label);
+  // A lease needs an explicit time and timezone; locale dates and date-only
+  // values otherwise acquire different authority on different machines.
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(value)) {
+    throw new Error(`${label} must be an ISO-8601 instant with an explicit timezone`);
+  }
+  const date = value.slice(0, 10);
+  if (new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date || Number(value.slice(11, 13)) > 23) {
+    throw new Error(`${label} must be a valid ISO-8601 instant`);
+  }
+  return new Date(value).toISOString();
+}
+
 export class IllegalTransitionError extends Error {
   readonly subject: string;
   readonly from: string;

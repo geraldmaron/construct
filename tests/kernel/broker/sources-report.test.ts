@@ -12,6 +12,8 @@ import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { mcpTool, record, ToolInputError } from '../../../src/kernel/broker/definition.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { REPORTED_TEXT_CAP } from '../../../src/kernel/source/service.ts';
+import { projectResolver } from '../../../src/kernel/source/resolver.ts';
+import { researchCoverage } from '../../../src/kernel/source/research.ts';
 import { brokerFixture, type BrokerFixture } from './support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
@@ -61,8 +63,8 @@ test('a report says which items it cut, and keeps their text without credentials
     const long = `Use ${SECRET} to deploy. ${'more text '.repeat(REPORTED_TEXT_CAP / 8)}`;
     const r = await call(fx, 'sources', { action: 'report', id: 'wiki', items: [{ ref: 'runbook', text: long }, { ref: 'short', text: 'Short.' }] });
     assert.deepEqual(r.truncated, ['runbook']);
-    assert.match(r.next, /first 16 KiB of the text of runbook/);
-    assert.match(r.next, /report the passage you rely on as its own item/);
+    assert.match(r.next, /at most 256 KiB of UTF-8 per item/);
+    assert.match(r.next, /same stable ref and URL/);
     const kept = currentManifest(fx.broker.store, 'wiki')!.find((e) => e.ref === 'runbook')!;
     assert.equal(kept.truncated, true);
     assert.ok(kept.text!.startsWith('Use [redacted] to deploy.'));
@@ -72,6 +74,26 @@ test('a report says which items it cut, and keeps their text without credentials
   } finally {
     fx.cleanup();
   }
+});
+
+test('partial capture recovery keeps stable canonical identity and requires accounting for the remainder', async () => {
+  const fx = brokerFixture();
+  try {
+    const url = 'https://wiki.example/policy';
+    await call(fx, 'sources', { action: 'declare', id: 'wiki', kind: 'docs' });
+    const long = 'ordinary prose '.repeat(REPORTED_TEXT_CAP / 10) + 'The exact tail.';
+    await call(fx, 'sources', { action: 'report', id: 'wiki', items: [{ ref: 'policy', url, text: long }] });
+    const recovered = await call(fx, 'sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: 'policy', url, text: 'The exact tail.', truncated: true }] });
+    assert.deepEqual(recovered.truncated, ['policy']);
+    assert.match(recovered.next, /same.*ref|stable.*ref/i);
+    assert.match(recovered.next, /referenceDispositions/);
+    assert.equal(currentManifest(fx.broker.store, 'wiki')!.length, 1);
+    assert.equal((await call(fx, 'check_answer', { answer: 'The exact tail.', citations: [{ ref: url, excerpt: 'The exact tail.' }] })).ok, true);
+    const resolve = projectResolver(fx.broker.store, fx.broker.root);
+    assert.match(researchCoverage([{ ref: url }], resolve, {}).problems.join(' '), /truncated/);
+    assert.deepEqual(researchCoverage([{ ref: url }], resolve, { referenceDispositions: [{ ref: url, status: 'deferred', why: 'The uncaptured remainder remains unreviewed; this answer covers this exact passage only.' }] }).problems, []);
+    await assert.rejects(call(fx, 'sources', { action: 'report', id: 'wiki', items: [{ ref: 'bad', text: 'Observed.', truncated: 'true' }] }), (e: unknown) => e instanceof ToolInputError && e.field === 'items[0].truncated');
+  } finally { fx.cleanup(); }
 });
 
 test('an excerpt a step hands back is kept without credentials', () => {

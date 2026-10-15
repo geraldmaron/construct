@@ -238,10 +238,44 @@ test('text past the cap is cut, the item is marked, and the report names it', ()
     assert.equal(entry('long')?.text?.length, REPORTED_TEXT_CAP);
     assert.equal(entry('short')?.truncated, undefined);
     const thin = svc.reportRead('wiki', { items: [{ ref: 'long', text: long.slice(0, 100) }, { ref: 'short', text: 'Short page.' }] }, at(), nextId);
-    assert.equal(thin.truncated, undefined, 'a report that kept nothing cut names nothing');
+    assert.deepEqual(thin.truncated, ['long'], 'a shorter observation cannot silently erase a known remainder');
   } finally {
     fx.cleanup();
   }
+});
+
+test('source capture retains ordinary documents and enforces UTF-8 rather than code-unit bounds', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const normal = `${'ordinary documentation '.repeat(1800)}The conclusion.`;
+    svc.reportRead('wiki', { items: [{ ref: 'normal', text: normal }] }, at(), nextId);
+    assert.equal(entry('normal')?.text, normal);
+    assert.equal(entry('normal')?.truncated, undefined);
+    for (const [ref, text] of [['unicode', '界'.repeat(REPORTED_TEXT_CAP)], ['surrogate', 'a'.repeat(REPORTED_TEXT_CAP - 1) + '😀'], ['exact', 'é'.repeat(REPORTED_TEXT_CAP / 2)]] as const) {
+      svc.reportRead('wiki', { partial: true, items: [{ ref, text }] }, at(), nextId);
+      const captured = entry(ref)!;
+      assert.ok(Buffer.byteLength(captured.text!) <= REPORTED_TEXT_CAP);
+      assert.ok(captured.text!.isWellFormed());
+      assert.ok(text.startsWith(captured.text!));
+      assert.equal(captured.truncated === true, ref !== 'exact');
+    }
+  } finally { fx.cleanup(); }
+});
+
+test('reported partial captures stay partial through unchanged and weak sightings until an explicit complete capture', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'Exact tail passage.', truncated: true }] }, at(), nextId);
+    assert.equal(entry('policy')?.truncated, true);
+    svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'Exact tail passage.' }] }, at(), nextId);
+    assert.equal(entry('policy')?.truncated, true);
+    svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'New observed passage.' }] }, at(), nextId);
+    assert.equal(entry('policy')?.truncated, true);
+    svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'Search hit', weak: true, truncated: false }] }, at(), nextId);
+    assert.equal(entry('policy')?.truncated, true);
+    svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'Now the complete revised document.', truncated: false }] }, at(), nextId);
+    assert.equal(entry('policy')?.truncated, undefined);
+  } finally { fx.cleanup(); }
 });
 
 test('stored text and titles have credentials removed, while the version is still judged on what was read', () => {
@@ -634,5 +668,46 @@ test('a complete host report clears retained supersession even when all content 
     assert.equal(searchContext(fx.store, { query: 'Old', sourceId: 'docs' }, at).items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
     assert.equal(host.reportRead('docs', report, at, next).outcome, 'unchanged', 'identical complete reports still deduplicate');
     assert.equal(host.reportRead('docs', { items: report.items.map(item => ({ ...item, title: 'Display only' })) }, at, next).outcome, 'unchanged', 'titles absent from persisted manifest do not create revisions');
+  } finally { fx.cleanup(); }
+});
+
+test('kernel reports refuse credential-bearing item refs atomically', () => {
+  const { fx, at, nextId, svc } = wikiService();
+  try {
+    svc.reportRead('wiki', { items: [{ ref: 'clean', text: 'Held text.' }] }, at(), nextId);
+    const before = currentManifest(fx.store, 'wiki');
+    const dirty = 'https://user:synthetic-password@wiki.example/page';
+    for (const ref of [dirty, `<${dirty}|page>`, `[page](${dirty})`]) {
+      assert.throws(() => svc.reportRead('wiki', { items: [{ ref: 'valid', text: 'New text.' }, { ref, text: 'Held text.' }] }, at(), nextId), /credentials/);
+      assert.deepEqual(currentManifest(fx.store, 'wiki'), before);
+    }
+  } finally { fx.cleanup(); }
+});
+
+test('native reader reports cannot persist credential addresses as refs or metadata', async () => {
+  for (const field of ['ref', 'url'] as const) {
+    const fx = freshStore();
+    try {
+      let n = 0;
+      const dirty = 'https://user:synthetic-password@wiki.example/page';
+      const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'unsafe', summary: 'Synthetic reader', evidence: 'witnessed', items: [{ externalRef: field === 'ref' ? dirty : 'opaque', kind: 'item', name: 'Synthetic', attributes: { text: 'Held text.', ...(field === 'url' ? { url: dirty } : {}) } }] } });
+      const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+      svc.syncDeclarations(file([docs]), '2026-10-02T00:00:00Z');
+      await assert.rejects(svc.refresh('docs', '2026-10-02T00:00:00Z', () => `unsafe-${++n}`), /credentials/);
+      assert.equal(currentManifest(fx.store, 'docs'), null);
+      assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 0);
+    } finally { fx.cleanup(); }
+  }
+});
+
+test('source locators use parsed credential checks on both committed and local admission', () => {
+  const { fx, at, svc } = wikiService();
+  try {
+    for (const locator of ['https://user:synthetic\tpassword@example.invalid/source', 'https://user:synthetic\npassword@example.invalid/source']) {
+      assert.throws(() => file([{ ...docs, id: 'unsafe', kind: 'other', locator }]), /credentials/);
+      assert.throws(() => svc.addLocal({ id: 'unsafe', kind: 'other', purpose: 'Synthetic source', locator, authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at()), /credentials/);
+      assert.throws(() => svc.setLocalLocator('wiki', locator, at()), /credentials/);
+      assert.equal(getSource(fx.store, 'unsafe'), null);
+    }
   } finally { fx.cleanup(); }
 });

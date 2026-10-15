@@ -11,10 +11,67 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, inProject } from './support.ts';
+import { withProject } from '../../src/cli/context.ts';
+import { claimWork, createWork, handoffWork } from '../../src/kernel/work/service.ts';
+
+test('CLI acceptance retains a private capability before dispatch and recovers lost stdout with the same command', async () => {
+  await inProject(async (ctx) => {
+    const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
+    withProject(ctx, project => {
+      const at = ctx.now();
+      createWork(project.store, { id: 'recoverable', kind: 'task', title: 'Recoverable', description: 'Recoverable', at });
+      const a = claimWork(project.store, { id: 'recoverable', owner: 'offerer', paths: ['docs/'], now: at, until: new Date(Date.parse(at) + 30 * 60_000).toISOString() });
+      handoffWork(project.store, { id: 'recoverable', owner: 'offerer', token: a.claimToken, packet: { state: 'Ready', next: 'Review' }, now: at });
+    });
+    const lost = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
+    assert.equal(lost.code, 0, lost.err);
+    const retry = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
+    assert.equal(retry.code, 0, retry.err);
+    const accepted = last(lost.out) as { claimToken: string; claimUntil: string; revision: number };
+    const recovered = last(retry.out) as typeof accepted;
+    assert.equal(recovered.claimToken, accepted.claimToken);
+    assert.equal(recovered.claimUntil, accepted.claimUntil);
+    assert.equal(recovered.revision, accepted.revision);
+    const directory = join(ctx.paths.stateDir, 'handoff-acceptance');
+    assert.equal(statSync(directory).mode & 0o077, 0);
+    const files = readdirSync(directory);
+    assert.equal(files.length, 1);
+    const retained = readFileSync(join(directory, files[0]!), 'utf8');
+    assert.equal(retained.length, 64);
+    assert.equal(statSync(join(directory, files[0]!)).mode & 0o077, 0);
+    assert.ok(!lost.out.includes(retained));
+    const snapshot = await capture(() => run(['work', 'export', '--json'], person));
+    assert.ok(!snapshot.out.includes(retained));
+    assert.ok(!snapshot.out.includes(accepted.claimToken));
+    const file = join(directory, files[0]!);
+    chmodSync(file, 0o644);
+    const publicFile = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
+    assert.equal(publicFile.code, 1);
+    assert.match(publicFile.err, /private regular file/);
+    assert.ok(!publicFile.err.includes(retained));
+    chmodSync(file, 0o600);
+    if (process.platform !== 'win32') {
+      const target = join(directory, 'untrusted-target');
+      writeFileSync(target, 'not a capability', { mode: 0o600 });
+      rmSync(file); symlinkSync(target, file);
+      const symbolic = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
+      assert.equal(symbolic.code, 1);
+      assert.ok(!symbolic.err.includes(retained));
+      rmSync(file);
+      const fifo = spawnSync('mkfifo', [file], { env: { ...ctx.env, PATH: process.env.PATH }, encoding: 'utf8' });
+      assert.equal(fifo.status, 0, fifo.stderr);
+      const source = `import { run } from ${JSON.stringify(new URL('../../src/cli/index.ts', import.meta.url).href)}; import { createContext } from ${JSON.stringify(new URL('../../src/cli/context.ts', import.meta.url).href)}; const ctx = { ...createContext(), terminal: { interactive: true, agentAncestor: null } }; process.exitCode = await run(['work', 'accept', 'recoverable', '--json'], ctx);`;
+      const refused = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 3000 });
+      assert.equal(refused.status, 1, 'a corrupt FIFO receipt refuses promptly instead of blocking its open');
+      assert.match(refused.stderr, /private regular file/);
+      assert.ok(!refused.stderr.includes(retained));
+    }
+  });
+});
 
 const last = (out: string): unknown => JSON.parse(out.trim().split('\n').pop()!);
 
@@ -54,7 +111,9 @@ test('a claim reserves paths, and work check reports the staged files it holds',
     assert.doesNotMatch(staged.out, /change the parser/, 'another claim’s title is not repeated');
     assert.doesNotMatch(staged.out, /NOTES/);
 
-    const mine = await capture(() => run(['work', 'check', '--staged', `--work=${id}`, '--json'], relayed));
+    const notMine = await capture(() => run(['work', 'check', '--staged', `--work=${id}`, '--json'], relayed));
+    assert.equal(notMine.code, 1, 'a relay cannot hide the person’s reservation by naming it');
+    const mine = await capture(() => run(['work', 'check', '--staged', `--work=${id}`, '--json'], person));
     assert.equal(mine.code, 0, mine.err);
     assert.deepEqual(last(mine.out), { clear: true, collisions: [], mergeRisks: [] });
 
@@ -66,5 +125,23 @@ test('a claim reserves paths, and work check reports the staged files it holds',
 
     const nothing = await capture(() => run(['work', 'check'], relayed));
     assert.equal(nothing.code, 2);
+  });
+});
+
+test('CLI claims and checks refuse symbolic aliases without creating reservations', async () => {
+  const { symlinkSync } = await import('node:fs');
+  await inProject(async (ctx, box) => {
+    const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
+    symlinkSync(join(box.cwd, 'docs'), join(box.cwd, 'alias'), 'dir');
+    const checked = await capture(() => run(['work', 'check', '--paths=alias/new.md', '--json'], ctx));
+    assert.notEqual(checked.code, 0);
+    assert.match(checked.err, /symbolic link|canonical/i);
+    const added = await capture(() => run(['work', 'add', 'edit alias', '--json'], person));
+    const id = (last(added.out) as { id: string }).id;
+    const claimed = await capture(() => run(['work', 'claim', id, '--paths=alias/new.md', '--json'], person));
+    assert.notEqual(claimed.code, 0);
+    assert.match(claimed.err, /symbolic link|canonical/i);
+    const shown = await capture(() => run(['work', 'show', id, '--json'], person));
+    assert.equal((last(shown.out) as { status: string }).status, 'open');
   });
 });

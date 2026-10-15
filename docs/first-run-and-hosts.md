@@ -150,7 +150,13 @@ Construct keeps them from stepping on each other:
   `construct work requalify <id> --reason=...` records what was checked.
 - A work item is claimed before it is edited. A claim belongs to one session
   and one agent, returns a token only that claimant sees, and needs the token
-  to renew, complete, or release it. Another session's claim is refused until
+  to renew, complete, or release it. Renewal never shortens its term. Expiry
+  permits a new claim; completing expired claimed work requires reacquiring it
+  with a fresh token. Stale-token cancellation is refused; tokenless
+  administrative cancellation remains possible once no live lease protects it.
+  The exact expired owner/token may still
+  release its own generation as cleanup, but cannot release a successor.
+  Another session's claim is refused until
   it expires or that session goes quiet for two hours; taking it over records
   why.
 - A claim can reserve the files or directories it will change. In one
@@ -161,16 +167,34 @@ Construct keeps them from stepping on each other:
   another git worktree of the project names that worktree's absolute path
   as `worktree` on the `work` tool's claim, check, accept, or takeover, and
   its reservations record that worktree and its current branch. A renewal
-  that leaves it out keeps the worktree the claim records. A path that is
+  that leaves it out keeps the worktree the claim records. An explicit move
+  without a new path list moves existing reservations atomically; a collision
+  refuses the move and preserves the original claim and reservations. A path that is
   not one of the project's worktrees is refused with the ones that are.
   Reservations end with the claim, and are judged per work item: two agents
   a host cannot tell apart are still two writers. A reserved path is spelled
   plainly (no spaces, at most 512 bytes), so a file whose name has spaces is
-  reserved through its directory. Taking over or accepting work releases any
+  reserved through its directory. Managed file delivery applies this rule
+  automatically and returns both the exact artifact path and reservedPath. If
+  no containing directory has a reservable spelling, it reserves the repository
+  root conservatively and says so. Root-wide exclusive reservations block
+  other writers across project worktrees until release. Narrow worktree
+  overlaps continue to report merge risks.
+  Public claims and checks refuse symbolic links, multiply-linked files, and
+  noncanonical filesystem spellings. Directory scopes must not hide symbolic
+  or hard links; name independent canonical files or reserve the root exclusively.
+  Potential case or Unicode aliases of an existing reservation are refused
+  before creating missing files unless existing distinct ancestry proves they
+  are separate. A held path whose ancestry changes requires reconciliation.
+  Managed delivery checks its entire reserved scope before granting work, and
+  treats artifact filenames literally even when they contain citation syntax.
+  Taking over or accepting work releases any
   inherited reservation another claim already holds in the new checkout.
   `construct work check --paths=...` or
   `--staged` says what is reserved before you edit or commit, and exits 1 on
-  a collision in this checkout.
+  a collision in this checkout. A named work id excludes a reservation only
+  when the caller is its current claimant; another session or agent cannot
+  hide a collision by supplying that id. The CLI follows the same owner check.
 - An agent that never calls Construct can still sweep a peer's file into a
   commit. `construct hooks install --git` adds a pre-commit guard that warns
   when a staged file is reserved by other work in the same checkout. It never
@@ -196,6 +220,36 @@ Construct keeps them from stepping on each other:
   token, and a packet saying where the work stands, what comes next, what to
   watch out for, and what is still open. Whoever accepts gets the claim, a new
   token, and its reservations in one step; nobody else can accept it after.
+  The successor accepts without receiving the former holder's secret; the
+  returned `claimToken` belongs to the new holder. Native ledger tokens are
+  separate from the `token` returned by workflow `claim_work`: a ledger
+  handoff moves neither that workflow lease nor an approval. Claim, accept
+  and takeover all check admission, dependencies and stale premises before
+  issuing new authority. Packet `where.paths` describes context and reserves
+  nothing; only the claim's real reservations transfer, with dropped paths
+  reported when a destination checkout already holds them.
+  If a CLI acceptance response is lost, repeat `construct work accept <id>`
+  from the same worktree and machine account. Before dispatch, the CLI
+  atomically retains a private recovery capability in the machine's Construct
+  state directory, outside the project; it never prints that capability or
+  places it in shell arguments. Recovery returns the same still-live claim
+  without extending its term. A new offer receives a fresh capability.
+  Tool callers use `work prepare_accept` to receive a cryptographically
+  generated private `acceptanceKey` and the public immutable `offerId`.
+  Retain both before the first `work accept`, then pass both on that call and
+  any retry, with the same agent, session and worktree. Preparation changes
+  no authority; a lost preparation can be repeated safely. Integrations may
+  generate their own random capability in the format the live schema specifies.
+  The immutable generation also fences an initial request delayed until after
+  its observed offer was replaced. CLI recovery is automatic and takes no
+  secret command-line arguments.
+  Caller names alone never recover a token. A used key cannot accept a later
+  offer or recover released, displaced, completed or expired authority.
+  Calls without a retained capability keep the original behavior: inspect
+  the item and packet, then use a retained token or recover through expiry
+  and a fresh claim (or a permitted takeover). Do not borrow a former
+  holder's token. Exact-step expiry and
+  owner checks still apply to workflow submissions and heartbeats.
   A handoff never moves an approval. `construct work offers` lists what is
   waiting, and the packet is always shown as its author's words.
 - Sessions learn about each other on the calls they already make. Bootstrap
