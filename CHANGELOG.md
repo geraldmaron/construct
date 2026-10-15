@@ -24,6 +24,8 @@ across common copied formats, partial captures and lost acceptance responses.
   a private pre-dispatch capability and immutable offer identity. CLI retention
   is automatic on POSIX; Windows CLI acceptance remains keyless and explicitly
   reports private-file recovery unavailable. Keyed MCP retries do not extend the target's expiry.
+- Installed coordination hooks use the existing bounded handler without loading
+  the general CLI graph; ordinary parsing and grounding behavior are preserved.
 - Shared host conformance covers recovery, output paths, deadlines and contract
   parity. Public guides and generated references describe the same interfaces.
 
@@ -44,8 +46,9 @@ finite controls do not qualify all hosts or production source adapters.
 
 Canonical instruction isolation and the full live cross-host matrix remain
 unverified; mandatory Claude/full-matrix acceptance was explicitly waived for
-this local release scope. Earlier intermittent reset/hook timing failures did
-not reproduce in the final gates; their cause remains unproven. Windows
+this local release scope. A deterministic coordination-hook startup overrun was
+reproduced and repaired without increasing timing limits; attribution of earlier
+intermittent reset failures remains unproven. Windows
 filesystem durability and induced power-loss recovery remain untested.
 Publish under `alpha` only; `latest` remains on 2.x.
 
