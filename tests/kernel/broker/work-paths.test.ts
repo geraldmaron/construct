@@ -149,7 +149,11 @@ test('dot-prefixed symlinks, hard links and observed case aliases cannot hide an
     if (existsSync(join(fx.box.cwd, 'DOCS', 'DESIGN.MD'))) {
       for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['DOCS/DESIGN.MD'] }), /canonical/i);
     } else {
-      // On case-sensitive filesystems these are distinct paths and must stay so.
+      // A missing spelling cannot prove a distinct filesystem object.
+      for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['DOCS/DESIGN.MD'] }), /case or Unicode filename alias/i);
+      // Existing distinct ancestry on a case-sensitive filesystem is proof.
+      mkdirSync(join(fx.box.cwd, 'DOCS'));
+      writeFileSync(join(fx.box.cwd, 'DOCS', 'DESIGN.MD'), 'Independent case-distinct file.');
       assert.equal((call(fx.broker, { action: 'check', paths: ['DOCS/DESIGN.MD'] }) as { clear: boolean }).clear, true);
     }
     linkSync(join(fx.box.cwd, 'docs', 'design.md'), join(fx.box.cwd, 'linked.md'));
