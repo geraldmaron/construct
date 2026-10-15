@@ -11,7 +11,7 @@
  */
 
 import { redact } from '../render/redact.ts';
-import { normalizeLeasePath } from './leases.ts';
+import { LEASE_PATH_MAX_BYTES, normalizeLeasePath } from './leases.ts';
 
 /** Where the work stands, what comes next, and what the next holder should know. */
 export interface HandoffPacket {
@@ -28,6 +28,8 @@ export interface HandoffPacket {
 
 /** An offered or taken handoff, as the work item records it. */
 export interface Handoff {
+  /** Public immutable generation identity; never a capability or claim token. */
+  readonly offerId?: string;
   /** The claimant that offered it. */
   readonly from: string;
   /** The claimant or session it was offered to; null when anyone in the project may accept. */
@@ -93,6 +95,7 @@ function texts(value: unknown, field: string): string[] {
 export function normalizePacket(raw: Record<string, unknown>): HandoffPacket {
   const where = (raw.where ?? {}) as Record<string, unknown>;
   if (typeof where !== 'object' || Array.isArray(where)) throw new HandoffPacketError('handoff where is an object');
+  if (where.commit !== undefined && where.commit !== null && typeof where.commit !== 'string') throw new HandoffPacketError('handoff where.commit is text');
   const commit = where.commit === undefined || where.commit === null || where.commit === '' ? null : String(where.commit).trim().toLowerCase();
   if (commit !== null && !/^[0-9a-f]{7,64}$/.test(commit)) throw new HandoffPacketError('handoff where.commit is a git commit id');
   const branch = where.branch === undefined || where.branch === null || where.branch === '' ? null : text(where.branch, 'where.branch', false).slice(0, 200) || null;
@@ -101,7 +104,14 @@ export function normalizePacket(raw: Record<string, unknown>): HandoffPacket {
   if (pathsRaw.length > 200) throw new HandoffPacketError('handoff where.paths holds at most 200 entries');
   let paths: string[];
   try {
-    paths = pathsRaw.map((p) => normalizeLeasePath(String(p)));
+    paths = pathsRaw.map((p) => {
+      if (typeof p !== 'string') throw new HandoffPacketError('handoff where.paths holds text paths');
+      if (/\p{C}/u.test(p)) throw new HandoffPacketError('handoff where.paths cannot contain control characters');
+      if (Buffer.byteLength(p) > LEASE_PATH_MAX_BYTES) throw new HandoffPacketError(`a handoff path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; point at its directory instead`);
+      // These locations are context, not writer reservations. Keep readable
+      // filenames while retaining the shared repository-confinement checks.
+      return normalizeLeasePath(p, 'check');
+    });
   } catch (e) {
     throw new HandoffPacketError((e as Error).message);
   }

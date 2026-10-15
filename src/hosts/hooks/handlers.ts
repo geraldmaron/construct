@@ -72,26 +72,64 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
 
-/** A rich-text node, the Atlassian Document Format shape: a string type with a content list or a text string. */
+/** Enter ADF only at a recognized node. Generic provider envelopes also carry
+ * type/text/attrs; unknown children inside an ADF tree are handled as partial. */
 function isRichText(o: Record<string, unknown>): boolean {
-  return typeof o.type === 'string' && (Array.isArray(o.content) || typeof o.text === 'string');
+  return typeof o.type === 'string' && (ADF_BLOCKS.has(o.type) || ['text', 'hardBreak', 'rule', 'mention', 'emoji', 'status', 'date', 'inlineCard', 'media'].includes(o.type));
+}
+
+const ADF_BLOCKS = new Set(['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'panel', 'table', 'tableRow', 'tableCell', 'tableHeader', 'mediaGroup', 'mediaSingle']);
+const TEXT_MARKS = new Set(['strong', 'em', 'code', 'underline', 'textColor', 'backgroundColor']);
+interface ReadableState { partial: boolean; readonly links: Set<string> }
+
+function linkMarks(node: Record<string, unknown>, state: ReadableState): void {
+  if (node.marks === undefined) return;
+  if (!Array.isArray(node.marks)) { state.partial = true; return; }
+  for (const mark of node.marks) {
+    if (!isObject(mark) || typeof mark.type !== 'string') { state.partial = true; continue; }
+    if (mark.type === 'link') {
+      const href = isObject(mark.attrs) ? mark.attrs.href : undefined;
+      if (typeof href === 'string' && href.trim()) state.links.add(href);
+      else state.partial = true;
+    } else if (!TEXT_MARKS.has(mark.type)) state.partial = true;
+  }
 }
 
 /**
  * A rich-text node as text: a text node is inline, a hard break is an inline line break, and a node with content is
  * a block whose inline children join into one line and whose block children go on lines of their own. Its type,
- * marks, and attrs are structure, not content.
+ * supported attrs supply the provider's observed readable fields. Unresolved
+ * display content stays partial rather than being guessed from identifiers.
  */
-function richText(node: unknown, depth: number): { readonly inline: boolean; readonly text: string } | null {
-  if (depth > READABLE_DEPTH || !isObject(node) || typeof node.type !== 'string') return null;
-  if (typeof node.text === 'string') return { inline: true, text: node.text };
+function richText(node: unknown, depth: number, state: ReadableState): { readonly inline: boolean; readonly text: string } {
+  const missing = () => { state.partial = true; return { inline: true, text: '\n' }; };
+  if (depth > READABLE_DEPTH || !isObject(node) || typeof node.type !== 'string') return missing();
+  if (node.type === 'doc' && node.version !== undefined && node.version !== 1) state.partial = true;
+  linkMarks(node, state);
+  if (node.type === 'text') return typeof node.text === 'string' ? { inline: true, text: node.text } : missing();
   if (node.type === 'hardBreak') return { inline: true, text: '\n' };
-  if (!Array.isArray(node.content)) return null;
+  if (node.type === 'rule') return { inline: false, text: '' };
+  const attrs = isObject(node.attrs) ? node.attrs : {};
+  if (node.type === 'mention' || node.type === 'status' || node.type === 'emoji') {
+    // ADF names the readable fields; ids, colors and arbitrary attrs never
+    // stand in for a person's name or the visible state of work.
+    const value = typeof attrs.text === 'string' && attrs.text ? attrs.text : node.type === 'emoji' ? attrs.shortName : undefined;
+    return typeof value === 'string' && value ? { inline: true, text: value } : missing();
+  }
+  if (node.type === 'inlineCard') {
+    state.partial = true; // Its externally derived display description is not held.
+    return { inline: true, text: typeof attrs.url === 'string' ? `\n${attrs.url}\n` : '\n' };
+  }
+  if (node.type === 'date') {
+    state.partial = true; // ADF displays a locale date; do not infer units or locale.
+    return { inline: true, text: typeof attrs.timestamp === 'string' ? `\n[date timestamp: ${attrs.timestamp}]\n` : '\n' };
+  }
+  if (!ADF_BLOCKS.has(node.type)) state.partial = true;
+  if (!Array.isArray(node.content)) return missing();
   const lines: string[] = [];
   let run = '';
   for (const child of node.content) {
-    const r = richText(child, depth + 1);
-    if (!r) continue;
+    const r = richText(child, depth + 1, state);
     if (r.inline) run += r.text;
     else {
       if (run !== '') lines.push(run);
@@ -108,10 +146,11 @@ function richText(node: unknown, depth: number): { readonly inline: boolean; rea
  * line, with JSON carried inside strings opened up and rich text reduced to its words. Keys and JSON punctuation
  * are not content, so a quote containing double quotes or a line break reads back the way it was written.
  */
-export function readableText(value: unknown): string {
+export function readableCapture(value: unknown): { readonly text: string; readonly truncated: boolean } {
   const lines: string[] = [];
+  const state: ReadableState = { partial: false, links: new Set() };
   const walk = (v: unknown, depth: number): void => {
-    if (depth > READABLE_DEPTH) return;
+    if (depth > READABLE_DEPTH) { state.partial = true; return; }
     const x = parseMaybeJson(v);
     if (typeof x === 'string') {
       if (x.trim() !== '') lines.push(x);
@@ -119,13 +158,19 @@ export function readableText(value: unknown): string {
     else if (Array.isArray(x)) for (const e of x) walk(e, depth + 1);
     else if (isObject(x)) {
       if (isRichText(x)) {
-        const r = richText(x, depth);
-        if (r && r.text.trim() !== '') lines.push(r.text);
+        const r = richText(x, depth, state);
+        if (r.text.trim() !== '') lines.push(r.text);
       } else for (const e of Object.values(x)) walk(e, depth + 1);
     }
   };
   walk(value, 0);
-  return lines.join('\n');
+  // Keep destinations outside inline prose so adjacent marked words still
+  // quote exactly, while linked evidence remains visible to source closure.
+  return { text: [...lines, ...state.links].join('\n'), truncated: state.partial };
+}
+
+export function readableText(value: unknown): string {
+  return readableCapture(value).text;
 }
 
 function str(o: Record<string, unknown>, ...path: string[]): string | undefined {
@@ -161,12 +206,13 @@ export function jiraItemsIn(response: unknown, projectKey: string): HostReportIt
     const title = str(o, 'fields', 'summary') ?? str(o, 'summary') ?? str(o, 'title');
     const updatedAt = str(o, 'fields', 'updated') ?? str(o, 'updated') ?? str(o, 'updatedAt');
     // Uncut: the source service caps what it keeps and says when it cut.
-    const text = readableText(o);
+    const capture = readableCapture(o);
+    const text = capture.text;
     const prev = byKey.get(key);
     const url = issueUrl(o, key) ?? prev?.url;
     // The fullest object for a key wins; a bare link to an issue should not displace the issue itself.
     // Without the tracker's own updated time, a response cannot say whether the ticket changed, only that it exists.
-    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(url ? { url } : {}), ...(updatedAt ? { updatedAt } : { weak: true }), text, kind: 'work_item' });
+    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(url ? { url } : {}), ...(updatedAt ? { updatedAt } : { weak: true }), text, truncated: capture.truncated, kind: 'work_item' });
     else if (url && !prev.url) byKey.set(key, { ...prev, url });
   }
   return [...byKey.values()];

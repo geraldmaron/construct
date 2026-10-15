@@ -1,9 +1,10 @@
+import { assertLeasePaths } from '../work/lanes.ts';
 import { runExecutionProblems } from '../workflow/verification.ts';
 /** A managed run's requested local artifact already has an admitted purpose.
  * Reserve it with the step, instead of asking the host to invent another
  * outcome/statement and a second coordination sequence before delivery.
  */
-import { relative, resolve } from 'node:path';
+import { relative, resolve, posix } from 'node:path';
 import { lstatSync } from 'node:fs';
 import type { WorkflowStep } from '../registry/models.ts';
 import { getRun } from '../state/runs.ts';
@@ -50,6 +51,26 @@ export function recoverAbandonedSteps(ctx: BrokerContext, runId?: string): numbe
   });
 }
 
+/** Artifact spelling and reservation scope are different: ordinary filenames
+ * may contain spaces, while published reservation identifiers remain plain. */
+function artifactPath(root: string, ref: string): string {
+  const path = relative(root, resolve(root, ref));
+  if (/\p{C}/u.test(path)) throw new Error('an artifact path cannot contain control characters');
+  return normalizeLeasePath(path, 'check');
+}
+
+function reservationPath(path: string): string {
+  let candidate = path;
+  for (;;) {
+    try { return normalizeLeasePath(candidate); }
+    catch {
+      const parent = posix.dirname(candidate);
+      if (parent === '.') return '/';
+      candidate = `${parent}/`;
+    }
+  }
+}
+
 interface Holder { id: string; ended_at: string | null; pid: number | null; machine: string }
 function holderState(ctx: BrokerContext, id: string | null): 'ended' | 'absent' | 'live' | 'unknown' {
   if (!id || id === ctx.sessionId) return id ? 'live' : 'unknown';
@@ -82,13 +103,14 @@ export class DeliveryRecoveryRequired extends Error {
  */
 function recoverPriorPreparation(ctx: BrokerContext, packet: WorkPacket, path: string): { runId: string; workId: string; evidence: string }[] {
   const at = ctx.now(), recovered: { runId: string; workId: string; evidence: string }[] = [];
-  const collisions = findOverlaps(ctx.store, { paths: [path], laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: identity(packet.run.id) }).filter(o => o.kind === 'collision');
+  const reservedPath = reservationPath(path);
+  const collisions = findOverlaps(ctx.store, { paths: [reservedPath], laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: identity(packet.run.id) }).filter(o => o.kind === 'collision');
   for (const collision of collisions) {
     const item = getWork(ctx.store, collision.workId), scope = item?.scope as { kind?: string; runId?: string; path?: string } | null;
     const prior = scope?.runId ? getRun(ctx.store, scope.runId) : null;
     if (!item || !prior || scope?.kind !== 'managed_delivery' || identity(prior.id) !== item.id) continue; // ordinary reservations retain their existing conflict contract
     const reasons: string[] = [], state = holderState(ctx, item.claimSession);
-    const checkpoint = contentReceipt(path, projectResolver(ctx.store, ctx.root));
+    const checkpoint = contentReceipt(path, projectResolver(ctx.store, ctx.root), 'artifact');
     const creation = (id: string) => (ctx.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'run.created' AND run_id = ? ORDER BY id LIMIT 1").get(id) as { id: number } | undefined)?.id;
     const oldOrder = creation(prior.id), newOrder = creation(packet.run.id);
     const admitted = ctx.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'work.admitted' AND actor = 'kernel' AND run_id = ? AND json_extract(payload_json, '$.basis') = 'existing_managed_run' AND json_extract(payload_json, '$.workId') = ? LIMIT 1").get(prior.id, item.id);
@@ -96,7 +118,7 @@ function recoverPriorPreparation(ctx: BrokerContext, packet: WorkPacket, path: s
     const held = ctx.store.db.prepare('SELECT path, lane_root FROM path_leases WHERE work_id = ? AND released_at IS NULL').all(item.id) as { path: string; lane_root: string }[];
     const oldDestination = askedOf(prior).intake?.destination;
     if (!admitted || !associated) reasons.push('the reservation has no matching kernel admission and run association');
-    if (scope.path !== path || collision.heldPath !== path || held.length !== 1 || held[0]?.path !== path || held[0]?.lane_root !== (ctx.lane?.root ?? MAIN_LANE) || oldDestination?.kind !== 'project_file' || !oldDestination.ref || normalizeLeasePath(relative(ctx.root, resolve(ctx.root, oldDestination.ref))) !== path) reasons.push('the reservation is not the same exact file in this checkout');
+    if (scope.path !== path || collision.heldPath !== reservedPath || held.length !== 1 || held[0]?.path !== reservedPath || held[0]?.lane_root !== (ctx.lane?.root ?? MAIN_LANE) || oldDestination?.kind !== 'project_file' || !oldDestination.ref || artifactPath(ctx.root, oldDestination.ref) !== path) reasons.push('the reservation is not the same exact file in this checkout');
     if (!oldOrder || !newOrder || oldOrder >= newOrder) reasons.push('this request is not a newer run than the reserved preparation');
     if (prior.workflowId !== packet.run.workflowId || prior.workflowDigest !== packet.run.workflowDigest) reasons.push('the workflows or frozen definitions differ');
     if (prior.triggerKind !== 'manual' || packet.run.triggerKind !== 'manual' || prior.executorKind !== 'interactive' || packet.run.executorKind !== 'interactive' || packet.run.executorId !== ctx.host.executorId) reasons.push('automatic replacement requires a new manual interactive request in this session');
@@ -133,7 +155,9 @@ export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
   if (ctx.sessionId) appendActivity(ctx.store, { at, kind: 'step.session_bound', runId: packet.run.id, stepRunId: packet.leased.id, actor: 'kernel', payload: { owner: packet.leased.leaseOwner, attempt: packet.leased.token, sessionId: ctx.sessionId } });
   const destination = askedOf(packet.run).intake?.destination;
   if (destination?.kind !== 'project_file' || !destination.ref) return null;
-  const path = normalizeLeasePath(relative(ctx.root, resolve(ctx.root, destination.ref)));
+  const path = artifactPath(ctx.root, destination.ref);
+  const reservedPath = reservationPath(path);
+  assertLeasePaths({ root: ctx.root, lane: ctx.lane?.root, paths: [path, reservedPath], store: ctx.store, now: at });
   if (path === '/' || path.endsWith('/')) throw new Error('a managed artifact destination must name a project file');
   const recoveredPreparation = recoverPriorPreparation(ctx, packet, path);
   const id = identity(packet.run.id), claimant = owner(ctx);
@@ -149,10 +173,10 @@ export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
   if (item.status === 'claimed' && item.claimOwner !== claimant && item.claimUntil && item.claimUntil > at) {
     item = takeoverWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, reason: 'Resume this same managed delivery after its previous session ended.', processAlive: ctx.processAlive, quietCapMs: Number.POSITIVE_INFINITY });
   }
-  const held = claimWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, token: item.claimOwner === claimant ? reservationToken(ctx, id) : undefined, paths: [path] });
+  const held = claimWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, token: item.claimOwner === claimant ? reservationToken(ctx, id) : undefined, paths: [reservedPath] });
   const draft = packet.step.tier === 'project_write' ? listDeliverables(ctx.store, packet.run.id).at(-1) : undefined;
   const prepared = draft ? { ref: `deliverable:${draft.id}`, body: JSON.stringify(draft.body).length <= 64000 ? draft.body : undefined, omitted: JSON.stringify(draft.body).length > 64000, next: 'Use this held draft as input to the requested file; an omitted body is available through run_status.' } : null;
-  return { workId: id, path, prepared, recoveredPreparation, owner: claimant, claimUntil: held.claimUntil, checkpoint: contentReceipt(path, projectResolver(ctx.store, ctx.root)), next: 'This run already reserves the requested file. Do not create a second outcome, remember a new commitment, or repeat work claim for this path. Write/checkpoint the artifact during the first allowed project-write step, then submit its reference. A reservation does not widen the step tier or accept the result.' };
+  return { workId: id, path, reservedPath, prepared, recoveredPreparation, owner: claimant, claimUntil: held.claimUntil, checkpoint: contentReceipt(path, projectResolver(ctx.store, ctx.root), 'artifact'), next: `${reservedPath === path ? '' : `The containing repository scope ${JSON.stringify(reservedPath)} is reserved conservatively for this filename. `}This run already reserves the requested file. Do not create a second outcome, remember a new commitment, or repeat work claim for this path. Write/checkpoint the artifact during the first allowed project-write step, then submit its reference. A reservation does not widen the step tier or accept the result.` };
 }
 
 export function settleManagedDelivery(ctx: BrokerContext, runId: string, state: string): void {

@@ -215,6 +215,8 @@ Surface: both. Reads only: no.
 | `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
+| `evidence[].ref` | string | yes | Recorded item ref, source-qualified ref, file or complete HTTP(S) link. |
+| `evidence[].excerpt` | string | no | Optional exact readable passage; never a structured provider object. |
 | `noData` | boolean | no | The step found nothing to work on. |
 
 ### `checkpoint_work`
@@ -274,7 +276,7 @@ Surface: interactive. Reads only: no.
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `action` | `list`, `show`, `refresh`, `report`, `declare`, `check`, `map` | yes | Inspect, read, check scoped access, or map typed data. |
-| `observation` | object | no | Optional access report; omit if identity/expiry is unknown. Never grants access; session/provenance/grants are ignored. |
+| `observation` | object | no | Observed access; omit unknown identity/expiry. Never grants access; session/provenance/grants ignored. |
 | `observation.principal` | string | yes | Observed principal, never credentials; 1–512 characters. |
 | `observation.scope` | string | yes | Exact observed scope; 1–512 characters. |
 | `observation.operation` | string | yes | Attempted operation; 1–512 characters. |
@@ -291,16 +293,17 @@ Surface: interactive. Reads only: no.
 | `item` | string | no | Map: item ref; without mapping returns its recorded mapping or unknown shape. |
 | `mapping` | object | no | Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations. |
 | `id` | string | no | Source id: lowercase letters, digits and dashes; starts with a letter. |
-| `outcome` | `read`, `no_results`, `permission_denied`, `auth_required`, `unsupported`, `unreachable` | no | Report outcome; defaults to read. Empty/failed reads preserve prior evidence, never establish source-wide freshness. |
+| `outcome` | `read`, `no_results`, `permission_denied`, `auth_required`, `unsupported`, `unreachable` | no | Defaults to read. Empty/failed reads preserve evidence, never source-wide freshness. |
 | `reason` | string | no | For non-read report outcomes: the actual result and what remains unknown. |
 | `scope` | string | no | For report: attempted query, item URI or scope; required for non-read outcomes. |
-| `coverage` | object | no | For report: observed completeness, pagination and coverage limitations; these remain host reports. |
+| `coverage` | object | no | Reported completeness, pagination and limitations. |
 | `items` | list of object | no | Read items; preserve passages, not summaries. |
 | `items[].ref` | string | yes | Stable nonempty key, unique within source. |
 | `items[].url` | string | no | HTTP(S) address a person would open; never credentials. |
 | `items[].title` | string | no | Observed item title. |
 | `items[].updatedAt` | string | no | Provider last-updated time, when known; not the time you read it. |
-| `items[].text` | string | no | Exact passage read; text cap applies. |
+| `items[].text` | string | no | Exact readable text; retained up to 256 KiB UTF-8. |
+| `items[].truncated` | boolean | no | True if content omitted; omission preserves partial status. False requires a full read; separate from list partial. |
 | `items[].kind` | string | no | Observed item kind. |
 | `items[].fingerprint` | string | no | Provider content fingerprint, when available. |
 | `items[].weak` | boolean | no | True for a discovered reference that was not read as a version. |
@@ -322,6 +325,8 @@ Surface: interactive. Reads only: no.
 | `historicalEvidence` | list of object | no | Historical citations used as history, never as current support: {ref,why}. |
 | `claims` | list of object | no | Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown. |
 | `citations` | list of object | no | What it rests on: {ref, excerpt?} entries. |
+| `citations[].ref` | string | yes | Recorded item ref, source-qualified ref, file or complete HTTP(S) link. |
+| `citations[].excerpt` | string | no | Optional exact readable passage; never a structured provider object. |
 | `period` | object | no | The period the answer covers, when it covers one: {semantics: as_of \| changed_during \| evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}. |
 | `outsidePeriod` | list of object | no | Cited items updated after the period that belong in the answer anyway: {ref, why} entries. |
 
@@ -359,7 +364,7 @@ Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `ready`, `offers`, `show`, `add`, `update`, `link`, `unlink`, `requalify`, `claim`, `check`, `handoff`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, offers, show, add, update, link, unlink, requalify, claim, check, handoff, accept, complete, release, takeover, reopen. |
+| `action` | `list`, `ready`, `offers`, `show`, `add`, `update`, `link`, `unlink`, `requalify`, `claim`, `check`, `handoff`, `prepare_accept`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | Use prepare_accept before recoverable accept. |
 | `id` | string | no | Work id or a preserved legacy id. |
 | `title` | string | no | Title, for add and update. |
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
@@ -373,13 +378,23 @@ Surface: interactive. Reads only: no.
 | `sources` | list of string | no | For add and update: source ids whose refresh sends this work back for requalification. |
 | `removeParent` | boolean | no | For unlink: remove the parent. |
 | `reason` | string | no | Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met. |
-| `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
+| `token` | string | no | Ledger claimToken for renewal, handoff or settlement; not a workflow-step token. Accept rotates it. Never relay the offerer’s token. |
+| `acceptanceKey` | string | no | Accept: private key from prepare_accept. Retain with offerId before dispatch; retry both unchanged to recover the same live claim without renewal. Never publish or invent a key. |
+| `offerId` | string | no | Accept: public immutable handoff.offerId from offers/show or prepare_accept. Pair with acceptanceKey to fence stale requests. |
 | `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
 | `paths` | list of string | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |
 | `mode` | `exclusive`, `shared` | no | exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside. |
-| `packet` | object | no | For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths. |
+| `packet` | object | no | Handoff notes; descriptive paths do not reserve files. Only actual claim reservations transfer. |
+| `packet.state` | string | yes | Where the work stands. |
+| `packet.next` | string | yes | The next concrete step. |
+| `packet.watchOut` | list of string | no | Known hazards. |
+| `packet.openQuestions` | list of string | no | Unresolved questions. |
+| `packet.where` | object | no | Descriptive location; never authority or reservations. |
+| `packet.where.branch` | string | no | Branch name, when known. |
+| `packet.where.commit` | string | no | Git commit id, when known. |
+| `packet.where.paths` | list of string | no | Repository-relative paths for context. |
 | `to` | string | no | For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept. |
-| `worktree` | string | no | For claim, check, accept, and takeover: the absolute path of the git worktree of this project you edit in, when it is not the one this session runs in. Reservations then record that worktree and its current branch, and a renewal that leaves it out keeps the worktree its claim records. A path that is not one of the project’s worktrees is refused with the ones that are. |
+| `worktree` | string | no | For claim/check/accept/takeover in another managed worktree: its absolute path. Reservations bind that root and branch; renewal without it keeps that binding. Unknown worktrees refuse. |
 
 ### `delegate`
 
@@ -451,6 +466,8 @@ Surface: both. Reads only: no.
 | `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
+| `evidence[].ref` | string | yes | Recorded item ref, source-qualified ref, file or complete HTTP(S) link. |
+| `evidence[].excerpt` | string | no | Optional exact readable passage; never a structured provider object. |
 | `noData` | boolean | no | The step found nothing to work on. |
 
 ### `checkpoint_work`

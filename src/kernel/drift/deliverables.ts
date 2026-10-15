@@ -77,7 +77,7 @@ export function flagStaleDeliverables(
       const bare = stripLocator(ref);
       const resolvedItem = resolve(ref);
       const item = sourceItemOf(ref, sourceId) ?? (resolvedItem?.sourceId === sourceId ? resolvedItem.itemRef ?? null : null);
-      const address = normalizeUrl(ref);
+      const address = normalizeUrl(sourceItemOf(ref, sourceId) ?? ref);
       for (const gone of changes.removed) {
         const viaSource = item !== null && (source?.kind === 'directory' ? stripLocator(item) : item) === gone;
         const viaPath = source?.kind === 'directory' && dirAbs !== null && resolvePath(input.root ?? '', bare.replace(/^file:/, '')) === joinPath(dirAbs, gone);

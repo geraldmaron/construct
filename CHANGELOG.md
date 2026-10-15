@@ -1,5 +1,57 @@
 # Changelog
 
+## 3.0.0-alpha.30 — 2026-10-15 (experimental)
+
+Jira/Slack evidence and handoff recovery now preserve identity and authority
+across common copied formats, partial captures and lost acceptance responses.
+
+### Changes
+
+- Complete Markdown, autolink and Slack citation wrappers resolve to recorded
+  items. Recognized navigation fields normalize without collapsing comment,
+  review or unknown-query identities. Malformed text and excerpts fail clearly.
+- Shared UTF-8 source capture retains up to 256 KiB per item, preserving character
+  boundaries, redaction and explicit partial coverage. Jira rich-text extraction
+  preserves visible labels and marks unsupported content partial.
+- Review packets share identical held text across verified aliases, preserve
+  historical generations, use versioned locale-independent serialization and
+  carry actual command receipts. Native staged transport keeps the separate
+  2 MiB packet bound and fails closed on protocol or isolation errors.
+- Claim, takeover and acceptance share readiness/time validation. Expired tokens
+  cannot settle successor work; worktree moves preserve reservations atomically.
+  Filesystem aliases and changed reservation ancestry refuse unsafe writes.
+- Lost handoff acceptance responses recover only the same live generation using
+  a private pre-dispatch capability and immutable offer identity. CLI retention
+  is automatic on POSIX; Windows CLI acceptance remains keyless and explicitly
+  reports private-file recovery unavailable. Keyed MCP retries do not extend the target's expiry.
+- Installed coordination hooks use the existing bounded handler without loading
+  the general CLI graph; ordinary parsing and grounding behavior are preserved.
+- Shared host conformance covers recovery, output paths, deadlines and contract
+  parity. Public guides and generated references describe the same interfaces.
+
+### Upgrade
+
+Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
+`construct init --client=<host>` and `construct skill update`, then reconnect.
+Use `construct doctor` to inspect installation. State remains format 5; no new
+migration or credentials are required. Existing runs retain frozen bindings.
+
+### Verification and limits
+
+The repair candidate passed the full local gate, packaged installation and
+static conformance. Independent scoped subagent validation and an exact native
+review passed. Experimental release controls accept the correct result and
+reject wrong calculations and injected sources with drafts retained. These
+finite controls do not qualify all hosts or production source adapters.
+
+Canonical instruction isolation and the full live cross-host matrix remain
+unverified; mandatory Claude/full-matrix acceptance was explicitly waived for
+this local release scope. A deterministic coordination-hook startup overrun was
+reproduced and repaired without increasing timing limits; attribution of earlier
+intermittent reset failures remains unproven. Windows
+filesystem durability and induced power-loss recovery remain untested.
+Publish under `alpha` only; `latest` remains on 2.x.
+
 ## 3.0.0-alpha.29 — 2026-10-14 (experimental)
 
 Source activation, evidence preservation and recovery now follow the same state

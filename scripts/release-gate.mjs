@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {resolve, relative, sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {checkRecord, descriptionsDigest} from './evals-live.mjs';
-import {reviewDigest, semanticJudgmentProblems, SEMANTIC_OBLIGATIONS} from '../src/kernel/workflow/semantic-review.ts';
+import {reviewDigest, reviewContractDigest, semanticReviewPrompt, semanticJudgmentProblems, SEMANTIC_OBLIGATIONS} from '../src/kernel/workflow/semantic-review.ts';
 import {CASES, REQUEST, DISCLOSURES} from './experimental-cases.mjs';
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -21,12 +21,13 @@ export function repositoryFile(root, name) {
 export function validateNativeCase(record, c, digest, now) {
   const problems = [], fail = s => problems.push(`${c.id}: ${s}`);
   const {prepared: p, event: e} = record ?? {}, b = p?.bundle, i = e?.invocation;
+  if (b?.canonicalization !== undefined && b.canonicalization !== 'utf16-codeunit-v1') fail('unsupported held bundle canonicalization');
   if (record?.caseId !== c.id || record.surfaceDigest !== digest) fail('case or candidate identity mismatch');
   if (!b || p.digest !== reviewDigest(b) || e?.bundleDigest !== p.digest || e.preparedRef !== p.ref || e.attempt !== b.attempt) fail('held bundle binding mismatch');
-  if (!b || b.contractDigest !== reviewDigest(b.contract) || b.contract?.request?.input?.request !== REQUEST || reviewDigest(b.contract?.obligations) !== reviewDigest(SEMANTIC_OBLIGATIONS)) fail('frozen request or obligations mismatch');
+  if (!b || b.contractDigest !== reviewContractDigest(b) || b.contract?.request?.input?.request !== REQUEST || reviewDigest(b.contract?.obligations) !== reviewDigest(SEMANTIC_OBLIGATIONS)) fail('frozen request or obligations mismatch');
   if (b?.body?.summary !== c.answer || b?.artifacts?.find(x => x.ref === 'answer.md')?.content?.text !== c.answer || b?.evidence?.find(x => x.ref === 'source.txt')?.content?.text !== c.source) fail('frozen case text mismatch');
   if (!Array.isArray(b?.problems) || b.problems.length || record?.filesUnchanged !== true || record?.canaryAbsent !== true) fail('fixture changed or held evidence unavailable');
-  if (!i?.id || !i.sessionId || i.host !== 'codex' || i.hostVersion !== 'codex-cli 0.145.0' || i.model !== 'gpt-6-astra' || i.completed !== true || i.exitStatus !== 0 || i.timedOut !== false || e?.profile !== 'codex-held-text-v1' || e?.modelSource !== 'requested') fail('native invocation incomplete or unsupported');
+  if (!i?.id || !i.sessionId || i.host !== 'codex' || i.hostVersion !== 'codex-cli 0.145.0' || i.model !== 'gpt-6-astra' || i.completed !== true || i.exitStatus !== 0 || i.timedOut !== false || !['codex-held-text-v1','codex-app-server-held-text-v1'].includes(e?.profile) || e?.modelSource !== 'requested') fail('native invocation incomplete or unsupported');
   if (!/^[a-f0-9]{64}$/.test(e?.binaryDigest ?? '') || e.binaryDigest !== b?.contract?.reviewer?.digest || b?.contract?.reviewer?.profile !== e?.profile) fail('native executable identity mismatch');
   const start = Date.parse(e?.startedAt), end = Date.parse(record?.completedAt);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end < start || end - start > 300000 || end > now + 60000 || now - end > 7 * 86400000) fail('native time window missing, expired or unbounded');
@@ -34,8 +35,14 @@ export function validateNativeCase(record, c, digest, now) {
   if (!Array.isArray(obs) || reviewDigest(obs) !== i?.transcriptDigest) fail('public transcript digest mismatch');
   else {
     const structural = obs.filter(o => o.type !== 'native.metadata_warning');
-    if (structural.length !== 4 || structural[0]?.type !== 'thread.started' || structural[0].sessionId !== i?.sessionId || structural[1]?.type !== 'turn.started' || structural[2]?.type !== 'item.completed' || structural[2].itemType !== 'agent_message' || structural[3]?.type !== 'turn.completed') fail('unexpected public events, including possible tool use');
-    try { if (reviewDigest(JSON.parse(structural[2].text)) !== reviewDigest(e.judgment)) fail('judgment differs from native final text'); } catch { fail('native final text is not the judgment'); }
+    const staged = e?.profile === 'codex-app-server-held-text-v1';
+    const offset = staged ? 1 : 0;
+    if (staged) {
+      const prompt = b ? semanticReviewPrompt(b) : '';
+      if (structural[1]?.type !== 'native.evidence_staged' || structural[1].sessionId !== i?.sessionId || structural[1].characters !== [...prompt].length || structural[1].digest !== reviewDigest(prompt)) fail('complete staged evidence is not bound to the held prompt');
+    }
+    if (structural.length !== 4 + offset || structural[0]?.type !== 'thread.started' || structural[0].sessionId !== i?.sessionId || structural[1 + offset]?.type !== 'turn.started' || structural[2 + offset]?.type !== 'item.completed' || structural[2 + offset].itemType !== 'agent_message' || structural[3 + offset]?.type !== 'turn.completed') fail('unexpected public events, including possible tool use');
+    try { if (reviewDigest(JSON.parse(structural[2 + offset].text)) !== reviewDigest(e.judgment)) fail('judgment differs from native final text'); } catch { fail('native final text is not the judgment'); }
   }
   const checks = e?.judgment?.checks;
   const allowed = new Set(['body','answer.md','source.txt']);

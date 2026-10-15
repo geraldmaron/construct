@@ -40,6 +40,7 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clientWiring, projectSkillsDirFor } from '../src/hosts/wiring/clients.ts';
 import { launchOf } from '../src/hosts/wiring/wire.ts';
+import { readTomlServerTable } from '../src/hosts/wiring/merge-toml.ts';
 import { EVAL_HOSTS, codexProviderFromConfig, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment } from './host-cli.mjs';
 import { cursorSnapshot, restoreCursor } from './evals-live.mjs';
 import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
@@ -134,9 +135,14 @@ function session(cwd, env, client, launch = { command: process.execPath, args: [
       return;
     }
     const id = next++;
-    pending.set(id, resolve);
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      resolve({ error: { code: -1, message: `${method} did not answer within the simulation deadline` } });
+    }, 10000);
+    pending.set(id, (reply) => { clearTimeout(timer); resolve(reply); });
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
   });
+  const notify = (method, params) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
   const call = async (name, args = {}) => {
     const r = await rpc('tools/call', { name, arguments: args });
     if (!r || r.error) throw new Error(`${name}: ${r?.error?.message ?? 'no reply'}`);
@@ -148,14 +154,78 @@ function session(cwd, env, client, launch = { command: process.execPath, args: [
       resolve();
       return;
     }
+    const timer = setTimeout(() => child.kill('SIGKILL'), 2000);
+    child.on('exit', () => { clearTimeout(timer); resolve(); });
     child.stdin.end();
-    child.on('exit', resolve);
   });
-  return { rpc, call, close };
+  return { rpc, notify, call, close };
 }
 
 const checks = [];
 const record = (host, check, status, detail) => checks.push({ host, check, status, detail });
+
+// Keep expected host configuration shapes independent of CLIENT_WIRINGS so
+// the conformance check can detect adapter drift. These checks are static.
+const DOCUMENTED_CONFIG = {
+  'claude-code': { path: '.mcp.json', key: 'mcpServers', type: 'stdio' },
+  cursor: { path: '.cursor/mcp.json', key: 'mcpServers', type: 'stdio' },
+  vscode: { path: '.vscode/mcp.json', key: 'servers', type: 'stdio' },
+  opencode: { path: 'opencode.json', key: 'mcp', type: 'local' },
+  codex: { path: '.codex/config.toml', key: 'mcp_servers' },
+  bob: { path: '.bob/mcp.json', key: 'mcpServers' },
+};
+
+function checkDocumentedConfig(host, project) {
+  const contract = DOCUMENTED_CONFIG[host.id];
+  const file = join(project, contract.path);
+  const entry = host.id === 'codex' ? readTomlServerTable(file, 'construct') : JSON.parse(readFileSync(file, 'utf8'))[contract.key]?.construct;
+  const problems = [];
+  if (!entry) problems.push('documented configuration location has no construct entry');
+  else {
+    if (contract.type && entry.type !== contract.type) problems.push(`expected type ${contract.type}`);
+    if (host.id === 'opencode') {
+      if (!Array.isArray(entry.command) || entry.command.some((part) => typeof part !== 'string')) problems.push('local command must be a string array');
+    } else if (typeof entry.command !== 'string' || !Array.isArray(entry.args) || entry.args.some((part) => typeof part !== 'string')) problems.push('stdio command and arguments have the wrong shape');
+    if (entry.enabled === false || entry.disabled === true) problems.push('server is disabled');
+    if (host.id === 'cursor' && !entry.args?.includes('--project=${workspaceFolder}')) problems.push('workspace interpolation does not bind the project');
+    if (host.id === 'vscode' && entry.cwd !== '${workspaceFolder}') problems.push('workspace cwd is missing');
+    if (host.id === 'codex' && !(entry.tool_timeout_sec > 60)) problems.push('host timeout must exceed the person prompt wait');
+  }
+  record(host.id, 'documented configuration simulation', problems.length ? 'failed' : 'passed', problems.length ? problems.join('; ') : `${contract.path}: documented transport shape, enabled state and project binding; host UI not executed`);
+}
+
+async function checkProtocolProfiles(host, project, env) {
+  // Version/capability variations are adversarial simulations, not claims
+  // about what any particular installed host version currently advertises.
+  const profiles = [
+    { name: 'legacy without elicitation', protocolVersion: '2024-11-05', capabilities: {} },
+    { name: 'current with optional capabilities', protocolVersion: '2025-06-18', capabilities: { roots: { listChanged: true }, elicitation: {} } },
+    { name: 'newer version fallback', protocolVersion: '2026-07-28', capabilities: {} },
+  ];
+  const problems = [];
+  for (const profile of profiles) {
+    const s = session(project, env, host.id);
+    try {
+      const initialized = await s.rpc('initialize', { protocolVersion: profile.protocolVersion, capabilities: profile.capabilities, clientInfo: { name: `${host.id}-simulation`, version: 'fixture' } });
+      if (initialized.result?.protocolVersion !== '2025-06-18') throw new Error('server did not return its supported protocol version');
+      s.notify('notifications/initialized');
+      const list = await s.rpc('tools/list', {});
+      if (!list.result?.tools?.some((tool) => tool.name === 'bootstrap')) throw new Error('tool discovery lost bootstrap');
+      const bad = await s.rpc('tools/call', { name: 'work', arguments: { action: 'show' } });
+      const structured = bad.result?.structuredContent;
+      if (!bad.result?.isError || structured?.field !== 'id' || JSON.parse(bad.result.content[0].text).field !== 'id') throw new Error('recoverable error differs between structured and text-only clients');
+      const boot = await s.call('bootstrap');
+      if (boot.session?.host !== host.id) throw new Error('recovery lost host identity');
+      const ping = await s.rpc('ping');
+      if (!ping.result) throw new Error('session did not survive invalid input');
+    } catch (error) {
+      problems.push(`${profile.name}: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      await s.close();
+    }
+  }
+  record(host.id, 'protocol profile simulation', problems.length ? 'failed' : 'passed', problems.length ? problems.join('; ') : 'legacy/current/newer proposals; optional capabilities; initialized notification; text/structured error parity and recovery; actual host not executed');
+}
 
 /** What each host's model reads from Construct, as this run received it: instructions, tools/list, and the planted skill. */
 const hostTexts = new Map();
@@ -221,7 +291,11 @@ async function checkPortableWiring(host, project, env, bin) {
     return;
   }
   const substitute = (a) => a.replaceAll('${workspaceFolder}', project);
-  const s = session(project, { ...env, PATH: scratchBin(bin) }, host.id, { command: launch.command, args: launch.args.map(substitute) });
+  const entry = w.format === 'toml' ? readTomlServerTable(join(project, w.relativePath), 'construct') : JSON.parse(text)[w.serversKey].construct;
+  // Cursor documents explicit workspace interpolation; prove it binds even
+  // when the parent process starts elsewhere. VS Code supplies the declared cwd.
+  const cwd = typeof entry.cwd === 'string' ? substitute(entry.cwd) : host.id === 'cursor' ? env.HOME : project;
+  const s = session(cwd, { ...env, PATH: scratchBin(bin) }, host.id, { command: launch.command, args: launch.args.map(substitute) });
   try {
     const initMsg = await s.rpc('initialize', {});
     if (!initMsg.result) throw new Error(initMsg.error?.message ?? 'no initialize reply');
@@ -266,7 +340,7 @@ function checkLocalHooks(project, wiredHost, env) {
 async function checkHost(host) {
   const scratch = mkdtempSync(join(tmpdir(), `construct-conformance-${host.id}-`));
   const home = join(scratch, 'home');
-  const project = join(scratch, 'project');
+  const project = join(scratch, 'project with spaces');
   mkdirSync(join(project, 'docs'), { recursive: true });
   mkdirSync(home, { recursive: true });
   writeFileSync(join(project, 'README.md'), '# Conformance\n\nA project for the conformance run.\n');
@@ -281,7 +355,9 @@ async function checkHost(host) {
     record(host.id, 'installation and binding', init.code === 0 ? 'passed' : 'failed', init.code === 0 ? `init bound ${project}` : init.err.trim());
     const wiredHost = rec?.hosts?.find((h) => h.client === host.id);
     record(host.id, 'host wiring', wiredHost?.mcp?.status === 'installed' ? 'passed' : 'failed', wiredHost?.mcp ? `${wiredHost.mcp.path} ${wiredHost.mcp.status}` : 'no wiring recorded');
+    checkDocumentedConfig(host, project);
     await checkPortableWiring(host, project, env, join(scratch, 'bin'));
+    await checkProtocolProfiles(host, project, env);
     if (host.id === 'claude-code') checkLocalHooks(project, wiredHost, env);
     // The project skills directory this host reads when it is the only host wired.
     const dir = join(realpathSync(project), projectSkillsDirFor(host.id, [host.id]));

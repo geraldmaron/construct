@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { createMcpHandler, serveHandler } from '../../../src/hosts/mcp/server.ts';
-import { HostRequests } from '../../../src/hosts/mcp/outbound.ts';
+import { HostRequestError, HostRequests } from '../../../src/hosts/mcp/outbound.ts';
 import { raiseDecision, getDecision } from '../../../src/kernel/state/decisions.ts';
 import { getDeliverable } from '../../../src/kernel/state/deliverables.ts';
 import { HOST_SAID_LABEL } from '../../../src/kernel/render/person-prompt.ts';
@@ -73,6 +73,10 @@ class FakeHost {
 
   notify(method: string, params: unknown): void {
     this.write({ jsonrpc: '2.0', method, params });
+  }
+
+  respond(id: unknown, result: unknown): void {
+    this.write({ jsonrpc: '2.0', id, result });
   }
 
   request(method: string, params: unknown): Promise<Message> {
@@ -170,6 +174,65 @@ test('a prompt nobody answers in time leaves the decision open', async () => {
     assert.deepEqual((ping as { result?: unknown }).result, {}, 'the server keeps answering after a lapsed prompt');
     host.close();
     await served;
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('Bob gets the pending fallback before its response deadline and late approval grants nothing', async () => {
+  const fx = brokerFixture();
+  const host = new FakeHost();
+  let selectedWaitMs: number | undefined;
+  class AcceleratedRequests extends HostRequests {
+    override request(method: string, params: unknown, timeoutMs: number): Promise<unknown> {
+      selectedWaitMs = timeoutMs;
+      return super.request(method, params, timeoutMs / 100);
+    }
+  }
+  const requests = new AcceleratedRequests();
+  const broker = { ...fx.broker, host: { ...fx.broker.host, hostId: 'bob' } };
+  const handler = createMcpHandler('interactive', broker, { hostRequests: requests, personPrompts: true });
+  const served = serveHandler(handler, host.toServer, host.fromServer, requests);
+  let deadline: ReturnType<typeof setTimeout> | undefined;
+  try {
+    externalWrite(fx, 'decision-bob');
+    await host.request('initialize', { protocolVersion: '2025-06-18', capabilities: { elicitation: {} } });
+    const hostTimeout = new Promise<never>((_, reject) => { deadline = setTimeout(() => reject(new Error('simulated Bob response deadline expired')), 600); });
+    const result = await Promise.race([decide(host, 'decision-bob'), hostTimeout]);
+    assert.equal(selectedWaitMs, 45_000);
+    assert.equal(result.personRequired, true);
+    assert.match(String(result.asked), /did not answer the prompt in time/);
+    assert.match(String(result.next), /construct inbox resolve decision-bob/);
+    assert.equal(getDecision(fx.broker.store, 'decision-bob')!.state, 'open');
+    host.respond(host.asked[0]!.id, { action: 'accept', content: { answer: 'approve' } });
+    await host.request('ping', {});
+    assert.equal(getDecision(fx.broker.store, 'decision-bob')!.state, 'open');
+    assert.equal(listGrants(fx.broker.store).length, 0, 'a late host response cannot grant approval');
+  } finally {
+    clearTimeout(deadline);
+    host.close();
+    await served;
+    fx.cleanup();
+  }
+});
+
+test('person prompt timeout preserves other host defaults and explicit overrides', async () => {
+  const fx = brokerFixture();
+  try {
+    for (const [hostId, override, expected] of [['codex', undefined, 60_000], ['bob', 120_000, 120_000], ['bob', 0, 0]] as const) {
+      let selected: number | undefined;
+      class CapturingRequests extends HostRequests {
+        override request(_method: string, _params: unknown, timeoutMs: number): Promise<unknown> {
+          selected = timeoutMs;
+          return Promise.reject(new HostRequestError('controlled timeout', 'timeout'));
+        }
+      }
+      externalWrite(fx, `decision-${hostId}-${String(override)}`);
+      const handler = createMcpHandler('interactive', { ...fx.broker, host: { ...fx.broker.host, hostId } }, { hostRequests: new CapturingRequests(), personPrompts: true, personPromptWaitMs: override });
+      await handler({ id: 1, method: 'initialize', params: { capabilities: { elicitation: {} } } });
+      await handler({ id: 2, method: 'tools/call', params: { name: 'decide', arguments: { decisionId: `decision-${hostId}-${String(override)}`, resolution: 'approve' } } });
+      assert.equal(selected, expected, `${hostId} preserves the configured timeout`);
+    }
   } finally {
     fx.cleanup();
   }

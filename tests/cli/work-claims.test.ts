@@ -35,3 +35,17 @@ test('only the person claims or takes over work from the command line, and a cla
     assert.ok(Date.parse(record.claimUntil) <= Date.parse('2026-09-03T12:05:00.000Z'), `capped at a day: ${record.claimUntil}`);
   });
 });
+
+test('CLI validates requested expiry before applying its ceiling and normalizes timezone offsets', async () => {
+  await inProject(async ctx => {
+    const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
+    const added = await capture(() => run(['work', 'add', 'expiry check', '--json'], person));
+    const id = JSON.parse(added.out.trim().split('\n').pop()!).id;
+    const invalid = await capture(() => run(['work', 'claim', id, '--until=not-a-date', '--json'], person));
+    assert.equal(invalid.code, 1);
+    assert.match(invalid.err, /instant/);
+    const valid = await capture(() => run(['work', 'claim', id, '--until=2026-09-02T09:00:00-04:00', '--json'], person));
+    assert.equal(valid.code, 0, valid.err);
+    assert.equal(JSON.parse(valid.out.trim().split('\n').pop()!).claimUntil, '2026-09-02T13:00:00.000Z');
+  });
+});

@@ -41,6 +41,9 @@ export function inspectWiring(client: WirableClient, projectRoot: string): Wirin
   const path = join(projectRoot, w.relativePath);
   const entry = readEntry(w, path);
   if (!entry) return { client, path, status: 'absent', detail: `no ${MCP_SERVER_NAME} entry in ${w.relativePath}` };
+  if ((client === 'bob' && entry.disabled === true) || ((client === 'codex' || client === 'opencode') && entry.enabled === false)) {
+    return { client, path, status: 'broken', detail: `${w.relativePath} has construct disabled. Enable construct in ${w.label}'s MCP settings or this file, then restart the server.` };
+  }
   const repair = `\`construct init --client=${client}\` rewrites it`;
   const pinned = machinePaths(entry);
   const gone = pinned.find((p) => !existsSync(p));

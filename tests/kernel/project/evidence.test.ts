@@ -219,3 +219,14 @@ test('revoked source content cannot resolve through aliases or unverified-read f
     for (const ref of ['wiki', 'wiki:42', '42', 'https://wiki.example.com/42', 'wiki:unknown', 'docs/strategy/new.md', 'docs:strategy/new.md']) assert.equal(resolve(ref), null, ref);
   } finally { p.cleanup(); }
 });
+
+test('historical manifests cannot turn credential URLs into exact item citations', () => {
+  const p = project();
+  try {
+    const dirty = 'https://user:synthetic-password@wiki.example/page';
+    for (const ref of [dirty, `<${dirty}|page>`, `[page](${dirty})`]) {
+      const resolve = createEvidenceResolver({ root: p.root, hostReads: 'accept', sources: [{ id: 'wiki', kind: 'docs', locator: null, manifest: [{ ref, kind: 'item', fingerprint: 'dirty', text: 'Untrusted stored passage.' }, { ref: 'opaque', kind: 'item', fingerprint: 'dirty-url', url: dirty, text: 'Untrusted stored passage.' }] }] });
+      for (const citation of [ref, `wiki:${ref}`, 'opaque', 'wiki:opaque']) assert.equal(resolve(citation), null);
+    }
+  } finally { p.cleanup(); }
+});

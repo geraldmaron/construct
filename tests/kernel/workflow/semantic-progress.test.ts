@@ -134,12 +134,12 @@ test('failed invocation, source change, cancellation and draft replacement canno
 test('unsupported oversized drafts keep reviewer unavailability visible', () => {
   const f = fixture(false);
   try {
-    const result = f.submit({ summary: 'x'.repeat(600_000) });
+    const result = f.submit({ summary: 'x'.repeat(2_200_000) });
     assert.equal(result.semanticReview!.state, 'unavailable');
     assert.equal(f.progress().state, 'unavailable');
     assert.equal(result.semanticReview!.canInvoke, false);
     assert.match(result.semanticReview!.problems.join(' '), /No supported native reviewer/);
-    assert.match(result.semanticReview!.problems.join(' '), /exceeds 512 KiB/);
+    assert.match(result.semanticReview!.problems.join(' '), /limit.*2 MiB/);
     assert.equal(result.deliverable!.trustState, 'draft');
     assert.equal(result.step.state, 'leased');
   } finally { f.cleanup(); }

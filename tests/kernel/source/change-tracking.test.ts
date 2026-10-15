@@ -20,6 +20,8 @@ import { readDirectorySource } from '../../../src/hosts/sources/directory.ts';
 import { createJiraFixtureReader, FIXTURE_TEXT_CAP } from '../../../src/hosts/sources/jira-fixture.ts';
 import { hostReaders } from '../../../src/hosts/sources/readers.ts';
 import { createSourceService } from '../../../src/kernel/source/service.ts';
+import { SOURCE_TEXT_CAP_BYTES } from '../../../src/kernel/source/text.ts';
+import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { brokerFixture, observedVerification } from '../broker/support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
@@ -44,6 +46,92 @@ test('the directory reader fingerprints content, reports items, and records supe
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('directory capture spans hash chunks, bounds UTF-8 text and still fingerprints omitted bytes', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-capture-'));
+  try {
+    const cap = SOURCE_TEXT_CAP_BYTES;
+    const normal = '项目🙂 café\n'.repeat(7000) + 'Final exact conclusion.';
+    const key = 'ghp_' + 'a1B2c3D4e5F6g7H8i9J0'.repeat(2);
+    const redaction = 'sk-' + 'a'.repeat(50) + '\n';
+    const boundary = redaction + 'a'.repeat(cap + 2 - Buffer.byteLength(redaction)) + '🙂tail';
+    const pem = '-----BEGIN ' + 'PRIVATE KEY-----\n' + 'A'.repeat(cap + 100) + '\n-----END ' + 'PRIVATE KEY-----';
+    const secretBoundary = 'a '.repeat((cap - 2) / 2) + key;
+    const large = '界'.repeat(cap) + 'original tail';
+    for (const [name, text] of Object.entries({ normal, boundary, pem, secretBoundary, large })) writeFileSync(join(dir, `${name}.md`), text);
+    const read = async () => {
+      const r = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+      assert.equal(r.outcome, 'read');
+      if (r.outcome !== 'read') throw new Error('directory capture failed');
+      return new Map(r.report.items!.map(i => [i.externalRef, i.attributes!]));
+    };
+    const first = await read();
+    assert.equal(first.get('normal.md')!.text, normal, 'complete text spans multiple hash buffers');
+    assert.equal(first.get('normal.md')!.truncated, false);
+    for (const name of ['boundary', 'pem', 'secretBoundary', 'large']) {
+      const item = first.get(`${name}.md`)!;
+      assert.equal(item.truncated, true);
+      assert.ok(Buffer.byteLength(item.text as string) <= cap);
+      assert.ok(!(item.text as string).includes('\uFFFD'));
+    }
+    assert.ok(!(first.get('pem.md')!.text as string).includes('BEGIN PRIVATE KEY'));
+    assert.ok(!(first.get('pem.md')!.text as string).includes('A'.repeat(100)));
+    assert.ok(!(first.get('secretBoundary.md')!.text as string).includes('ghp_'));
+    writeFileSync(join(dir, 'large.md'), large.replace('original tail', 'modified tail'));
+    const second = await read();
+    assert.notEqual(second.get('large.md')!.fingerprint, first.get('large.md')!.fingerprint);
+    assert.equal(second.get('large.md')!.text, first.get('large.md')!.text);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('fixture refresh upgrades prior narrow captures without declaring unchanged issues modified', async () => {
+  const fx = brokerFixture();
+  try {
+    const dir = join(fx.box.cwd, 'jira-fixtures');
+    mkdirSync(dir);
+    writeFileSync(join(dir, 'APP.json'), JSON.stringify([{ key: 'APP-1', description: 'ordinary prose '.repeat(3000) + 'Exact tail.' }]));
+    const reader = createJiraFixtureReader(dir);
+    const oldReader: typeof reader = async input => {
+      const read = await reader(input);
+      if (read.outcome !== 'read') return read;
+      const content = read.report.items!.map(i => `${i.externalRef}\t${String(i.attributes?.fingerprint)}`).join('\n');
+      return { ...read, report: { ...read.report, digest: `sha256:${createHash('sha256').update(content).digest('hex')}`, items: read.report.items!.map(i => ({ ...i, attributes: { ...i.attributes, text: String(i.attributes!.text).slice(0, 16 * 1024), truncated: true } })) } };
+    };
+    const readers = new Map([['jira', oldReader]]);
+    addSource(fx.broker.store, { id: 'fixture', kind: 'jira', locator: 'APP', purpose: 'fixture', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    const svc = createSourceService(fx.broker.store, { readers, root: fx.broker.root });
+    await svc.refresh('fixture', fx.ctx.now(), () => fx.ctx.nextId('snap'));
+    assert.equal(currentManifest(fx.broker.store, 'fixture')![0]!.text!.length, 16 * 1024);
+    readers.set('jira', reader);
+    const upgraded = await svc.refresh('fixture', fx.ctx.now(), () => fx.ctx.nextId('snap'));
+    assert.equal(upgraded.outcome, 'changed');
+    assert.deepEqual(upgraded.changes?.modified, []);
+    const captured = currentManifest(fx.broker.store, 'fixture')![0]!;
+    assert.ok(captured.text!.endsWith('Exact tail.'));
+    assert.equal(captured.truncated, undefined);
+  } finally { fx.cleanup(); }
+});
+
+test('Jira fixture preserves ADF readable fields and partial extraction coverage', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-adf-fixture-'));
+  try {
+    const issues = [
+      { key: 'APP-1', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'mention', attrs: { id: 'account', text: '@Sam' } }, { type: 'text', text: ' ' }, { type: 'status', attrs: { text: 'Blocked', color: 'red' } }] }] } },
+      { key: 'APP-2', description: { type: 'doc', content: [{ type: 'mediaSingle', content: [{ type: 'media', attrs: { id: 'external-media', type: 'file' } }] }] } },
+      { type: 'issue', attrs: { kind: 'ticket' }, key: 'APP-3', fields: { summary: 'Fix deployment', description: 'The rollout is approved.' } },
+    ];
+    writeFileSync(join(dir, 'APP.json'), JSON.stringify(issues));
+    const r = await createJiraFixtureReader(dir)({ sourceId: 'jira', kind: 'jira', locator: 'APP' });
+    assert.equal(r.outcome, 'read');
+    if (r.outcome !== 'read') return;
+    assert.match(String(r.report.items![0]!.attributes!.text), /@Sam Blocked/);
+    assert.equal(r.report.items![0]!.attributes!.truncated, undefined);
+    assert.equal(r.report.items![1]!.attributes!.truncated, true);
+    assert.ok(!String(r.report.items![1]!.attributes!.text).includes('external-media'));
+    assert.match(String(r.report.items![2]!.attributes!.text), /Fix deployment\nThe rollout is approved\./);
+    assert.equal(r.report.items![2]!.attributes!.truncated, undefined);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('a Jira fixture stands in for the tracker: issues become citable items, reported not witnessed, and only when configured', async () => {
@@ -320,4 +408,17 @@ test('review finding: the current manifest is the newest read even after a long 
   } finally {
     fx.cleanup();
   }
+});
+
+test('removing Slack evidence flags complete wrapped and qualified navigation links', async () => {
+  const fx=brokerFixture();
+  try {
+    const url='https://acme.slack.com/archives/C123/p1729000000000100';
+    await call(fx,'sources',{action:'declare',id:'chat',kind:'other'});
+    await call(fx,'sources',{action:'report',id:'chat',items:[{ref:'message',url,text:'The ledger is called synchronously.'},{ref:'other',text:'Other message.'}]});
+    for(const [name,ref] of Object.entries({wrapped:`<${url}|message>`,qualified:`chat:[message](${url}?thread_ts=1&cid=C123)`})) await finishedCiting(fx,[ref],name);
+    const removed=await call(fx,'sources',{action:'report',id:'chat',items:[{ref:'other',text:'Other message.'}]});
+    assert.deepEqual(removed.changes.removed,['message']);
+    assert.equal(removed.staleDeliverables.length,2);
+  } finally { fx.cleanup(); }
 });

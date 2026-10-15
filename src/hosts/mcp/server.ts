@@ -12,7 +12,7 @@ import { AGENT_NAME, toolsFor } from '../../kernel/broker/tools.ts';
 import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
 import { renewExecutorLeases } from '../../kernel/state/steps.ts';
-import { renewSessionClaims } from '../../kernel/work/service.ts';
+import { getWork, getWorkByLegacyId, renewSessionClaims } from '../../kernel/work/service.ts';
 import { HostRequestError, HostRequests } from './outbound.ts';
 import { INTERACTIVE_INSTRUCTIONS, RUNNER_INSTRUCTIONS, unboundInstructions } from './instructions.ts';
 import type { AskPerson } from '../../kernel/policy/channels.ts';
@@ -135,6 +135,13 @@ export interface HandlerOptions {
 /** How long a question put to the person through the host waits for an answer. */
 export const PERSON_PROMPT_WAIT_MS = 60_000;
 
+function personPromptWaitFor(hostId: string, override?: number): number {
+  // Bob documents a one-minute default response timeout. Return its pending
+  // inbox fallback with room to serialize and deliver it before that deadline.
+  // https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob
+  return override ?? (hostId === 'bob' ? 45_000 : PERSON_PROMPT_WAIT_MS);
+}
+
 /** Ask the person through the host's elicitation: one choice among the options, shown by the host, not the model. */
 function elicitor(requests: HostRequests, waitMs: number, stillPerson: () => boolean): AskPerson {
   return async (question) => {
@@ -185,7 +192,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
    * Before each call: say who is acting, keep this session's presence fresh,
    * and extend its claims past half their term, at most once a minute.
    */
-  const beforeCall = (args: Record<string, unknown>): void => {
+  const beforeCall = (name: string, args: Record<string, unknown>): void => {
     options.beforeEachCall?.();
     ctx.store.attribution.sessionId = ctx.sessionId;
     ctx.store.attribution.agent = typeof args.agent === 'string' && AGENT_NAME.test(args.agent.trim()) ? args.agent.trim() : null;
@@ -195,7 +202,11 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
       lastPresence = now;
       const at = new Date(now).toISOString();
       touchSession(ctx.store, { id: ctx.sessionId, at });
-      renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS });
+      // A capability retry recovers exactly its existing live term. Even a
+      // wrong key must not extend that item through the presence courtesy.
+      const excludeWorkId = name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
+        ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id : undefined;
+      renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS, excludeWorkId });
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
   };
@@ -231,7 +242,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
         const prompts = options.personPrompts;
         const stillPerson = typeof prompts === 'function' ? prompts : () => prompts === true;
         if (surface === 'interactive' && options.hostRequests && stillPerson() && declared && typeof declared === 'object' && declared.elicitation) {
-          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, options.personPromptWaitMs ?? PERSON_PROMPT_WAIT_MS, stillPerson) };
+          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, personPromptWaitFor(ctx.host.hostId, options.personPromptWaitMs), stillPerson) };
         }
         const client = (record(params) as { clientInfo?: unknown }).clientInfo;
         if (ctx.sessionId && client && typeof client === 'object') {
@@ -266,7 +277,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           if (stale) return response(id, { ...text({ error: stale }), isError: true });
           const args = record(p.arguments);
           const input = tool.validate(args);
-          beforeCall(args);
+          beforeCall(name, args);
           const result = await tool.run(callCtx, input);
           return response(id, withPeers(result, peersAfter(tool.name)));
         } catch (error) {
