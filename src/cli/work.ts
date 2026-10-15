@@ -457,12 +457,14 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'accept': {
         personOnly('Accepting a handoff');
-        assertLeasePaths({ root: project.root, lane: project.lane?.root, paths: leasesFor(project.store, args.positionals[0]!).map(l => l.path), store: project.store, now: at });
         const id = args.positionals[0]!;
         const offerId = handoffOf(project.store, id)?.offerId;
-        const acceptanceKey = offerId ? acceptanceCapability(ctx.paths.stateDir, JSON.stringify([project.root, id, offerId, actor, project.lane?.root ?? MAIN_LANE])) : undefined;
-        const w = acceptWork(project.store, { id, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, acceptanceKey, offerId });
-        if (args.json) writeJson(w);
+        const recoveryAvailable = process.platform !== 'win32';
+        const acceptanceKey = offerId && recoveryAvailable ? acceptanceCapability(ctx.paths.stateDir, JSON.stringify([project.root, id, offerId, actor, project.lane?.root ?? MAIN_LANE])) : undefined;
+        const w = acceptWork(project.store, { id, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, acceptanceKey, offerId }, () => assertLeasePaths({ root: project.root, lane: project.lane?.root, paths: leasesFor(project.store, id).map(l => l.path), store: project.store, now: at }));
+        const recovery = { available: recoveryAvailable, ...(recoveryAvailable ? {} : { reason: 'Private local recovery storage is not qualified on Windows; retain the returned claim token. After a lost response, inspect the handoff and recover through expiry/reclaim or a permitted takeover.' }) };
+        if (!recoveryAvailable) process.stderr.write('Automatic acceptance-response recovery is unavailable on Windows. Retain the claim token; after a lost response, inspect the handoff and recover through expiry/reclaim or a permitted takeover.\n');
+        if (args.json) writeJson({ ...w, recovery });
         else {
           say(`accepted ${esc(w.id)} from ${esc(w.handoff.from)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
           printPacket(w.handoff.from, w.handoff.packet);

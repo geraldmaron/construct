@@ -835,6 +835,7 @@ export function prepareAcceptance(store: StateStore, input: { readonly id: strin
 export function acceptWork(
   store: StateStore,
   input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly branch?: string | null; readonly acceptanceKey?: string; readonly offerId?: string },
+  beforeAcquire?: () => void,
 ): ClaimedWork & { readonly handoff: Handoff } {
   input = claimBounds(input);
   if (input.acceptanceKey !== undefined && !/^[a-f0-9]{64}$/i.test(input.acceptanceKey)) throw new Error('acceptanceKey must be 32 cryptographically random bytes encoded as 64 hex characters, retained privately before accepting');
@@ -872,6 +873,9 @@ export function acceptWork(
     if (h.from === input.owner) throw new Error(`you offered ${input.id}; release or settle it with your token instead`);
     if (!offeredTo(h, input.owner, input.session)) throw new Error(`the handoff of ${input.id} is offered to ${h.to}`);
     requireReadyForClaim(store, current, input.now);
+    // Host filesystem checks fence new acquisition, not recovery of an already
+    // granted live generation. A refusal still rolls back the transaction.
+    beforeAcquire?.();
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
     const taken: Handoff = { ...h, takenBy: input.owner, takenAt: input.now, takenVia: 'accept' };

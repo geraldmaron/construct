@@ -228,12 +228,16 @@ Construct keeps them from stepping on each other:
   issuing new authority. Packet `where.paths` describes context and reserves
   nothing; only the claim's real reservations transfer, with dropped paths
   reported when a destination checkout already holds them.
-  If a CLI acceptance response is lost, repeat `construct work accept <id>`
+  On POSIX, if a CLI acceptance response is lost, repeat `construct work accept <id>`
   from the same worktree and machine account. Before dispatch, the CLI
   atomically retains a private recovery capability in the machine's Construct
   state directory, outside the project; it never prints that capability or
   places it in shell arguments. Recovery returns the same still-live claim
   without extending its term. A new offer receives a fresh capability.
+  Windows CLI acceptance uses the existing keyless path and reports automatic
+  recovery unavailable on stderr and in JSON; it never persists an unqualified
+  private cache. Retain the returned token, or recover through expiry/reclaim
+  after a lost response. Tool callers retain their own capability as below.
   Tool callers use `work prepare_accept` to receive a cryptographically
   generated private `acceptanceKey` and the public immutable `offerId`.
   Retain both before the first `work accept`, then pass both on that call and
@@ -241,7 +245,7 @@ Construct keeps them from stepping on each other:
   no authority; a lost preparation can be repeated safely. Integrations may
   generate their own random capability in the format the live schema specifies.
   The immutable generation also fences an initial request delayed until after
-  its observed offer was replaced. CLI recovery is automatic and takes no
+  its observed offer was replaced. POSIX CLI recovery is automatic and takes no
   secret command-line arguments.
   Caller names alone never recover a token. A used key cannot accept a later
   offer or recover released, displaced, completed or expired authority.
