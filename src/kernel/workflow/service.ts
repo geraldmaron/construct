@@ -1,4 +1,4 @@
-import { semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type ReviewerIdentity } from './semantic-review.ts';
+import { SemanticReviewInputCapacityError, SemanticReviewCapacityError, semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type ReviewerIdentity } from './semantic-review.ts';
 import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
@@ -902,7 +902,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       prepared = prepareSemanticReview(store, { run, leased, body, evidence: runEvidence(run.id, evidence), resolve, at });
       problems = semanticReviewProblems(store, prepared, resolve);
     } catch (error) {
-      if (!(error instanceof Error) || !error.message.includes('exceeds 512 KiB')) throw error;
+      if (!(error instanceof SemanticReviewCapacityError) && !(error instanceof SemanticReviewInputCapacityError)) throw error;
       problems = [error.message];
     }
     if (problems.length) {

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,writeFileSync,symlinkSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {SEMANTIC_OBLIGATIONS,reviewDigest,semanticJudgmentProblems} from '../../src/kernel/workflow/semantic-review.ts';
+import {SEMANTIC_OBLIGATIONS,semanticReviewPrompt,reviewDigest,reviewContractDigest,semanticJudgmentProblems} from '../../src/kernel/workflow/semantic-review.ts';
 // @ts-expect-error release script is intentionally plain JavaScript
 import {checkExperimental,checkRelease,repositoryFile,sha256} from '../../scripts/release-gate.mjs';
 // @ts-expect-error frozen script fixtures are intentionally plain JavaScript
@@ -30,6 +30,32 @@ function fixture() {
   return {records,manifest,files,freeze,check};
 }
 test('experimental records verify bounded controls without claiming qualification',()=>{assert.equal(fixture().check().ok,true)});
+test('versioned packet canonicalization binds its contract and refuses unsupported formats',()=>{
+  const make=()=>{const f=fixture();for(const r of f.records){const b=r.prepared.bundle;b.formatVersion=1;b.canonicalization='utf16-codeunit-v1';b.contractDigest=reviewContractDigest(b);r.prepared.digest=reviewDigest(b);r.event.bundleDigest=r.prepared.digest;}f.freeze();return f;};
+  assert.equal(make().check().ok,true);
+  const unknown=make();unknown.records[0].prepared.bundle.canonicalization='future';unknown.records[0].prepared.digest=reviewDigest(unknown.records[0].prepared.bundle);unknown.records[0].event.bundleDigest=unknown.records[0].prepared.digest;unknown.freeze();assert.equal(unknown.check().ok,false);
+  const stale=make();stale.records[0].prepared.bundle.contract.request.input.request='changed';stale.records[0].prepared.digest=reviewDigest(stale.records[0].prepared.bundle);stale.records[0].event.bundleDigest=stale.records[0].prepared.digest;stale.freeze();assert.equal(stale.check().ok,false);
+});
+test('the app-server profile requires exact staged prompt identity and ordered public observations',()=>{
+  const make=()=>{
+    const f=fixture();
+    for(const r of f.records){
+      r.prepared.bundle.contract.reviewer.profile='codex-app-server-held-text-v1';
+      r.prepared.bundle.contractDigest=reviewDigest(r.prepared.bundle.contract);
+      r.prepared.digest=reviewDigest(r.prepared.bundle);r.event.bundleDigest=r.prepared.digest;
+      r.event.profile='codex-app-server-held-text-v1';
+      const prompt=semanticReviewPrompt(r.prepared.bundle);
+      r.event.observations.splice(1,0,{type:'native.evidence_staged',sessionId:r.event.invocation.sessionId,characters:[...prompt].length,digest:reviewDigest(prompt)});
+      r.event.invocation.transcriptDigest=reviewDigest(r.event.observations);
+    }
+    f.freeze();return f;
+  };
+  assert.equal(make().check().ok,true);
+  for(const field of ['sessionId','characters','digest']){
+    const f=make();(f.records[0].event.observations[1] as any)[field]='wrong';f.records[0].event.invocation.transcriptDigest=reviewDigest(f.records[0].event.observations);f.freeze();assert.equal(f.check().ok,false,field);
+  }
+  const missing=make();missing.records[0].event.observations.splice(1,1);missing.records[0].event.invocation.transcriptDigest=reviewDigest(missing.records[0].event.observations);missing.freeze();assert.equal(missing.check().ok,false);
+});
 test('experimental alpha cannot replace a stable or unknown tier',()=>{const f=fixture();assert.equal(checkExperimental({manifest:f.manifest,version:'3.0.0',digest,now,read:(p:string)=>f.files.get(p)}).ok,false);assert.equal(checkRelease({tier:'unqualified'}).ok,false)});
 test('missing, stale, malformed or reused native evidence is rejected',()=>{
   const mutations:((f:ReturnType<typeof fixture>)=>void)[]=[

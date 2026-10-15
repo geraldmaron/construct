@@ -52,9 +52,16 @@ const dist = new URL('../dist/cli/index.js', import.meta.url);
 const src = new URL('../src/cli/index.ts', import.meta.url);
 const target = existsSync(fileURLToPath(src)) ? src : dist;
 
-let main;
+let main, hookExit = null;
 try {
-  ({ main } = await import(target.href));
+  // Installed coordination hooks need the existing bounded handler, not the
+  // general CLI graph. Its own spec/parser still decides the accepted operands.
+  if (process.argv[2] === 'hook') {
+    const hookTarget = new URL(target === src ? './hook.ts' : './hook.js', target);
+    const { installedCoordinationHook } = await import(hookTarget.href);
+    hookExit = await installedCoordinationHook(process.argv.slice(3));
+  }
+  if (hookExit === null) ({ main } = await import(target.href));
 } catch (error) {
   const text = error instanceof Error ? `${error.message}\n${error.stack ?? ''}` : String(error);
   if (/node:sqlite|ERR_UNKNOWN_BUILTIN_MODULE/.test(text)) {
@@ -66,4 +73,4 @@ try {
   }
   throw error;
 }
-process.exitCode = await main();
+process.exitCode = hookExit === null ? await main() : hookExit;

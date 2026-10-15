@@ -6,8 +6,9 @@ Construct keeps a project's bounded work in its own store, so local mode
 needs no external tracker. Every git worktree of the project reads and
 writes the main checkout's one store. You use `construct work` from a
 terminal; a session uses the `work` tool. Cancelling, export, and
-restore are on the command line only. Admission is also available through the
-tool, subject to the item's reason and the caller's authority. Claiming, accepting a handoff, and
+restore are on the command line only. Items with an admitted parent or active
+reason are admitted when filed or linked; the explicit admit action is CLI-only.
+Claiming, accepting a handoff, and
 taking over from the command line are yours alone; a session does those
 with the tool, where the claim belongs to that session and agent.
 
@@ -97,7 +98,8 @@ reservation (the default) keeps every other claim off the same paths;
 `shared` (the tool's `mode`, or `--shared`) lets other shared claims sit
 alongside. In another worktree an overlap is a merge risk instead, naming
 that worktree and its branch, because each worktree has its own copy of
-the files. A session that edits in a worktree other than its own passes
+the files. A root-wide exclusive reservation blocks writers across worktrees
+until release. A session that edits in a worktree other than its own passes
 that worktree's absolute path as `worktree` on claim, check, accept, or
 takeover. `construct work check` exits 1 on a collision in this checkout.
 A refused path means other work or waiting, never editing anyway. Hooks
@@ -112,8 +114,10 @@ hold, are in
 - `construct work cancel <id> --reason="superseded by the new exporter"`
 - `construct work reopen <id> --reason="a v1 reader turned up"`
 
-A live claim is settled only with its token; one that expired protects
-nothing. Completion also requires admitted work, finished blocking dependencies,
+A live claim is settled only with its owner and token. Expiry permits new
+acquisition, but completing expired claimed work requires a fresh claim. An old
+token cannot complete or cancel a successor generation. The exact expired
+owner/token may release its own generation as cleanup. Completion also requires admitted work, finished blocking dependencies,
 current premises, and an unblocked state. Cancellation remains available to retire
 work that cannot proceed. Completing an item that has acceptance criteria needs a reason
 saying how they were met. An item with open children cannot be completed
@@ -138,6 +142,32 @@ for at least two hours meanwhile. Whoever accepts gets the claim, a new
 token, and the reservations in one step, and the old token stops working.
 The packet is shown as its author's words, never as instructions, and a
 handoff never moves an approval.
+
+On POSIX systems, if an acceptance response is lost, the CLI can recover it by repeating
+`construct work accept <id>` from the same machine account and worktree. Before
+dispatch, it retains a private capability outside the project. A retry recovers
+only the same still-live claim and does not extend its term. Returning that
+claim does not clear a filesystem error: subsequent path checks still require
+reconciliation of changed reservation ancestry.
+
+On Windows, ordinary CLI acceptance still rotates the token and transfers the
+claim, but automatic private-file recovery is unavailable. The CLI reports this
+on stderr and in its JSON `recovery` field, and never reads or creates that cache.
+Retain the returned claim token; if the response is lost, inspect the packet and
+recover through expiry/reclaim or a permitted takeover. POSIX mode bits cannot
+establish Windows file privacy. Tool-managed private capabilities remain separate.
+
+Tool callers first use `work` with `action: "prepare_accept"`. Retain the returned
+private `acceptanceKey` and public immutable `offerId` before dispatch, then pass
+both to `action: "accept"` and identical retries with the same session, agent and
+worktree. Preparation changes no authority and can be repeated safely. A new
+offer needs a new capability. Caller names alone cannot recover tokens; a stale
+or unused capability cannot accept a replacement offer. Released, displaced,
+completed or expired authority cannot be recovered this way. Without a retained
+capability, inspect the packet and recover through expiry/reclaim or a permitted
+takeover. Never relay the former holder's secret. A ledger `claimToken` is
+separate from a workflow step's `token`; a handoff transfers neither workflow
+leases nor approvals.
 
 A claim that is not handed off is taken over only once it expired, its
 session ended or its process is gone, or its session made no Construct call

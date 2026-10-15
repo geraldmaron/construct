@@ -346,3 +346,110 @@ for (const holder of ['ended', 'live', 'unknown'] as const) {
     } finally { fx.cleanup(); }
   });
 }
+
+for (const path of ['briefs/Release Notes.md', 'Release Notes.md', 'Team Briefs/Release Notes.md', 'briefs/Release#v2 Notes.md', 'briefs/Release Notes.md:12']) test(`managed delivery supports the ordinary filename ${path}`, async () => {
+  const { mkdirSync } = await import('node:fs');
+  const { dirname } = await import('node:path');
+  const fx = brokerFixture();
+  try {
+    const started = await call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: 'Write the requested design brief.', deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref: path } } });
+    const planning = await claim(fx.broker, started.run.id);
+    assert.equal(planning.delivery.path, path);
+    assert.ok(planning.delivery.reservedPath);
+    await submit(fx.broker, planning, plan);
+    const writing = await claim(fx.broker, started.run.id);
+    mkdirSync(dirname(join(fx.box.cwd, path)), { recursive: true });
+    writeFileSync(join(fx.box.cwd, path), 'Keep the kernel host-agnostic.');
+    const done = await submit(fx.broker, writing, { summary: 'Saved the design brief.', findings: ['Keep the kernel host-agnostic.'], changes: [path], artifact: path });
+    assert.equal(done.step.state, 'succeeded', JSON.stringify(done.validation));
+    const verifying = await claim(fx.broker, started.run.id);
+    const result = await submit(fx.broker, verifying, { verification: await observedVerification(fx, verifying), passed: true });
+    assert.equal(result.run.state, 'succeeded', JSON.stringify(result.validation));
+    assert.equal(readFileSync(join(fx.box.cwd, path), 'utf8'), 'Keep the kernel host-agnostic.');
+  } finally { fx.cleanup(); }
+});
+
+for (const path of ['briefs/Release#v2 Notes.md', 'briefs/Release Notes.md:12']) test(`a citation-shaped decoy never substitutes for literal artifact ${path}`, async () => {
+  const { mkdirSync, existsSync } = await import('node:fs');
+  const fx = brokerFixture();
+  try {
+    mkdirSync(join(fx.box.cwd, 'briefs'));
+    const decoy = path.split('#')[0]!.replace(/:\d+$/, '');
+    writeFileSync(join(fx.box.cwd, decoy), 'Unrelated existing document.');
+    const started = await call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: 'Write the literal requested file.', deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref: path } } });
+    const planning = await claim(fx.broker, started.run.id);
+    assert.equal(planning.delivery.checkpoint.digest, null, 'missing literal file has no receipt');
+    await submit(fx.broker, planning, plan);
+    const writing = await claim(fx.broker, started.run.id);
+    const result = await submit(fx.broker, writing, { summary: 'Wrote the requested file.', findings: ['Unrelated existing document.'], changes: [path], artifact: path });
+    assert.notEqual(result.step.state, 'succeeded');
+    assert.ok(result.validation.some((v: any) => v.validator === 'artifacts_exist' && !v.ok));
+    assert.equal(existsSync(join(fx.box.cwd, path)), false);
+  } finally { fx.cleanup(); }
+});
+
+test('managed destinations refuse symlink aliases before reserving any work', async () => {
+  const { symlinkSync } = await import('node:fs');
+  const fx = brokerFixture();
+  try {
+    symlinkSync(join(fx.box.cwd, 'docs'), join(fx.box.cwd, 'alias'), 'dir');
+    symlinkSync(fx.box.home, join(fx.box.cwd, 'outside'), 'dir');
+    for (const ref of ['alias/design.md', 'alias/new/Brief Notes.md', 'outside/Brief Notes.md']) {
+      await assert.rejects(call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: `Write ${ref}.`, deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref } } }), /symlink|symbolic link|canonical/i);
+      assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 0);
+    }
+  } finally { fx.cleanup(); }
+});
+
+test('spaced-filename directory reservation is explicit and preserves collision and confinement rules', async () => {
+  const fx = brokerFixture();
+  try {
+    const started = await call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: 'Write a release brief.', deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref: 'briefs/Release Notes.md' } } });
+    const held = await claim(fx.broker, started.run.id);
+    assert.equal(held.delivery.reservedPath, 'briefs/');
+    assert.match(held.delivery.next, /reserved conservatively/);
+    assert.deepEqual(listLiveLeases(fx.broker.store, fx.ctx.now()).map(lease => lease.path), ['briefs/']);
+    const reason = await call(fx.broker, 'remember', { kind: 'outcome', text: 'Unrelated edits remain coordinated' });
+    const sibling = await call(fx.broker, 'work', { action: 'add', title: 'Other brief', serves: reason.remembered.id });
+    await assert.rejects(call(fx.broker, 'work', { action: 'claim', id: sibling.id, paths: ['briefs/Other.md'] }), /reserved by other work/);
+    await call(fx.broker, 'work', { action: 'claim', id: sibling.id, paths: ['other/Notes.md'] });
+    await assert.rejects(call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: 'Write elsewhere.', deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref: '../Outside Notes.md' } } }), /inside|relative|project/);
+  } finally { fx.cleanup(); }
+});
+
+test('conservative scope never recovers a different artifact from an ended holder', async () => {
+  const fx = brokerFixture();
+  try {
+    register(fx);
+    const request = (ctx: BrokerContext, ref: string, words: string) => call(ctx, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words, deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref } } });
+    const prior = await request(fx.broker, 'briefs/Release Notes.md', 'Write the release brief.');
+    const held = await claim(fx.broker, prior.run.id);
+    endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+    const next = { ...peer(fx), processAlive: () => null };
+    const different = await request(next, 'briefs/Other Notes.md', 'Write the other brief.');
+    const blocked = await call(next, 'claim_work', { runId: different.run.id });
+    assert.equal(blocked.work, null);
+    assert.equal(blocked.waitingOn.kind, 'delivery_recovery');
+    assert.equal(getWork(fx.broker.store, held.delivery.workId)!.status, 'claimed');
+    assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 1);
+    const same = await request(next, 'briefs/Release Notes.md', 'Recheck evidence and write the corrected release brief.');
+    const recovered = await claim(next, same.run.id);
+    assert.equal(recovered.delivery.recoveredPreparation[0].workId, held.delivery.workId);
+    assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 1);
+  } finally { fx.cleanup(); }
+});
+
+for (const kind of ['symbolic', 'hard'] as const) test(`a broad managed scope containing ${kind} links refuses the first grant atomically`, async () => {
+  const { mkdirSync, symlinkSync, linkSync } = await import('node:fs');
+  const fx = brokerFixture();
+  try {
+    mkdirSync(join(fx.box.cwd, 'briefs'));
+    if (kind === 'symbolic') symlinkSync(join(fx.box.cwd, 'docs'), join(fx.box.cwd, 'briefs/alias'), 'dir');
+    else linkSync(join(fx.box.cwd, 'docs/design.md'), join(fx.box.cwd, 'briefs/copy.md'));
+    const started = await call(fx.broker, 'start_outcome', { workflowId: 'managed-outcome', intake: { kind: 'manage', words: 'Write a local release note.', deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref: 'briefs/Release Notes.md' } } });
+    await assert.rejects(call(fx.broker, 'claim_work', { runId: started.run.id }), /directory.*contains symbolic or hard links/i);
+    assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 0);
+    assert.equal(getWork(fx.broker.store, `work-${started.run.id}-delivery`), null);
+    assert.ok(listSteps(fx.broker.store, started.run.id).every(step => step.state !== 'leased'));
+  } finally { fx.cleanup(); }
+});

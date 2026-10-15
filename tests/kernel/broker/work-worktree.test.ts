@@ -180,7 +180,10 @@ test('the same path claimed from two worktrees: both claims succeed and each rep
     assert.deepEqual(renewed.mergeRisks.map((o) => [o.kind, o.workId, o.laneRoot, o.branch]), [['merge_risk', second, r.two, 'feat/two']], 'the first claim, renewed, sees the second');
     assert.equal(whereHeld(renewed.mergeRisks[0]!), `in the worktree at ${r.two} on feat/two`);
 
-    const checked = call(lead, { action: 'check', id: first, worktree: r.one, paths: ['src/parser.ts'] }) as { clear: boolean; collisions: Overlap[]; mergeRisks: Overlap[] };
+    const otherAgent = call(lead, { action: 'check', id: first, worktree: r.one, paths: ['src/parser.ts'] }) as { clear: boolean; collisions: Overlap[] };
+    assert.equal(otherAgent.clear, false, 'another agent cannot hide the reservation');
+    assert.deepEqual(otherAgent.collisions.map((o) => o.workId), [first]);
+    const checked = call(lead, { action: 'check', id: first, agent: 'one', worktree: r.one, paths: ['src/parser.ts'] }) as { clear: boolean; collisions: Overlap[]; mergeRisks: Overlap[] };
     assert.equal(checked.clear, true, 'a merge risk does not block');
     assert.deepEqual(checked.mergeRisks.map((o) => o.workId), [second]);
 
@@ -294,4 +297,19 @@ test('an accepted handoff and a takeover move reservations to the worktree the n
   } finally {
     r.cleanup();
   }
+});
+
+test('explicit worktree renewal without paths moves the existing reservations or refuses atomically', () => {
+  const r = repo();
+  try {
+    const lead = r.session(r.main, 'ses_lead');
+    const id = r.item('moving parser');
+    const held = call(lead, { action: 'claim', id, worktree: r.one, paths: ['src/parser.ts'] }) as Claimed;
+    const moving = call(lead, { action: 'claim', id, token: held.claimToken, worktree: r.two }) as Claimed;
+    assert.equal(moving.claimToken, held.claimToken);
+    assert.equal(moving.claimLane, r.two);
+    assert.deepEqual(moving.leases.map(lease => [lease.laneRoot, lease.branch]), [[r.two, 'feat/two']]);
+    const other = r.item('other parser');
+    assert.throws(() => call(lead, { action: 'claim', id: other, worktree: r.two, paths: ['src/parser.ts'] }), /reserved by other work/);
+  } finally { r.cleanup(); }
 });

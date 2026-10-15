@@ -25,7 +25,8 @@
  * Items match exactly as they were recorded: `confluence:98765`,
  * `github:acme/checkout#311`, the bare `acme/checkout#311`, `PLAT-101`. A
  * web address resolves to the item a read recorded under it, whatever its
- * fragment, case, scheme, or trailing slash. Anchors and line ranges
+ * supported presentation, scheme, host case, or trailing slash (see urls.ts
+ * for provider navigation fields and identity-bearing fragments). Anchors and line ranges
  * (`docs/a.md#section`, `docs/a.md:12-30`) narrow project files only.
  *
  * Accepted shapes: `docs/a.md`, `./docs/a.md`, `/abs/inside/root.md`,
@@ -44,7 +45,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ManifestEntry } from '../source/manifest.ts';
 import { supersessionFor, type DeclaredSupersession } from './governance.ts';
-import { normalizeUrl } from './urls.ts';
+import { normalizeUrl, urlCarriesCredentials } from './urls.ts';
 
 export const EVIDENCE_TEXT_CAP_BYTES = 1024 * 1024;
 
@@ -80,7 +81,8 @@ export interface ResolvedRef {
   readonly supersededBy?: string;
 }
 
-export type RefResolver = (ref: string) => ResolvedRef | null;
+/** Artifacts are literal project filenames; evidence retains citation grammar. */
+export type RefResolver = (ref: string, use?: 'artifact') => ResolvedRef | null;
 
 export interface EvidenceSource {
   /** A revoked source stays identifiable for refusal, but supplies no current evidence. */
@@ -189,10 +191,11 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   const sourceFor = (abs: string) => dirSources.find((d) => inside(d.abs, abs));
   const realRoot = (() => { try { return realpathSync(root); } catch { return root; } })();
   const realDirs = dirSources.map((d) => { try { return realpathSync(d.abs); } catch { return d.abs; } });
-  const asPath = (raw: string, original: string, base = root): ResolvedRef | null => {
+  const asPath = (raw: string, original: string, base = root, artifact = false): ResolvedRef | null => {
     // An empty path after narrowing (a bare "#anchor" or ":12") names no file, not the folder it would land on.
     if (raw.trim() === '') return null;
-    const abs = resolve(base, raw.replace(/^file:/, ''));
+    const abs = resolve(base, artifact ? raw : raw.replace(/^file:/, ''));
+    if (artifact && !inside(root, abs)) return null;
     const ds = sourceFor(abs);
     if (dirSources.some((d) => d.canRead === false && inside(d.abs, abs))) return null;
     if ((!inside(root, abs) && !ds) || !existsSync(abs)) return null;
@@ -203,7 +206,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
       return null;
     }
     if (dirSources.some((d, i) => d.canRead === false && inside(realDirs[i]!, real))) return null;
-    if (!inside(realRoot, real) && !realDirs.some((d) => inside(d, real))) return null;
+    if (!inside(realRoot, real) && (artifact || !realDirs.some((d) => inside(d, real)))) return null;
     const st = statSync(abs);
     const itemRef = ds ? relative(ds.abs, abs).split(sep).join('/') : undefined;
     const supersededBy = ds && itemRef ? ds.entries.get(itemRef)?.supersededBy : undefined;
@@ -214,7 +217,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   };
   // An item a recorded read holds, with what the read kept. A manifest that does not say how it was obtained is
   // the host's report, never Construct's own reading.
-  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef | null => source.canRead === false ? null : ({
+  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef | null => source.canRead === false || urlCarriesCredentials(entry.ref) || (entry.url !== undefined && urlCarriesCredentials(entry.url)) ? null : ({
     ref: original,
     kind: 'item',
     provenance: source.provenance ?? 'reported',
@@ -241,12 +244,12 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const hit = supersessionFor([r.itemRef ?? '', r.path ?? '', stripLocator(r.ref)].filter(Boolean), declared);
     return hit ? { ...r, supersededBy: `${hit.by} (statement:${hit.statementId})` } : r;
   };
-  return (original: string): ResolvedRef | null => govern(resolveRaw(original));
+  return (original: string, use): ResolvedRef | null => govern(use === 'artifact' ? asPath(original, original, root, true) : resolveRaw(original));
   // One parser, in order; nothing is stripped before Construct knows what the reference is.
   function resolveRaw(original: string): ResolvedRef | null {
     if (typeof original !== 'string') return null;
     let raw = original.trim();
-    if (raw === '') return null;
+    if (raw === '' || urlCarriesCredentials(raw)) return null;
     const address = normalizeUrl(raw);
     if (address !== null) {
       const hit = urlIndex.get(address);
@@ -269,6 +272,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     if (whole) return sourceLevel(original, whole);
     const s = head ? byId.get(head) : undefined;
     if (s && rest) {
+      if (urlCarriesCredentials(rest)) return null;
       if (s.canRead === false) return null;
       if (s.kind === 'directory') return s.locator ? asPath(stripLocator(rest), original, resolve(root, s.locator)) : null;
       const hit = s.manifest?.find((e) => e.ref === rest);

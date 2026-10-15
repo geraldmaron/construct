@@ -11,6 +11,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import type { StateStore } from '../../../src/kernel/state/open.ts';
 import { freshStore } from '../state/support.ts';
 import { acceptWork, claimWork, completeWork, createWork, handoffOf, handoffWork, listOffers, releaseWork, takeoverWork, HANDOFF_HOLD_MS } from '../../../src/kernel/work/service.ts';
@@ -182,4 +183,121 @@ test('accepting a handoff releases, rather than imports, a reservation another c
   } finally {
     fx.cleanup();
   }
+});
+
+test('handoff locations reject coerced identifiers rather than inventing paths or commit ids', () => {
+  assert.throws(() => normalizePacket({ state: 'done', next: 'verify', where: { paths: [42] } }), HandoffPacketError);
+  assert.throws(() => normalizePacket({ state: 'done', next: 'verify', where: { commit: 1234567 } }), HandoffPacketError);
+});
+
+test('descriptive filenames survive handoff without widening its actual reservations', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'a', paths: ['briefs/'], until: t(30), now: t(1) });
+    const paths = ['briefs/Release Notes.md', 'Team Briefs/Review Notes.md'];
+    const offered = handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: { state: 'Draft ready', next: 'Review the notes', where: { paths } }, to: 'b', now: t(2) });
+    assert.deepEqual(offered.handoff.packet.where.paths, paths);
+    const b = acceptWork(fx.store, { id: 'w-1', owner: 'b', until: t(60), now: t(3) });
+    assert.deepEqual(b.handoff.packet.where.paths, paths);
+    assert.deepEqual(b.leases!.map(l => l.path), ['briefs/']);
+    assert.notEqual(b.claimToken, a.claimToken);
+    assert.equal(completeWork(fx.store, { id: 'w-1', owner: 'b', token: b.claimToken, at: t(4) }).status, 'completed');
+  } finally { fx.cleanup(); }
+});
+
+test('descriptive handoff paths stay bounded and refuse traversal and hidden controls', () => {
+  const packet = (path: string) => ({ state: 'Draft ready', next: 'Review', where: { paths: [path] } });
+  for (const path of ['../escape.md', '/etc/passwd', 'C:\\outside.md', 'briefs/../escape.md', 'briefs/line\nnotes.md', 'briefs/tab\tnotes.md', 'briefs/hidden\u200bnotes.md', 'briefs/nul\u0000notes.md', 'é'.repeat(257)]) {
+    assert.throws(() => normalizePacket(packet(path)), HandoffPacketError, JSON.stringify(path));
+  }
+  assert.deepEqual(normalizePacket(packet('é'.repeat(256))).where.paths, ['é'.repeat(256)]);
+});
+
+test('a private acceptance capability recovers only its live exact handoff generation without renewing it', () => {
+  const fx = freshStore();
+  const acceptanceKey = randomBytes(32).toString('hex');
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'a', paths: ['src/'], until: t(30), now: t(1) });
+    const offerId = handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: PACKET, now: t(2) }).handoff.offerId!;
+    const accepted = acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(40), now: t(3) });
+    const revision = accepted.revision;
+    const retry = acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(90), now: t(4) });
+    assert.equal(retry.claimToken, accepted.claimToken);
+    assert.equal(retry.claimUntil, t(40));
+    assert.equal(retry.revision, revision);
+    assert.deepEqual(retry.leases, accepted.leases);
+    item(fx.store, 'w-2');
+    const second = claimWork(fx.store, { id: 'w-2', owner: 'a', until: t(40), now: t(4) });
+    handoffWork(fx.store, { id: 'w-2', owner: 'a', token: second.claimToken, packet: PACKET, now: t(4) });
+    assert.throws(() => acceptWork(fx.store, { id: 'w-2', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(90), now: t(4) }), /acceptance|generation|recover/);
+    assert.equal(handoffOf(fx.store, 'w-2')!.takenBy, null);
+    for (const patch of [{ acceptanceKey: randomBytes(32).toString('hex') }, { owner: 'c' }, { session: 'other-session' }, { lane: '/lanes/c' }]) {
+      assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(90), now: t(4), ...patch }), /handoff|acceptance|recover/);
+    }
+    assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(90), now: t(40) }), /acceptance|expired|recover/);
+    releaseWork(fx.store, { id: 'w-1', owner: 'b', token: accepted.claimToken, at: t(5) });
+    const next = claimWork(fx.store, { id: 'w-1', owner: 'c', until: t(50), now: t(6) });
+    handoffWork(fx.store, { id: 'w-1', owner: 'c', token: next.claimToken, packet: PACKET, now: t(7) });
+    assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', lane: '/lanes/b', acceptanceKey, offerId, until: t(90), now: t(8) }), /acceptance|generation|recover/);
+    const fresh = acceptWork(fx.store, { id: 'w-1', owner: 'b', session: 'b-session', acceptanceKey: randomBytes(32).toString('hex'), offerId: handoffOf(fx.store, 'w-1')!.offerId, until: t(90), now: t(9) });
+    assert.notEqual(fresh.claimToken, accepted.claimToken);
+    assert.ok(!JSON.stringify(fx.store.db.prepare('SELECT payload_json FROM work_events').all()).includes(acceptanceKey));
+  } finally { fx.cleanup(); }
+});
+
+test('failed acceptance does not consume its recovery capability', () => {
+  const fx = freshStore(), acceptanceKey = randomBytes(32).toString('hex');
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'a', paths: ['src/'], until: t(30), now: t(1) });
+    const offerId = handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: PACKET, now: t(2) }).handoff.offerId!;
+    fx.store.db.exec("CREATE TEMP TRIGGER refuse_acceptance BEFORE INSERT ON work_events WHEN NEW.kind = 'handoff_acceptance_receipt' BEGIN SELECT RAISE(ABORT, 'injected receipt failure'); END");
+    assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId, until: t(60), now: t(3) }), /injected receipt failure/);
+    assert.equal(handoffOf(fx.store, 'w-1')!.takenBy, null);
+    assert.equal(leasesFor(fx.store, 'w-1')[0]!.sessionId, 'a');
+    fx.store.db.exec('DROP TRIGGER refuse_acceptance');
+    const accepted = acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId, until: t(60), now: t(4) });
+    assert.equal(acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId, until: t(90), now: t(5) }).claimToken, accepted.claimToken);
+  } finally { fx.cleanup(); }
+});
+
+test('an unused acceptance capability cannot consume a later offer after a predispatch race', () => {
+  const fx = freshStore(), acceptanceKey = randomBytes(32).toString('hex');
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'a', paths: ['src/'], until: t(30), now: t(1) });
+    const stale = handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: PACKET, now: t(2) }).handoff;
+    // The original request has not reached the store; even a same-timestamp,
+    // same-packet replacement is a different immutable offer generation.
+    const fresh = handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: PACKET, now: t(2) }).handoff;
+    assert.notEqual(stale.offerId, fresh.offerId);
+    const before = JSON.stringify(fx.store.db.prepare('SELECT * FROM work_items').all());
+    const events = fx.store.db.prepare('SELECT COUNT(*) AS n FROM work_events').get()!.n;
+    assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId: stale.offerId, until: t(60), now: t(3) }), /generation changed/);
+    assert.equal(JSON.stringify(fx.store.db.prepare('SELECT * FROM work_items').all()), before);
+    assert.equal(fx.store.db.prepare('SELECT COUNT(*) AS n FROM work_events').get()!.n, events);
+    assert.equal(leasesFor(fx.store, 'w-1')[0]!.sessionId, 'a');
+    assert.equal(acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId: fresh.offerId, until: t(60), now: t(4) }).handoff.offerId, fresh.offerId);
+  } finally { fx.cleanup(); }
+});
+
+test('legacy offers acquire a stable public identity without a storage migration and malformed capabilities have no effects', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'a', until: t(30), now: t(1) });
+    handoffWork(fx.store, { id: 'w-1', owner: 'a', token: a.claimToken, packet: PACKET, now: t(2) });
+    fx.store.db.prepare("UPDATE work_items SET handoff_json = json_remove(handoff_json, '$.offerId') WHERE id = ?").run('w-1');
+    const legacy = handoffOf(fx.store, 'w-1')!;
+    assert.equal(handoffOf(fx.store, 'w-1')!.offerId, legacy.offerId);
+    for (const patch of [{ acceptanceKey: 'passphrase', offerId: legacy.offerId }, { acceptanceKey: randomBytes(32).toString('hex') }]) {
+      assert.throws(() => acceptWork(fx.store, { id: 'w-1', owner: 'b', until: t(60), now: t(3), ...patch }), /acceptance|offerId/);
+      assert.equal(handoffOf(fx.store, 'w-1')!.takenBy, null);
+    }
+    const acceptanceKey = randomBytes(32).toString('hex');
+    const accepted = acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId: legacy.offerId, until: t(60), now: t(4) });
+    assert.equal(acceptWork(fx.store, { id: 'w-1', owner: 'b', acceptanceKey, offerId: legacy.offerId, until: t(90), now: t(5) }).claimToken, accepted.claimToken);
+  } finally { fx.cleanup(); }
 });

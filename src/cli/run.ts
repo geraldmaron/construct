@@ -42,7 +42,7 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
       case 'review': {
         const stepRunId = stringFlag(args, 'step'), token = stringFlag(args, 'token'), preparedRef = stringFlag(args, 'prepared'), host = stringFlag(args, 'host'), model = stringFlag(args, 'model');
         if (!stepRunId || !token || !preparedRef || !host || !model) throw new UsageError('run review needs --step, --token, --prepared, --host and --model');
-        const result = await executeSemanticReview({ store: project.store, runId: args.positionals[0]!, stepRunId, token, preparedRef, host, model, root: project.root, env: ctx.env, now: ctx.now, resolve: ref => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
+        const result = await executeSemanticReview({ store: project.store, runId: args.positionals[0]!, stepRunId, token, preparedRef, host, model, root: project.root, env: ctx.env, now: ctx.now, resolve: (ref, use) => projectResolver(project.store, project.root)(ref, use), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
         writeJson(result);
         return result.passed ? 0 : 1;
       }
@@ -53,7 +53,7 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         if (!Array.isArray(argv) || argv.some((a) => typeof a !== 'string')) throw new UsageError('--command must be a JSON array of strings');
         const raw = args.flags.subject;
         const subjects = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
-        const result = await executeVerification({ store: project.store, runId: args.positionals[0]!, stepRunId, token, argv, subjects, root: project.root, env: ctx.env, now: ctx.now, resolve: (ref) => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
+        const result = await executeVerification({ store: project.store, runId: args.positionals[0]!, stepRunId, token, argv, subjects, root: project.root, env: ctx.env, now: ctx.now, resolve: (ref, use) => projectResolver(project.store, project.root)(ref, use), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
         writeJson(result);
         return result.receipt.exitStatus === 0 && !result.receipt.timedOut && result.receipt.subjectsStable && result.receipt.intendedVerification?.satisfied !== false ? 0 : 1;
       }

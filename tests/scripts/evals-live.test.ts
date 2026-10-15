@@ -16,13 +16,14 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sterileHome } from '../harness/sterile.ts';
 import { apiEnvironmentPresent } from '../../src/hosts/delegation/adapters.ts';
+import { REVIEW_DISABLED_FEATURES } from '../../src/hosts/semantic-review.ts';
 import { KNOWN_CLIENTS } from '../../src/hosts/wiring/clients.ts';
 import {
   OBSERVATION_DEFAULTS, PREREGISTRATION, gatingAxes, intakeVerdict, measureIntake, observeRun, pairToolCalls, shouldStop,
   type CellSummary, type IntakeCase, type RunObservation, type TapFrame,
 } from '../../src/kernel/skills/routing.ts';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
-import { codexProvider, codexProviderArgs, endedWithQuestion, hostArgs, hostEnv, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand, toml } from '../../scripts/host-cli.mjs';
+import { codexEvaluationIsolationArgs, codexProvider, codexProviderArgs, endedWithQuestion, hostArgs, hostEnv, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand, toml } from '../../scripts/host-cli.mjs';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
 import { executionSurfaceDigest, ALL_HOSTS, CROWDED_STUBS, GATED_MATRIX, ISOLATION_PROBE, buildRecord, carriedCells, checkRecord, cursorSnapshot, duplicateCell, e2eCheckpoints, finalTurnFacts, itemsFor, prepareRun, readFrames, readIsolation, restoreCursor, stripPaths, stubsDigest, superviseHost, workflowCatalog } from '../../scripts/evals-live.mjs';
 
@@ -107,6 +108,16 @@ test('a host gets the delegation allowlist and never a session marker or an API 
   assert.equal(apiEnvironmentPresent(env), true);
 });
 
+test('evaluation MCP overrides disable foreign names before enabling only the explicit fixtures', () => {
+  const args = hostArgs('codex', { model: 'gpt-6-astra', prompt: 'hi', disabledMcpNames: ['construct', 'personal'], server: { command: ['node', 'candidate.mjs'] }, stubs: [{ name: 'notion', command: ['node', 'stub.mjs'] }] }) as string[];
+  assert.ok(args.includes('mcp_servers.personal.enabled=false'));
+  assert.ok(args.indexOf('mcp_servers.construct.enabled=false') < args.indexOf('mcp_servers.construct.enabled=true'));
+  assert.ok(args.includes('mcp_servers.notion.enabled=true'));
+  assert.ok(!args.includes('mcp_servers.personal.enabled=true'));
+  assert.throws(() => codexEvaluationIsolationArgs(['personal.with.dot']), /safely override/);
+  assert.throws(() => hostArgs('codex', { model: 'gpt-6-astra', prompt: 'hi', server: { command: ['node', 'candidate.mjs'] }, stubs: [{ name: 'bad.name', command: ['node', 'stub.mjs'] }] }), /safely override/);
+});
+
 test('each host is invoked with its isolation flags and the server command the run names', () => {
   const server = { command: serverCommand('/opt/candidate', 'codex', '/tmp/p'), env: { HOME: '/tmp/c' } };
   assert.deepEqual(server.command.slice(1), ['/opt/candidate/bin/construct.mjs', 'serve', '--client=codex', '--project=/tmp/p']);
@@ -132,6 +143,15 @@ test('each host is invoked with its isolation flags and the server command the r
   assert.ok(codex.includes('mcp_servers.notion.default_tools_approval_mode="approve"'));
   assert.ok(codex.includes('model_provider="mine"') && codex.includes('model_providers.mine.requires_openai_auth=true') && codex.includes('model_reasoning_effort="medium"'));
   assert.equal(codex[codex.length - 1], 'hi');
+  for (const feature of REVIEW_DISABLED_FEATURES.filter((name) => !['shell_tool', 'unified_exec', 'skill_search'].includes(name))) {
+    assert.ok(codex.some((part, index) => part === '--disable' && codex[index + 1] === feature), `Codex evaluation disables unrelated ${feature}`);
+  }
+  for (const feature of ['shell_tool', 'unified_exec', 'skill_search']) {
+    assert.ok(!codex.some((part, index) => part === '--disable' && codex[index + 1] === feature), `Codex evaluation retains local ${feature}`);
+  }
+  assert.ok(!codex.some((part) => part.startsWith('project_doc_max_bytes=')), 'fixture project instructions stay available');
+  assert.ok(codex.includes('mcp_servers.construct.enabled=true'));
+  assert.ok(codex.includes('mcp_servers.notion.enabled=true'));
   const cursor = hostArgs('cursor', { model: 'composer-2.5', prompt: 'hi' }) as string[];
   assert.equal(cursor[cursor.indexOf('--sandbox') + 1], 'enabled');
   for (const flag of ['--approve-mcps', '--trust']) assert.ok(cursor.includes(flag), flag);

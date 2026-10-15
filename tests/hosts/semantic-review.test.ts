@@ -47,3 +47,38 @@ test('MCP overrides use the native CLI key syntax and reject ambiguous names', (
   assert.deepEqual(disableReviewMcp(['construct', 'source_api']), ['-c', 'mcp_servers.construct.enabled=false', '-c', 'mcp_servers.source_api.enabled=false']);
   assert.throws(() => disableReviewMcp(['source.with.dot']), /cannot safely override/);
 });
+
+test('context exhaustion, visible compaction and incomplete output cannot supply review assurance', () => {
+  for (const failure of [
+    { type: 'turn.failed', error: { message: 'Input exceeds the context window' } },
+    { type: 'error', message: 'Context length exceeded' },
+    { type: 'thread.compacted' },
+    { type: 'item.completed', item: { type: 'context_compaction' } },
+  ]) {
+    let stopped = false;
+    const s = semanticEventStream(() => { stopped = true; }); start(s);
+    s.write(event(failure)); final(s); s.write(event({ type: 'turn.completed' }));
+    const result = s.finish();
+    assert.equal(stopped, true);
+    assert.equal(result.completed, false);
+    assert.ok(result.problems.length > 0);
+  }
+  const incomplete = semanticEventStream(() => {}); start(incomplete); final(incomplete);
+  assert.equal(incomplete.finish().completed, false);
+});
+
+test('failed native stderr yields bounded categories without retaining private content or supplying judgment', () => {
+  for (const [message, category] of [['Input exceeds the maximum length of 1048576 characters.', 'input_capacity'], ['Input is too long for the context window', 'context_capacity'], ['connection closed', 'transport'], ['arbitrary private fixture', 'unknown']]) {
+    const s = semanticEventStream(() => {}); start(s);
+    const raw = Buffer.from(`${message}\ncafé private fixture sk-${'a'.repeat(30)}\n{"checks":[]}`);
+    for (const byte of raw) s.write(Buffer.from([byte]), true);
+    const r = s.finish(1);
+    assert.equal(r.text, ''); assert.equal(r.completed, false);
+    assert.ok(r.observations.some((o: any) => o.type === 'native.stderr_diagnostic' && o.category === category));
+    assert.ok(!JSON.stringify(r).includes('private fixture'));
+    assert.ok(!JSON.stringify(r).includes('sk-'));
+  }
+  const success = semanticEventStream(() => {}); start(success); final(success);
+  success.write(Buffer.from('metadata warning'), true); success.write(event({ type: 'turn.completed' }));
+  assert.deepEqual(success.finish().problems, []);
+});

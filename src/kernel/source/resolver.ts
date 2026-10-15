@@ -1,3 +1,4 @@
+import { urlCarriesCredentials } from '../project/urls.ts';
 import { getWork } from '../work/service.ts';
 /**
  * kernel/source/resolver.ts — the evidence resolver for a project as it
@@ -59,7 +60,8 @@ export function projectResolver(store: StateStore, root: string, override?: { re
     deliverableIds: new Set(listLiveDeliverables(store).map((d) => d.id)),
     knows,
   });
-  return (ref) => {
+  return (ref, use) => {
+    if (use === 'artifact') return current(ref, use);
     const raw=ref.trim();
     const match = /^snapshot:([^:]+):(.+)$/.exec(raw);
     if (!match) {
@@ -83,7 +85,7 @@ export function projectResolver(store: StateStore, root: string, override?: { re
     // Historical citations do not resurrect withdrawn access.
     if (!captured || !source?.canRead || source.status !== 'active') return null;
     const entry = captured.entries.find(e => e.ref === itemRef);
-    if (!entry || typeof entry.text !== 'string') return null;
+    if (!entry || typeof entry.text !== 'string' || urlCarriesCredentials(entry.ref) || (entry.url !== undefined && urlCarriesCredentials(entry.url))) return null;
     return { ref, kind: 'item', sourceId: source.id, itemRef, snapshotId, contentDigest: entry.fingerprint,
       historical: source.lastSnapshotId !== snapshotId, provenance: captured.provenance, text: entry.text,
       ...(entry.url ? { url: entry.url } : {}), ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),

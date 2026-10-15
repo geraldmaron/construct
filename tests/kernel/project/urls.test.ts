@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeUrl, urlProblem } from '../../../src/kernel/project/urls.ts';
+import { normalizeUrl, urlCarriesCredentials, urlProblem } from '../../../src/kernel/project/urls.ts';
 
 test('the same page written different ways reads the same', () => {
   const page = 'https://wiki.example/pages/98765';
@@ -37,5 +37,63 @@ test('an address carrying credentials is not kept', () => {
   assert.match(urlProblem(`https://wiki.example/p?token=ghp%5F${BODY}${BODY.slice(0, 4)}`)!, /carries credentials/, 'a token percent-encoded in the query');
   for (const page of ['https://www.notion.so/acme/Risk-Assessment-for-Q3-Launch-1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d', 'https://www.notion.so/acme/Task-Board-Platform-Migration-0f9e8d7c6b5a49382716a5b4c3d2e1f0', 'https://github.com/acme/task-management-service-backend/pull/12']) {
     assert.equal(urlProblem(page), null, `a page slug is a title, not a key: ${page}`);
+  }
+});
+
+test('provider normalization is bounded by host, permalink path and identity fields', () => {
+  const slack='https://acme.slack.com/archives/C123/p1729000000000100';
+  const jira='https://acme.atlassian.net/browse/APP-42';
+  assert.equal(normalizeUrl(`${slack}?thread_ts=1728999000.000100&cid=C123`),slack);
+  assert.equal(normalizeUrl(`${jira}?atlOrigin=copy`),jira);
+  assert.equal(normalizeUrl(`<${slack}|a label>`),slack);
+  assert.equal(normalizeUrl(`[a label](${jira})`),jira);
+  assert.equal(normalizeUrl(`<${jira}>`),jira);
+  for(const url of [jira,slack,'https://github.com/acme/repo/issues/42']) {
+    assert.notEqual(normalizeUrl(`${url}#comment-99`),normalizeUrl(url));
+    assert.notEqual(normalizeUrl(`${url}?focusedCommentId=99`),normalizeUrl(url));
+  }
+  for(const url of ['https://slack.com.evil.example/archives/C123/p1729000000000100','https://acme.slack.com/search','https://custom-jira.example/browse/APP-42','https://acme.atlassian.net/wiki/pages/42']) {
+    assert.notEqual(normalizeUrl(`${url}?thread_ts=1&atlOrigin=copy`),normalizeUrl(url));
+  }
+  for(const url of [`${jira}?atlOrigin=ghp_${'a1B2c3D4e5F6g7H8i9J0'.repeat(2)}`,`${slack}?access_token=ghp_${'a1B2c3D4e5F6g7H8i9J0'.repeat(2)}`,`https://user:password@acme.slack.com/archives/C123/p1729000000000100`]) assert.equal(normalizeUrl(url),null);
+  assert.equal(urlProblem(`<${jira}>`),'is not an http(s) address','stored URLs remain plain addresses');
+});
+
+test('URL credential policy follows parsed userinfo and encoded ASCII signatures', () => {
+  const body = 'a1B2c3D4e5F6g7H8i9J0'.repeat(2);
+  const base = 'https://wiki.example/page';
+  for (const ref of [
+    'https://user:fake\tpassword@wiki.example/page',
+    'https://user:fake\npassword@wiki.example/page',
+    'https://user@wiki.example/page',
+    'https://:password@wiki.example/page',
+    `${base}#%67hp_${body}`,
+    `${base}#token=%67%68%70%5f${body}`,
+    `${base}#%67hp_${body}%`,
+    `${base}#%FF%67hp_${body}`,
+    `${base}?token=%67hp_${body}%`,
+    `${base}?%67hp_${body}=value`,
+    `https://acme.atlassian.net/browse/APP-42?atlOrigin=%67hp_${body}`,
+  ]) {
+    assert.match(urlProblem(ref)!, /carries credentials/, ref);
+    assert.equal(normalizeUrl(ref), null, ref);
+  }
+  for (const ref of [
+    `${base}#ordinary%20heading`, `${base}#ordinary%`, `${base}#ordinary%FF`,
+    `${base}?filter=ordinary%20value`, `${base}?filter=ordinary%`, `${base}?filter=ordinary%FF`,
+    `https://wiki.example/Risk-Assessment-sk-${'a'.repeat(25)}`,
+  ]) {
+    assert.equal(urlProblem(ref), null, ref);
+    assert.notEqual(normalizeUrl(ref), null, ref);
+  }
+});
+
+test('credential inspection shares complete URL presentation parsing without reading labels or opaque refs', () => {
+  const unsafe = `https://wiki.example/page#%67hp_${'a1B2c3D4e5F6g7H8i9J0'.repeat(2)}`;
+  for (const ref of [unsafe, `<${unsafe}>`, `<${unsafe}|policy>`, `[policy](${unsafe})`, 'https://user:fake\tpassword@wiki.example/page']) {
+    assert.equal(urlCarriesCredentials(ref), true, ref);
+  }
+  for (const ref of ['APP-42', 'docs/Review Notes.md', 'chat:message', `opaque:${unsafe}`, `[${unsafe}](https://wiki.example/page)`, `<https://wiki.example/page|${unsafe}>`, `https://wiki.example/page#%2567hp_${'a1B2c3D4e5F6g7H8i9J0'.repeat(2)}`, `https://wiki.example/page?token=%2567hp_${'a1B2c3D4e5F6g7H8i9J0'.repeat(2)}`]) {
+    assert.equal(urlCarriesCredentials(ref), false, ref);
   }
 });

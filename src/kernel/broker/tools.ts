@@ -42,13 +42,13 @@ import { getSession, recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
-import { laneNamed, UnknownWorktreeError, WORKTREE_PATH_MAX, type EditLane } from '../work/lanes.ts';
+import { assertLeasePaths, laneNamed, UnknownWorktreeError, WORKTREE_PATH_MAX, type EditLane } from '../work/lanes.ts';
 import { coordinationFor, presentSessions } from '../coord/awareness.ts';
-import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork, type WorkItem } from '../work/service.ts';
+import { acceptWork, prepareAcceptance, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork, type WorkItem } from '../work/service.ts';
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
-import { runValidators } from '../workflow/validators.ts';
-import { checkSlot, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
+import { periodCoverage, runValidators } from '../workflow/validators.ts';
+import { checkSlot, dayOf, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
 import { inputProblems } from '../registry/resolver.ts';
 import type { RegisteredWorkflow } from '../registry/models.ts';
 import { differsNext, OBJECTION_DISPOSITIONS, OBJECTIONS_EXAMPLE, readObjections, VALIDATED_BY_CHECKS, type Objection, type PromotionSubject, type StartResult } from '../workflow/service.ts';
@@ -68,7 +68,7 @@ import { ensureSourceEntities } from '../source/entities.ts';
 import { locatorProblem } from '../source/locators.ts';
 import { getSource } from '../state/sources.ts';
 import { SOURCE_ID, locatorCarriesCredentials } from '../project/sources-file.ts';
-import { urlProblem } from '../project/urls.ts';
+import { urlCarriesCredentials, urlProblem } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
 import { quoteHost } from '../render/person-prompt.ts';
 import { REPORTED_TEXT_CAP, SOURCE_READ_OUTCOMES, type SourceReadOutcome } from '../source/service.ts';
@@ -858,6 +858,27 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
   },
 });
 
+/** One citation contract for answers and managed submissions. Malformed excerpts
+ * must not silently disappear and bypass quote validation. */
+const CITATION_ITEM = {
+  type: 'object',
+  properties: {
+    ref: { type: 'string', description: 'Recorded item ref, source-qualified ref, file or complete HTTP(S) link.' },
+    excerpt: { type: 'string', description: 'Optional exact readable passage; never a structured provider object.' },
+  },
+  required: ['ref'],
+} as const;
+
+function citationsInput(raw: Record<string, unknown>, key: string): { ref: string; excerpt?: string }[] {
+  return list(raw, key).map((entry, n) => {
+    const item = record(entry);
+    if (item.excerpt !== undefined && item.excerpt !== null && typeof item.excerpt !== 'string') {
+      throw new ToolInputError(`${key}[${String(n)}].excerpt must be a readable string; extract the observed passage before citing it`, { field: `${key}[${String(n)}].excerpt` });
+    }
+    return { ref: typeof item.ref === 'string' ? item.ref : '', ...(typeof item.excerpt === 'string' ? { excerpt: redact(item.excerpt) } : {}) };
+  });
+}
+
 interface SubmitInput { stepRunId: string; token: string; output: Record<string, unknown>; evidence: { ref: string; excerpt?: string }[]; noData: boolean }
 
 const submitWork = define<SubmitInput, unknown>({
@@ -873,7 +894,7 @@ const submitWork = define<SubmitInput, unknown>({
       token: { type: 'string', description: 'From claim_work: the lease’s secret.' },
       owner: { type: 'string', description: 'Ignored: the lease holder is the calling session.' },
       output: { type: 'object', description: 'The step’s result, with the keys it declared.' },
-      evidence: { type: 'array', description: 'What was read: {ref, excerpt?} entries.', items: { type: 'object' } },
+      evidence: { type: 'array', description: 'What was read: {ref, excerpt?} entries.', items: CITATION_ITEM },
       noData: { type: 'boolean', description: 'The step found nothing to work on.' },
     },
     required: ['stepRunId', 'token', 'output'],
@@ -881,12 +902,7 @@ const submitWork = define<SubmitInput, unknown>({
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    const evidence = list(raw, 'evidence').map((e) => {
-      const r = record(e);
-      const ref = typeof r.ref === 'string' ? r.ref : '';
-      // An excerpt is kept with the step, so it is kept without credentials, as recorded source text is.
-      return { ref, excerpt: typeof r.excerpt === 'string' ? redact(r.excerpt) : undefined };
-    });
+    const evidence = citationsInput(raw, 'evidence');
     return { stepRunId: str(raw, 'stepRunId')!, token: leaseToken(raw), output: obj(raw, 'output')!, evidence, noData: bool(raw, 'noData', false) };
   },
   run(ctx, input) {
@@ -937,8 +953,8 @@ const checkpointWork = define<{ stepRunId: string; token: string; summary: strin
     if (!step || !lease || lease.leaseUntil <= at) throw new Error('Checkpoint requires this session’s current unexpired step lease');
     if (JSON.stringify(input).length > 20_000 || !Number.isSafeInteger(input.gatherCalls) || input.gatherCalls < 0 || [...input.unknowns,...input.remaining].some(s => typeof s !== 'string')) throw new ToolInputError('Checkpoint must contain bounded text and a nonnegative gather-call count');
     const run = getRun(ctx.store,step.runId)!; if (run.cancelRequested || ['failed','cancelled','succeeded'].includes(run.state)) throw new Error('Stopped outcomes cannot receive a new checkpoint');
-    const artifact = input.artifact ? projectResolver(ctx)(input.artifact) : null;
-    const receipt = input.artifact ? contentReceipt(input.artifact,projectResolver(ctx)) : null;
+    const artifact = input.artifact ? projectResolver(ctx)(input.artifact, 'artifact') : null;
+    const receipt = input.artifact ? contentReceipt(input.artifact,projectResolver(ctx), 'artifact') : null;
     const binding = (run.bindings as { steps?: readonly import('../registry/models.ts').WorkflowStep[]; execution?: import('../registry/models.ts').WorkflowManifest['execution'] } | null);
     const bound = binding?.steps?.find(s => s.id === step.stepId);
     if (input.artifact && (artifact?.kind !== 'file' || !artifact.path || !isInside(ctx.root,artifact.path) || !receipt?.digest || bound?.tier !== 'project_write')) throw new Error('Artifact checkpoint needs an existing readable artifact on a project-write step');
@@ -1178,7 +1194,7 @@ const sources = define<SourcesInput, unknown>({
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Inspect, read, check scoped access, or map typed data.', enum: SOURCE_ACTIONS },
-      observation: { type: 'object', description: 'Optional access report; omit if identity/expiry is unknown. Never grants access; session/provenance/grants are ignored.', properties: {
+      observation: { type: 'object', description: 'Observed access; omit unknown identity/expiry. Never grants access; session/provenance/grants ignored.', properties: {
         ...ACCESS_REQUEST_PROPERTIES,
         mode: { type: 'string', description: 'A source read cannot report a write operation.', enum: ['read'] },
         transport: { type: 'string', description: 'Transport actually used for the read.', enum: ['api', 'mcp', 'local'] },
@@ -1190,16 +1206,17 @@ const sources = define<SourcesInput, unknown>({
       item: { type: 'string', description: 'Map: item ref; without mapping returns its recorded mapping or unknown shape.' },
       mapping: { type: 'object', description: 'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.' },
       id: { type: 'string', description: 'Source id: lowercase letters, digits and dashes; starts with a letter.' },
-      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'Report outcome; defaults to read. Empty/failed reads preserve prior evidence, never establish source-wide freshness.' },
+      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'Defaults to read. Empty/failed reads preserve evidence, never source-wide freshness.' },
       reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
       scope: { type: 'string', description: 'For report: attempted query, item URI or scope; required for non-read outcomes.' },
-      coverage: { type: 'object', description: 'For report: observed completeness, pagination and coverage limitations; these remain host reports.' },
+      coverage: { type: 'object', description: 'Reported completeness, pagination and limitations.' },
       items: { type: 'array', description: 'Read items; preserve passages, not summaries.', items: { type: 'object', properties: {
         ref: { type: 'string', description: 'Stable nonempty key, unique within source.' },
         url: { type: 'string', description: 'HTTP(S) address a person would open; never credentials.' },
         title: { type: 'string', description: 'Observed item title.' },
         updatedAt: { type: 'string', description: 'Provider last-updated time, when known; not the time you read it.' },
-        text: { type: 'string', description: 'Exact passage read; text cap applies.' },
+        text: { type: 'string', description: 'Exact readable text; retained up to 256 KiB UTF-8.' },
+        truncated: { type: 'boolean', description: 'True if content omitted; omission preserves partial status. False requires a full read; separate from list partial.' },
         kind: { type: 'string', description: 'Observed item kind.' },
         fingerprint: { type: 'string', description: 'Provider content fingerprint, when available.' },
         weak: { type: 'boolean', description: 'True for a discovered reference that was not read as a version.' },
@@ -1268,11 +1285,24 @@ const sources = define<SourcesInput, unknown>({
       if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
         if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: `items[${String(n)}].ref` });
-        const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
+        if (urlCarriesCredentials(i.ref)) throw new ToolInputError(`items[${String(n)}].ref carries credentials; give the address without them`, { field: `items[${String(n)}].ref` });
+        const opt = (k: string): string | undefined => {
+          if (i[k] === undefined || i[k] === null) return undefined;
+          if (typeof i[k] !== 'string') {
+            const expected = k === 'text' ? 'a readable string; extract the observed passage from structured provider content before reporting it' : 'a string';
+            throw new ToolInputError(`items[${String(n)}].${k} must be ${expected}`, { field: `items[${String(n)}].${k}` });
+          }
+          return i[k] as string;
+        };
+        if (i.weak !== undefined && typeof i.weak !== 'boolean') throw new ToolInputError(`items[${String(n)}].weak must be a boolean`, { field: `items[${String(n)}].weak` });
+        if (i.truncated !== undefined && typeof i.truncated !== 'boolean') throw new ToolInputError(`items[${String(n)}].truncated must be a boolean`, { field: `items[${String(n)}].truncated` });
+        if (i.schema !== undefined && i.schema !== null && (typeof i.schema !== 'object' || Array.isArray(i.schema))) throw new ToolInputError(`items[${String(n)}].schema must be an object`, { field: `items[${String(n)}].schema` });
         const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
         const problem = url === undefined ? null : urlProblem(url);
         if (problem) throw new ToolInputError(`items[${String(n)}].url ${problem}`, { field: `items[${String(n)}].url`, example: 'https://acme.atlassian.net/browse/PLAT-101' });
-        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text'), fingerprint: opt('fingerprint'), weak: i.weak === true, ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}), ...(url !== undefined ? { url } : {}) };
+        const updatedAt = opt('updatedAt');
+        if (updatedAt && /^\d{4}-\d{2}-\d{2}(?:[Tt ]|$)/.test(updatedAt.trim()) && dayOf(updatedAt.trim(), 'UTC') === null) throw new ToolInputError(`items[${String(n)}].updatedAt is not a valid calendar date or timestamp; preserve an unknown provider format as unknown, never invent a date`, { field: `items[${String(n)}].updatedAt` });
+        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt, text: opt('text'), fingerprint: opt('fingerprint'), weak: i.weak === true, ...(typeof i.truncated === 'boolean' ? { truncated: i.truncated } : {}), ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}), ...(url !== undefined ? { url } : {}) };
       });
       const reported = ctx.sources.reportRead(id, { items: parsed, partial, outcome, reason, scope, coverage, observation, sessionId: ctx.sessionId ?? undefined }, at, () => ctx.nextId('snap'));
       // Access observations are scoped reports, not grants or evidence that every source
@@ -1282,7 +1312,7 @@ const sources = define<SourcesInput, unknown>({
         if (Array.isArray(ctx.host.reported) && !ctx.host.reported.includes(capability)) ctx.host.reported.push(capability);
       }
       if (!reported.truncated?.length) return reported;
-      return { ...reported, next: `Construct kept the first ${String(REPORTED_TEXT_CAP / 1024)} KiB of the text of ${reported.truncated.join(', ')}; a quote or figure past that cannot be checked, so report the passage you rely on as its own item.` };
+      return { ...reported, next: `The retained text of ${reported.truncated.join(', ')} is incomplete (at most ${String(REPORTED_TEXT_CAP / 1024)} KiB of UTF-8 per item). To capture a missing exact passage, report it using the same stable ref and URL with partial:true and items[].truncated:true; do not create another item for the same URL. For research closure, account for the uncaptured remainder under referenceDispositions using the exact cited ref. Set items[].truncated:false only after a complete read that fits the retained limit.` };
     }
     return ctx.sources.refresh(id, at, () => ctx.nextId('snap'));
   },
@@ -1340,7 +1370,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
       historicalEvidence: { type: 'array', description: 'Historical citations used as history, never as current support: {ref,why}.', items: { type: 'object' } },
       claims: { type: 'array', items: { type: 'object' }, description: 'Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown.' },
-      citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: { type: 'object' } },
+      citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: CITATION_ITEM },
       period: { type: 'object', description: 'The period the answer covers, when it covers one: {semantics: as_of | changed_during | evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}.' },
       outsidePeriod: { type: 'array', description: 'Cited items updated after the period that belong in the answer anyway: {ref, why} entries.', items: { type: 'object' } },
     },
@@ -1349,10 +1379,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    const citations = list(raw, 'citations').map((e) => {
-      const r = record(e);
-      return { ref: typeof r.ref === 'string' ? r.ref : '', excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
-    });
+    const citations = citationsInput(raw, 'citations');
     const period = obj(raw, 'period', { optional: true });
     const outsidePeriod = list(raw, 'outsidePeriod').map((e) => {
       const r = record(e);
@@ -1393,7 +1420,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       limits: 'Citation, excerpt, figure and policy checks do not establish that evidence entails every claim or that research is complete.',
       problems,
       evidence: provenanceOf(citations, resolve),
-      ...(period ? { period: { from: period.from, to: period.to, timezone: period.timezone, assumptions: period.assumptions } } : {}),
+      ...(period ? { period: { from: period.from, to: period.to, timezone: period.timezone, assumptions: period.assumptions, coverage: periodCoverage(citations, resolve, period, outsidePeriod ?? []) } } : {}),
       next: (problems.length === 0
         ? 'Structural checks passed. Review whether the evidence actually supports each claim before answering; these checks do not establish semantic support. Name unsupported parts and reported sources.'
         : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,
@@ -1487,7 +1514,7 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
   },
 });
 
-const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'update', 'link', 'unlink', 'requalify', 'claim', 'check', 'handoff', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
+const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'update', 'link', 'unlink', 'requalify', 'claim', 'check', 'handoff', 'prepare_accept', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
@@ -1608,6 +1635,8 @@ interface WorkToolInput {
   removeParent?: boolean;
   reason?: string;
   token?: string;
+  acceptanceKey?: string;
+  offerId?: string;
   agent?: string;
   paths?: string[];
   mode?: LeaseMode;
@@ -1634,7 +1663,7 @@ const work = define<WorkToolInput, unknown>({
   inputSchema: {
     type: 'object',
     properties: {
-      action: { type: 'string', description: WORK_ACTIONS.join(', ') + '.', enum: [...WORK_ACTIONS] },
+      action: { type: 'string', description: 'Use prepare_accept before recoverable accept.', enum: [...WORK_ACTIONS] },
       id: { type: 'string', description: 'Work id or a preserved legacy id.' },
       title: { type: 'string', description: 'Title, for add and update.' },
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
@@ -1648,19 +1677,34 @@ const work = define<WorkToolInput, unknown>({
       sources: { type: 'array', items: { type: 'string' }, description: 'For add and update: source ids whose refresh sends this work back for requalification.' },
       removeParent: { type: 'boolean', description: 'For unlink: remove the parent.' },
       reason: { type: 'string', description: 'Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met.' },
-      token: { type: 'string', description: 'The token your claim returned: renews a claim, completes or releases it.' },
+      token: { type: 'string', description: 'Ledger claimToken for renewal, handoff or settlement; not a workflow-step token. Accept rotates it. Never relay the offerer’s token.' },
+      acceptanceKey: { type: 'string', description: 'Accept: private key from prepare_accept. Retain with offerId before dispatch; retry both unchanged to recover the same live claim without renewal. Never publish or invent a key.' },
+      offerId: { type: 'string', description: 'Accept: public immutable handoff.offerId from offers/show or prepare_accept. Pair with acceptanceKey to fence stale requests.' },
       agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
       paths: { type: 'array', items: { type: 'string' }, description: 'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.' },
       mode: { type: 'string', description: 'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.', enum: [...LEASE_MODES] },
-      packet: { type: 'object', description: 'For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths.' },
+      packet: { type: 'object', description: 'Handoff notes; descriptive paths do not reserve files. Only actual claim reservations transfer.', properties: {
+        state: { type: 'string', description: 'Where the work stands.' },
+        next: { type: 'string', description: 'The next concrete step.' },
+        watchOut: { type: 'array', items: { type: 'string' }, description: 'Known hazards.' },
+        openQuestions: { type: 'array', items: { type: 'string' }, description: 'Unresolved questions.' },
+        where: { type: 'object', description: 'Descriptive location; never authority or reservations.', properties: {
+          branch: { type: 'string', description: 'Branch name, when known.' },
+          commit: { type: 'string', description: 'Git commit id, when known.' },
+          paths: { type: 'array', items: { type: 'string' }, description: 'Repository-relative paths for context.' },
+        } },
+      }, required: ['state', 'next'] },
       to: { type: 'string', description: 'For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept.' },
-      worktree: { type: 'string', description: 'For claim, check, accept, and takeover: the absolute path of the git worktree of this project you edit in, when it is not the one this session runs in. Reservations then record that worktree and its current branch, and a renewal that leaves it out keeps the worktree its claim records. A path that is not one of the project’s worktrees is refused with the ones that are.' },
+      worktree: { type: 'string', description: 'For claim/check/accept/takeover in another managed worktree: its absolute path. Reservations bind that root and branch; renewal without it keeps that binding. Unknown worktrees refuse.' },
     },
     required: ['action'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
+    if (raw.acceptanceKey !== undefined && raw.action !== 'accept') throw new ToolInputError('"acceptanceKey" is only for accept; prepare_accept generates one before dispatch', { field: 'acceptanceKey' });
+    if (raw.offerId !== undefined && raw.action !== 'accept') throw new ToolInputError('"offerId" is only for accept', { field: 'offerId' });
+    if (raw.acceptanceKey !== undefined && raw.offerId === undefined) throw new ToolInputError('"offerId" from the observed handoff is required with acceptanceKey', { field: 'offerId' });
     return {
       action: str(raw, 'action', { oneOf: [...WORK_ACTIONS] }) as WorkAction,
       id: str(raw, 'id', { optional: true }),
@@ -1677,6 +1721,8 @@ const work = define<WorkToolInput, unknown>({
       removeParent: bool(raw, 'removeParent', false),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
+      acceptanceKey: matching(str(raw, 'acceptanceKey', { optional: true }), /^[a-f0-9]{64}$/i, 'acceptanceKey', '"acceptanceKey" is 32 cryptographically random bytes encoded as 64 hex characters and retained privately before accepting'),
+      offerId: matching(str(raw, 'offerId', { optional: true }), /^[A-Za-z0-9:_-]{1,160}$/, 'offerId', '"offerId" is the public immutable generation from the observed handoff'),
       agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, 'agent', '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
       paths: raw.paths === undefined ? undefined : leasePaths(raw),
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
@@ -1685,14 +1731,16 @@ const work = define<WorkToolInput, unknown>({
       worktree: worktreePath(raw),
     };
   },
-  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, agent, paths, mode, packet, to, worktree }) {
+  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, acceptanceKey, offerId, agent, paths, mode, packet, to, worktree }) {
     const at = ctx.now();
     const where = editLane(ctx, LANE_ACTIONS.includes(action) ? worktree : undefined);
     if (action === 'list') return queryWork(ctx.store, { query: title, parentId: parent, limit: 50 });
     if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new ToolInputError('"paths" is required for check', { field: 'paths' });
-      const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
+      assertLeasePaths({ root: ctx.root, lane: where.lane, paths, store: ctx.store, now: at });
+      const named = id ? getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id) : null;
+      const exclude = named?.status === 'claimed' && named.claimOwner === claimantOf(ctx, agent).owner && named.claimUntil && named.claimUntil > at ? named.id : undefined;
       return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: where.lane ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
     }
     if (action === 'ready') return listReady(ctx.store, at);
@@ -1721,6 +1769,7 @@ const work = define<WorkToolInput, unknown>({
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
+    if (action === 'prepare_accept') return { ...prepareAcceptance(ctx.store, { id: item.id, ...claimantOf(ctx, agent), now: at }), next: 'Retain acceptanceKey privately with offerId, then call work accept with both, the same id, agent and intended worktree. Repeat that identical accept after a lost response; never publish this capability.' };
     if (action === 'show') {
       const handoff = handoffOf(ctx.store, item.id);
       return { ...item, readiness: readinessOf(ctx.store, item, at), structure: workStructure(ctx.store, item), leases: leasesFor(ctx.store, item.id), handoff: handoff ? handoffAsData(handoff) : null };
@@ -1746,13 +1795,14 @@ const work = define<WorkToolInput, unknown>({
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
     const renewing = action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
     const who = claimantFor(ctx, agent, at, renewing ?? where);
+    if (['claim', 'takeover'].includes(action)) assertLeasePaths({ root: ctx.root, lane: who.lane, paths: paths?.length ? paths : leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at });
     if (action === 'handoff') {
       if (!token) throw new ToolInputError('"token" is required for handoff: the one your claim returned', { field: 'token' });
       if (!packet) throw new ToolInputError('"packet" is required for handoff: at least state and next', { field: 'packet' });
       return handoffWork(ctx.store, { id: item.id, owner: who.owner, token, packet, to, now: at });
     }
     if (action === 'accept') {
-      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at });
+      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at, acceptanceKey, offerId }, () => assertLeasePaths({ root: ctx.root, lane: who.lane, paths: leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at }));
       return { ...taken, handoff: handoffAsData(taken.handoff) };
     }
     if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });
@@ -1796,7 +1846,7 @@ const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
     if (!extendLease(ctx.store, { id: stepRunId, owner: ctx.host.executorId, nonce: token, until, at })) {
       throw new Error(`step ${stepRunId} is not held by this session under that token`);
     }
-    return { leaseUntil: until };
+    return { leaseUntil: getStep(ctx.store, stepRunId)!.leaseUntil };
   },
 });
 

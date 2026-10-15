@@ -1,4 +1,3 @@
-import { redact } from '../../kernel/render/redact.ts';
 /**
  * hosts/sources/directory.ts — reading a directory source: what files are
  * there, digested so a refresh can tell whether anything changed.
@@ -27,6 +26,7 @@ import { closeSync, constants, existsSync, fstatSync, openSync, readSync, readdi
 import { join, relative, resolve, sep } from 'node:path';
 import type { ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
 import { inspectContained, isInside } from '../../kernel/safety/containment.ts';
+import { captureSourcePrefix, SOURCE_TEXT_CAP_BYTES } from '../../kernel/source/text.ts';
 
 export const DIRECTORY_ENTRY_CAP = 5000;
 /** Maximum buffer retained while hashing a file, regardless of its size. */
@@ -35,7 +35,6 @@ export const DIRECTORY_HASH_BUFFER_BYTES = 64 * 1024;
 const HEADER_LINES = 40;
 const SKIP = new Set(['.git', '.codex', '.claude', '.cursor', '.bob', '.opencode', '.ssh', '.aws', 'node_modules', '.construct', 'dist', '.cache', '.venv', '__pycache__']);
 const TEXTUAL = /\.(?:md|markdown|txt|rst|adoc|csv|ts|tsx|js|jsx|mjs|cjs|py|rs|go|java|html|css|sql|yaml|yml|json|toml)$/i;
-const DIRECTORY_TEXT_CAP = 16 * 1024;
 const PRIVATE_TEXT = /(?:^|[\\/])(?:auth\.json|credentials(?:\.[^/]*)?|secrets?(?:\.[^/]*)?|\.env(?:\.[^/]*)?)$/i;
 
 interface Fingerprint {
@@ -71,22 +70,29 @@ function fingerprintOf(path: string): Fingerprint {
     if (!before.isFile()) throw new Error('source entry is no longer a regular file');
     const hash = createHash('sha256');
     const buffer = Buffer.allocUnsafe(DIRECTORY_HASH_BUFFER_BYTES);
-    let header = '';
+    // The capture budget is independent of the streaming hash buffer. A few
+    // lookahead bytes let the shared capture routine end on a UTF-8 boundary.
+    const prefix = TEXTUAL.test(path) && !PRIVATE_TEXT.test(path) ? Buffer.allocUnsafe(SOURCE_TEXT_CAP_BYTES + 4) : null;
+    let retained = 0;
     let total = 0;
     while (total < before.size) {
       const n = readSync(fd, buffer, 0, Math.min(buffer.length, before.size - total), null);
       if (n === 0) break;
       hash.update(buffer.subarray(0, n));
-      if (total === 0 && TEXTUAL.test(path) && !PRIVATE_TEXT.test(path)) header = buffer.subarray(0, n).toString('utf8');
+      if (prefix && retained < prefix.length) {
+        const count = Math.min(n, prefix.length - retained);
+        buffer.copy(prefix, retained, 0, count);
+        retained += count;
+      }
       total += n;
     }
     const after = fstatSync(fd);
     if (total !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs) {
       throw new Error('source entry changed during its read; retry the refresh');
     }
-    const readable = TEXTUAL.test(path) && !PRIVATE_TEXT.test(path) && !header.includes('\0');
-    const text = readable ? redact(header).slice(0,DIRECTORY_TEXT_CAP) : undefined;
-    return { ...(text !== undefined ? { text, truncated: after.size > DIRECTORY_HASH_BUFFER_BYTES || redact(header).length > DIRECTORY_TEXT_CAP } : {}), size: after.size, mtimeMs: after.mtimeMs, fingerprint: hash.digest('hex'), ...headerFacts(header) };
+    const header = prefix?.subarray(0, retained).toString('utf8') ?? '';
+    const capture = prefix && !header.includes('\0') ? captureSourcePrefix(prefix.subarray(0, retained), after.size > retained) : undefined;
+    return { ...(capture ? { text: capture.text, truncated: capture.truncated } : {}), size: after.size, mtimeMs: after.mtimeMs, fingerprint: hash.digest('hex'), ...headerFacts(header) };
   } finally {
     closeSync(fd);
   }
@@ -155,7 +161,7 @@ export const readDirectorySource: SourceReader = async ({ locator }): Promise<Re
     }
   }
   const contentDigest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${f.fp.fingerprint}`).join('\n')).digest('hex')}`;
-  const digest = `sha256:${createHash('sha256').update(`directory-text-v1:${contentDigest}`).digest('hex')}`;
+  const digest = `sha256:${createHash('sha256').update(`directory-text-v2:${contentDigest}`).digest('hex')}`;
   const inventoryDigest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${String(f.fp.size)}\t${String(Math.floor(f.fp.mtimeMs))}`).join('\n')).digest('hex')}`;
   const capped = files.length >= DIRECTORY_ENTRY_CAP ? ` (capped at ${String(DIRECTORY_ENTRY_CAP)})` : '';
   const items: SnapshotItem[] = files.map((f) => ({

@@ -3,6 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { requestedFileProblems, persistedRecordProblems, artifactRefs, verificationReceipt, staleReceiptSubjects } from '../../../src/kernel/workflow/verification.ts';
 import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
+import { projectResolver } from '../../../src/kernel/source/resolver.ts';
+import { linkSync, mkdirSync, writeFileSync } from 'node:fs';
+import { runValidators } from '../../../src/kernel/workflow/validators.ts';
+import { join } from 'node:path';
 
 const resolve = (text: string): RefResolver => (ref) => ref === 'report.md' ? { ref, kind: 'file', provenance: 'witnessed', text } : null;
 test('structural receipts bind observed content and never upgrade a host execution claim', () => {
@@ -51,4 +55,33 @@ test('a requested file requires a real artifact, not only a successful database 
   assert.equal(requestedFileProblems(destination, ['report.md'], resolve('')).length, 1);
   assert.deepEqual(requestedFileProblems(destination, ['./report.md'], resolve('report')), []);
   assert.deepEqual(requestedFileProblems({ kind: 'chat', ref: null }, [], () => null), []);
+});
+
+test('artifact receipts bind literal filenames while evidence keeps citation locators', () => {
+  const fx = brokerFixture();
+  try {
+    mkdirSync(join(fx.box.cwd, 'briefs'));
+    const ref = 'briefs/report.md#draft';
+    writeFileSync(join(fx.box.cwd, 'briefs/report.md'), 'Decoy citation text.');
+    const resolver = () => projectResolver(fx.broker.store, fx.box.cwd);
+    assert.ok(requestedFileProblems({ kind: 'project_file', ref }, [ref], resolver()).length);
+    writeFileSync(join(fx.box.cwd, ref), 'Literal artifact text.');
+    const receipt = verificationReceipt({ runId: 'r', stepRunId: 's', observedAt: fx.ctx.now(), actor: 'fixture', subjects: [ref], evidence: [{ ref: 'briefs/report.md#section' }], checks: [], resolve: resolver() });
+    assert.notEqual(receipt.subjects[0]!.digest, receipt.evidence[0]!.digest);
+    assert.deepEqual(staleReceiptSubjects(receipt, resolver()), []);
+    writeFileSync(join(fx.box.cwd, ref), 'Changed literal artifact text.');
+    assert.deepEqual(staleReceiptSubjects(receipt, resolver()), [ref]);
+    assert.equal(resolver()('briefs/report.md#section')?.text, 'Decoy citation text.');
+  } finally { fx.cleanup(); }
+});
+
+test('a hard-linked document cannot ground the produced document in its own figures', () => {
+  const fx = brokerFixture();
+  try {
+    writeFileSync(join(fx.box.cwd, 'docs/report.md'), 'The target is $2.4M.');
+    linkSync(join(fx.box.cwd, 'docs/report.md'), join(fx.box.cwd, 'docs/linked.md'));
+    const result = runValidators(['numbers_grounded'], { output: { summary: 'The target is $2.4M.', artifact: 'docs/report.md' }, evidence: [{ ref: 'docs/linked.md' }], expectedKeys: [], resolvableRefs: new Set(), resolve: projectResolver(fx.broker.store, fx.box.cwd) });
+    assert.equal(result[0]!.ok, false);
+    assert.match(result[0]!.problems.join(' '), /grounds nothing|no cited source/);
+  } finally { fx.cleanup(); }
 });

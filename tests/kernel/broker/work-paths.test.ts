@@ -10,6 +10,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record, ToolInputError } from '../../../src/kernel/broker/definition.ts';
 import { createBrokerContext } from '../../../src/cli/broker-context.ts';
@@ -34,7 +36,9 @@ test('sessions reserve paths through the work tool: one writer per path in a che
   try {
     const a = fx.broker;
     const b = peer(fx, 'ses_b', null);
-    const c = peer(fx, 'ses_c', '/tmp/repo-lane');
+    const lane = join(fx.box.cwd, 'peer-checkout');
+    mkdirSync(lane);
+    const c = peer(fx, 'ses_c', lane);
     const reason = await reasonFor(a);
     const one = call(a, { action: 'add', serves: reason, title: 'parser' }) as { id: string };
     const two = call(a, { action: 'add', serves: reason, title: 'lexer' }) as { id: string };
@@ -51,7 +55,7 @@ test('sessions reserve paths through the work tool: one writer per path in a che
 
     const across = call(c, { action: 'claim', id: three.id, paths: ['src/parser/lex.ts'] }) as { mergeRisks: { kind: string; laneRoot: string }[]; leases: { laneRoot: string; branch: string }[] };
     assert.deepEqual(across.mergeRisks.map((o) => [o.kind, o.laneRoot]), [['merge_risk', 'main']]);
-    assert.deepEqual(across.leases.map((l) => [l.laneRoot, l.branch]), [['/tmp/repo-lane', 'feat/lane']]);
+    assert.deepEqual(across.leases.map((l) => [l.laneRoot, l.branch]), [[lane, 'feat/lane']]);
 
     const own = call(a, { action: 'check', id: one.id, paths: ['src/parser/lex.ts'] }) as { clear: boolean; mergeRisks: { workId: string }[] };
     assert.equal(own.clear, true, 'the work a check names is left out of it');
@@ -89,4 +93,83 @@ test('paths outside the repository, too many paths, and check without paths are 
   } finally {
     fx.cleanup();
   }
+});
+
+test('checks cannot exclude another session or agent merely by naming its work id', async () => {
+  const fx = brokerFixture();
+  try {
+    const item = call(fx.broker, { action: 'add', serves: await reasonFor(fx.broker), title: 'reserved parser' }) as { id: string };
+    call(fx.broker, { action: 'claim', id: item.id, paths: ['src/parser/'] });
+    const other = peer(fx, 'ses_other', null);
+    for (const [ctx, agent] of [[other, undefined], [fx.broker, 'helper']] as const) {
+      const result = call(ctx, { action: 'check', id: item.id, agent, paths: ['src/parser/a.ts'] }) as { clear: boolean; collisions: unknown[] };
+      assert.equal(result.clear, false);
+      assert.equal(result.collisions.length, 1);
+    }
+    assert.equal((call(fx.broker, { action: 'check', id: item.id, paths: ['src/parser/a.ts'] }) as { clear: boolean }).clear, true);
+  } finally { fx.cleanup(); }
+});
+
+test('symbolic aliases refuse before native acquisition or a misleading path check', async () => {
+  const { symlinkSync, mkdirSync, renameSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const fx = brokerFixture();
+  try {
+    const serves = await reasonFor(fx.broker);
+    const item = call(fx.broker, { action: 'add', serves, title: 'Edit canonical file' }) as { id: string };
+    const other = call(fx.broker, { action: 'add', serves, title: 'Edit another file' }) as { id: string };
+    const held = call(fx.broker, { action: 'claim', id: item.id, paths: ['docs/design.md'] }) as { claimToken: string };
+    symlinkSync(join(fx.box.cwd, 'docs'), join(fx.box.cwd, 'alias'), 'dir');
+    for (const path of ['alias/design.md', 'alias/missing/new.md']) {
+      assert.throws(() => call(fx.broker, { action: 'claim', id: other.id, paths: [path] }), /symbolic link.*canonical/i);
+      assert.throws(() => call(fx.broker, { action: 'check', paths: [path] }), /symbolic link.*canonical/i);
+    }
+    assert.equal((call(fx.broker, { action: 'show', id: other.id }) as { status: string }).status, 'open');
+    // A directory replaced after a claim must not silently become an alias.
+    mkdirSync(join(fx.box.cwd, 'moved'));
+    renameSync(join(fx.box.cwd, 'docs'), join(fx.box.cwd, 'moved', 'docs'));
+    symlinkSync(join(fx.box.cwd, 'moved', 'docs'), join(fx.box.cwd, 'docs'), 'dir');
+    assert.throws(() => call(fx.broker, { action: 'check', paths: ['moved/docs/design.md'] }), /symbolic link.*reconcile/i);
+    call(fx.broker, { action: 'release', id: item.id, token: held.claimToken });
+    assert.equal((call(fx.broker, { action: 'check', paths: ['moved/docs/design.md'] }) as { clear: boolean }).clear, true);
+  } finally { fx.cleanup(); }
+});
+
+test('dot-prefixed symlinks, hard links and observed case aliases cannot hide an exclusive writer', async () => {
+  const { symlinkSync, linkSync, existsSync, writeFileSync, mkdirSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const fx = brokerFixture();
+  try {
+    const serves = await reasonFor(fx.broker);
+    const first = call(fx.broker, { action: 'add', serves, title: 'First writer' }) as { id: string };
+    const second = call(fx.broker, { action: 'add', serves, title: 'Second writer' }) as { id: string };
+    const held = call(fx.broker, { action: 'claim', id: first.id, paths: ['docs/design.md'] }) as { claimToken: string };
+    symlinkSync(join(fx.box.cwd, 'docs'), join(fx.box.cwd, '..alias'), 'dir');
+    for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['..alias/design.md'] }), /symbolic link|canonical/i);
+    if (existsSync(join(fx.box.cwd, 'DOCS', 'DESIGN.MD'))) {
+      for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['DOCS/DESIGN.MD'] }), /canonical/i);
+    } else {
+      // A missing spelling cannot prove a distinct filesystem object.
+      for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['DOCS/DESIGN.MD'] }), /case or Unicode filename alias/i);
+      // Existing distinct ancestry on a case-sensitive filesystem is proof.
+      mkdirSync(join(fx.box.cwd, 'DOCS'));
+      writeFileSync(join(fx.box.cwd, 'DOCS', 'DESIGN.MD'), 'Independent case-distinct file.');
+      assert.equal((call(fx.broker, { action: 'check', paths: ['DOCS/DESIGN.MD'] }) as { clear: boolean }).clear, true);
+    }
+    linkSync(join(fx.box.cwd, 'docs', 'design.md'), join(fx.box.cwd, 'linked.md'));
+    for (const action of ['check', 'claim']) assert.throws(() => call(fx.broker, { action, id: second.id, paths: ['linked.md'] }), /hard link/i);
+    call(fx.broker, { action: 'release', id: first.id, token: held.claimToken });
+    writeFileSync(join(fx.box.cwd, 'plain.md'), 'Independent file.');
+    call(fx.broker, { action: 'claim', id: second.id, paths: ['plain.md'] });
+    const missing = call(fx.broker, { action: 'add', serves, title: 'New file' }) as { id: string };
+    call(fx.broker, { action: 'claim', id: missing.id, paths: ['docs/New.md'] });
+    assert.throws(() => call(fx.broker, { action: 'check', paths: ['docs/new.md'] }), /case or Unicode filename alias/i);
+    assert.throws(() => call(fx.broker, { action: 'check', paths: ['docs/cafe\u0301.md', 'docs/new.md'] }), /case or Unicode filename alias/i);
+    const unicode = call(fx.broker, { action: 'add', serves, title: 'Unicode file' }) as { id: string };
+    call(fx.broker, { action: 'claim', id: unicode.id, paths: ['docs/caf\u00e9.md'] });
+    assert.throws(() => call(fx.broker, { action: 'check', paths: ['docs/cafe\u0301.md'] }), /case or Unicode filename alias/i);
+    mkdirSync(join(fx.box.cwd, 'linked-dir'));
+    linkSync(join(fx.box.cwd, 'docs', 'design.md'), join(fx.box.cwd, 'linked-dir', 'another.md'));
+    assert.throws(() => call(fx.broker, { action: 'check', paths: ['linked-dir/'] }), /contains symbolic or hard links/i);
+  } finally { fx.cleanup(); }
 });

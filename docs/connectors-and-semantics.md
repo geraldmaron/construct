@@ -67,10 +67,21 @@ cited the item by its ref (`confluence:98765`, `98765`), by its url, or as
 `owner/repo#311`. An item's url is kept from one report to the next when a
 later report leaves it out; a url that is not http(s), or that carries
 credentials, is refused. The text is kept with anything shaped like a
-credential replaced by `[redacted]`, and capped at 16 KiB per item; the
-report names any item whose text it cut, a quote past the cut is not
-checked, and a figure past it is not grounded, so report the passage you
-rely on as its own item. Whether an item changed is still judged on what
+credential replaced by `[redacted]`, and capped at 256 KiB of UTF-8 per item,
+without splitting characters. Ordinary documents that fit are retained whole.
+The report names incomplete captures: a quote beyond the retained text is
+unchecked and a figure there is not grounded. To capture a missing exact
+passage, report it under the same stable item ref and URL with source-list
+`partial:true` and item `truncated:true`; a second item for the same URL makes
+that URL ambiguous. The uncaptured remainder stays unknown and needs an
+explicit `referenceDispositions` entry for research closure. Omitting the item
+flag preserves a known remainder; only a complete read that fits the limit
+may set `truncated:false`. Weak sightings never erase prior capture coverage.
+Directory reads retain a bounded prefix separately from their streaming hash;
+an incomplete final token and unfinished private-key blocks are withheld before
+credential screening. The entire file still contributes to its fingerprint.
+The per-item limit does not remove the separate aggregate review-bundle limit.
+Whether an item changed is still judged on what
 the host read, so a rotated key is a change. The redaction also replaces
 long hyphenated names that hold a digit
 (`release-2026-10-09-alpha-26-notes`), most full-length commit SHAs (one
@@ -103,9 +114,40 @@ check that refused it says to report the read first. Set to accept, such a
 citation resolves on the host's word and is counted as unverified. Items
 match exactly as recorded: `confluence:98765#heading` is not
 `confluence:98765`; cite the ref as it was reported. A url matches the
-item a read recorded under it whatever its fragment, `http` or `https`,
+item a read recorded under it across `http` or `https`,
 the letter case of its host, a default port, or a trailing slash; its path
-and query must match as recorded.
+and unknown query fields must match as recorded. Complete Markdown links
+(`[label](https://...)`), autolinks (`<https://...>`) and Slack links
+(`<https://...|label>`) are accepted as citations; labels are never item keys.
+On Slack workspace `/archives/<channel>/p<timestamp>` permalinks, `thread_ts`
+and `cid` are navigation fields. On Atlassian Cloud `/browse/<issue>` URLs,
+`atlOrigin` is a navigation field. Those fields do not change the recorded
+item identity. No other query fields are dropped; custom Jira hosts require
+the recorded URL. Recognized Atlassian Cloud issue, Slack message and GitHub issue/pull-request
+fragments remain significant because they can name comments or reviews. Custom
+Jira hosts follow generic URL fragment handling; use exact source-qualified item
+refs to distinguish their comments.
+Ambiguous normalized URLs fail closed; source-qualified references disambiguate.
+The original URL stays stored, and equivalent citation forms also participate
+in change/removal tracking.
+
+Report `text` and citation `excerpt` as readable strings. Structured provider
+objects are refused with a field-specific error instead of being silently
+dropped. Extract the exact observed passage, preserving sentence boundaries
+and adjacent formatted words; do not stringify metadata into prose or supply
+a summary as a quote. The existing Jira hook extracts supported Atlassian rich
+text, including observed mention labels, statuses and emoji. Link destinations
+are retained separately from the quoted prose. Unknown nodes or marks, missing
+labels, media, unresolved card displays and depth-limited content make the
+capture explicitly partial; date timestamps stay labeled as raw timestamps
+rather than guessed display dates.
+Other hosts report readable text explicitly. Impossible ISO calendar dates in
+reported updatedAt fields are refused before admission. Unknown provider date
+formats remain undated; period-scoped check_answer results expose their coverage
+instead of guessing a timestamp. A partial report preserves unread
+items; an unread or truncated passage cannot establish support. Citation
+resolution and quote checks establish identity and text correspondence, not
+semantic support for a conclusion.
 
 What the host reports is kept as data for checking quotes and figures. It
 is never read back to the host as an instruction, and it cannot approve,

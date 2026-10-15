@@ -141,6 +141,8 @@ const ZONELESS_TIME = /^(\d{4}-\d{2}-\d{2})[Tt ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?
 export function dayOf(instant: string, timezone: string): string | null {
   if (typeof instant !== 'string') return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(instant)) return parseDay(instant) ? instant : null;
+  const isoDate = /^(\d{4}-\d{2}-\d{2})[Tt ]/.exec(instant);
+  if (isoDate && !parseDay(isoDate[1])) return null;
   const t = Date.parse(instant);
   if (Number.isNaN(t)) return null;
   const zoneless = ZONELESS_TIME.exec(instant);
