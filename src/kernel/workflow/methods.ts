@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { RefResolver } from '../project/evidence.ts';
+import { sameRef } from './validators.ts';
 
 export interface MethodReceipt {
   readonly id: string;
@@ -49,7 +50,9 @@ export function methodReceipts(output: Record<string, unknown>, primary: string 
       let section: unknown = output;
       for (const key of item.section.slice(1).split('/').map((k: string) => k.replaceAll('~1', '/').replaceAll('~0', '~'))) section = section && typeof section === 'object' && Object.hasOwn(section, key) ? (section as Record<string, unknown>)[key] : undefined;
       if (section === undefined || section === null || JSON.stringify(section) === '""') { problems.push(`method ${entry.id} section ${item.section} is absent or empty`); continue; }
-      if (item.evidence.some((r: unknown) => typeof r !== 'string' || !evidence.some(e => e.ref === r))) { problems.push(`method ${entry.id} obligation evidence must occur in its project evidence list`); continue; }
+      const listed = (r: string) => evidence.some(e => e.ref === r || (resolve !== undefined && sameRef(e.ref, r, resolve) && resolve(e.ref)?.sourceId === resolve(r)?.sourceId));
+      const stray = item.evidence.filter((r: unknown) => typeof r !== 'string' || !listed(r));
+      if (stray.length) { problems.push(`method ${entry.id} obligation evidence ${stray.map((r: unknown) => JSON.stringify(r)).join(', ')} is not in its project evidence list (${evidence.map(e => e.ref).join(', ') || 'empty'}); add it to the method's evidence or cite one that is listed`); continue; }
       obligations.push({ obligation: item.obligation, section: item.section, evidence: item.evidence, sectionDigest: createHash('sha256').update(JSON.stringify(section)).digest('hex') });
     }
     receipts.push({ id: skill.manifest.id, version: skill.manifest.version, digest: skill.digest, status: `reported_${entry.disposition}` as MethodReceipt['status'], why: entry.why.trim(), evidence, ...(doctrine.length ? { doctrine } : {}), ...(obligations.length ? { obligations } : {}) });
