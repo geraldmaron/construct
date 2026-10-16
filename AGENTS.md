@@ -125,3 +125,9 @@ File operations must be non-interactive (`cp -f`, `mv -f`, `rm -f`,
 - Development model calls use Gerald's subscriptions, never a local
   model. A Construct *user* may still choose a local model.
 - Measured gates over asserted claims.
+
+## Agent coordination (Claude Code ↔ Codex)
+
+The cross-agent coordination model and handoff protocol for this repo live in
+`COORDINATION.md` — the single source of truth (do not duplicate it here). Read
+`COORDINATION.md` at session start, and `HANDOFF.md` for live session state.

@@ -344,7 +344,7 @@ function itemDay(r: ResolvedRef | null, timezone: string): string | null {
 }
 
 /** Whether two references name the same thing: written alike, or resolving to one recorded item or one file. */
-function sameRef(a: string, b: string, resolve: RefResolver): boolean {
+export function sameRef(a: string, b: string, resolve: RefResolver): boolean {
   if (a.trim() === b.trim()) return true;
   const [x, y] = [resolve(a), resolve(b)];
   if (!x || !y || x.kind !== y.kind) return false;

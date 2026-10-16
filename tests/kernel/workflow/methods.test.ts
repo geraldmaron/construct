@@ -40,3 +40,25 @@ test('method obligations bind existing output sections and keep doctrine separat
   assert.ok(methodReceipts({findings:[],methods:[applied]},null,skills,resolve).problems.some(p=>p.includes('absent')));
   assert.ok(methodReceipts({findings:['claim'],methods:[{...applied,obligations:[{...applied.obligations[0],evidence:['method:decision-framework']}]}]},null,skills,resolve).problems.some(p=>p.includes('project evidence')));
 });
+
+test('an obligation may cite a listed file by another spelling of the same file, and a stray ref is named', () => {
+  const resolve: RefResolver = ref => ['src/a.ts', './src/a.ts', '/work/src/a.ts'].includes(ref) ? { ref, kind: 'file', provenance: 'witnessed', path: '/work/src/a.ts', text: 'x' } : null;
+  const method = (evidence: string[], cited: string[]) => ({ findings: ['f'], methods: [{ id: 'decision-framing', disposition: 'applied', why: 'w', evidence, obligations: [{ obligation: 'o', section: '/findings/0', evidence: cited }] }] });
+  assert.deepEqual(methodReceipts(method(['src/a.ts'], ['./src/a.ts']), null, skills, resolve).problems, []);
+  assert.deepEqual(methodReceipts(method(['/work/src/a.ts'], ['src/a.ts']), null, skills, resolve).problems, []);
+  const problems = methodReceipts(method(['src/a.ts'], ['src/b.ts']), null, skills, resolve).problems;
+  assert.ok(problems.some(p => p.includes('"src/b.ts"') && p.includes('src/a.ts') && p.includes('project evidence list')));
+});
+
+test('equivalence never joins distinct sources, different items, or a directory and its descendant', () => {
+  const table: Record<string, { kind: 'source' | 'file' | 'directory'; path: string; sourceId?: string }> = {
+    alpha: { kind: 'source', path: '/w/src', sourceId: 'alpha' }, beta: { kind: 'source', path: '/w/src', sourceId: 'beta' },
+    dir: { kind: 'directory', path: '/w/src' }, 'dir/a.ts': { kind: 'file', path: '/w/src/a.ts' }, 'dir/b.ts': { kind: 'file', path: '/w/src/b.ts' },
+  };
+  const resolve: RefResolver = ref => table[ref] ? { ref, provenance: 'witnessed', text: 'x', ...table[ref] } : null;
+  const run = (listed: string, cited: string) => methodReceipts({ findings: ['f'], methods: [{ id: 'decision-framing', disposition: 'applied', why: 'w', evidence: [listed], obligations: [{ obligation: 'o', section: '/findings/0', evidence: [cited] }] }] }, null, skills, resolve);
+  for (const [l, c] of [['alpha', 'beta'], ['dir', 'dir/a.ts'], ['dir/a.ts', 'dir/b.ts']]) assert.ok(run(l, c).problems.some(p => p.includes('project evidence list')), `${l} vs ${c}`);
+  const same = run('dir/a.ts', 'dir/a.ts');
+  assert.deepEqual(same.problems, []);
+  assert.deepEqual(same.receipts[0]?.obligations?.[0]?.evidence, ['dir/a.ts']);
+});
