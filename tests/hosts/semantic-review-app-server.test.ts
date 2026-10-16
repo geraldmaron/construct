@@ -45,11 +45,15 @@ rl.on('line',line=>{
   if(mode==='unknown'){note('unexpected/operation',params);return;}
   if(mode==='unknown-private'){note('DO_NOT_RETAIN_PRIVATE_REASONING',{...params,item:{type:'DO_NOT_RETAIN_PRIVATE_REASONING'}});return;}
   if(mode==='skills-changed')note('skills/changed',{});
+  if(mode==='moderation')note('turn/moderationMetadata',{...params,metadata:{note:'DO_NOT_RETAIN_PRIVATE_REASONING'}});
+  if(mode==='moderation-wrong-turn'){note('turn/moderationMetadata',{threadId:'review-session',turnId:'other-turn',metadata:{note:'DO_NOT_RETAIN_PRIVATE_REASONING'}});return;}
+  if(mode==='moderation-wrong-thread'){note('turn/moderationMetadata',{threadId:'other-session',turnId:'review-turn',metadata:{}});return;}
   if(mode==='skills-nonempty'){note('skills/changed',{text:'DO_NOT_RETAIN_PRIVATE_REASONING'});return;}
   if(mode==='skills-null'){note('skills/changed',null);return;}
   if(mode==='skills-array'){note('skills/changed',[]);return;}
   if(mode==='malformed'){process.stdout.write('not-json\\n');return;}
   if(mode==='overflow-private'){note('item/reasoning/textDelta',{...params,delta:'PRIVATE'.repeat(200000)});return;}
+  if(mode==='overflow-moderation'){note('turn/moderationMetadata',{...params,metadata:'PRIVATE'.repeat(200000)});return;}
   if(mode==='overflow-stderr'){process.stderr.write('PRIVATE'.repeat(200000));return;}
   if(mode==='timeout')return;
   note('item/reasoning/textDelta',{...params,delta:'DO_NOT_RETAIN_PRIVATE_REASONING'});
@@ -126,4 +130,20 @@ test('native structured output schema is forwarded without changing generic held
   assert.deepEqual(structured.problems, []); assert.equal(structured.completed, true);
   const generic = await exercise('success');
   assert.deepEqual(generic.problems, []); assert.equal(generic.completed, true);
+});
+
+test('turn moderation metadata is discarded unread, only for this review turn', async () => {
+  const allowed = await exercise('moderation');
+  assert.deepEqual(allowed.problems, []); assert.equal(allowed.completed, true);
+  assert.equal(JSON.stringify(allowed).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false);
+  assert.deepEqual(allowed.observations.map((entry: any) => entry.type), ['thread.started', 'native.evidence_staged', 'turn.started', 'item.completed', 'turn.completed']);
+  const flood = await exercise('overflow-moderation');
+  assert.equal(flood.completed, false); assert.ok(flood.problems.length);
+  assert.equal(JSON.stringify(flood).includes('PRIVATEPRIVATE'), false);
+  for (const mode of ['moderation-wrong-turn', 'moderation-wrong-thread']) {
+    const refused = await exercise(mode);
+    assert.equal(refused.completed, false, mode); assert.ok(refused.problems.length, mode);
+    assert.ok(refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === 'turn/moderationMetadata'), mode);
+    assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
+  }
 });

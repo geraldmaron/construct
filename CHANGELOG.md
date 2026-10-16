@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.0.0-alpha.31 — 2026-10-16 (experimental)
+
+A method report may cite a listed file by any spelling that resolves to it.
+
+### Changes
+
+- A method obligation's evidence is accepted when it names the same file or
+  recorded item as a reference in the method's own evidence list, however it
+  is spelled (relative, absolute, `./`-prefixed, `file:` or line-suffixed).
+  Distinct sources, different items and a directory against its descendant
+  stay refused, as does a reference that is not listed. The refusal now names
+  the reference and the listed ones. Case-only differences still do not match.
+- The native semantic reviewer now discards Codex's `turn/moderationMetadata`
+  notification unread, only for the review's own thread and turn, under the
+  same bounds as reasoning events. Codex 0.145.0 began sending it, and the
+  reviewer refused it, which failed every live native control. Its content is
+  not interpreted: a turn that finishes with a valid all-pass judgment is still
+  accepted whether or not it was moderated.
+
+### Upgrade
+
+Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
+`construct skill update`, then reconnect. State remains format 5; no migration
+or credentials are required.
+
+### Verification and limits
+
+The change passed lint, typecheck, the full test suite and packaged smoke
+locally, and independent read-only Codex reviews found one source-identity
+defect, which is fixed, and accepted the reviewer change. The three live native
+controls ran on Codex 0.145.0: the correct result completed, and the wrong
+calculation and injected-source results were rejected with drafts retained. The evidence resolution was probed against the real
+resolver for the spellings above only. The failure that prompted it was
+reported from another device and has not been reproduced from its payload.
+Broader host qualification is unchanged and unverified. Publish under `alpha`
+only; `latest` remains on 2.x.
+
 ## 3.0.0-alpha.30 — 2026-10-15 (experimental)
 
 Jira/Slack evidence and handoff recovery now preserve identity and authority
