@@ -61,9 +61,12 @@ construct skill remove intake --dir=./.tmp-skills --confirm
 `init` plants only the operational skill, in the project skills directory
 each wired host reads (`.claude/skills`, `.agents/skills`, or `.bob/skills`).
 `init --skills-dir=<path>` also plants a personal copy in that directory,
-which loads in every repository the host opens. Run inside Claude Code,
-Cursor, or Bob, `construct doctor` names the `construct skill remove`
-command for an older or changed copy in that host's personal skills
+which loads in every repository the host opens. `construct doctor` fails on
+an older or changed personal copy of the operational skill, in any host's
+personal skills directory, and names the `construct skill remove` command.
+Personal copies of the method skills are not Construct's to keep current:
+another tool may own them (ai-workflow-config, for example), and Construct's
+runs take a method's text from the registry, never from a personal
 directory.
 
 Install others by name when a host needs files on disk: `--dir` names the
