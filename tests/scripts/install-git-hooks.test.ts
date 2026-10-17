@@ -63,13 +63,13 @@ test('an existing per-worktree hooks path is replaced, and a checkout without .g
     s.git('commit', '-q', '-m', 'a branch from before .githooks existed');
     s.git('checkout', '-q', 'main');
     s.git('worktree', 'add', '-q', old, 'before-githooks');
-    execFileSync('git', ['-C', old, 'config', '--worktree', 'core.hooksPath', '/main/checkout/.beads/hooks'], { env: s.env });
+    execFileSync('git', ['-C', old, 'config', '--worktree', 'core.hooksPath', '/main/checkout/old-hooks'], { env: s.env });
     const report = s.install();
     assert.equal(s.git('rev-parse', '--git-path', 'hooks').trim(), '.githooks', 'the stale override is gone');
-    assert.match(report, /kept: .*-old has no \.githooks yet; it still resolves \/main\/checkout\/\.beads\/hooks/);
+    assert.match(report, /kept: .*-old has no \.githooks yet; it still resolves \/main\/checkout\/old-hooks/);
     assert.equal(
       execFileSync('git', ['-C', old, 'config', '--get', 'core.hooksPath'], { env: s.env, encoding: 'utf8' }).trim(),
-      '/main/checkout/.beads/hooks',
+      '/main/checkout/old-hooks',
     );
   } finally {
     rmSync(old, { recursive: true, force: true });

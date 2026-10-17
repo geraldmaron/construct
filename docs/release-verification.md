@@ -13,8 +13,8 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 
 `lint` chains: no absolute paths, glossary parity, no tracker ids in code,
 skill-spec and skill-policy conformance, terminal-escape safety, the docs
-index, documentation commands against the command registry, documentation
-bead references, lockfile version parity, the registry index check, and the
+index, documentation commands against the command registry, lockfile
+version parity, the registry index check, and the
 generated-reference check. `test` runs the sterile suite, including the
 documentation examples, the scenario tests, the drift fixtures, and the
 broker protocol. `smoke` packs the package, installs it into a scratch

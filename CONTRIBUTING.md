@@ -56,7 +56,7 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 
 One coherent change per commit. The subject states the invariant the change
 makes true, in plain words. No attribution trailers, and no tracker ids in
-code or comments (`scripts/lint-no-bead-refs.mjs` enforces that).
+code or comments (`scripts/lint-no-tracker-refs.mjs` enforces that).
 
 ## Construct in this repository
 
