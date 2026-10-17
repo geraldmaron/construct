@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.32 — 2026-10-17 (experimental)
 
 Hermes Agent is a supported host, nothing matches a person's words, and
 review and authoring each run as one workflow keyed by domain.
@@ -48,9 +48,20 @@ review and authoring each run as one workflow keyed by domain.
 - The native semantic reviewer is pinned to Codex CLI 0.163.0 (profile
   `codex-app-server-held-text-v2`). New message deliveries and notifications
   refuse the review; `account/updated` passes only on subscription auth; the
-  only admitted warning is Codex's own fail-closed code-mode notice.
+  only admitted warning is Codex's own fail-closed code-mode notice. The reviewer did not
+  run for this alpha; see Verification and limits.
 - `doctor` fails only on a stale personal copy of the operational skill, and
   names the wiring that actually reaches Construct.
+
+- Tool descriptions say what each tool does and returns; field rules live on
+  their schema fields. `classify_request`, `work` and `sources` keep condensed
+  guidance their full schemas cannot hold.
+- A refused claim or takeover of work held by another agent of your own session
+  names the recovery: the session's main agent takes it back with a reason.
+- A host child keeps `USER`, so Claude Code finds its Keychain login in
+  delegated and evaluated runs.
+- `work/service.ts` and `broker/tools.ts` are split into lifecycle and per-tool
+  modules with byte-identical `tools/list`.
 
 ### Upgrade
 
@@ -58,6 +69,23 @@ Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
 `construct skill update`, then reconnect. State remains format 5; no
 migration or credentials are required. Hosts or scripts that start a former
 review or authoring workflow id keep working through its alias.
+
+### Verification and limits
+
+Lint, typecheck, the full test suite (1,300 pass, 0 fail), packaged smoke and
+static conformance for every host (126 passed, 0 failed, 23 untested) pass. The
+smoke live intake record passes on Claude Code haiku in the crowded condition
+against the preregistered baselines: missed work 32/34 against 31/34 for
+staging-79562bbc, and 0/27 false writes. Before and after the description
+change, the same cell missed 30/34 and 32/34, which is within the margin.
+
+This alpha ran no native semantic review. Gerald took Codex and gpt-6-astra
+out of use on 2026-10-17, and the only qualified reviewer is the Codex
+held-text profile, so the release manifest records the review as unavailable
+(RESEARCH-DECISIONS §48) and the eval gate holds no Codex cell. A live run
+showing hosts fill the new typed `setAside`, `superseded` and `decision`
+fields is still open; a host that leaves one empty is refused with a typed
+recovery. Publish under `alpha` only; `latest` remains on 2.x.
 
 ## 3.0.0-alpha.31 — 2026-10-16 (experimental)
 
