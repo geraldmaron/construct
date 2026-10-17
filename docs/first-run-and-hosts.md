@@ -348,8 +348,10 @@ its own `HERMES_HOME`. The entry marks `construct` as `trust: untrusted`, so
 Hermes asks before every Construct tool that changes something and runs the
 read-only ones without asking. Construct edits only its own
 `mcp_servers.construct` block and refuses a file it cannot read safely (tabs,
-several documents, the servers written inline, or a `construct` entry with
-nested settings) rather than rewrite it. Hermes strips the environment of the
+a byte-order mark, several documents, an indented or non-key top level, the
+servers written inline, or a `construct` entry with nested settings) rather
+than rewrite it. An entry that names another project in any form, or names
+none, is left alone. Hermes strips the environment of the
 servers it starts, so `construct serve` names the host from `--client=hermes`;
 a `construct` command run from Hermes's own terminal is recognized by
 `HERMES_AGENT=true`.

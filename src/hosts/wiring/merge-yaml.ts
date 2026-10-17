@@ -124,6 +124,8 @@ function locate(lines: readonly Line[]): Located {
     }
     if (/^\.\.\.(?:\s|$)/.test(l.text)) return { kind: 'problem', problem: 'the file holds more than one YAML document' };
   }
+  const firstContent = lines.find((l) => isContent(l.text) && !/^---/.test(l.text));
+  if (firstContent && indentOf(firstContent.text) > 0) return { kind: 'problem', problem: 'its top level is indented' };
   const topLevel = lines.flatMap((l, i) => (isContent(l.text) && indentOf(l.text) === 0 && !/^---/.test(l.text) ? [i] : []));
   // Every top-level line must be a plain `key:` this module reads; anything else (an explicit `?` key, a flow mapping) could be where the servers live.
   if (topLevel.some((i) => parseKey(lines[i]!.text) === null)) return { kind: 'problem', problem: 'it has a top-level line this writer cannot read' };
