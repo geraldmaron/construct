@@ -49,7 +49,7 @@ export function reset(args: ParsedArgs, ctx: CliContext = createContext()): numb
   }
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
   const root = findProjectRoot({ start: ctx.cwd, floor }) ?? initRootFor(ctx.cwd);
-  const plan = planReset(root, { includeProjectFiles: boolFlag(args, 'include-project-files'), paths: ctx.paths });
+  const plan = planReset(root, { includeProjectFiles: boolFlag(args, 'include-project-files') });
 
   if (!boolFlag(args, 'confirm')) {
     if (args.json) {

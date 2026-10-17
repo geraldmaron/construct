@@ -13,7 +13,6 @@ import { initializeProject } from '../../../src/kernel/project/initialize.ts';
 import { planReset, applyReset, ResetNotConfirmedError } from '../../../src/kernel/project/reset.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
 import { validateLock } from '../../../src/kernel/project/lock.ts';
-import { detectLegacyHomeState } from '../../../src/kernel/project/legacy.ts';
 import { tmpProject, AT } from './support.ts';
 
 test('discovery walks up to the floor and never past it', () => {
@@ -65,25 +64,6 @@ test('reset names exact targets and removes only what was confirmed', () => {
     );
     assert.equal(existsSync(join(root, '.construct', 'project.json')), false);
     assert.equal(existsSync(join(root, '.gitignore')), true);
-  } finally {
-    cleanup();
-  }
-});
-
-test('an old per-user database is named for removal and never opened', () => {
-  const { root, cleanup } = tmpProject();
-  try {
-    const paths = { configDir: join(root, 'c'), stateDir: join(root, 's'), dataDir: join(root, 'd'), cacheDir: join(root, 'k') };
-    assert.deepEqual(detectLegacyHomeState(paths), []);
-    mkdirSync(paths.dataDir, { recursive: true });
-    writeFileSync(join(paths.dataDir, 'construct.db'), 'not sqlite at all', 'utf8');
-    const found = detectLegacyHomeState(paths);
-    assert.equal(found.length, 1);
-    assert.match(found[0]!.what, /earlier alpha/);
-    assert.equal(
-      planReset(root, { paths }).targets.some((t) => t.path === join(paths.dataDir, 'construct.db')),
-      true,
-    );
   } finally {
     cleanup();
   }

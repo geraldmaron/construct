@@ -601,16 +601,6 @@ restore a snapshot; never restores grants or live leases
 
 Reads only: no.
 
-### `construct work import-legacy <file>`
-
-one-way import of a frozen tracker JSONL snapshot
-
-| Flag | Takes a value | Meaning |
-|---|---|---|
-| `--dry-run` | no | report mapping without writing |
-
-Reads only: no.
-
 ## Runs
 
 ### `construct run review <id>`

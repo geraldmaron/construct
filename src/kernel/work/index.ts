@@ -3,4 +3,3 @@
  */
 
 export * from './service.ts';
-export * from './legacy-import.ts';

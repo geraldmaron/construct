@@ -579,6 +579,9 @@ CREATE TABLE reviews (
 );
 CREATE INDEX reviews_subject ON reviews (subject_kind, subject_id, status);
 
+-- run_bindings is no longer written: every step row carries its frozen skill
+-- binding. It is dropped at the next state-format change rather than forcing a
+-- migration for cleanup alone.
 CREATE TABLE run_bindings (
   run_id              TEXT PRIMARY KEY REFERENCES workflow_runs(id),
   workflow_id         TEXT NOT NULL,
