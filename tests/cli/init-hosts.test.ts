@@ -344,3 +344,22 @@ test("re-init over an alpha.25 project repairs its .mcp.json and moves its hooks
     box.cleanup();
   }
 });
+
+test('portable construct hooks committed in .claude/settings.json survive init and count as installed', async () => {
+  const box = sandbox();
+  try {
+    const committed = readFileSync(new URL('../../.claude/settings.json', import.meta.url), 'utf8');
+    mkdirSync(join(box.cwd, '.claude'), { recursive: true });
+    writeFileSync(join(box.cwd, '.claude', 'settings.json'), committed);
+    const init = await capture(() => run(['init', '--client=claude-code', '--scale=solo', '--outcome=x', '--constraint=y'], box.ctx));
+    assert.equal(init.code, 0, init.err);
+    assert.equal(readFileSync(join(box.cwd, '.claude', 'settings.json'), 'utf8'), committed, 'init leaves the committed hooks alone');
+    const doctor = JSON.parse((await capture(() => run(['doctor', '--json'], box.ctx))).out) as {
+      checks: { name: string; ok: boolean; detail: string }[];
+    };
+    const hooks = doctor.checks.find((c) => c.name === 'host-hooks');
+    assert.ok(hooks?.ok, hooks?.detail);
+  } finally {
+    box.cleanup();
+  }
+});
