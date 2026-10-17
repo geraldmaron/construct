@@ -253,6 +253,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     throw Error('usage: node scripts/release-gate.mjs [--tier=qualified|experimental-alpha]');
   const r = checkRelease({ tier });
   for (const p of r.problems) process.stderr.write(`release gate: ${p}\n`);
-  if (r.ok) console.log(`release gate: ${tier} evidence is current and meets its bounded policy; broader qualification is not inferred`);
+  if (r.ok) {
+    console.log(`release gate: ${tier} evidence is current and meets its bounded policy; broader qualification is not inferred`);
+    if (r.nativeReview === 'unavailable')
+      console.log('release gate: no native semantic review ran for this release; its manifest says why and under which decision');
+  }
   process.exitCode = r.ok ? 0 : 1;
 }
