@@ -62,13 +62,37 @@ function hooksIn(settings: Record<string, unknown>): Record<string, unknown> {
   return hooks && typeof hooks === 'object' && !Array.isArray(hooks) ? (hooks as Record<string, unknown>) : {};
 }
 
-/** A grounding hook Construct wrote into the shared file: a construct command running ` hook <event> --client=claude-code`. */
+/** A hook that starts the checkout's own launcher through the project directory Claude Code passes, so it works on any machine. */
+const PORTABLE = /\$\{?CLAUDE_PROJECT_DIR\b/;
+
+/**
+ * An old grounding hook in the shared file: a construct command running
+ * ` hook <event> --client=claude-code` that names one machine's Node or
+ * install. A portable one, which starts the checkout's own launcher through
+ * $CLAUDE_PROJECT_DIR, is a team's committed hook and stays: init never
+ * removes it, and it counts as the grounding hooks being installed.
+ */
 function isSharedGroundingEntry(entry: unknown): boolean {
   const hooks = (entry as { hooks?: { command?: unknown }[] } | null)?.hooks;
   return (
     Array.isArray(hooks) &&
-    hooks.some((h) => typeof h?.command === 'string' && h.command.includes('construct') && isSetCommand(h.command, 'grounding'))
+    hooks.some(
+      (h) =>
+        typeof h?.command === 'string' &&
+        h.command.includes('construct') &&
+        isSetCommand(h.command, 'grounding') &&
+        !PORTABLE.test(h.command),
+    )
   );
+}
+
+/** The grounding events a portable hook in the shared file covers. */
+function sharedPortableEvents(settings: Record<string, unknown>): readonly string[] {
+  const hooks = hooksIn(settings);
+  return GROUNDING_HOOKS.map((h) => h.hostEvent).filter((event) => {
+    const list = hooks[event];
+    return Array.isArray(list) && list.some((e) => isSetEntry(e, 'grounding') && !isSharedGroundingEntry(e));
+  });
 }
 
 /** The shared settings without Construct's grounding hooks, and how many it held. The hooks key goes when nothing is left in it. */
@@ -137,6 +161,13 @@ export function inspectHooks(projectRoot: string, place: HookPlace): HookWiringS
       detail: `${HOOK_SETTINGS_PATH} runs construct hook on ${GROUNDING_HOOKS.map((h) => h.hostEvent).join(', ')}, through Construct's launcher, on this machine only`,
     };
   }
+  const committed = sharedPortableEvents(shared.value);
+  if (committed.length === GROUNDING_HOOKS.length)
+    return {
+      path,
+      status: 'installed',
+      detail: `${SHARED_HOOK_SETTINGS_PATH}, the committed file, runs construct hook on ${committed.join(', ')} through each checkout's own launcher`,
+    };
   if (exact.length === 0) return { path, status: 'absent', detail: `no construct hooks in ${HOOK_SETTINGS_PATH}` };
   return {
     path,

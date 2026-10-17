@@ -58,6 +58,16 @@ One coherent change per commit. The subject states the invariant the change
 makes true, in plain words. No attribution trailers, and no tracker ids in
 code or comments (`scripts/lint-no-bead-refs.mjs` enforces that).
 
+## Construct in this repository
+
+This repository runs Construct on itself. `.mcp.json` starts
+`node bin/construct.mjs serve --client=claude-code` and `.claude/settings.json`
+runs the hooks through `$CLAUDE_PROJECT_DIR/bin/construct.mjs`, both from
+whichever checkout the session is in, so every git worktree gets Construct
+and runs its own branch's code. Do not run `construct init --client=claude-code`
+here to "fix" them: they are committed on purpose and carry no machine paths.
+Claude Code asks once to approve the project's MCP server.
+
 ## Agents working here
 
 Agents follow [AGENTS.md](AGENTS.md) and [COORDINATION.md](COORDINATION.md):

@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c '[ \"${CONSTRUCT_HOOKS:-}\" = off ] && exit 0; c=\"${CLAUDE_PROJECT_DIR:-.}/bin/construct.mjs\"; [ -r \"$c\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; node \"$c\" hook session-start --client=claude-code 2>/dev/null; exit 0'",
+            "timeout": 20
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c '[ \"${CONSTRUCT_HOOKS:-}\" = off ] && exit 0; c=\"${CLAUDE_PROJECT_DIR:-.}/bin/construct.mjs\"; [ -r \"$c\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; node \"$c\" hook claude-code session-start 2>/dev/null; exit 0'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c '[ \"${CONSTRUCT_HOOKS:-}\" = off ] && exit 0; c=\"${CLAUDE_PROJECT_DIR:-.}/bin/construct.mjs\"; [ -r \"$c\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; node \"$c\" hook post-tool --client=claude-code 2>/dev/null; exit 0'",
+            "timeout": 20
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c '[ \"${CONSTRUCT_HOOKS:-}\" = off ] && exit 0; c=\"${CLAUDE_PROJECT_DIR:-.}/bin/construct.mjs\"; [ -r \"$c\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; node \"$c\" hook claude-code post-tool-use 2>/dev/null; exit 0'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh -c '[ \"${CONSTRUCT_HOOKS:-}\" = off ] && exit 0; c=\"${CLAUDE_PROJECT_DIR:-.}/bin/construct.mjs\"; [ -r \"$c\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; node \"$c\" hook stop --client=claude-code 2>/dev/null; exit 0'",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
