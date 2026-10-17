@@ -3409,3 +3409,89 @@ each is fixed with a test:
   still counted. Consumption is now read from step inputs.
 
 Verdict: **accepted with controls**.
+
+## 40. The clean-state audit: what was cut, what was kept, and what waits for its own decision (2026-10-17)
+
+Gerald, 2026-10-17: resolve the remaining issues, prune old code and
+patterns, and pick apart the skills, the evals and everything load-bearing
+beside them; no pattern stays only because it is in place. Four read-only
+teardowns (three Claude, one Codex) found the issues; each change below was
+reviewed by Codex before it was committed. The calls that are not obvious
+are recorded here with the strongest objection and the verdict.
+
+**Evals follow the Agent Skills shape.** Four formats of our own
+(`behavior.json`, `fixtures.json`, the intake corpus inside `skills/`, a
+native qualification suite) gave way to `evals/evals.json` and
+`evals/trigger-queries.json` from agentskills.io. Failure mode: the new
+cases are drafted, not measured, so a green shape test says nothing about
+the skills. Control: `scripts/run-skill-evals.mjs` measures trigger rates
+and with/without output through a real Claude Code, refuses to score a
+failed run, and names an installed copy of the skill as a confound. Verdict:
+accepted with controls.
+
+**Lock integrity replaces the qualification ladder.** Every skill reported
+experimental because `qualified` needed a Codex-only native witness run, and
+the authority regex flagged skills that forbid escalation while missing
+paraphrases. Failure mode: hosts that displayed the projection lose it.
+Alternative: keep the ladder and make it reachable; rejected, since its only
+reader was a display and the tier ceiling is the real boundary. Verdict:
+accepted.
+
+**A Claude Code plugin is not shipped yet.** A plugin rooted at this repo
+would be the whole repository, and with `package.json` and a lockfile
+present Claude Code would run an npm install of all of Construct in the
+plugin cache on every install. Alternative: a separate skills-only package
+or repository published as the plugin. Verdict: needs its own decision; the
+method skills reach hosts through `construct skill install` until then.
+
+**This repository wires Construct from every checkout.** A committed
+`.mcp.json` and `.claude/settings.json` start each checkout's own
+`bin/construct.mjs`, so a fresh worktree gets Construct. Failure mode: a
+broken branch breaks its own session's tools. Alternative: the user-scope
+entry, which serves worktrees through the main checkout but binds every
+repository on the machine; Gerald chose the committed wiring. The
+user-scope entry is removed after this reaches the main checkout, not
+before, so no checkout loses Construct in between. Verdict: accepted with
+controls (the hooks exit silently when the launcher or node is missing).
+
+**Worktree evidence waits for checkout-bound identity.** Resolving a
+worktree session's references against its own checkout first was built and
+reverted: one reference then resolves to different bytes depending on who
+verifies it, and submission, verification and delivery settlement disagree.
+Verdict: rejected as built; filed as its own work with the requirement that
+a receipt name its checkout and commit.
+
+**Kept on the merits.** claim-support's proposition check stays: it fires
+only when an answer and its evidence documents are each the same single
+assertion, returns unknown otherwise, and catches a known negation failure.
+The project-file format guard stays: it stops init from building on a
+project it would misread. The Jira fixture reader stays: it is a documented
+offline mode. `run_bindings` is no longer written, but the table goes at the
+next state-format change rather than forcing a migration for cleanup.
+RESEARCH-DECISIONS.md stays at the root, because STRATEGY, the ledger and
+code comments cite it by section.
+
+**Prose verdicts stay as they are until they become typed.** Three
+validators judge prose by vocabulary: settled-against terms (a sentence with
+"not" or "never" is exempt), superseded documents (a "superseded" anywhere
+in the output acknowledges them) and decision deadlines (a bare "by"). Each
+was narrowed and then reverted: Codex's adversarial review found every
+narrower word list wrong in both directions, passing "plaintext instead of
+hashing" while rejecting "we do not use plaintext". A better word list is
+the pattern §38 rejected. The fix is a typed field the host fills (the terms
+it set aside, the superseded references it relied on, the decision date) and
+checked as data, which belongs to the tool surface change below.
+
+**Waiting for their own decision, each a multi-day change to every host.**
+(1) Merge the nine review workflows that share one skeleton into one keyed
+by domain skill, and the four authoring workflows into one; remove the
+`remember` manifest that `start()` refuses. (2) One claim authority per
+artifact instead of a step lease plus a per-run work item. (3) Split
+`service.ts` (one closure of about 1,650 lines) by lifecycle and `tools.ts`
+per tool. (4) Cut the 22 MCP tools' descriptions to what each does, move the
+policy prose into typed errors, and drop the `owner` inputs that are already
+ignored; that changes model-facing text the live intake evals measure, and
+hosts echo `owner` today, so it is a versioned change measured before and
+after. The strongest objection to all four is churn across every host for
+no user-visible gain; the case for them is that a contributor or host
+developer meets this surface first.
