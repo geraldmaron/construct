@@ -13,5 +13,4 @@ export * from './skill-registry.ts';
 export * from './workflow-registry.ts';
 export * from './dependency-graph.ts';
 export * from './lockfile.ts';
-export * from './qualification.ts';
 export * from './resolver.ts';

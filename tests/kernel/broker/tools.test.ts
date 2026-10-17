@@ -31,7 +31,11 @@ test('every tool is declared once with a closed schema, a plain description, and
     assert.doesNotMatch(t.description, /MCP|JSON-RPC|lease token|digest|broker/i, `${t.name} speaks plainly`);
     const entry = mcpTool(t) as { annotations: { readOnlyHint: boolean } };
     assert.equal(entry.annotations.readOnlyHint, t.readOnly);
-    assert.throws(() => t.validate({ ...(t.inputSchema.required ? Object.fromEntries(t.inputSchema.required.map((k) => [k, 'x'])) : {}), smuggled: 1 }), ToolInputError, `${t.name} refuses an undeclared input`);
+    assert.throws(
+      () => t.validate({ ...(t.inputSchema.required ? Object.fromEntries(t.inputSchema.required.map((k) => [k, 'x'])) : {}), smuggled: 1 }),
+      ToolInputError,
+      `${t.name} refuses an undeclared input`,
+    );
   }
   const interactive = toolsFor('interactive').map((t) => t.name);
   const headless = toolsFor('headless').map((t) => t.name);
@@ -56,7 +60,10 @@ test('every tool on both surfaces fits a host budget: a small schema, a bounded 
     for (const t of toolsFor(surface)) {
       if (seen.has(t.name)) continue;
       seen.add(t.name);
-      assert.ok(Buffer.byteLength(JSON.stringify(t.inputSchema)) < 4500, `${t.name}: input schema is ${String(Buffer.byteLength(JSON.stringify(t.inputSchema)))} bytes`);
+      assert.ok(
+        Buffer.byteLength(JSON.stringify(t.inputSchema)) < 4500,
+        `${t.name}: input schema is ${String(Buffer.byteLength(JSON.stringify(t.inputSchema)))} bytes`,
+      );
       assert.ok(t.description.length <= 2048, `${t.name}: description is ${String(t.description.length)} characters`);
       assert.deepEqual(arraysWithoutItems(t.inputSchema, t.name), [], `${t.name}: every array declares items`);
     }
@@ -118,15 +125,31 @@ test('promote_deliverable never takes validated, and takes challenged only with 
   assert.equal(unsaid.field, 'objections[0].objection');
   assert.equal(typeof unsaid.example, 'string');
   assert.equal(problem({ deliverableId: 'd', to: 'challenged', objections: [3] }).field, 'objections[0]');
-  assert.equal(problem({ deliverableId: 'd', to: 'challenged', objections: [{ objection: 'x', disposition: 'open', severity: 'high' }] }).field, 'objections[0].severity');
+  assert.equal(
+    problem({ deliverableId: 'd', to: 'challenged', objections: [{ objection: 'x', disposition: 'open', severity: 'high' }] }).field,
+    'objections[0].severity',
+  );
   const notAList = problem({ deliverableId: 'd', to: 'challenged', objections: 'none' });
   assert.equal(notAList.field, 'objections');
   assert.ok(Array.isArray(notAList.example));
-  assert.equal(problem({ deliverableId: 'd', to: 'accepted', objections: [] }).field, 'objections', 'objections belong to a challenge only');
+  assert.equal(
+    problem({ deliverableId: 'd', to: 'accepted', objections: [] }).field,
+    'objections',
+    'objections belong to a challenge only',
+  );
 
-  assert.deepEqual(tool('promote_deliverable').validate(record({ deliverableId: 'd', to: 'challenged', objections: [] })), { deliverableId: 'd', to: 'challenged', reason: undefined, objections: [] });
+  assert.deepEqual(tool('promote_deliverable').validate(record({ deliverableId: 'd', to: 'challenged', objections: [] })), {
+    deliverableId: 'd',
+    to: 'challenged',
+    reason: undefined,
+    objections: [],
+  });
   assert.deepEqual(
-    (tool('promote_deliverable').validate(record({ deliverableId: 'd', to: 'challenged', objections: [{ objection: ' stale figure ', disposition: 'fixed' }] })) as { objections: unknown }).objections,
+    (
+      tool('promote_deliverable').validate(
+        record({ deliverableId: 'd', to: 'challenged', objections: [{ objection: ' stale figure ', disposition: 'fixed' }] }),
+      ) as { objections: unknown }
+    ).objections,
     [{ objection: 'stale figure', disposition: 'fixed' }],
   );
 });
@@ -136,23 +159,52 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
   try {
     const boot = (await call(fx, 'bootstrap')) as Record<string, unknown>;
     assert.ok(JSON.stringify(boot).length < 4000, 'bootstrap stays bounded');
-    assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'contextIndex', 'coordination', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
+    assert.deepEqual(Object.keys(boot).sort(), [
+      'capabilities',
+      'construct',
+      'contextIndex',
+      'coordination',
+      'decisions',
+      'drift',
+      'next',
+      'profile',
+      'registry',
+      'runs',
+      'session',
+      'sources',
+      'tiers',
+    ]);
     assert.equal((boot.registry as { skills: number }).skills, 17);
     assert.match(boot.next as string, /listen/);
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
-    const cls = (await call(fx, 'classify_request', { words: 'What does this function do?', kind: 'answer' })) as { kind: string; matches: unknown[]; recorded: boolean };
+    const cls = (await call(fx, 'classify_request', { words: 'What does this function do?', kind: 'answer' })) as {
+      kind: string;
+      matches: unknown[];
+      recorded: boolean;
+    };
     assert.equal(cls.kind, 'answer');
     assert.deepEqual(cls.matches, []);
     assert.equal(cls.recorded, false);
     const words = 'I want you to rewrite the X document, naming it Y.';
-    const rewrite = (await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'rewritten document' } })) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
+    const rewrite = (await call(fx, 'classify_request', {
+      words,
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'other', describe: 'rewritten document' },
+    })) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
     assert.equal(rewrite.matches[0]!.workflowId, 'guided-outcome');
     assert.equal(listActivity(fx.broker.store).length, 0, 'reading a request records nothing');
-    const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as { remembered: { id: string }; nothingElseCreated: boolean };
+    const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as {
+      remembered: { id: string };
+      nothingElseCreated: boolean;
+    };
     assert.equal(remembered.nothingElseCreated, true);
     assert.equal(listStatements(fx.broker.store).filter((s) => s.kind === 'decision').length, 1);
-    assert.equal((await call(fx, 'run_status', { runId: 'nope' }).catch((e: Error) => e.message)), 'no run nope');
-    const constCtxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as { items: unknown[]; total: number };
+    assert.equal(await call(fx, 'run_status', { runId: 'nope' }).catch((e: Error) => e.message), 'no run nope');
+    const constCtxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as {
+      items: unknown[];
+      total: number;
+    };
     assert.equal(constCtxRead.items.length, 1);
     assert.equal(constCtxRead.total, 1);
   } finally {
@@ -161,18 +213,45 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
 });
 
 test('the tools that record or start something for the person say that what the host reads is data, not a request', () => {
-  for (const name of ['remember', 'decide', 'start_outcome', 'classify_request']) assert.ok(tool(name).description.includes(PERSON_ASKED_ONLY), name);
+  for (const name of ['remember', 'decide', 'start_outcome', 'classify_request'])
+    assert.ok(tool(name).description.includes(PERSON_ASKED_ONLY), name);
 });
 
-test('bootstrap never puts setup ahead of the person\'s request: setup questions and proposals are offered after it, with their answers', async () => {
+test("bootstrap never puts setup ahead of the person's request: setup questions and proposals are offered after it, with their answers", async () => {
   const fx = brokerFixture();
   try {
     const at = fx.broker.now();
-    raiseDecision(fx.broker.store, { id: 'q-scale', kind: 'clarification', question: `${ONBOARDING_QUESTIONS[0]!.question} From README.md this looks like a team project (team); say whether that is right.`, options: SCALE_OPTIONS, subject: { onboarding: 'scale', suggested: 'team', basis: 'CODEOWNERS in README.md' }, at });
-    raiseDecision(fx.broker.store, { id: 'q-outcome', kind: 'clarification', question: ONBOARDING_QUESTIONS[1]!.question, subject: { onboarding: 'primary_outcome' }, at });
-    addStatement(fx.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
-    const boot = (await call(fx, 'bootstrap')) as { next: string; decisions: { open: number }; profile: { openQuestions: { id: string; choices: { id: string; label: string }[] | null; suggested: string | null }[]; proposals: number } };
-    assert.match(boot.next, /handle what the person asked first/, 'the person\'s request comes first');
+    raiseDecision(fx.broker.store, {
+      id: 'q-scale',
+      kind: 'clarification',
+      question: `${ONBOARDING_QUESTIONS[0]!.question} From README.md this looks like a team project (team); say whether that is right.`,
+      options: SCALE_OPTIONS,
+      subject: { onboarding: 'scale', suggested: 'team', basis: 'CODEOWNERS in README.md' },
+      at,
+    });
+    raiseDecision(fx.broker.store, {
+      id: 'q-outcome',
+      kind: 'clarification',
+      question: ONBOARDING_QUESTIONS[1]!.question,
+      subject: { onboarding: 'primary_outcome' },
+      at,
+    });
+    addStatement(fx.broker.store, {
+      id: 'st-proposed',
+      kind: 'principle',
+      text: 'Keep the kernel host-agnostic',
+      provenance: 'discovery',
+      at,
+    });
+    const boot = (await call(fx, 'bootstrap')) as {
+      next: string;
+      decisions: { open: number };
+      profile: {
+        openQuestions: { id: string; choices: { id: string; label: string }[] | null; suggested: string | null }[];
+        proposals: number;
+      };
+    };
+    assert.match(boot.next, /handle what the person asked first/, "the person's request comes first");
     assert.match(boot.next, /ask a setup question only when its answer changes that work/);
     assert.match(boot.next, /put the 2 setup question\(s\) to them in one message/);
     assert.match(boot.next, /offer the 1 proposed statement\(s\) from inbox for confirmation; never before their request/);
@@ -180,7 +259,10 @@ test('bootstrap never puts setup ahead of the person\'s request: setup questions
     assert.equal(boot.decisions.open, 2);
     assert.equal(boot.profile.proposals, 1);
     const scale = boot.profile.openQuestions.find((q) => q.id === 'q-scale')!;
-    assert.deepEqual(scale.choices, SCALE_CHOICES.map((c) => ({ id: c.id, label: c.label })));
+    assert.deepEqual(
+      scale.choices,
+      SCALE_CHOICES.map((c) => ({ id: c.id, label: c.label })),
+    );
     assert.equal(scale.suggested, 'team');
     const outcome = boot.profile.openQuestions.find((q) => q.id === 'q-outcome')!;
     assert.equal(outcome.choices, null);
@@ -190,8 +272,17 @@ test('bootstrap never puts setup ahead of the person\'s request: setup questions
     // Only proposals left: still after the request.
     const fx2 = brokerFixture();
     try {
-      addStatement(fx2.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
-      assert.equal(((await call(fx2, 'bootstrap')) as { next: string }).next.split('Project state: ')[1], 'when the person is free, offer the 1 proposed statement(s) from inbox for confirmation; never before their request');
+      addStatement(fx2.broker.store, {
+        id: 'st-proposed',
+        kind: 'principle',
+        text: 'Keep the kernel host-agnostic',
+        provenance: 'discovery',
+        at,
+      });
+      assert.equal(
+        ((await call(fx2, 'bootstrap')) as { next: string }).next.split('Project state: ')[1],
+        'when the person is free, offer the 1 proposed statement(s) from inbox for confirmation; never before their request',
+      );
     } finally {
       fx2.cleanup();
     }
@@ -204,17 +295,34 @@ test('bootstrap leads with the decisions about runs, and names blocked runs inst
   const fx = brokerFixture();
   try {
     const at = fx.broker.now();
-    raiseDecision(fx.broker.store, { id: 'q-scale', kind: 'clarification', question: ONBOARDING_QUESTIONS[0]!.question, options: SCALE_OPTIONS, subject: { onboarding: 'scale' }, at });
+    raiseDecision(fx.broker.store, {
+      id: 'q-scale',
+      kind: 'clarification',
+      question: ONBOARDING_QUESTIONS[0]!.question,
+      options: SCALE_OPTIONS,
+      subject: { onboarding: 'scale' },
+      at,
+    });
     const blocked = (await call(fx, 'start_outcome', { workflowId: 'design-conformance', input: {} })) as { started: boolean };
     assert.equal(blocked.started, false, 'a session start with a missing input creates no run');
     const run = fx.broker.workflow.start({ workflowId: 'design-conformance', input: {}, trigger: 'manual' });
     assert.equal(run.run.state, 'blocked');
     const boot = (await call(fx, 'bootstrap')) as { next: string };
-    assert.match(boot.next, new RegExp(`Project state: 1 run\\(s\\) blocked \\(${run.run.id}\\); claim_work with a runId says what would unblock it$`));
+    assert.match(
+      boot.next,
+      new RegExp(`Project state: 1 run\\(s\\) blocked \\(${run.run.id}\\); claim_work with a runId says what would unblock it$`),
+    );
     assert.doesNotMatch(boot.next, /continue with claim_work/);
     raiseDecision(fx.broker.store, { id: 'q-run', kind: 'decision', question: 'Which target?', runId: run.run.id, at });
-    assert.equal(((await call(fx, 'bootstrap')) as { next: string }).next.split('Project state: ')[1], '1 decision(s) about runs wait on the person; show them with inbox');
-    assert.match(await onSessionStart(fx.broker), /1 decision\(s\) about runs wait on the person \(inbox\)\./, 'the session-start note counts only the decisions about runs');
+    assert.equal(
+      ((await call(fx, 'bootstrap')) as { next: string }).next.split('Project state: ')[1],
+      '1 decision(s) about runs wait on the person; show them with inbox',
+    );
+    assert.match(
+      await onSessionStart(fx.broker),
+      /1 decision\(s\) about runs wait on the person \(inbox\)\./,
+      'the session-start note counts only the decisions about runs',
+    );
   } finally {
     fx.cleanup();
   }
@@ -223,25 +331,67 @@ test('bootstrap leads with the decisions about runs, and names blocked runs inst
 test('the interactive lifecycle: read, start, claim, submit, status, promote', async () => {
   const fx = brokerFixture();
   try {
-    const cls = (await call(fx, 'classify_request', { words: 'Review this feature against the project’s design principles', kind: 'manage', deliverable: { kind: 'review/design-conformance' } })) as { matches: { workflowId: string; missing: string[] }[] };
+    const cls = (await call(fx, 'classify_request', {
+      words: 'Review this feature against the project’s design principles',
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'review/design-conformance' },
+    })) as { matches: { workflowId: string; missing: string[] }[] };
     assert.equal(cls.matches[0]!.workflowId, 'design-conformance');
     assert.deepEqual(cls.matches[0]!.missing, ['target']);
-    const resolved = (await call(fx, 'workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'src/kernel/state' } })) as { status: string; summary: string };
+    const resolved = (await call(fx, 'workflows', {
+      action: 'resolve',
+      id: 'design-conformance',
+      input: { target: 'src/kernel/state' },
+    })) as { status: string; summary: string };
     assert.equal(resolved.status, 'runnable', resolved.summary);
-    const started = (await call(fx, 'start_outcome', { workflowId: 'design-conformance', input: { target: 'src/kernel/state' } })) as { run: { id: string; state: string }; created: boolean };
+    const started = (await call(fx, 'start_outcome', { workflowId: 'design-conformance', input: { target: 'src/kernel/state' } })) as {
+      run: { id: string; state: string };
+      created: boolean;
+    };
     assert.equal(started.created, true);
     assert.equal(started.run.state, 'ready');
-    const claimed = (await call(fx, 'claim_work', { runId: started.run.id, includeSkillBody: true })) as { work: { stepRunId: string; owner: string; token: number; step: { id: string }; skill: { id: string; body: string } } };
+    const claimed = (await call(fx, 'claim_work', { runId: started.run.id, includeSkillBody: true })) as {
+      work: { stepRunId: string; token: number; step: { id: string }; skill: { id: string; body: string } };
+    };
     assert.equal(claimed.work.step.id, 'gather');
     assert.equal(claimed.work.skill.id, 'context-mapping');
     assert.match(claimed.work.skill.body, /^---\nname: context-mapping/);
-    const bad = (await call(fx, 'submit_work', { stepRunId: claimed.work.stepRunId, owner: claimed.work.owner, token: claimed.work.token, output: { principles: [] } })) as { step: { state: string }; validation: { ok: boolean }[] };
+    assert.equal('owner' in claimed.work, false, 'the lease holder is the calling session, so the packet does not name one');
+    for (const [tool, input] of [
+      ['submit_work', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, owner: 'me', output: {} }],
+      ['heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, owner: 'me' }],
+    ] as const) {
+      await assert.rejects(call(fx, tool, input), /"owner" is not an input of this tool/, `${tool} refuses owner by name`);
+    }
+    const bad = (await call(fx, 'submit_work', {
+      stepRunId: claimed.work.stepRunId,
+      token: claimed.work.token,
+      output: { principles: [] },
+    })) as { step: { state: string }; validation: { ok: boolean }[] };
     assert.equal(bad.step.state, 'ready', 'no evidence: retried');
-    const again = (await call(fx, 'claim_work', { runId: started.run.id })) as { work: { stepRunId: string; owner: string; token: number } };
-    const ok = (await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: { principles: ['keep the kernel host-agnostic'], targetSummary: 'the state module', unknownPrinciples: [] }, evidence: [{ ref: 'docs/design.md' }] })) as { step: { state: string } };
+    const again = (await call(fx, 'claim_work', { runId: started.run.id })) as {
+      work: { stepRunId: string; token: number };
+    };
+    const ok = (await call(fx, 'submit_work', {
+      stepRunId: again.work.stepRunId,
+      token: again.work.token,
+      output: { principles: ['keep the kernel host-agnostic'], targetSummary: 'the state module', unknownPrinciples: [] },
+      evidence: [{ ref: 'docs/design.md' }],
+    })) as { step: { state: string } };
     assert.equal(ok.step.state, 'succeeded');
-    assert.equal((await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: {} }).catch((e: Error) => e.message)), `step ${again.work.stepRunId} is not held by this session under that token; claim it again`);
-    const status = (await call(fx, 'run_status', { runId: started.run.id })) as { run: { state: string }; steps: { step: string; state: string }[] };
+    assert.equal(
+      await call(fx, 'submit_work', {
+        stepRunId: again.work.stepRunId,
+        token: again.work.token,
+        output: {},
+      }).catch((e: Error) => e.message),
+      `step ${again.work.stepRunId} is not held by this session under that token; claim it again`,
+    );
+    const status = (await call(fx, 'run_status', { runId: started.run.id })) as {
+      run: { state: string };
+      steps: { step: string; state: string }[];
+    };
     assert.equal(status.run.state, 'running');
     assert.equal(status.steps.find((s) => s.step === 'gather')!.state, 'succeeded');
     assert.deepEqual(await call(fx, 'inbox'), []);
@@ -260,19 +410,21 @@ test('the headless surface claims and submits but cannot decide, remember, or st
     assert.equal(claimed.work, null);
     assert.equal(claimed.waitingOn.kind, 'nothing_ready');
     for (const forbidden of HEADLESS_FORBIDDEN) assert.ok(!toolsFor('headless').some((t) => t.name === forbidden), forbidden);
-    assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', token: 'not-the-lease' }).catch((e: Error) => e.message)), 'step x is not held by this session under that token');
+    assert.equal(
+      await call(fx, 'heartbeat', { stepRunId: 'x', token: 'not-the-lease' }).catch((e: Error) => e.message),
+      'step x is not held by this session under that token',
+    );
   } finally {
     fx.cleanup();
   }
 });
-
 
 test('bootstrap keeps the requested lifecycle ahead of setup, without giving a headless worker interactive authority', async () => {
   for (const surface of ['interactive', 'headless'] as const) {
     const fx = brokerFixture(surface);
     try {
       const before = listActivity(fx.broker.store).length;
-      const boot = await call(fx, 'bootstrap') as { next: string };
+      const boot = (await call(fx, 'bootstrap')) as { next: string };
       if (surface === 'interactive') {
         assert.match(boot.next, /^Answer plain questions directly and record nothing/);
         assert.match(boot.next, /classify_request kind=manage, start_outcome, then claim_work\/submit_work/);
@@ -284,6 +436,8 @@ test('bootstrap keeps the requested lifecycle ahead of setup, without giving a h
         assert.doesNotMatch(boot.next, /classify_request|start_outcome|claim_work|remember/);
       }
       assert.equal(listActivity(fx.broker.store).length, before);
-    } finally { fx.cleanup(); }
+    } finally {
+      fx.cleanup();
+    }
   }
 });

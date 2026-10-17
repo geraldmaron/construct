@@ -31,8 +31,22 @@ import { workCommand, WORK_SPECS } from './work.ts';
 import { hooksCommand, HOOKS_SPECS } from './hooks.ts';
 import { packageVersion } from './version.ts';
 
-export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
-export const HELP_SPEC: CommandSpec = { path: ['help'], gloss: 'show every command', group: 'Help', positionals: [], flags: [], readOnly: true };
+export const VERSION_SPEC: CommandSpec = {
+  path: ['version'],
+  gloss: 'print the installed version',
+  group: 'Help',
+  positionals: [],
+  flags: [],
+  readOnly: true,
+};
+export const HELP_SPEC: CommandSpec = {
+  path: ['help'],
+  gloss: 'show every command',
+  group: 'Help',
+  positionals: [],
+  flags: [],
+  readOnly: true,
+};
 export const COMPLETION_SPEC: CommandSpec = {
   path: ['completion'],
   gloss: 'print a shell completion script derived from this command list',
@@ -67,7 +81,20 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   HELP_SPEC,
 ]);
 
-export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Work', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
+export const HELP_GROUPS: readonly string[] = Object.freeze([
+  'Setup',
+  'Inspect',
+  'Configure',
+  'Sources',
+  'Skills',
+  'Workflows',
+  'Work',
+  'Runs',
+  'Staff',
+  'Host',
+  'Recover',
+  'Help',
+]);
 
 const INTRO: readonly string[] = [
   'construct — a project-bound operating layer for the agent host you already use.',
@@ -108,7 +135,9 @@ export async function run(argv: readonly string[], ctx: CliContext = createConte
     const known = COMMANDS.filter((c) => c.path[0] === argv[0]);
     if (known.length > 0 && known.every((c) => c.path.length > 1)) {
       const asked = argv[1];
-      warn(`construct ${argv[0]!}: ${asked !== undefined && !asked.startsWith('-') ? `no subcommand "${asked}"` : 'needs a subcommand'}: ${known.map((c) => c.path[1]).join(' | ')}`);
+      warn(
+        `construct ${argv[0]!}: ${asked !== undefined && !asked.startsWith('-') ? `no subcommand "${asked}"` : 'needs a subcommand'}: ${known.map((c) => c.path[1]).join(' | ')}`,
+      );
       return 2;
     }
     warn(`construct: unknown command ${JSON.stringify(argv[0])}`);

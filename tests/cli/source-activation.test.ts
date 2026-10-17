@@ -19,7 +19,10 @@ test('rejected retired IDs leave declarations unchanged and later new sources ac
     assert.equal(readFileSync(file, 'utf8'), before);
     assert.equal((await capture(() => run(add('new'), ctx))).code, 0);
     const listed = await capture(() => run(['source', 'list', '--json'], ctx));
-    assert.deepEqual(JSON.parse(listed.out).map((r: { source: { id: string } }) => r.source.id), ['new']);
+    assert.deepEqual(
+      JSON.parse(listed.out).map((r: { source: { id: string } }) => r.source.id),
+      ['new'],
+    );
   });
 });
 
@@ -38,11 +41,13 @@ test('retiring a stranded declaration recovers new declarations from the earlier
     const recovered = await capture(() => run(['source', 'retire', 'old'], ctx));
     assert.equal(recovered.code, 0, recovered.err);
     const listed = await capture(() => run(['source', 'list', '--json'], ctx));
-    assert.deepEqual(JSON.parse(listed.out).map((r: { source: { id: string } }) => r.source.id), ['new']);
+    assert.deepEqual(
+      JSON.parse(listed.out).map((r: { source: { id: string } }) => r.source.id),
+      ['new'],
+    );
     assert.equal((await capture(() => run(['source', 'refresh', 'new', '--json'], ctx))).code, 0);
   });
 });
-
 
 test('a declaration write failure rolls back source activation', async () => {
   await inProject(async (ctx, box) => {

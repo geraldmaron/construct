@@ -322,7 +322,6 @@ export function migrateV3ToV4(db: DatabaseSync): void {
   db.prepare(`UPDATE meta SET value = '4' WHERE key = 'format_version'`).run();
 }
 
-
 /** Complete format 4 adds coordination tables to format 3. */
 export function isCompleteV4(db: DatabaseSync): boolean {
   const names = tableNames(db);

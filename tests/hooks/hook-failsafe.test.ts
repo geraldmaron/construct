@@ -28,7 +28,11 @@ import { claimWork, createWork } from '../../src/kernel/work/service.ts';
 const REPEAT = Math.max(1, Number(process.env.CX_HOOK_SOAK ?? 2));
 const LIMIT_MS = 2000;
 
-interface Outcome { readonly code: number | null; readonly ms: number; readonly out: string }
+interface Outcome {
+  readonly code: number | null;
+  readonly ms: number;
+  readonly out: string;
+}
 
 function runHook(command: string, cwd: string, env: NodeJS.ProcessEnv, input: string | null): Promise<Outcome> {
   return new Promise((resolve) => {
@@ -47,7 +51,9 @@ function runHook(command: string, cwd: string, env: NodeJS.ProcessEnv, input: st
   });
 }
 
-test('an installed hook exits 0 within two seconds, saying nothing or one bounded line, whatever breaks', { timeout: 600_000 }, async () => {
+test('an installed hook exits 0 within two seconds, saying nothing or one bounded line, whatever breaks', {
+  timeout: 600_000,
+}, async () => {
   const fx = sterile();
   try {
     const repo = join(fx.root, 'repo');
@@ -55,9 +61,14 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
     mkdirSync(join(fx.root, 'home'), { recursive: true });
     const env = envFor(fx, { GIT_CONFIG_NOSYSTEM: '1' });
     assert.equal(spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: repo, env }).status, 0);
-    assert.equal(spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=failsafe', '--scale=solo'], { cwd: repo, env }).status, 0);
+    assert.equal(
+      spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=failsafe', '--scale=solo'], { cwd: repo, env }).status,
+      0,
+    );
     assert.equal(spawnSync(process.execPath, [LAUNCHER, 'hooks', 'install', '--host=claude-code'], { cwd: repo, env }).status, 0);
-    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.local.json'), 'utf8')) as { hooks: Record<string, { hooks: { command: string }[] }[]> };
+    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.local.json'), 'utf8')) as {
+      hooks: Record<string, { hooks: { command: string }[] }[]>;
+    };
     const postEdit = settings.hooks.PostToolUse!.at(-1)!.hooks[0]!.command;
     const sessionStart = settings.hooks.SessionStart!.at(-1)!.hooks[0]!.command;
 
@@ -67,7 +78,14 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
     const now = new Date().toISOString();
     registerSession(store, { id: 'ses_peer', host: 'cursor', surface: 'interactive', machine: 'test', at: now });
     createWork(store, { id: 'w-peer', kind: 'task', title: 'peer', description: 'x', at: now, actor: 'test' });
-    claimWork(store, { id: 'w-peer', owner: 'ses_peer/main', session: 'ses_peer', until: new Date(Date.now() + 3_600_000).toISOString(), now, paths: ['src/'] });
+    claimWork(store, {
+      id: 'w-peer',
+      owner: 'ses_peer/main',
+      session: 'ses_peer',
+      until: new Date(Date.now() + 3_600_000).toISOString(),
+      now,
+      paths: ['src/'],
+    });
     store.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     store.close();
     const pristine = join(fx.root, 'pristine.sqlite');
@@ -78,40 +96,79 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
     };
     const launcher = join(stateDir, 'launcher');
     const launcherText = readFileSync(launcher, 'utf8');
-    const edit = JSON.stringify({ cwd: repo, session_id: 'host-x', hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: { file_path: join(repo, 'src', 'x.ts') } });
+    const edit = JSON.stringify({
+      cwd: repo,
+      session_id: 'host-x',
+      hook_event_name: 'PostToolUse',
+      tool_name: 'Edit',
+      tool_input: { file_path: join(repo, 'src', 'x.ts') },
+    });
     const empty = join(fx.root, 'empty');
     mkdirSync(empty);
 
-    const states: { name: string; command?: string; cwd?: string; input: string | null; env?: NodeJS.ProcessEnv; before?: () => void | (() => void); speaks?: boolean }[] = [
+    const states: {
+      name: string;
+      command?: string;
+      cwd?: string;
+      input: string | null;
+      env?: NodeJS.ProcessEnv;
+      before?: () => void | (() => void);
+      speaks?: boolean;
+    }[] = [
       { name: 'healthy, with a held file', input: edit, speaks: true },
       { name: 'healthy session start', command: sessionStart, input: JSON.stringify({ cwd: repo, source: 'startup' }), speaks: true },
-      { name: 'no project', cwd: empty, input: JSON.stringify({ cwd: empty, tool_name: 'Edit', tool_input: { file_path: join(empty, 'a.ts') } }) },
+      {
+        name: 'no project',
+        cwd: empty,
+        input: JSON.stringify({ cwd: empty, tool_name: 'Edit', tool_input: { file_path: join(empty, 'a.ts') } }),
+      },
       { name: 'corrupt store', input: edit, before: () => (writeFileSync(db, 'this is not a database'), restore) },
-      { name: 'newer store', input: edit, before: () => {
-        const d = new DatabaseSync(db);
-        d.exec(`UPDATE meta SET value = '99' WHERE key = 'format_version'`);
-        d.close();
-        return restore;
-      } },
-      { name: 'locked store', input: edit, before: () => {
-        const d = new DatabaseSync(db);
-        d.exec('PRAGMA locking_mode = EXCLUSIVE');
-        d.exec('BEGIN EXCLUSIVE');
-        d.exec(`UPDATE meta SET value = value WHERE key = 'format_version'`);
-        return () => {
-          d.exec('ROLLBACK');
+      {
+        name: 'newer store',
+        input: edit,
+        before: () => {
+          const d = new DatabaseSync(db);
+          d.exec(`UPDATE meta SET value = '99' WHERE key = 'format_version'`);
           d.close();
-          restore();
-        };
-      } },
+          return restore;
+        },
+      },
+      {
+        name: 'locked store',
+        input: edit,
+        before: () => {
+          const d = new DatabaseSync(db);
+          d.exec('PRAGMA locking_mode = EXCLUSIVE');
+          d.exec('BEGIN EXCLUSIVE');
+          d.exec(`UPDATE meta SET value = value WHERE key = 'format_version'`);
+          return () => {
+            d.exec('ROLLBACK');
+            d.close();
+            restore();
+          };
+        },
+      },
       { name: 'empty input', input: '' },
       { name: 'malformed input', input: '{"cwd": ' },
       { name: 'huge input', input: `{"cwd":"${repo}","pad":"${'x'.repeat(5_000_000)}"}` },
       { name: 'input that never ends', input: null },
       { name: 'nonsense fields', input: JSON.stringify({ cwd: 42, tool_name: ['Edit'], tool_input: { file_path: 7 } }) },
-      { name: 'launcher missing', input: edit, before: () => (renameSync(launcher, `${launcher}.away`), () => renameSync(`${launcher}.away`, launcher)) },
-      { name: 'launcher broken', input: edit, before: () => (writeFileSync(launcher, '/no/such/node\n/no/such/construct.mjs\n'), () => writeFileSync(launcher, launcherText)) },
-      { name: 'state directory unwritable', input: edit, speaks: true, before: () => (chmodSync(stateDir, 0o500), () => chmodSync(stateDir, 0o700)) },
+      {
+        name: 'launcher missing',
+        input: edit,
+        before: () => (renameSync(launcher, `${launcher}.away`), () => renameSync(`${launcher}.away`, launcher)),
+      },
+      {
+        name: 'launcher broken',
+        input: edit,
+        before: () => (writeFileSync(launcher, '/no/such/node\n/no/such/construct.mjs\n'), () => writeFileSync(launcher, launcherText)),
+      },
+      {
+        name: 'state directory unwritable',
+        input: edit,
+        speaks: true,
+        before: () => (chmodSync(stateDir, 0o500), () => chmodSync(stateDir, 0o700)),
+      },
       { name: 'switched off', input: edit, env: { CONSTRUCT_HOOKS: 'off' } },
     ];
 
@@ -142,7 +199,10 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
       }
     }
     assert.deepEqual(failures, [], `${String(failures.length)} of ${String(runs)} runs misbehaved`);
-    const health = JSON.parse(readFileSync(join(stateDir, 'hook-health.json'), 'utf8')) as Record<string, { runs: number; said: number; failed: number }>;
+    const health = JSON.parse(readFileSync(join(stateDir, 'hook-health.json'), 'utf8')) as Record<
+      string,
+      { runs: number; said: number; failed: number }
+    >;
     const edits = health['claude-code:post-tool-use']!;
     assert.ok(edits.said >= REPEAT, 'what it said is counted');
     assert.ok(edits.failed >= REPEAT * 3, 'a corrupt, newer, or locked store counts as a failed run, not a quiet one');
@@ -151,7 +211,6 @@ test('an installed hook exits 0 within two seconds, saying nothing or one bounde
   }
 });
 
-
 test('installed coordination hooks do not wait for the unrelated general CLI graph', async () => {
   const fx = sterile();
   try {
@@ -159,16 +218,28 @@ test('installed coordination hooks do not wait for the unrelated general CLI gra
     mkdirSync(repo, { recursive: true });
     mkdirSync(join(fx.root, 'home'), { recursive: true });
     const env = envFor(fx, { GIT_CONFIG_NOSYSTEM: '1' });
-    assert.equal(spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=startup-budget', '--scale=solo'], { cwd: repo, env }).status, 0);
+    assert.equal(
+      spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=startup-budget', '--scale=solo'], { cwd: repo, env }).status,
+      0,
+    );
     assert.equal(spawnSync(process.execPath, [LAUNCHER, 'hooks', 'install', '--host=claude-code'], { cwd: repo, env }).status, 0);
     const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.local.json'), 'utf8'));
     const command = settings.hooks.PostToolUse.at(-1).hooks[0].command;
-    const loader = join(fx.root, 'slow-general-cli.mjs'), preload = join(fx.root, 'register-loader.mjs');
-    writeFileSync(loader, `export async function load(url, context, nextLoad) { if (/\\/cli\\/index\\.(?:ts|js)$/.test(url)) await new Promise(resolve => setTimeout(resolve, 3000)); return nextLoad(url, context); }`);
-    writeFileSync(preload, `import { register } from 'node:module'; register(${JSON.stringify(pathToFileURL(loader).href)}, import.meta.url);`);
+    const loader = join(fx.root, 'slow-general-cli.mjs'),
+      preload = join(fx.root, 'register-loader.mjs');
+    writeFileSync(
+      loader,
+      `export async function load(url, context, nextLoad) { if (/\\/cli\\/index\\.(?:ts|js)$/.test(url)) await new Promise(resolve => setTimeout(resolve, 3000)); return nextLoad(url, context); }`,
+    );
+    writeFileSync(
+      preload,
+      `import { register } from 'node:module'; register(${JSON.stringify(pathToFileURL(loader).href)}, import.meta.url);`,
+    );
     const result = await runHook(command, repo, { ...env, NODE_OPTIONS: `--import=${pathToFileURL(preload).href}` }, '{}');
     assert.equal(result.code, 0);
     assert.equal(result.out, '');
     assert.ok(result.ms <= LIMIT_MS, `unrelated CLI loading consumed ${String(result.ms)}ms of the installed hook deadline`);
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });

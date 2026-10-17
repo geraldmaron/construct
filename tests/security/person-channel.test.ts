@@ -12,7 +12,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { agentAncestorOf, channelFor, isAgentProcess, relayMarkerIn, systemPs, UNREADABLE_ANCESTRY, type PsRunner } from '../../src/cli/person-channel.ts';
+import {
+  agentAncestorOf,
+  channelFor,
+  isAgentProcess,
+  relayMarkerIn,
+  systemPs,
+  UNREADABLE_ANCESTRY,
+  type PsRunner,
+} from '../../src/cli/person-channel.ts';
 
 const AGENT_HOSTS: Record<string, readonly string[]> = {
   'Claude desktop': [
@@ -43,7 +51,10 @@ const AGENT_HOSTS: Record<string, readonly string[]> = {
     'code-insiders --wait',
   ],
   Warp: ['/Applications/Warp.app/Contents/MacOS/stable', '/opt/warpdotdev/warp-terminal/warp-terminal'],
-  Kiro: ['/Applications/Kiro.app/Contents/MacOS/Electron', '/Applications/Kiro.app/Contents/Frameworks/Kiro Helper.app/Contents/MacOS/Kiro Helper --type=utility'],
+  Kiro: [
+    '/Applications/Kiro.app/Contents/MacOS/Electron',
+    '/Applications/Kiro.app/Contents/Frameworks/Kiro Helper.app/Contents/MacOS/Kiro Helper --type=utility',
+  ],
   Trae: ['/Applications/Trae.app/Contents/MacOS/Electron'],
   'a JetBrains IDE': [
     '/Applications/IntelliJ IDEA.app/Contents/MacOS/idea',
@@ -53,15 +64,27 @@ const AGENT_HOSTS: Record<string, readonly string[]> = {
     '/opt/idea/jbr/bin/java -classpath /opt/idea/lib/app.jar -Didea.vendor.name=JetBrains com.intellij.idea.Main',
     '/opt/android-studio/bin/studio.sh',
   ],
-  'Copilot, Cline, Continue': ['node /opt/homebrew/bin/copilot', 'node /opt/homebrew/lib/node_modules/@github/copilot/index.js', 'node /opt/homebrew/bin/cline', 'node /opt/homebrew/bin/cn'],
+  'Copilot, Cline, Continue': [
+    'node /opt/homebrew/bin/copilot',
+    'node /opt/homebrew/lib/node_modules/@github/copilot/index.js',
+    'node /opt/homebrew/bin/cline',
+    'node /opt/homebrew/bin/cn',
+  ],
 };
 
 const PERSON_TERMINALS: Record<string, readonly string[]> = {
   'Terminal.app': ['-zsh', 'login -pf me', '/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'],
-  iTerm2: ['-zsh', '/usr/bin/login -fpl me /Applications/iTerm.app/Contents/MacOS/iTerm2 --launch_shell', '/Applications/iTerm.app/Contents/MacOS/iTerm2'],
+  iTerm2: [
+    '-zsh',
+    '/usr/bin/login -fpl me /Applications/iTerm.app/Contents/MacOS/iTerm2 --launch_shell',
+    '/Applications/iTerm.app/Contents/MacOS/iTerm2',
+  ],
   Ghostty: ['/usr/bin/login -flp me /bin/bash --noprofile --norc -c exec -l /bin/zsh', '/Applications/Ghostty.app/Contents/MacOS/ghostty'],
   'a shell chain': ['/bin/zsh -l', 'bash', 'tmux new-session -s work -c /Users/me/code', 'sshd: me@ttys001', '/sbin/launchd'],
-  'Construct itself': ['node /Users/me/code/construct/bin/construct.mjs inbox resolve decision-1 approve', 'npm exec construct inbox resolve decision-1 approve'],
+  'Construct itself': [
+    'node /Users/me/code/construct/bin/construct.mjs inbox resolve decision-1 approve',
+    'npm exec construct inbox resolve decision-1 approve',
+  ],
 };
 
 test('every agent host and agent-capable editor is recognized in its recorded process lines', () => {
@@ -93,7 +116,12 @@ test('an editor’s integrated terminal is a relay by its environment alone', ()
     assert.ok(relayMarkerIn(env), JSON.stringify(env));
     assert.equal(channelFor(env, facts), 'relay', JSON.stringify(env));
   }
-  for (const env of [{}, { TERM_PROGRAM: 'Apple_Terminal' }, { TERM_PROGRAM: 'iTerm.app' }, { TERM_PROGRAM: 'ghostty' }] as NodeJS.ProcessEnv[]) {
+  for (const env of [
+    {},
+    { TERM_PROGRAM: 'Apple_Terminal' },
+    { TERM_PROGRAM: 'iTerm.app' },
+    { TERM_PROGRAM: 'ghostty' },
+  ] as NodeJS.ProcessEnv[]) {
     assert.equal(relayMarkerIn(env), null, JSON.stringify(env));
     assert.equal(channelFor(env, facts), 'tty_cli', JSON.stringify(env));
   }
@@ -109,9 +137,20 @@ function psFrom(table: Record<number, readonly [number, string]>): PsRunner {
 }
 
 test('the ancestor walk finds the agent host above a shell, and nothing above a plain terminal', () => {
-  const inEditor = psFrom({ 900: [800, 'node /Users/me/.npm/bin/construct inbox resolve d-1 approve'], 800: [700, '/bin/zsh -il'], 700: [1, '/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility'], 1: [0, '/sbin/launchd'] });
+  const inEditor = psFrom({
+    900: [800, 'node /Users/me/.npm/bin/construct inbox resolve d-1 approve'],
+    800: [700, '/bin/zsh -il'],
+    700: [1, '/Applications/Visual Studio Code.app/Contents/Frameworks/Code Helper.app/Contents/MacOS/Code Helper --type=utility'],
+    1: [0, '/sbin/launchd'],
+  });
   assert.match(agentAncestorOf(900, inEditor) ?? '', /Code Helper/);
-  const inTerminal = psFrom({ 900: [800, 'node /Users/me/.npm/bin/construct inbox resolve d-1 approve'], 800: [700, '-zsh'], 700: [600, 'login -pf me'], 600: [1, '/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'], 1: [0, '/sbin/launchd'] });
+  const inTerminal = psFrom({
+    900: [800, 'node /Users/me/.npm/bin/construct inbox resolve d-1 approve'],
+    800: [700, '-zsh'],
+    700: [600, 'login -pf me'],
+    600: [1, '/System/Applications/Utilities/Terminal.app/Contents/MacOS/Terminal'],
+    1: [0, '/sbin/launchd'],
+  });
   assert.equal(agentAncestorOf(900, inTerminal), null);
   assert.equal(channelFor({}, { interactive: true, agentAncestor: agentAncestorOf(900, inTerminal) }), 'tty_cli');
 });

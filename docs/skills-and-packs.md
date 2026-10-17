@@ -3,12 +3,12 @@
 [Documentation index](README.md) · [Project README](../README.md)
 
 A skill is a portable `SKILL.md` (Agent Skills format) beside a Construct
-manifest, `construct.skill.json`, that declares what the portable file
-cannot: activation and stand-down conditions, interaction classes, outcomes
-and deliverable types, required inputs and sources, capability requirements
-(never tool names), action tiers, versioned dependencies, quality gates,
-escalation, licensed-review boundaries, observations, and evals. The
-manifest and the frontmatter must agree on name and version.
+manifest, `construct.skill.json`, that declares only what Construct
+enforces when it binds the skill into a workflow step: capability
+requirements (never tool names), the highest action tier it may be applied
+at, the validators its deliverable must pass, versioned dependencies, and
+evals. Everything else about the method lives in `SKILL.md`. The manifest
+and the frontmatter must agree on name and version.
 
 ## What ships
 
@@ -43,9 +43,9 @@ requests metadata only); a
 judgment step that binds no skill is told to load the method the reading
 chose. A claim supplies the current step's bound method, not the whole library.
 
-The `skills` tool lists the project's skills with their activation and
-stand-down conditions, shows one with its digest, files, and qualification
-(its full text only with `includeBody`), and with `status` reports each
+The `skills` tool lists the project's skills with their descriptions,
+shows one with its digest, files, and lock state (its full text only
+with `includeBody`), and with `status` reports each
 bundle's lock state.
 
 ## On disk in a host
@@ -61,13 +61,16 @@ construct skill remove intake --dir=./.tmp-skills --confirm
 `init` plants only the operational skill, in the project skills directory
 each wired host reads (`.claude/skills`, `.agents/skills`, or `.bob/skills`).
 `init --skills-dir=<path>` also plants a personal copy in that directory,
-which loads in every repository the host opens. Run inside Claude Code,
-Cursor, or Bob, `construct doctor` names the `construct skill remove`
-command for an older or changed copy in that host's personal skills
+which loads in every repository the host opens. `construct doctor` fails on
+an older or changed personal copy of the operational skill, in any host's
+personal skills directory, and names the `construct skill remove` command.
+Personal copies of the method skills are not Construct's to keep current:
+another tool may own them (ai-workflow-config, for example), and Construct's
+runs take a method's text from the registry, never from a personal
 directory.
 
 Install others by name when a host needs files on disk: `--dir` names the
-directory, `--client=<claude|bob|opencode|cursor|codex|vscode>` names that
+directory, `--client=<claude|bob|opencode|cursor|codex|vscode|hermes>` names that
 host's personal skills directory under your home (a copy there loads in every
 repository the host opens), and with neither, the personal directory of the
 host you are running inside is used when Construct can tell which one that
@@ -95,23 +98,13 @@ changed is left alone until you name it with `--confirm=<id>`. `status` and
 `doctor` report skew. A built-in bundle whose content changes without a
 version bump fails the release check.
 
-## Qualification and skill impact
+## Evals and skill impact
 
-A skill is qualified only by current passing executed evidence for its exact
-version, digest, host and model, within the recorded scope. The observed suite
-must include matching native producer and independent reviewer witnesses,
-artifacts, method application and passing checks, with unchanged witnessed
-sources/evaluator bytes and an unexpired evidence window. A lock and evaluation
-filenames alone do not qualify it.
-
-Missing locks or missing executed evidence leave a skill experimental. An
-outdated or blocked lock, failed or stale evidence, or incomplete matching native
-witnesses makes it degraded. Same-version digest divergence or text attempting
-to raise Construct’s authority makes it unsafe. A missing locked skill is
-reported missing by status (deprecated in the qualification projection).
-The `skills` tool’s show action reports the reason and any evidence identity;
-see the host/model input in the [tool reference](broker-reference.md#skills).
-These states never grant permission or promise universal correctness.
+Each skill ships `evals/evals.json` and `evals/trigger-queries.json` in the
+Agent Skills shape; [authoring](authoring-and-qualification.md#evals) says
+how they are written and run. The `skills` tool's show action reports lock
+integrity only: whether the bytes are the ones the project locked. It never
+grants permission or claims a skill works; a run of its evals shows that.
 
 ```bash
 construct skill impact

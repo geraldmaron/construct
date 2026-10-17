@@ -1,18 +1,14 @@
 # Ordinary push and pull request run the real gate: lint, typecheck, full
 # unit suite, sterile read-only HOME, and packaged-install smoke. Live host
 # conformance stays out of PR and release jobs (credentials); release notes
-# disclose that gap. Tracker-only commits under .beads/ do not start a run.
+# disclose that gap.
 
 name: ci
 
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '.beads/**'
   pull_request:
-    paths-ignore:
-      - '.beads/**'
   workflow_dispatch:
 
 concurrency:

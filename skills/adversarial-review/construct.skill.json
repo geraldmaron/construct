@@ -3,78 +3,17 @@
   "formatVersion": 1,
   "id": "adversarial-review",
   "title": "Adversarial review",
-  "version": "0.3.1",
+  "version": "0.3.4",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "poke holes in this before we commit",
-    "tell me why this will fail",
-    "argue the other side",
-    "be the skeptic about this proposal",
-    "what is wrong with this plan",
-    "we are too excited about this idea",
-    "find the weak point",
-    "a finished artifact is about to be committed to and being wrong is expensive",
-    "architecture, data model, security boundary, vendor, dependency, build-vs-buy, migration, hard-to-reverse change",
-    "a spec about to be built, a public factual claim, a decision record about to be executed, a strategy about to be funded",
-    "challenge this, try to break the case, find what is wrong with the thinking, strongest case against",
-    "challenge this decision or architecture before we commit to it",
-    "review the plan for the failure modes we have not considered"
-  ],
-  "standDown": [
-    "the artifact is still moving, a half-finished draft, tidy up",
-    "low-stakes reversible work, easy to change later, cheap pick",
-    "code review of a diff for style and naming",
-    "fix a typo"
-  ],
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "challenge verdict on a deliverable"
-  ],
-  "deliverableTypes": [
-    "review/challenge verdict"
-  ],
-  "inputs": [
-    "the finished artifact or decision record",
-    "the claims and alternatives it rests on"
-  ],
-  "outputSchemas": [
-    "review/challenge/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context",
     "model_review"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present",
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a verdict of rejected or needs validation returns the deliverable to its author with the failure mode named",
-    "self-review is stated in the record because a reviewer who shares the author's context shares the blind spots"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json",
-    "evals/behavior.json"
-  ]
+  "skillDependencies": []
 }

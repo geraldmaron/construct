@@ -1,7 +1,18 @@
 export const EXECUTORS = ['claude', 'codex', 'cursor'] as const;
-export type Executor = typeof EXECUTORS[number];
+export type Executor = (typeof EXECUTORS)[number];
 export type Role = 'implement' | 'review';
-export type ExecutionState = 'queued' | 'running' | 'succeeded' | 'blocked' | 'failed' | 'cancelled' | 'timed_out' | 'orphaned' | 'integrating' | 'integrated' | 'integration_failed';
+export type ExecutionState =
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'blocked'
+  | 'failed'
+  | 'cancelled'
+  | 'timed_out'
+  | 'orphaned'
+  | 'integrating'
+  | 'integrated'
+  | 'integration_failed';
 
 export interface Assignment {
   readonly workId: string;
@@ -110,7 +121,11 @@ export interface DelegationDriver {
   cancel(id: string): Promise<void>;
   collect(execution: Execution): Promise<Artifact>;
   integrate(execution: Execution): Promise<void>;
-  validate(execution: Execution, stage: 'worker' | 'integrated', onProcess?: (supervisorPid: number, groupPid: number | null) => void): Promise<readonly ValidationResult[]>;
+  validate(
+    execution: Execution,
+    stage: 'worker' | 'integrated',
+    onProcess?: (supervisorPid: number, groupPid: number | null) => void,
+  ): Promise<readonly ValidationResult[]>;
   alive(execution: Execution): boolean | null;
 }
 

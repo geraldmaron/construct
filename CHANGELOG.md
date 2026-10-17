@@ -1,5 +1,92 @@
 # Changelog
 
+## 3.0.0-alpha.32 — 2026-10-17 (experimental)
+
+Hermes Agent is a supported host, nothing matches a person's words, and
+review and authoring each run as one workflow keyed by domain.
+
+### Breaking
+
+- Nine review workflows are now `review` and four authoring workflows
+  (PRD, proposal, RFC, research brief) are now `authoring`, both 2.0.0 and
+  keyed by `domain`. Every former id still starts the matching domain
+  through an alias, and saved runs keep their frozen contracts. The unused
+  `remember` workflow is gone.
+- A managed `classify_request` reading must carry `stakes` with `reversible`
+  and `affects`. A reading without it fails with a typed error naming the
+  field.
+- Checks that used to pass on a matching word now read typed fields:
+  `setAside` names the settled statement an answer discusses, `superseded`
+  takes `{ref, replacedBy}`, and a decision ask takes
+  `decision: {ask, decider, by}`. Claim support decides only by typed
+  calculation. `check_answer` accepts `setAside` and `superseded`.
+- `submit_work` and `heartbeat` no longer declare an `owner` input, and the
+  `claim_work` and `claim_step` packets no longer return `owner`. A host
+  that still sends `owner` gets a typed input error; drop the field.
+- Trigger phrase lists, the lexical router and the lexical rigor floor are
+  gone. A skill manifest declares only what something enforces (`maxTier`,
+  `requiredValidators`), and the resolver enforces both.
+- Construct ships no plugin. `construct init` plants the operational skill;
+  the method skills reach personal hosts through the tool that installs
+  them.
+
+### Changes
+
+- Hermes Agent is a supported host, wired through `$HERMES_HOME/config.yaml`
+  without touching another project's binding or the real home. Its YAML
+  writer refuses any file it cannot fully read.
+- `construct workflow install-timer` installs a platform timer (launchd or
+  systemd) that fires a standing trigger on an explicit executor. A timer
+  never fires into a stale slot and never reports a removal it did not
+  confirm.
+- A run that fails or is cancelled ends its delivery reservation, and no
+  host can claim a run's reservation through the `work` tool. Cancelling a
+  run no longer waits on a step whose holder is gone, from MCP or from
+  `construct run cancel`.
+- A receipt is the bytes it observed, and a session's lane is the checkout
+  its host names in MCP roots, so a worktree session cites its own files.
+- The native semantic reviewer is pinned to Codex CLI 0.163.0 (profile
+  `codex-app-server-held-text-v2`). New message deliveries and notifications
+  refuse the review; `account/updated` passes only on subscription auth; the
+  only admitted warning is Codex's own fail-closed code-mode notice. The reviewer did not
+  run for this alpha; see Verification and limits.
+- `doctor` fails only on a stale personal copy of the operational skill, and
+  names the wiring that actually reaches Construct.
+
+- Tool descriptions say what each tool does and returns; field rules live on
+  their schema fields. `classify_request`, `work` and `sources` keep condensed
+  guidance their full schemas cannot hold.
+- A refused claim or takeover of work held by another agent of your own session
+  names the recovery: the session's main agent takes it back with a reason.
+- A host child keeps `USER`, so Claude Code finds its Keychain login in
+  delegated and evaluated runs.
+- `work/service.ts` and `broker/tools.ts` are split into lifecycle and per-tool
+  modules with byte-identical `tools/list`.
+
+### Upgrade
+
+Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
+`construct skill update`, then reconnect. State remains format 5; no
+migration or credentials are required. Hosts or scripts that start a former
+review or authoring workflow id keep working through its alias.
+
+### Verification and limits
+
+Lint, typecheck, the full test suite (1,300 pass, 0 fail), packaged smoke and
+static conformance for every host (126 passed, 0 failed, 23 untested) pass. The
+smoke live intake record passes on Claude Code haiku in the crowded condition
+against the preregistered baselines: missed work 32/34 against 31/34 for
+staging-79562bbc, and 0/27 false writes. Before and after the description
+change, the same cell missed 30/34 and 32/34, which is within the margin.
+
+This alpha ran no native semantic review. Gerald took Codex and gpt-6-astra
+out of use on 2026-10-17, and the only qualified reviewer is the Codex
+held-text profile, so the release manifest records the review as unavailable
+(RESEARCH-DECISIONS §48) and the eval gate holds no Codex cell. A live run
+showing hosts fill the new typed `setAside`, `superseded` and `decision`
+fields is still open; a host that leaves one empty is refused with a typed
+recovery. Publish under `alpha` only; `latest` remains on 2.x.
+
 ## 3.0.0-alpha.31 — 2026-10-16 (experimental)
 
 A method report may cite a listed file by any spelling that resolves to it.

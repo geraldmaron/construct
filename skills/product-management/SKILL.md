@@ -10,7 +10,7 @@ description: >-
   requirements).
 license: Apache-2.0
 metadata:
-  version: 1.0.2
+  version: 1.0.5
   source: geraldmaron/construct
 ---
 # Product management

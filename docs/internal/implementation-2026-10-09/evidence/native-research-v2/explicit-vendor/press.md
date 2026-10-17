@@ -1,1 +1,0 @@
-A press article repeats vendor.md without independent measurements.

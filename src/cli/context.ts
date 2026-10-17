@@ -20,6 +20,15 @@ import { StoreProjectError, bindStoreToProject } from '../kernel/state/identity.
 import type { ProjectWorktree } from '../kernel/work/lanes.ts';
 import { OperationError } from './output.ts';
 import type { TerminalFacts } from './person-channel.ts';
+import type { SchedulerControl } from '../hosts/timer.ts';
+
+export interface TimerSeam {
+  readonly platform: NodeJS.Platform;
+  readonly control: SchedulerControl;
+  readonly systemTimezone: string;
+  /** The launcher a unit starts; this install's own when unset. */
+  readonly launcher?: string;
+}
 
 export interface CliContext {
   readonly cwd: string;
@@ -45,6 +54,14 @@ export interface CliContext {
    * read from, supplied only by tests. Production reads process.stdin.
    */
   readonly input?: NodeJS.ReadableStream;
+  /**
+   * The platform scheduler a timer command talks to, supplied only by tests:
+   * which platform to write for, a recorder in place of launchctl or
+   * systemctl, and the machine timezone. Production uses this process's
+   * platform and the real scheduler, which loads only from the account's own
+   * scheduler directory.
+   */
+  readonly timers?: TimerSeam;
   now(): string;
   nextId(prefix: string): string;
 }
@@ -368,7 +385,9 @@ export function projectWorktrees(root: string): ProjectWorktree[] {
   const rel = relative(mainReal, realpathOr(root));
   if (rel.startsWith('..') || isAbsolute(rel)) return [];
   const main = repo.linked ? resolveRepository(repo.mainRoot) : repo;
-  const out: ProjectWorktree[] = [{ root: join(mainReal, rel), checkout: mainReal, branch: main?.branch ?? null, head: main?.head ?? null, main: true }];
+  const out: ProjectWorktree[] = [
+    { root: join(mainReal, rel), checkout: mainReal, branch: main?.branch ?? null, head: main?.head ?? null, main: true },
+  ];
   const records = join(repo.commonDir, 'worktrees');
   let names: string[];
   try {
@@ -429,6 +448,27 @@ export function worktreeHolding(root: string, path: string): { readonly worktree
   return best;
 }
 
+/**
+ * The lane of a session its host says works in `dirs`, trusted only as far as
+ * the project's own checkouts reach: null for the main checkout, the worktree
+ * for a linked one. Undefined when no directory is in one of the project's
+ * checkouts, or when they name different checkouts, so the host said nothing
+ * Construct can use.
+ */
+export function laneAt(root: string, dirs: readonly string[]): Lane | null | undefined {
+  const found = new Map<string, Lane | null>();
+  for (const dir of dirs) {
+    const held = worktreeHolding(root, dir);
+    if (held === null) continue;
+    const { worktree } = held;
+    found.set(
+      worktree.checkout,
+      worktree.main ? null : { root: worktree.root, checkout: worktree.checkout, branch: worktree.branch, head: worktree.head },
+    );
+  }
+  return found.size === 1 ? [...found.values()][0] : undefined;
+}
+
 /** The nearest directory at or above `start`, up to `floor`, holding a project store. */
 function findStoreRoot(start: string, floor: string): string | null {
   let dir = resolve(start);
@@ -468,9 +508,10 @@ export function locateProject(ctx: CliContext): ProjectLocation {
     return { root: here, lane: ctx.sessionCwd === undefined ? null : laneFor(here, ctx.sessionCwd) };
   }
   const sameRelative = (dir: string): string => join(mainRoot, relative(repo.checkout, dir));
-  const root = here !== null
-    ? sameRelative(here)
-    : findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot }) ?? findStoreRoot(sameRelative(ctx.cwd), mainRoot);
+  const root =
+    here !== null
+      ? sameRelative(here)
+      : (findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot }) ?? findStoreRoot(sameRelative(ctx.cwd), mainRoot));
   if (root === null || (!hasProject(root) && !existsSync(projectDbPath(root)))) {
     if (here !== null) {
       throw new WorktreeBindingError(
@@ -536,7 +577,10 @@ export interface ExpectedProject {
 
 export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenProject {
   const bound = bindProject(ctx);
-  if (expected && (realpathOr(bound.root) !== realpathOr(expected.root) || (expected.id !== null && bound.files.config?.id !== expected.id))) {
+  if (
+    expected &&
+    (realpathOr(bound.root) !== realpathOr(expected.root) || (expected.id !== null && bound.files.config?.id !== expected.id))
+  ) {
     throw new OperationError(
       'The project binding changed while this connection was waiting to bind.',
       'Restart the MCP server after checking the intended project root and identity. Nothing was recorded.',
@@ -545,7 +589,9 @@ export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenPr
   if (!existsSync(bound.layout.dbPath)) {
     throw new OperationError(
       `this project has no state database at ${bound.layout.dbPath}`,
-      bound.lane ? `Run \`construct init\` in ${bound.root} to create it; every worktree shares that one store.` : 'Run `construct init` to create it.',
+      bound.lane
+        ? `Run \`construct init\` in ${bound.root} to create it; every worktree shares that one store.`
+        : 'Run `construct init` to create it.',
     );
   }
   try {
@@ -564,7 +610,10 @@ export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenPr
   } catch (error) {
     if (error instanceof UnsupportedStateError || error instanceof StoreProjectError) throw error;
     if (error instanceof StateBusyError) throw new ProjectBusyError(error.message);
-    throw new OperationError(`cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`, 'Check the file’s permissions and that this user owns it.');
+    throw new OperationError(
+      `cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`,
+      'Check the file’s permissions and that this user owns it.',
+    );
   }
 }
 

@@ -15,9 +15,23 @@ import { PersonChannelRequiredError } from '../kernel/policy/channels.ts';
 const group = 'Runs';
 
 export const INBOX_SPECS: readonly CommandSpec[] = [
-  { path: ['inbox', 'list'], gloss: 'approvals, questions, and proposed statements waiting on you', group, positionals: [], flags: [], readOnly: true },
+  {
+    path: ['inbox', 'list'],
+    gloss: 'approvals, questions, and proposed statements waiting on you',
+    group,
+    positionals: [],
+    flags: [],
+    readOnly: true,
+  },
   { path: ['inbox', 'show'], gloss: 'one inbox item with everything behind it', group, positionals: ['<id>'], flags: [], readOnly: true },
-  { path: ['inbox', 'resolve'], gloss: 'answer a decision or confirm or retire a proposal', group, positionals: ['<id>', '<answer>'], flags: [], readOnly: false },
+  {
+    path: ['inbox', 'resolve'],
+    gloss: 'answer a decision or confirm or retire a proposal',
+    group,
+    positionals: ['<id>', '<answer>'],
+    flags: [],
+    readOnly: false,
+  },
 ];
 
 export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
@@ -37,7 +51,10 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
             say(`${proposal ? 'Proposals to review' : 'Decisions to answer'} (${String(group.length)})`);
             for (const d of group) {
               if (d.kind === 'proposal') say(`${esc(d.id)}  proposal  ${esc(d.text)}  [${d.options.map(esc).join(' | ')}]`);
-              else say(`${esc(d.id)}  ${d.decisionKind}  ${esc(d.question.split('\n')[0] ?? '')}${d.options ? `  [${d.options.map(esc).join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`);
+              else
+                say(
+                  `${esc(d.id)}  ${d.decisionKind}  ${esc(d.question.split('\n')[0] ?? '')}${d.options ? `  [${d.options.map(esc).join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`,
+                );
             }
           }
           say();
@@ -53,7 +70,8 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
         if (args.json) writeJson(d ?? proposal);
         else if (d) {
           // A question cut to fit a prompt keeps its whole text beside it.
-          const { brief, ...about } = d.subject !== null && typeof d.subject === 'object' && !Array.isArray(d.subject) ? (d.subject as Record<string, unknown>) : {};
+          const { brief, ...about } =
+            d.subject !== null && typeof d.subject === 'object' && !Array.isArray(d.subject) ? (d.subject as Record<string, unknown>) : {};
           const whole = typeof brief === 'string' ? brief : null;
           say(`${esc(d.id)} (${d.kind}, ${d.state}): ${esc(whole ?? d.question)}`);
           if (d.options) say(`  options: ${d.options.join(' | ')}`);
@@ -71,7 +89,14 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
         project.store.attribution.channel = channel;
         const proposal = getStatement(project.store, id);
         if (proposal?.status === 'proposed') {
-          const s = resolveProposal(project.store, { id, resolution: answer, at: broker.now(), nextId: broker.nextId, by: answeredBy(channel), channel });
+          const s = resolveProposal(project.store, {
+            id,
+            resolution: answer,
+            at: broker.now(),
+            nextId: broker.nextId,
+            by: answeredBy(channel),
+            channel,
+          });
           if (args.json) writeJson(s);
           else say(`recorded: ${esc(id)} → ${esc(answer)} (${s.kind} is ${s.status})`);
           return 0;

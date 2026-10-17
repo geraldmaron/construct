@@ -4,8 +4,10 @@
  * the official TypeScript SDK transport.
  */
 
+import { workflowDomainCatalog } from '../../kernel/registry/workflow-domains.ts';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { Readable, Writable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
 import { AGENT_NAME, toolsFor } from '../../kernel/broker/tools.ts';
@@ -33,7 +35,10 @@ export type BrokerSurface = 'interactive' | 'headless';
 export const SERVER_NAMES: Readonly<Record<BrokerSurface, string>> = { interactive: 'construct', headless: 'construct-runner' };
 
 function text(payload: unknown): { content: Array<{ type: 'text'; text: string }>; structuredContent?: unknown } {
-  return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }], structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined };
+  return {
+    content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+    structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined,
+  };
 }
 
 /** A tool result with what peers did since the session last looked, when they did anything. */
@@ -76,10 +81,14 @@ export function modelFacingSurface(surface: BrokerSurface, skills: SkillRegistry
   return {
     instructions: instructionsFor(surface, null),
     tools: toolsFor(surface).map(mcpTool),
-    operationalSkillDigest: operational === null ? null : bundleDigest([{ relativePath: 'SKILL.md', bytes: new TextEncoder().encode(operational) }]),
-    skills: skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, category: s.manifest.category, description: s.description })),
+    operationalSkillDigest:
+      operational === null ? null : bundleDigest([{ relativePath: 'SKILL.md', bytes: new TextEncoder().encode(operational) }]),
+    skills: skills
+      .list()
+      .map((s) => ({ id: s.manifest.id, title: s.manifest.title, category: s.manifest.category, description: s.description })),
     workflows: workflows.list().map((w) => ({
       id: w.manifest.id,
+      ...workflowDomainCatalog(w),
       title: w.manifest.title,
       interactionClass: w.manifest.interactionClass,
       deliverableKind: w.manifest.deliverable.kind,
@@ -130,6 +139,53 @@ export interface HandlerOptions {
   readonly personPrompts?: boolean | (() => boolean);
   /** How long a question to the person waits before it is left in the inbox. */
   readonly personPromptWaitMs?: number;
+  /**
+   * The directories the host says this session works in, from its MCP roots,
+   * asked once after the handshake and before any call runs. The adapter
+   * returns the context to serve from when they put the session in another
+   * checkout of the project, and null to keep the one it has.
+   */
+  readonly sessionRoots?: (dirs: readonly string[]) => BrokerContext | null;
+  /** How long the host has to list its roots before the session keeps the checkout it was started in. */
+  readonly rootsWaitMs?: number;
+}
+
+/** How long the host has to answer roots/list; a call waits on it at most once, at the start. */
+export const ROOTS_WAIT_MS = 5_000;
+
+/** Whether the host said at initialize that it lists the directories its session works in. */
+function declaresRoots(params: unknown): boolean {
+  const declared = (record(params) as { capabilities?: { roots?: unknown } }).capabilities;
+  return Boolean(declared && typeof declared === 'object' && declared.roots && typeof declared.roots === 'object');
+}
+
+/**
+ * The local directories the host's roots name. A root that is not a file URI,
+ * or a host that does not answer in time, names nothing.
+ */
+async function hostRoots(requests: HostRequests, waitMs: number): Promise<string[]> {
+  try {
+    const result = (await requests.request('roots/list', {}, waitMs)) as { roots?: unknown } | null;
+    if (!Array.isArray(result?.roots)) return [];
+    return result.roots.flatMap((r: unknown) => {
+      const uri = (record(r) as { uri?: unknown }).uri;
+      if (typeof uri !== 'string' || !uri.startsWith('file://')) return [];
+      try {
+        return [fileURLToPath(uri)];
+      } catch {
+        return [];
+      }
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** Ask the host where the session works, when it said it can tell and the adapter wants to know. */
+async function askSessionRoots(options: HandlerOptions, declared: boolean): Promise<BrokerContext | null> {
+  if (!declared || !options.hostRequests || !options.sessionRoots) return null;
+  const dirs = await hostRoots(options.hostRequests, options.rootsWaitMs ?? ROOTS_WAIT_MS);
+  return dirs.length ? options.sessionRoots(dirs) : null;
 }
 
 /** How long a question put to the person through the host waits for an answer. */
@@ -152,14 +208,20 @@ function elicitor(requests: HostRequests, waitMs: number, stillPerson: () => boo
         'elicitation/create',
         {
           message: question.message,
-          requestedSchema: { type: 'object', properties: { answer: { type: 'string', title: 'Your answer', enum: [...question.options] } }, required: ['answer'] },
+          requestedSchema: {
+            type: 'object',
+            properties: { answer: { type: 'string', title: 'Your answer', enum: [...question.options] } },
+            required: ['answer'],
+          },
         },
         waitMs,
       )) as { action?: unknown; content?: { answer?: unknown } } | null;
       if (result?.action === 'accept') {
         if (!stillPerson()) return { answered: false, why: 'unavailable' };
         const choice = result.content?.answer;
-        return typeof choice === 'string' && question.options.includes(choice) ? { answered: true, choice } : { answered: false, why: 'unavailable' };
+        return typeof choice === 'string' && question.options.includes(choice)
+          ? { answered: true, choice }
+          : { answered: false, why: 'unavailable' };
       }
       return { answered: false, why: result?.action === 'decline' ? 'declined' : 'cancelled' };
     } catch (error) {
@@ -168,7 +230,9 @@ function elicitor(requests: HostRequests, waitMs: number, stillPerson: () => boo
   };
 }
 
-export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, options: HandlerOptions = {}): AsyncMessageHandler {
+export function createMcpHandler(surface: BrokerSurface, started: BrokerContext, options: HandlerOptions = {}): AsyncMessageHandler {
+  let ctx = started;
+  let rootsDeclared = false;
   const tools = toolsFor(surface);
   const byName = new Map(tools.map((t) => [t.name, t]));
   let cookie = schemaCookie(ctx);
@@ -204,8 +268,10 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
       touchSession(ctx.store, { id: ctx.sessionId, at });
       // A capability retry recovers exactly its existing live term. Even a
       // wrong key must not extend that item through the presence courtesy.
-      const excludeWorkId = name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
-        ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id : undefined;
+      const excludeWorkId =
+        name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
+          ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id
+          : undefined;
       renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS, excludeWorkId });
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
@@ -238,17 +304,33 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
     const isNotification = id === undefined || id === null;
     switch (method) {
       case 'initialize': {
+        rootsDeclared = declaresRoots(params);
         const declared = (record(params) as { capabilities?: { elicitation?: unknown } }).capabilities;
         const prompts = options.personPrompts;
         const stillPerson = typeof prompts === 'function' ? prompts : () => prompts === true;
-        if (surface === 'interactive' && options.hostRequests && stillPerson() && declared && typeof declared === 'object' && declared.elicitation) {
-          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, personPromptWaitFor(ctx.host.hostId, options.personPromptWaitMs), stillPerson) };
+        if (
+          surface === 'interactive' &&
+          options.hostRequests &&
+          stillPerson() &&
+          declared &&
+          typeof declared === 'object' &&
+          declared.elicitation
+        ) {
+          callCtx = {
+            ...ctx,
+            askPerson: elicitor(options.hostRequests, personPromptWaitFor(ctx.host.hostId, options.personPromptWaitMs), stillPerson),
+          };
         }
         const client = (record(params) as { clientInfo?: unknown }).clientInfo;
         if (ctx.sessionId && client && typeof client === 'object') {
           const info = client as { name?: unknown; version?: unknown };
           try {
-            recordClient(ctx.store, { id: ctx.sessionId, name: typeof info.name === 'string' ? info.name : null, version: typeof info.version === 'string' ? info.version : null, at: ctx.now() });
+            recordClient(ctx.store, {
+              id: ctx.sessionId,
+              name: typeof info.name === 'string' ? info.name : null,
+              version: typeof info.version === 'string' ? info.version : null,
+              at: ctx.now(),
+            });
           } catch {
             // Describing the client is a courtesy; the handshake never fails for it.
           }
@@ -260,7 +342,15 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           instructions: instructionsFor(surface, null),
         });
       }
-      case 'notifications/initialized':
+      case 'notifications/initialized': {
+        // Answered before any call runs: the session's lane is settled before anything is cited or claimed.
+        const moved = await askSessionRoots(options, rootsDeclared);
+        if (moved) {
+          callCtx = callCtx === ctx ? moved : { ...moved, askPerson: callCtx.askPerson };
+          ctx = moved;
+        }
+        return null;
+      }
       case 'notifications/cancelled':
         return null;
       case 'ping':
@@ -285,12 +375,40 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           // Wrong input is a tool error the model reads and corrects; only a tool
           // this surface does not carry is a protocol error.
           if (error instanceof ToolInputError) {
-            return response(id, { ...text({ error: messageText, field: error.field, allowed: error.allowed, example: error.example, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Correct the indicated input or satisfy the missing prerequisite, then retry. Do not advance a managed outcome as though this operation succeeded; do not invent a run, source or claim.' } }), isError: true });
+            return response(id, {
+              ...text({
+                error: messageText,
+                field: error.field,
+                allowed: error.allowed,
+                example: error.example,
+                recovery: {
+                  tool: tool.name,
+                  inputSchema: tool.inputSchema,
+                  next: 'This call failed. Correct the indicated input or satisfy the missing prerequisite, then retry. Do not advance a managed outcome as though this operation succeeded; do not invent a run, source or claim.',
+                },
+              }),
+              isError: true,
+            });
           }
           if (error instanceof UnsupportedStateError) {
-            return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
+            return response(id, {
+              ...text({
+                error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.`,
+              }),
+              isError: true,
+            });
           }
-          return response(id, { ...text({ error: messageText, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.' } }), isError: true });
+          return response(id, {
+            ...text({
+              error: messageText,
+              recovery: {
+                tool: tool.name,
+                inputSchema: tool.inputSchema,
+                next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.',
+              },
+            }),
+            isError: true,
+          });
         }
       }
       default:
@@ -303,7 +421,12 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
 /** Handshake-capable server when no project is bound, so a host can show why. */
 export const INIT_NEXT = 'Run `construct init` in the project, then restart this MCP server.';
 
-export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, version: string, next: string = INIT_NEXT): AsyncMessageHandler {
+export function createUnboundMcpHandler(
+  surface: BrokerSurface,
+  reason: string,
+  version: string,
+  next: string = INIT_NEXT,
+): AsyncMessageHandler {
   const payload = {
     bound: false,
     error: reason,
@@ -340,7 +463,8 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
       case 'tools/call': {
         const p = record(params) as { name?: unknown };
         const name = typeof p.name === 'string' ? p.name : '';
-        if (name !== 'bootstrap') return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" until Construct is bound to a project`);
+        if (name !== 'bootstrap')
+          return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" until Construct is bound to a project`);
         return response(id, { ...text(payload), isError: true });
       }
       default:
@@ -351,7 +475,12 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
 }
 
 /** Official stdio transport: newline-delimited JSON-RPC, replies in arrival order. */
-export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = process.stdin, stdout: Writable = process.stdout, hostRequests?: HostRequests): Promise<void> {
+export function serveHandler(
+  handle: AsyncMessageHandler,
+  stdin: Readable = process.stdin,
+  stdout: Writable = process.stdout,
+  hostRequests?: HostRequests,
+): Promise<void> {
   const transport = new StdioServerTransport(stdin, stdout);
   hostRequests?.attach((message) => transport.send(message as never));
   let chain: Promise<void> = Promise.resolve();
@@ -406,7 +535,13 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
   );
 }
 
-export function serveMcp(surface: BrokerSurface, ctx: BrokerContext, stdin: Readable = process.stdin, stdout: Writable = process.stdout, options: HandlerOptions = {}): Promise<void> {
+export function serveMcp(
+  surface: BrokerSurface,
+  ctx: BrokerContext,
+  stdin: Readable = process.stdin,
+  stdout: Writable = process.stdout,
+  options: HandlerOptions = {},
+): Promise<void> {
   return serveHandler(createMcpHandler(surface, ctx, options), stdin, stdout, options.hostRequests);
 }
 
@@ -443,6 +578,7 @@ export function createLazyMcpHandler(
   let bound: AsyncMessageHandler | null = null;
   let lastFailure: BindFailure = { busy: true };
   let handshake: JsonRpcRequest | null = null;
+  let rootsDeclared = false;
   const tryBind = async (): Promise<void> => {
     try {
       const handler = createMcpHandler(surface, open(), options);
@@ -460,12 +596,17 @@ export function createLazyMcpHandler(
     switch (method) {
       case 'initialize':
         handshake = message;
+        rootsDeclared = declaresRoots(params);
         return response(id, {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: SERVER_NAMES[surface], version },
           instructions: `${instructionsFor(surface, null)} Tool discovery describes the supported interface; project binding is checked on each call. A refused call records nothing and names the repair.`,
         });
+      case 'notifications/initialized':
+        // Nothing is open yet; the adapter keeps what the host said for when the project binds.
+        await askSessionRoots(options, rootsDeclared);
+        return null;
       case 'tools/list':
         return response(id, { tools: tools.map(mcpTool) });
       case 'tools/call': {

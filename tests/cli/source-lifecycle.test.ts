@@ -27,23 +27,57 @@ test('concurrent source additions reread declarations under the shared write loc
   await inProject(async (ctx, box) => {
     const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
     db.exec('BEGIN IMMEDIATE');
-    const children = ['alpha', 'beta'].map(id => {
-      const child = fork(observer, add(id), { cwd: box.cwd, execArgv: [], env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+    const children = ['alpha', 'beta'].map((id) => {
+      const child = fork(observer, add(id), {
+        cwd: box.cwd,
+        execArgv: [],
+        env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher },
+        stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+      });
       let err = '';
-      child.stderr!.on('data', bytes => err += String(bytes));
-      return { child,
-        read: new Promise<{ ids: string[] }>((resolve, reject) => { child.once('message', value => resolve(value as { ids: string[] })); child.once('error', reject); }),
-        done: new Promise<{ code: number | null; err: string }>(resolve => child.once('exit', code => resolve({ code, err }))) };
+      child.stderr!.on('data', (bytes) => (err += String(bytes)));
+      return {
+        child,
+        read: new Promise<{ ids: string[] }>((resolve, reject) => {
+          child.once('message', (value) => resolve(value as { ids: string[] }));
+          child.once('error', reject);
+        }),
+        done: new Promise<{ code: number | null; err: string }>((resolve) => child.once('exit', (code) => resolve({ code, err }))),
+      };
     });
-    const timer = setTimeout(() => { for (const { child } of children) child.kill('SIGKILL'); }, 15000);
+    const timer = setTimeout(() => {
+      for (const { child } of children) child.kill('SIGKILL');
+    }, 15000);
     try {
-      const loaded = await Promise.all(children.map(child => child.read));
-      assert.deepEqual(loaded.map(row => row.ids), [[], []], 'both bound the same stale declaration snapshot');
+      const loaded = await Promise.all(children.map((child) => child.read));
+      assert.deepEqual(
+        loaded.map((row) => row.ids),
+        [[], []],
+        'both bound the same stale declaration snapshot',
+      );
       db.exec('COMMIT');
-      for (const result of await Promise.all(children.map(child => child.done))) assert.equal(result.code, 0, result.err);
-      assert.deepEqual(JSON.parse(readFileSync(join(box.cwd, '.construct/sources.json'), 'utf8')).sources.map((s: { id: string }) => s.id).sort(), ['alpha', 'beta']);
-      assert.deepEqual(db.prepare('SELECT id,status FROM sources ORDER BY id').all().map(row => ({ ...row })), [{ id: 'alpha', status: 'active' }, { id: 'beta', status: 'active' }]);
-    } finally { clearTimeout(timer); for (const { child } of children) child.kill(); db.close(); }
+      for (const result of await Promise.all(children.map((child) => child.done))) assert.equal(result.code, 0, result.err);
+      assert.deepEqual(
+        JSON.parse(readFileSync(join(box.cwd, '.construct/sources.json'), 'utf8'))
+          .sources.map((s: { id: string }) => s.id)
+          .sort(),
+        ['alpha', 'beta'],
+      );
+      assert.deepEqual(
+        db
+          .prepare('SELECT id,status FROM sources ORDER BY id')
+          .all()
+          .map((row) => ({ ...row })),
+        [
+          { id: 'alpha', status: 'active' },
+          { id: 'beta', status: 'active' },
+        ],
+      );
+    } finally {
+      clearTimeout(timer);
+      for (const { child } of children) child.kill();
+      db.close();
+    }
   });
 });
 
@@ -61,16 +95,23 @@ test('multiple stranded retired declarations can be removed individually without
     writeFileSync(file, JSON.stringify(declaration));
     const first = json(ctx, ['source', 'retire', 'old', '--json']);
     assert.deepEqual(first.remainingRetired, ['other']);
-    assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id), ['other']);
+    assert.deepEqual(
+      JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id),
+      ['other'],
+    );
     json(ctx, ['source', 'retire', 'other', '--json']);
     json(ctx, add('new'));
-    assert.deepEqual(json(ctx, ['source', 'list', '--json']).map((row: { source: { id: string } }) => row.source.id), ['new']);
+    assert.deepEqual(
+      json(ctx, ['source', 'list', '--json']).map((row: { source: { id: string } }) => row.source.id),
+      ['new'],
+    );
   });
 });
 
 test('retirement succeeds even when unrelated declarations cannot reconcile', async () => {
   await inProject(async (ctx, box) => {
-    json(ctx, add('old')); json(ctx, add('docs'));
+    json(ctx, add('old'));
+    json(ctx, add('docs'));
     const file = join(box.cwd, '.construct/sources.json');
     const declarations = JSON.parse(readFileSync(file, 'utf8'));
     declarations.sources.find((s: { id: string }) => s.id === 'docs').kind = 'jira';
@@ -79,7 +120,10 @@ test('retirement succeeds even when unrelated declarations cannot reconcile', as
     const retired = json(ctx, ['source', 'retire', 'old', '--json']);
     assert.match(retired.reconciliationError, /directory source/);
     assert.equal(json(ctx, ['source', 'show', 'docs', '--json']).source.kind, 'directory');
-    assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id), ['docs']);
+    assert.deepEqual(
+      JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id),
+      ['docs'],
+    );
   });
 });
 
@@ -98,50 +142,76 @@ test('kind changes fail through init and repeated CLI refreshes keep claims boun
       }
       const file = join(box.cwd, '.construct/sources.json');
       const declarations = JSON.parse(readFileSync(file, 'utf8'));
-      declarations.sources[0].kind = 'jira'; declarations.sources[0].locator = 'PROJ';
+      declarations.sources[0].kind = 'jira';
+      declarations.sources[0].locator = 'PROJ';
       writeFileSync(file, JSON.stringify(declarations));
       const init = cli(ctx, ['init', '--no-wire', '--json']);
       assert.equal(init.code, 1);
       assert.match(init.err, /directory source/);
       const source = json(ctx, ['source', 'show', 'docs', '--json']);
-      assert.equal(source.source.kind, 'directory'); assert.equal(source.source.locator, box.cwd);
-    } finally { db.close(); }
+      assert.equal(source.source.kind, 'directory');
+      assert.equal(source.source.locator, box.cwd);
+    } finally {
+      db.close();
+    }
   });
 });
-
 
 test('init reconciles declarations committed after its initial project-file snapshot', async () => {
   await inProject(async (ctx, box) => {
     const gate = join(box.home, 'release-init');
-    const child = fork(observer, ['init', '--no-wire', '--json'], { cwd: box.cwd, execArgv: [], env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher, CONSTRUCT_SOURCE_READ_GATE: gate }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+    const child = fork(observer, ['init', '--no-wire', '--json'], {
+      cwd: box.cwd,
+      execArgv: [],
+      env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher, CONSTRUCT_SOURCE_READ_GATE: gate },
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    });
     let err = '';
-    child.stderr!.on('data', bytes => err += String(bytes));
-    const done = new Promise<number | null>(resolve => child.once('exit', resolve));
+    child.stderr!.on('data', (bytes) => (err += String(bytes)));
+    const done = new Promise<number | null>((resolve) => child.once('exit', resolve));
     const timer = setTimeout(() => child.kill('SIGKILL'), 18000);
     try {
-      const loaded = await new Promise<{ ids: string[] }>((resolve, reject) => { child.once('message', value => resolve(value as { ids: string[] })); child.once('error', reject); });
+      const loaded = await new Promise<{ ids: string[] }>((resolve, reject) => {
+        child.once('message', (value) => resolve(value as { ids: string[] }));
+        child.once('error', reject);
+      });
       assert.deepEqual(loaded.ids, []);
       json(ctx, add('added-after-init-read'));
       writeFileSync(gate, 'continue');
       assert.equal(await done, 0, err);
-      assert.deepEqual(json(ctx, ['source', 'list', '--json']).map((row: { source: { id: string } }) => row.source.id), ['added-after-init-read']);
-    } finally { clearTimeout(timer); child.kill(); }
+      assert.deepEqual(
+        json(ctx, ['source', 'list', '--json']).map((row: { source: { id: string } }) => row.source.id),
+        ['added-after-init-read'],
+      );
+    } finally {
+      clearTimeout(timer);
+      child.kill();
+    }
   });
 });
-
 
 test('init repairs declaration changes if a process dies after file replacement before database commit', async () => {
   await inProject(async (ctx, box) => {
     const file = join(box.cwd, '.construct/sources.json');
     const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'), { readOnly: true });
     const crash = async (args: string[]) => {
-      const child = fork(observer, args, { cwd: box.cwd, execArgv: [], env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher, CONSTRUCT_SOURCE_CRASH_AFTER_REPLACE: '1' }, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-      const result = await new Promise<{ code: number | null; signal: string | null }>(resolve => child.once('exit', (code, signal) => resolve({ code, signal })));
+      const child = fork(observer, args, {
+        cwd: box.cwd,
+        execArgv: [],
+        env: { ...ctx.env, CONSTRUCT_AUDIT_LAUNCHER: launcher, CONSTRUCT_SOURCE_CRASH_AFTER_REPLACE: '1' },
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      });
+      const result = await new Promise<{ code: number | null; signal: string | null }>((resolve) =>
+        child.once('exit', (code, signal) => resolve({ code, signal })),
+      );
       assert.equal(result.signal, 'SIGKILL');
     };
     try {
       await crash(add('recoverable'));
-      assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id), ['recoverable']);
+      assert.deepEqual(
+        JSON.parse(readFileSync(file, 'utf8')).sources.map((s: { id: string }) => s.id),
+        ['recoverable'],
+      );
       assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sources').get()!.n, 0, 'uncommitted activation rolled back');
       json(ctx, ['init', '--no-wire', '--json']);
       assert.equal(json(ctx, ['source', 'show', 'recoverable', '--json']).source.status, 'active');
@@ -150,7 +220,9 @@ test('init repairs declaration changes if a process dies after file replacement 
       assert.equal(db.prepare('SELECT status FROM sources WHERE id=?').get('recoverable')!.status, 'active');
       json(ctx, ['init', '--no-wire', '--json']);
       assert.equal(db.prepare('SELECT status FROM sources WHERE id=?').get('recoverable')!.status, 'retired');
-    } finally { db.close(); }
+    } finally {
+      db.close();
+    }
   });
 });
 
@@ -177,10 +249,13 @@ for (const mutation of ['add', 'retire'] as const) {
       const file = join(box.cwd, '.construct/sources.json');
       const declarations = JSON.parse(readFileSync(file, 'utf8'));
       const permissions = new Map([
-        ['neither', { read: false, write: false }], ['read-only', { read: true, write: false }],
-        ['write-only', { read: false, write: true }], ['both', { read: true, write: true }],
+        ['neither', { read: false, write: false }],
+        ['read-only', { read: true, write: false }],
+        ['write-only', { read: false, write: true }],
+        ['both', { read: true, write: true }],
       ]);
-      for (const declaration of declarations.sources) declaration.capabilities = permissions.get(declaration.id) ?? { read: true, write: false };
+      for (const declaration of declarations.sources)
+        declaration.capabilities = permissions.get(declaration.id) ?? { read: true, write: false };
       writeFileSync(file, JSON.stringify(declarations));
       json(ctx, ['init', '--no-wire', '--json']);
       const beforeRefusal = readFileSync(file, 'utf8');
@@ -204,15 +279,28 @@ for (const mutation of ['add', 'retire'] as const) {
 }
 
 test('ambiguous top-level source permissions require explicit capabilities repair', () => {
-  const source = { id: 'docs', kind: 'directory', purpose: 'docs', locator: '.', authorityLevel: 'informative', sensitivity: 'internal', read: false, write: true };
+  const source = {
+    id: 'docs',
+    kind: 'directory',
+    purpose: 'docs',
+    locator: '.',
+    authorityLevel: 'informative',
+    sensitivity: 'internal',
+    read: false,
+    write: true,
+  };
   const raw = { format: 'construct-sources', formatVersion: 2, sources: [source] };
   assert.throws(() => validateSourcesFile(raw, 'sources.json'), /capabilities.read.*capabilities.write/);
-  assert.throws(() => validateSourcesFile({ ...raw, sources: [{ ...source, capabilities: { read: false, write: false } }] }, 'sources.json'), /capabilities.read.*capabilities.write/);
+  assert.throws(
+    () => validateSourcesFile({ ...raw, sources: [{ ...source, capabilities: { read: false, write: false } }] }, 'sources.json'),
+    /capabilities.read.*capabilities.write/,
+  );
 });
 
 test('legacy serialized permissions refuse commands without mutation until explicitly repaired', async () => {
   await inProject((ctx, box) => {
-    json(ctx, add('restricted')); json(ctx, add('other'));
+    json(ctx, add('restricted'));
+    json(ctx, add('other'));
     const file = join(box.cwd, '.construct/sources.json');
     const declarations = JSON.parse(readFileSync(file, 'utf8'));
     declarations.sources[0].capabilities = { read: false, write: true };

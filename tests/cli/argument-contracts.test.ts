@@ -27,13 +27,18 @@ test('actual source add rejects an extra ID before changing declarations or regi
   await inProject((_ctx, box) => {
     const file = join(box.cwd, '.construct/sources.json');
     const before = readFileSync(file, 'utf8');
-    const result = spawnSync(process.execPath, [launcher, 'source', 'add', 'docs', 'ignored-extra-argument',
-      '--kind=directory', '--purpose=docs', '--locator=.', '--json'], { cwd: box.cwd, env: box.ctx.env, encoding: 'utf8' });
+    const result = spawnSync(
+      process.execPath,
+      [launcher, 'source', 'add', 'docs', 'ignored-extra-argument', '--kind=directory', '--purpose=docs', '--locator=.', '--json'],
+      { cwd: box.cwd, env: box.ctx.env, encoding: 'utf8' },
+    );
     assert.equal(result.status, 2, result.stderr);
     assert.match(result.stderr, /unexpected argument.*ignored-extra-argument/);
     assert.equal(readFileSync(file, 'utf8'), before);
     const listed = spawnSync(process.execPath, [launcher, 'source', 'list', '--json'], {
-      cwd: box.cwd, env: box.ctx.env, encoding: 'utf8',
+      cwd: box.cwd,
+      env: box.ctx.env,
+      encoding: 'utf8',
     });
     assert.equal(listed.status, 0, listed.stderr);
     assert.deepEqual(JSON.parse(listed.stdout), []);

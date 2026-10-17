@@ -1,21 +1,10 @@
 {
   "format": "construct-workflow",
   "formatVersion": 1,
-  "evals": [],
   "id": "source-drift-review",
   "title": "Source freshness and drift review",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "purpose": "Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed.",
-  "activation": [
-    "has anything drifted",
-    "check the sources against the implementation",
-    "review the governing documents for changes",
-    "source drift"
-  ],
-  "standDown": [
-    "no sources are declared",
-    "the person asked a question with no drift in view"
-  ],
   "interactionClass": "maintain",
   "inputSchema": {
     "scope": "string"

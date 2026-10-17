@@ -4,7 +4,6 @@
  */
 
 import { resolve } from 'node:path';
-import { evaluateSkill } from '../hosts/skill-evaluation.ts';
 import { openBroker } from './broker-context.ts';
 import { projectResolver } from '../kernel/source/resolver.ts';
 import { listShippedSkills, readShippedSkill, plantSkill, removeSkill, skillState } from '../kernel/skills/bundle.ts';
@@ -24,21 +23,74 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 
 const group = 'Skills';
 const dirFlag = { name: 'dir', gloss: 'the skills directory to use instead of the detected host’s', takesValue: true } as const;
-const clientFlag = { name: 'client', gloss: `the host whose skills directory to use: ${SKILLS_HOST_NAMES.join(' | ')}`, takesValue: true } as const;
+const clientFlag = {
+  name: 'client',
+  gloss: `the host whose skills directory to use: ${SKILLS_HOST_NAMES.join(' | ')}`,
+  takesValue: true,
+} as const;
 
 export const SKILL_SPECS: readonly CommandSpec[] = [
-  { path: ['skill', 'evaluate'], gloss: 'execute a predetermined skill evaluation and record scoped qualification evidence', group, positionals: ['<name>'], flags: [
-    { name: 'suite', gloss: 'project JSON suite with host/model, cases and evaluator argv; native.adapter=codex adds fresh producer/reviewer calls', takesValue: true },
-    { name: 'timeout-ms', gloss: 'bounded evaluation timeout, at most 1200000', takesValue: true },
-    { name: 'valid-hours', gloss: 'qualification expiry, at most 720 hours', takesValue: true },
-  ], readOnly: false },
-  { path: ['skill', 'impact'], gloss: 'how each skill version\'s steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back', group, positionals: [], flags: [{ name: 'skill', gloss: 'only this skill', takesValue: true }], readOnly: true },
+  {
+    path: ['skill', 'impact'],
+    gloss: "how each skill version's steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back",
+    group,
+    positionals: [],
+    flags: [{ name: 'skill', gloss: 'only this skill', takesValue: true }],
+    readOnly: true,
+  },
   { path: ['skill', 'list'], gloss: 'the skills this install ships, with versions', group, positionals: [], flags: [], readOnly: true },
-  { path: ['skill', 'show'], gloss: 'one skill’s description, version, and files', group, positionals: ['<name>'], flags: [], readOnly: true },
-  { path: ['skill', 'install'], gloss: 'plant a shipped skill into a host’s skills directory, byte for byte', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'force', gloss: 'overwrite a copy that someone changed; an earlier release is replaced without it', takesValue: false }], readOnly: false },
-  { path: ['skill', 'verify'], gloss: 'compare installed skills with the shipped ones', group, positionals: [], flags: [dirFlag, clientFlag], readOnly: true },
-  { path: ['skill', 'update'], gloss: 'bring the project’s registry lock up to the skills and workflows present; project-authored changes are locked only when named', group, positionals: [], flags: [{ name: 'confirm', gloss: 'a project-authored bundle id whose change may be locked (repeatable)', takesValue: true, repeatable: true }, { name: 'dry-run', gloss: 'report what would change', takesValue: false }], readOnly: false },
-  { path: ['skill', 'remove'], gloss: 'remove an installed skill (needs --confirm)', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'confirm', gloss: 'actually remove it', takesValue: false }], readOnly: false },
+  {
+    path: ['skill', 'show'],
+    gloss: 'one skill’s description, version, and files',
+    group,
+    positionals: ['<name>'],
+    flags: [],
+    readOnly: true,
+  },
+  {
+    path: ['skill', 'install'],
+    gloss: 'plant a shipped skill into a host’s skills directory, byte for byte',
+    group,
+    positionals: ['<name>'],
+    flags: [
+      dirFlag,
+      clientFlag,
+      { name: 'force', gloss: 'overwrite a copy that someone changed; an earlier release is replaced without it', takesValue: false },
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['skill', 'verify'],
+    gloss: 'compare installed skills with the shipped ones',
+    group,
+    positionals: [],
+    flags: [dirFlag, clientFlag],
+    readOnly: true,
+  },
+  {
+    path: ['skill', 'update'],
+    gloss: 'bring the project’s registry lock up to the skills and workflows present; project-authored changes are locked only when named',
+    group,
+    positionals: [],
+    flags: [
+      {
+        name: 'confirm',
+        gloss: 'a project-authored bundle id whose change may be locked (repeatable)',
+        takesValue: true,
+        repeatable: true,
+      },
+      { name: 'dry-run', gloss: 'report what would change', takesValue: false },
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['skill', 'remove'],
+    gloss: 'remove an installed skill (needs --confirm)',
+    group,
+    positionals: ['<name>'],
+    flags: [dirFlag, clientFlag, { name: 'confirm', gloss: 'actually remove it', takesValue: false }],
+    readOnly: false,
+  },
 ];
 
 function installDir(args: ParsedArgs, ctx: CliContext): string {
@@ -46,41 +98,42 @@ function installDir(args: ParsedArgs, ctx: CliContext): string {
   if (dir) return dir;
   const client = stringFlag(args, 'client');
   if (client !== undefined) {
-    if (!(SKILLS_HOST_NAMES as readonly string[]).includes(client)) throw new UsageError(`--client must be one of ${SKILLS_HOST_NAMES.join(' | ')}`);
+    if (!(SKILLS_HOST_NAMES as readonly string[]).includes(client))
+      throw new UsageError(`--client must be one of ${SKILLS_HOST_NAMES.join(' | ')}`);
     return resolveHostSkillsDir(client as SkillsHostName, ctx.env);
   }
   const ambient = detectAmbientHost(ctx.env);
-  if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) return resolveHostSkillsDir(ambient.host as SkillsHostName, ctx.env);
+  if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host))
+    return resolveHostSkillsDir(ambient.host as SkillsHostName, ctx.env);
   throw new UsageError(`no host detected; pass --client=<${SKILLS_HOST_NAMES.join('|')}> or --dir=<path>`);
 }
 
 export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   switch (sub) {
-    case 'evaluate': {
-      const suite = stringFlag(args, 'suite');
-      if (!suite) throw new UsageError('skill evaluate needs --suite with a predetermined evaluator and cases');
-      const { project, broker } = openBroker(ctx, {});
-      try {
-        const skill = broker.skills.get(args.positionals[0]!);
-        if (!skill) throw new UsageError('unknown skill');
-        const observed = await evaluateSkill({ store: project.store, skill, suitePath: resolve(project.root, suite), root: project.root, env: ctx.env, now: ctx.now,
-          resolve: (ref) => projectResolver(project.store, project.root)(ref),
-          timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined,
-          validForHours: stringFlag(args, 'valid-hours') ? Number(stringFlag(args, 'valid-hours')) : undefined });
-        writeJson(observed);
-        return observed.passed ? 0 : 1;
-      } finally { project.store.close(); }
-    }
     case 'impact': {
       const { store } = openProject({ ...ctx, readOnly: true });
       try {
         const rows = skillQuality(store, { skill: stringFlag(args, 'skill') });
-        if (args.json) { writeJson(rows); return 0; }
-        if (rows.length === 0) { say('no skill-bound steps have run yet'); return 0; }
+        if (args.json) {
+          writeJson(rows);
+          return 0;
+        }
+        if (rows.length === 0) {
+          say('no skill-bound steps have run yet');
+          return 0;
+        }
         for (const r of rows) {
           const pct = r.steps ? Math.round((100 * r.firstPass) / r.steps) : 0;
-          say(`${esc(r.skill)}@${esc(r.version)}  ${String(r.steps)} step(s), ${String(pct)}% passed first time, ${String(r.meanAttempts)} attempts on average, ${String(r.waived)} waived, ${String(r.failedOrStopped)} failed or stopped`);
-          if (r.failingChecks.length) say(`  sent back by: ${r.failingChecks.slice(0, 5).map((c) => `${c.validator} ×${String(c.count)}`).join(', ')}`);
+          say(
+            `${esc(r.skill)}@${esc(r.version)}  ${String(r.steps)} step(s), ${String(pct)}% passed first time, ${String(r.meanAttempts)} attempts on average, ${String(r.waived)} waived, ${String(r.failedOrStopped)} failed or stopped`,
+          );
+          if (r.failingChecks.length)
+            say(
+              `  sent back by: ${r.failingChecks
+                .slice(0, 5)
+                .map((c) => `${c.validator} ×${String(c.count)}`)
+                .join(', ')}`,
+            );
         }
         return 0;
       } finally {
@@ -104,7 +157,13 @@ export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContex
     case 'show': {
       const skill = readShippedSkill(args.positionals[0]!);
       if (!skill) throw new OperationError(`no shipped skill named ${args.positionals[0]!}`, '`construct skill list` shows them.');
-      if (args.json) writeJson({ name: skill.name, version: skill.version, description: skill.description, files: skill.files.map((f) => f.relativePath) });
+      if (args.json)
+        writeJson({
+          name: skill.name,
+          version: skill.version,
+          description: skill.description,
+          files: skill.files.map((f) => f.relativePath),
+        });
       else {
         say(`${skill.name} ${skill.version ?? ''}`.trim());
         say(`  ${esc(skill.description)}`);
@@ -140,10 +199,14 @@ export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContex
       const dry = boolFlag(args, 'dry-run');
       if (!dry && (result.changed.length > 0 || result.removed.length > 0)) writeJsonFile(bound.layout.lockFile, result.lock);
       const after = lockStatus(dry ? current : result.lock, skills.list(), workflows.list());
-      if (args.json) writeJson({ ...result, lock: undefined, dryRun: dry, status: after.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) });
+      if (args.json)
+        writeJson({ ...result, lock: undefined, dryRun: dry, status: after.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) });
       else {
-        say(`${dry ? 'would update' : 'updated'}: ${result.changed.join(', ') || 'nothing'}${result.removed.length ? `; removed: ${result.removed.join(', ')}` : ''}`);
-        if (result.needsConfirmation.length) say(`  changed in this project and left alone until confirmed: ${result.needsConfirmation.join(', ')} (pass --confirm=<id>)`);
+        say(
+          `${dry ? 'would update' : 'updated'}: ${result.changed.join(', ') || 'nothing'}${result.removed.length ? `; removed: ${result.removed.join(', ')}` : ''}`,
+        );
+        if (result.needsConfirmation.length)
+          say(`  changed in this project and left alone until confirmed: ${result.needsConfirmation.join(', ')} (pass --confirm=<id>)`);
         say(`  ${String(after.filter((r) => r.state === 'current').length)}/${String(after.length)} current`);
       }
       return 0;

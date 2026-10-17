@@ -24,10 +24,17 @@ async function call(fx: Fixture, name: string, args: Record<string, unknown>, ct
 }
 
 function askScale(fx: Fixture, id: string): void {
-  raiseDecision(fx.broker.store, { id, kind: 'clarification', question: ONBOARDING_QUESTIONS[0]!.question, options: SCALE_OPTIONS, subject: { onboarding: 'scale' }, at: fx.broker.now() });
+  raiseDecision(fx.broker.store, {
+    id,
+    kind: 'clarification',
+    question: ONBOARDING_QUESTIONS[0]!.question,
+    options: SCALE_OPTIONS,
+    subject: { onboarding: 'scale' },
+    at: fx.broker.now(),
+  });
 }
 
-test('a relayed scale in the question\'s words lands in the profile, and the reply says what setup still needs', async () => {
+test("a relayed scale in the question's words lands in the profile, and the reply says what setup still needs", async () => {
   const fx = brokerFixture();
   try {
     askScale(fx, 'q-scale');
@@ -55,24 +62,40 @@ test('a relayed side project waits for the person, who is told the command, and 
     assert.equal(getProfile(fx.broker.store)?.scale ?? null, null);
 
     const closed: AskPerson = async () => ({ answered: false, why: 'cancelled' });
-    const unanswered = await call(fx, 'decide', { decisionId: 'q-scale', resolution: 'side_project' }, { ...fx.broker, askPerson: closed } as BrokerContext);
+    const unanswered = await call(fx, 'decide', { decisionId: 'q-scale', resolution: 'side_project' }, {
+      ...fx.broker,
+      askPerson: closed,
+    } as BrokerContext);
     assert.equal(unanswered.asked, 'the person closed the prompt');
-    assert.match(unanswered.next, /`construct inbox resolve q-scale side_project`/, 'the person is told the answer they would give, not approve or decline');
+    assert.match(
+      unanswered.next,
+      /`construct inbox resolve q-scale side_project`/,
+      'the person is told the answer they would give, not approve or decline',
+    );
     assert.equal(getDecision(fx.broker.store, 'q-scale')!.state, 'open');
   } finally {
     fx.cleanup();
   }
 });
 
-test('when the host can ask, the person\'s own choice of side project makes the project one', async () => {
+test("when the host can ask, the person's own choice of side project makes the project one", async () => {
   const fx = brokerFixture();
   try {
     askScale(fx, 'q-scale');
     const asked: { message: string; options: readonly string[] }[] = [];
-    const pick: AskPerson = async (q) => { asked.push(q); return { answered: true, choice: 'side_project' }; };
-    const r = await call(fx, 'decide', { decisionId: 'q-scale', resolution: 'it is a side project' }, { ...fx.broker, askPerson: pick } as BrokerContext);
+    const pick: AskPerson = async (q) => {
+      asked.push(q);
+      return { answered: true, choice: 'side_project' };
+    };
+    const r = await call(fx, 'decide', { decisionId: 'q-scale', resolution: 'it is a side project' }, {
+      ...fx.broker,
+      askPerson: pick,
+    } as BrokerContext);
     assert.equal(asked.length, 1);
-    assert.match(asked[0]!.message, /^Construct needs your own answer; your assistant cannot give it for you\. What is this project to you:/);
+    assert.match(
+      asked[0]!.message,
+      /^Construct needs your own answer; your assistant cannot give it for you\. What is this project to you:/,
+    );
     assert.match(asked[0]!.message, /\nYour assistant relayed .*it is a side project.*\.$/);
     assert.deepEqual(asked[0]!.options, SCALE_OPTIONS);
     assert.equal(r.channel, 'elicitation');

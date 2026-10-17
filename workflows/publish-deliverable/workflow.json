@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "publish-deliverable",
   "title": "Publish a deliverable",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "purpose": "Put a finished deliverable where its readers are (a wiki page, a doc, a tracker), through the host's own connector, after the person approves the exact write and clears the material for its audience when it rests on confidential or restricted sources; record where it went.",
-  "activation": [
-    "publish the PRD to Confluence",
-    "put this in Notion for the team",
-    "post the brief to the project page"
-  ],
-  "standDown": [
-    "save it locally",
-    "I will share it myself"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "deliverable": "string",
@@ -150,6 +141,5 @@
   },
   "proposes": [
     "lessons"
-  ],
-  "evals": []
+  ]
 }

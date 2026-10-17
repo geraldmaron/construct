@@ -100,18 +100,48 @@ export function registerSession(store: StateStore, input: RegisterSessionInput):
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(id), 0) FROM activity_events))`,
       )
       .run(
-        input.id, input.host, input.surface, input.hostSessionId ?? null, input.hostSessionSource ?? null, input.machine,
-        input.pid ?? null, input.serveVersion ?? null, input.laneRoot ?? null, input.branch ?? null, input.head ?? null, input.at, input.at,
+        input.id,
+        input.host,
+        input.surface,
+        input.hostSessionId ?? null,
+        input.hostSessionSource ?? null,
+        input.machine,
+        input.pid ?? null,
+        input.serveVersion ?? null,
+        input.laneRoot ?? null,
+        input.branch ?? null,
+        input.head ?? null,
+        input.at,
+        input.at,
       );
     return getSession(store, input.id)!;
   });
 }
 
 /** What the host's MCP client said about itself at initialize. Descriptive only. */
-export function recordClient(store: StateStore, input: { readonly id: string; readonly name: string | null; readonly version: string | null; readonly at: string }): void {
+export function recordClient(
+  store: StateStore,
+  input: { readonly id: string; readonly name: string | null; readonly version: string | null; readonly at: string },
+): void {
   store.db
     .prepare(`UPDATE sessions SET client_name = ?, client_version = ?, last_seen_at = ? WHERE id = ?`)
     .run(input.name?.slice(0, 120) ?? null, input.version?.slice(0, 60) ?? null, input.at, input.id);
+}
+
+/** The session works in another checkout of the project than the one it was registered in. */
+export function moveSession(
+  store: StateStore,
+  input: {
+    readonly id: string;
+    readonly laneRoot: string | null;
+    readonly branch: string | null;
+    readonly head: string | null;
+    readonly at: string;
+  },
+): void {
+  store.db
+    .prepare(`UPDATE sessions SET lane_root = ?, branch = ?, head = ?, last_seen_at = ? WHERE id = ? AND ended_at IS NULL`)
+    .run(input.laneRoot, input.branch, input.head, input.at, input.id);
 }
 
 /** The session called Construct at `at`. */
@@ -141,7 +171,15 @@ export function listLiveSessions(store: StateStore, seenSince: string): SessionR
 /** Note an agent seen inside a session. `attestation` says whether the host vouched for it. */
 export function recordAgent(
   store: StateStore,
-  input: { readonly sessionId: string; readonly agent: string; readonly attestation: 'host' | 'reported'; readonly at: string; readonly laneRoot?: string; readonly hostAgentId?: string; readonly agentType?: string },
+  input: {
+    readonly sessionId: string;
+    readonly agent: string;
+    readonly attestation: 'host' | 'reported';
+    readonly at: string;
+    readonly laneRoot?: string;
+    readonly hostAgentId?: string;
+    readonly agentType?: string;
+  },
 ): void {
   store.db
     .prepare(
@@ -150,5 +188,14 @@ export function recordAgent(
        ON CONFLICT (session_id, agent) DO UPDATE SET last_seen_at = excluded.last_seen_at,
          attestation = CASE WHEN session_agents.attestation = 'host' THEN 'host' ELSE excluded.attestation END`,
     )
-    .run(input.sessionId, input.agent, input.hostAgentId ?? null, input.agentType ?? null, input.attestation, input.laneRoot ?? null, input.at, input.at);
+    .run(
+      input.sessionId,
+      input.agent,
+      input.hostAgentId ?? null,
+      input.agentType ?? null,
+      input.attestation,
+      input.laneRoot ?? null,
+      input.at,
+      input.at,
+    );
 }

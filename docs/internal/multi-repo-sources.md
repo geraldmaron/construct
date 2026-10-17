@@ -279,7 +279,7 @@ the single provenance `currentManifestRecord`
   `get_file_contents` passes it to the model is unverified. A blob sha
   equals the local reader's fingerprint for the same bytes, so the two read
   paths agree about identical files. The `sources` tool's report parsing
-  (the `sources` definition's `validate` in `src/kernel/broker/tools.ts`)
+  (the `sources` definition's `validate` in `src/kernel/broker/tools/sources.ts`)
   does not accept `fingerprint` today and needs to.
 - `updatedAt` is the time of the last commit that touched the file, when the
   host looked it up (the GitHub MCP server's `list_commits` takes a `path`).
@@ -382,7 +382,9 @@ deliverable that cites it (no column holds that), so the deliverable stays
 where an edge's evidence is read. A new validator, `edges_cited_both_ends`
 in `src/kernel/workflow/validators.ts`, checks rules 1 and 2. No workflow is
 dedicated to system maps today; the validator goes on the steps of
-`architecture-decision-review` and `rfc-authoring` that run the
+`review` (domain `system-architecture`) and `authoring` (domain
+`system-architecture`), formerly `architecture-decision-review` and
+`rfc-authoring`, that run the
 system-architecture skill, whose step 2 (compare the stated boundaries with
 the code's imports) is where edges are drawn.
 
@@ -505,7 +507,7 @@ Also rejected:
 |---|---|
 | Committed directory locators are absolute and relative ones are refused | Read `declaredFrom` and `directoryLocatorProblem` |
 | The directory reader resolves against the working directory | Read `readDirectorySource` |
-| `bootstrap` and `onSessionStart` ask `canRead` per source | Read the `bootstrap` definition in `src/kernel/broker/tools.ts` and `onSessionStart` in `src/hosts/hooks/handlers.ts` |
+| `bootstrap` and `onSessionStart` ask `canRead` per source | Read the `bootstrap` definition in `src/kernel/broker/tools/bootstrap.ts` and `onSessionStart` in `src/hosts/hooks/handlers.ts` |
 | A new required table means a new state format | Read the table check in `src/kernel/state/open.ts` and `REQUIRED_TABLES` in `src/kernel/state/schema.ts` |
 | The evidence branch's declare, url and resolver behavior | Read the diff of `staging...5e104e34` (`feat/ti-evidence`), and checked that `cb93fc8e` still resolves any `https://` address |
 | Repeat refreshes append a claim per item | Read `recordRead`, then ran three refreshes of a three-file directory source in a sterile store: 3, 6, 9 claims |
@@ -581,7 +583,7 @@ one outside it is a candidate for a `git` source.
 
 ### Slice 3: connector reads meet the same source (after the evidence branch merges)
 
-1. The `sources` definition's `validate` in `src/kernel/broker/tools.ts`:
+1. The `sources` definition's `validate` in `src/kernel/broker/tools/sources.ts`:
    accept `fingerprint` on report items.
 2. The evidence branch's `declare` action in the same file: refuse a
    `github` declaration whose identity matches an active source, naming it.

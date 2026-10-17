@@ -1,11 +1,6 @@
 /**
- * tests/hooks/committed-git-hooks.test.ts — no git hook this repository commits
- * runs the retired Beads tracker.
- *
- * core.hooksPath names the main checkout's hooks directory, so a commit made in
- * any linked worktree runs these files against the main checkout. A tracker
- * export there rewrites the frozen `.beads/issues.jsonl` that citation lint
- * reads, in a checkout the committing session is not working in.
+ * tests/hooks/committed-git-hooks.test.ts — the repository's git hooks live in
+ * the tracked .githooks, and none of them runs the retired Beads tracker.
  */
 
 import { test } from 'node:test';
@@ -18,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 
 test('committed git hooks never invoke the Beads tracker', () => {
-  const listed = spawnSync('git', ['ls-files', '--', '.beads/hooks', '.githooks'], { cwd: REPO, encoding: 'utf8' });
+  const listed = spawnSync('git', ['ls-files', '--', '.githooks'], { cwd: REPO, encoding: 'utf8' });
   assert.equal(listed.status, 0, listed.stderr);
   const files = listed.stdout.split('\n').filter(Boolean);
   assert.ok(files.length > 0, 'expected at least one committed git hook');

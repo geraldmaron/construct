@@ -66,10 +66,9 @@ obligations.
 ```
 skills/<name>/
   SKILL.md                 # method rules; prefer under 350 lines / ~10k chars
-  construct.skill.json     # Construct manifest: id, version, activation, stand-down, evals
-  evals/activation.json    # labeled activate and stand_down cases
-  evals/behavior.json      # optional behavioral cases
-  evals/fixtures.json      # optional model-judged fixtures
+  construct.skill.json     # Construct manifest: id, version, capabilities, maxTier, requiredValidators, dependencies
+  evals/evals.json         # output cases: prompt, expected_output, files, assertions (Agent Skills shape)
+  evals/trigger-queries.json  # 20 should/shouldn't-trigger queries on a fixed 12/8 train/validation split
   references/*.md          # long templates, record shapes, genre examples
   scripts/                 # optional executable helpers
   assets/                  # optional static resources
@@ -90,9 +89,11 @@ A useful skeleton, not a format mandate:
 4. **Pointer** - one line to `references/` for record shapes if used
 5. **Sources** - brief in-file list, or a pointer to `references/sources.md`
 
-`description` is the trigger: write the conditions under which a host
-should fire the skill, including stand-down, and test against realistic
-prompts.
+`description` is the one place that says when the skill applies: the host
+model reads it and judges. Write the conditions in plain words, including
+when it stands down, with a few examples of how people ask; there is no
+second list of trigger phrases anywhere, and a manifest that carries one is
+refused. Test it against realistic prompts on a real host.
 
 ## Composition without coupling
 
@@ -121,11 +122,10 @@ that originated in this repo is rewritten into the skill in plain language.
 - Naked-folder test: the skill directory (or at least `SKILL.md` plus any
   referenced files the run needs), outside the repo, on a session with no
   construct context, produces the deliverable.
-- Description trigger-tested: prompts that should fire it do; a stand-down
-  prompt does.
-- `construct.skill.json` lists `evals/activation.json`, which holds at
-  least four activating cases and one stand-down case; `npm test` checks
-  both.
+- Description tried on a real host: `node scripts/run-skill-evals.mjs
+  triggers <name>` runs the trigger queries through Claude Code; queries that
+  should apply it do, and near-misses do not. No word-matching test stands in
+  for it.
 - The version is bumped in both `construct.skill.json` and the `SKILL.md`
   frontmatter (`metadata.version`), which must agree, and
   `npm run registry:index` and `npm run docs:generate` have been run, so `registry/index.json` and

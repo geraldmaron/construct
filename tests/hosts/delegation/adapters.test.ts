@@ -36,17 +36,31 @@ test('disabled by default; binary drift, missing receipts, or API environments d
     assert.deepEqual(loadDelegationConfig(fixture.home).executors, {});
     const config = fakeExecutor(fixture, 'codex');
     assert.equal((await executorStatus('codex', 'implement', config, fixture.env)).liveVerified, true);
-    assert.equal((await executorStatus('codex', 'implement', config, { ...fixture.env, OPENAI_API_KEY: 'fixture-not-a-secret' })).authenticated, 'api');
+    assert.equal(
+      (await executorStatus('codex', 'implement', config, { ...fixture.env, OPENAI_API_KEY: 'fixture-not-a-secret' })).authenticated,
+      'api',
+    );
     appendFileSync(config.executors.codex!.binary, '\n');
     assert.equal((await executorStatus('codex', 'implement', config, fixture.env)).liveVerified, false);
     writeFileSync(join(fixture.home, 'delegation.json'), '{"surprise":true}');
     assert.throws(() => loadDelegationConfig(fixture.home), /unknown/);
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('child environments preserve local login locations without inherited credentials or grants', () => {
-  const env = safeEnvironment({ HOME: '/fixture/home', PATH: '/fixture/bin', CODEX_HOME: '/fixture/codex', CLAUDE_CONFIG_DIR: '/fixture/claude', OPENAI_API_KEY: 'not-secret', CLAIM_TOKEN: 'not-a-token', NODE_OPTIONS: '--require=untrusted' });
-  assert.deepEqual(Object.keys(env).sort(), ['CLAUDE_CONFIG_DIR', 'CODEX_HOME', 'HOME', 'PATH']);
+  const env = safeEnvironment({
+    HOME: '/fixture/home',
+    USER: 'fixture',
+    PATH: '/fixture/bin',
+    CODEX_HOME: '/fixture/codex',
+    CLAUDE_CONFIG_DIR: '/fixture/claude',
+    OPENAI_API_KEY: 'not-secret',
+    CLAIM_TOKEN: 'not-a-token',
+    NODE_OPTIONS: '--require=untrusted',
+  });
+  assert.deepEqual(Object.keys(env).sort(), ['CLAUDE_CONFIG_DIR', 'CODEX_HOME', 'HOME', 'PATH', 'USER']);
 });
 
 test('malformed streams, incomplete output, quota errors and denied permissions do not succeed', () => {

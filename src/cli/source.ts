@@ -7,7 +7,14 @@ import { appendActivity } from '../kernel/state/activity.ts';
  * sources live in the committed sources file; local ones stay in state.
  */
 
-import { AUTHORITY_LEVELS, SENSITIVITIES, getSource, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
+import {
+  AUTHORITY_LEVELS,
+  SENSITIVITIES,
+  getSource,
+  retireSource,
+  type AuthorityLevel,
+  type Sensitivity,
+} from '../kernel/state/sources.ts';
 import { RELATION_KINDS, addRelation, type RelationKind } from '../kernel/state/graph.ts';
 import { serializeSourcesFile, validateSourcesFile, type DeclaredSource } from '../kernel/project/sources-file.ts';
 import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
@@ -23,8 +30,22 @@ import { isAbsolute, resolve } from 'node:path';
 const group = 'Sources';
 
 export const SOURCE_SPECS: readonly CommandSpec[] = [
-  { path: ['source', 'list'], gloss: 'every active source with reachability and freshness', group, positionals: [], flags: [], readOnly: true },
-  { path: ['source', 'show'], gloss: 'one source: purpose, authority, freshness, last read', group, positionals: ['<id>'], flags: [], readOnly: true },
+  {
+    path: ['source', 'list'],
+    gloss: 'every active source with reachability and freshness',
+    group,
+    positionals: [],
+    flags: [],
+    readOnly: true,
+  },
+  {
+    path: ['source', 'show'],
+    gloss: 'one source: purpose, authority, freshness, last read',
+    group,
+    positionals: ['<id>'],
+    flags: [],
+    readOnly: true,
+  },
   {
     path: ['source', 'add'],
     gloss: 'declare a source (committed) or add one only this checkout knows (--local)',
@@ -45,8 +66,25 @@ export const SOURCE_SPECS: readonly CommandSpec[] = [
     readOnly: false,
   },
   { path: ['source', 'retire'], gloss: 'retire a source; its history stays', group, positionals: ['<id>'], flags: [], readOnly: false },
-  { path: ['source', 'traverse'], gloss: 'follow bounded references inside one declared readable directory source and record omissions', group, positionals: ['<id>'], flags: [{ name: 'from', gloss: 'starting document relative to the declared directory', takesValue: true }, { name: 'max-documents', gloss: 'document budget, 1–48 (default 48)', takesValue: true }], readOnly: false },
-  { path: ['source', 'refresh'], gloss: 'read a source now and record what changed', group, positionals: ['<id>'], flags: [], readOnly: false },
+  {
+    path: ['source', 'traverse'],
+    gloss: 'follow bounded references inside one declared readable directory source and record omissions',
+    group,
+    positionals: ['<id>'],
+    flags: [
+      { name: 'from', gloss: 'starting document relative to the declared directory', takesValue: true },
+      { name: 'max-documents', gloss: 'document budget, 1–48 (default 48)', takesValue: true },
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['source', 'refresh'],
+    gloss: 'read a source now and record what changed',
+    group,
+    positionals: ['<id>'],
+    flags: [],
+    readOnly: false,
+  },
   {
     path: ['source', 'relate'],
     gloss: `record how two sources stand to each other: ${RELATION_KINDS.filter((k) => ['governs', 'supersedes', 'contradicts', 'depends_on', 'feeds'].includes(k)).join(' | ')}`,
@@ -63,7 +101,8 @@ function readers() {
 
 function declaredFrom(id: string, args: ParsedArgs, root: string): DeclaredSource {
   const kind = stringFlag(args, 'kind');
-  if (!kind || !(SOURCE_KINDS as readonly string[]).includes(kind)) throw new UsageError(`--kind must be one of ${SOURCE_KINDS.join(' | ')}`);
+  if (!kind || !(SOURCE_KINDS as readonly string[]).includes(kind))
+    throw new UsageError(`--kind must be one of ${SOURCE_KINDS.join(' | ')}`);
   const purpose = stringFlag(args, 'purpose');
   if (!purpose) throw new UsageError('--purpose says what this source is for');
   const rawLocator = stringFlag(args, 'locator') ?? null;
@@ -72,16 +111,23 @@ function declaredFrom(id: string, args: ParsedArgs, root: string): DeclaredSourc
   const problem = locatorProblem(kind, locator);
   if (problem) throw new UsageError(problem);
   const authority = stringFlag(args, 'authority') ?? 'informative';
-  if (!(AUTHORITY_LEVELS as readonly string[]).includes(authority)) throw new UsageError(`--authority must be one of ${AUTHORITY_LEVELS.join(' | ')}`);
+  if (!(AUTHORITY_LEVELS as readonly string[]).includes(authority))
+    throw new UsageError(`--authority must be one of ${AUTHORITY_LEVELS.join(' | ')}`);
   const sensitivity = stringFlag(args, 'sensitivity') ?? 'internal';
-  if (!(SENSITIVITIES as readonly string[]).includes(sensitivity)) throw new UsageError(`--sensitivity must be one of ${SENSITIVITIES.join(' | ')}`);
+  if (!(SENSITIVITIES as readonly string[]).includes(sensitivity))
+    throw new UsageError(`--sensitivity must be one of ${SENSITIVITIES.join(' | ')}`);
   const fresh = stringFlag(args, 'freshness-hours');
   const freshnessHours = fresh === undefined ? null : Number(fresh);
   if (freshnessHours !== null && !(freshnessHours > 0)) throw new UsageError('--freshness-hours must be a positive number');
   const authoritativeFor = [...new Set(((args.flags['authoritative-for'] as readonly string[] | string | undefined) ?? []) as string[])];
-  const notAuthoritativeFor = [...new Set(((args.flags['not-authoritative-for'] as readonly string[] | string | undefined) ?? []) as string[])];
+  const notAuthoritativeFor = [
+    ...new Set(((args.flags['not-authoritative-for'] as readonly string[] | string | undefined) ?? []) as string[]),
+  ];
   return {
-    id, kind, purpose, locator,
+    id,
+    kind,
+    purpose,
+    locator,
     authorityLevel: authority as AuthorityLevel,
     authoritativeFor: typeof authoritativeFor === 'string' ? [authoritativeFor] : authoritativeFor,
     notAuthoritativeFor: typeof notAuthoritativeFor === 'string' ? [notAuthoritativeFor] : notAuthoritativeFor,
@@ -102,13 +148,51 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const from = stringFlag(args, 'from');
         if (!source || !from) throw new UsageError('source traverse needs an active source id and --from=<document>');
         const sessionId = `traverse:${randomUUID()}`;
-        const result = await traverseDirectory({ source, from, sessionId, now: ctx.now, maxDocuments: stringFlag(args, 'max-documents') ? Number(stringFlag(args, 'max-documents')) : undefined });
-        const snapshot = createSourceService(project.store, { root: project.root, readers: new Map([['directory', async () => ({ outcome: 'read' as const, report: { digest: createHash('sha256').update(JSON.stringify(result.documents.map((d) => [d.ref, d.digest]))).digest('hex'), summary: 'bounded reference traversal', evidence: 'witnessed' as const, coverage: { complete: false, traversal: result.coverage, omissions: result.dispositions }, items: result.documents.map((d) => ({ externalRef: relative(source.locator!, d.ref), name: relative(source.locator!, d.ref), kind: 'document', attributes: { fingerprint: d.digest, text: d.text, truncated: d.truncated } })) } })]]) });
+        const result = await traverseDirectory({
+          source,
+          from,
+          sessionId,
+          now: ctx.now,
+          maxDocuments: stringFlag(args, 'max-documents') ? Number(stringFlag(args, 'max-documents')) : undefined,
+        });
+        const snapshot = createSourceService(project.store, {
+          root: project.root,
+          readers: new Map([
+            [
+              'directory',
+              async () => ({
+                outcome: 'read' as const,
+                report: {
+                  digest: createHash('sha256')
+                    .update(JSON.stringify(result.documents.map((d) => [d.ref, d.digest])))
+                    .digest('hex'),
+                  summary: 'bounded reference traversal',
+                  evidence: 'witnessed' as const,
+                  coverage: { complete: false, traversal: result.coverage, omissions: result.dispositions },
+                  items: result.documents.map((d) => ({
+                    externalRef: relative(source.locator!, d.ref),
+                    name: relative(source.locator!, d.ref),
+                    kind: 'document',
+                    attributes: { fingerprint: d.digest, text: d.text, truncated: d.truncated },
+                  })),
+                },
+              }),
+            ],
+          ]),
+        });
         if (result.documents.length) await snapshot.refresh(source.id, ctx.now(), () => ctx.nextId('traverse'));
-        appendActivity(project.store, { at: ctx.now(), kind: 'source.traversed', actor: 'local source adapter', channel: 'host_source', payload: { sourceId: source.id, sessionId, ...result, documents: result.documents.map(({ text: _text, ...d }) => d) } });
+        appendActivity(project.store, {
+          at: ctx.now(),
+          kind: 'source.traversed',
+          actor: 'local source adapter',
+          channel: 'host_source',
+          payload: { sourceId: source.id, sessionId, ...result, documents: result.documents.map(({ text: _text, ...d }) => d) },
+        });
         writeJson(result);
         return result.coverage === 'incomplete' ? 1 : 0;
-      } finally { project.store.close(); }
+      } finally {
+        project.store.close();
+      }
     }
     case 'list':
       return withProject(ctx, ({ store }) => {
@@ -124,14 +208,22 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           return 0;
         }
         say(`Sources: ${String(rows.length)} active`);
-        const groupOf = (r: typeof rows[number]) => r.source.reachability === 'unreachable' || r.freshness === 'stale' ? 'Needs attention' : r.source.reachability === 'unknown' || r.freshness === 'never_read' ? 'Not yet checked' : 'Read successfully';
+        const groupOf = (r: (typeof rows)[number]) =>
+          r.source.reachability === 'unreachable' || r.freshness === 'stale'
+            ? 'Needs attention'
+            : r.source.reachability === 'unknown' || r.freshness === 'never_read'
+              ? 'Not yet checked'
+              : 'Read successfully';
         for (const label of ['Needs attention', 'Not yet checked', 'Read successfully']) {
           const group = rows.filter((r) => groupOf(r) === label).sort((a, b) => a.source.id.localeCompare(b.source.id));
           if (!group.length) continue;
           say();
           say(`${label} (${String(group.length)})`);
           say('ID  KIND  ORIGIN  REACHABILITY  FRESHNESS  PURPOSE');
-          for (const r of group) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+          for (const r of group)
+            say(
+              `${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`,
+            );
         }
         say();
         say('Next: construct source show <id> for details; construct source refresh <id> to read it.');
@@ -141,7 +233,8 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
       const id = args.positionals[0]!;
       return withProject(ctx, ({ store }) => {
         const svc = createSourceService(store, { readers: readers() });
-        if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`, '`construct source list` shows the ones that exist.');
+        if (!svc.list().some((s) => s.id === id))
+          throw new OperationError(`no active source ${id}`, '`construct source list` shows the ones that exist.');
         const r = svc.status(id, ctx.now());
         if (args.json) {
           writeJson(r);
@@ -151,9 +244,15 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         say(`  status: ${r.source.status}`);
         say(`  purpose: ${esc(r.source.purpose)}`);
         say(`  locator: ${r.source.locator ? esc(r.source.locator) : 'none'}`);
-        say(`  authority: ${r.source.authorityLevel}; settles ${r.authoritativeFor.length ? r.authoritativeFor.map(esc).join(', ') : 'nothing declared'}; must not settle ${r.notAuthoritativeFor.length ? r.notAuthoritativeFor.map(esc).join(', ') : 'nothing declared'}`);
-        say(`  sensitivity: ${r.source.sensitivity}; reads ${r.source.canRead ? 'yes' : 'no'}; writes ${r.source.canWrite ? 'allowed per action' : 'no'}`);
-        say(`  reachability: ${r.source.reachability}; freshness: ${r.freshness}${r.lastSnapshot ? ` (last read ${r.lastSnapshot.takenAt}, ${esc(r.lastSnapshot.summary ?? '')})` : ''}`);
+        say(
+          `  authority: ${r.source.authorityLevel}; settles ${r.authoritativeFor.length ? r.authoritativeFor.map(esc).join(', ') : 'nothing declared'}; must not settle ${r.notAuthoritativeFor.length ? r.notAuthoritativeFor.map(esc).join(', ') : 'nothing declared'}`,
+        );
+        say(
+          `  sensitivity: ${r.source.sensitivity}; reads ${r.source.canRead ? 'yes' : 'no'}; writes ${r.source.canWrite ? 'allowed per action' : 'no'}`,
+        );
+        say(
+          `  reachability: ${r.source.reachability}; freshness: ${r.freshness}${r.lastSnapshot ? ` (last read ${r.lastSnapshot.takenAt}, ${esc(r.lastSnapshot.summary ?? '')})` : ''}`,
+        );
         return 0;
       });
     }
@@ -169,7 +268,8 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const given = declaredFrom(id, args, root);
         const declared = local && stringFlag(args, 'sensitivity') === undefined ? { ...given, sensitivity: local.sensitivity } : given;
         if (boolFlag(args, 'local')) {
-          if (svc.list().some((s) => s.id === id)) throw new OperationError(`source ${id} already exists`, '`construct source show ' + id + '` shows it.');
+          if (svc.list().some((s) => s.id === id))
+            throw new OperationError(`source ${id} already exists`, '`construct source show ' + id + '` shows it.');
           store.transaction(() => {
             svc.addLocal({ ...declared }, at);
             ensureSourceEntities(store, at, ctx.nextId);
@@ -179,16 +279,30 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           store.transaction(() => {
             // Binding reads are only a snapshot. Read again after acquiring the
             // write lock so simultaneous commands cannot overwrite one another.
-            const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
-            if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
-            if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
-            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: [...current.sources, declared] }), layout.sourcesFile);
+            const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? {
+              format: 'construct-sources',
+              formatVersion: 2,
+              sources: [],
+            };
+            if (current.sources.some((s) => s.id === id))
+              throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
+            if (local && local.kind !== declared.kind)
+              throw new OperationError(
+                `source ${id} exists on this machine as a ${local.kind} source`,
+                `Commit it with --kind=${local.kind}, or declare this one under a new id.`,
+              );
+            const next = validateSourcesFile(
+              serializeSourcesFile({ ...current, sources: [...current.sources, declared] }),
+              layout.sourcesFile,
+            );
             for (const d of next.sources) {
               if (getSource(store, d.id)?.status === 'retired') {
-                throw new OperationError(`source ${d.id} was retired; declare it under a new id`,
+                throw new OperationError(
+                  `source ${d.id} was retired; declare it under a new id`,
                   current.sources.some((s) => s.id === d.id)
                     ? `Run construct source retire ${shellWord(d.id)} to remove its stranded declaration, then retry. No declarations were changed.`
-                    : 'Choose a new source id. No declarations were changed.');
+                    : 'Choose a new source id. No declarations were changed.',
+                );
               }
             }
             svc.syncDeclarations(next, at);
@@ -200,9 +314,13 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const r = svc.status(id, at);
         if (args.json) writeJson(r);
         else {
-          say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ` in .construct/sources.json${local ? '; what was already read from it on this machine carries over' : ''}`}`);
+          say(
+            `${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ` in .construct/sources.json${local ? '; what was already read from it on this machine carries over' : ''}`}`,
+          );
           say(`Status: ${r.source.status}; reachability: ${r.source.reachability}; freshness: ${r.freshness}.`);
-          say(`Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`);
+          say(
+            `Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`,
+          );
         }
         return 0;
       });
@@ -216,13 +334,20 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const remainingRetired: string[] = [];
         let reconciliationError: string | undefined;
         store.transaction(() => {
-          const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
+          const current = readJsonFile(root, layout.sourcesFile, validateSourcesFile) ?? {
+            format: 'construct-sources',
+            formatVersion: 2,
+            sources: [],
+          };
           const source = getSource(store, id);
           const declared = current.sources.some((s) => s.id === id);
           if (!declared && source?.status !== 'active') throw new OperationError(`no active source ${id}`);
           if (declared || source?.origin === 'declared') {
             requireMainCheckout(project, 'source retire of a declared source');
-            const next = validateSourcesFile(serializeSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }), layout.sourcesFile);
+            const next = validateSourcesFile(
+              serializeSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }),
+              layout.sourcesFile,
+            );
             // Retirement is a recovery operation. Other stranded declarations
             // cannot prevent removal of this one, and must never reactivate IDs.
             const recoverable = next.sources.filter((s) => {
@@ -244,7 +369,13 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
             retireSource(store, id, at);
           }
         });
-        if (args.json) writeJson({ id, retired: true, ...(remainingRetired.length ? { remainingRetired } : {}), ...(reconciliationError ? { reconciliationError } : {}) });
+        if (args.json)
+          writeJson({
+            id,
+            retired: true,
+            ...(remainingRetired.length ? { remainingRetired } : {}),
+            ...(reconciliationError ? { reconciliationError } : {}),
+          });
         else {
           say(`retired source ${esc(id)}; its snapshots and claims stay on the record`);
           if (remainingRetired.length) say(`Recovery remains: retire stranded declarations ${remainingRetired.map(esc).join(', ')}.`);
@@ -266,8 +397,17 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         else {
           say(`${esc(id)}: ${result.outcome}${result.snapshot ? ` (${esc(result.snapshot.summary ?? '')})` : ''}`);
           const c = result.changes;
-          if (c) for (const [label, refs] of [['added', c.added], ['modified', c.modified], ['removed', c.removed]] as const) if (refs.length > 0) say(`  ${label}: ${refs.map(esc).join(', ')}`);
-          if (result.staleDeliverables && result.staleDeliverables.length > 0) say(`  ${String(result.staleDeliverables.length)} drift finding(s): finished work cited what changed; \`construct inbox list\` shows what to decide.`);
+          if (c)
+            for (const [label, refs] of [
+              ['added', c.added],
+              ['modified', c.modified],
+              ['removed', c.removed],
+            ] as const)
+              if (refs.length > 0) say(`  ${label}: ${refs.map(esc).join(', ')}`);
+          if (result.staleDeliverables && result.staleDeliverables.length > 0)
+            say(
+              `  ${String(result.staleDeliverables.length)} drift finding(s): finished work cited what changed; \`construct inbox list\` shows what to decide.`,
+            );
         }
         return result.outcome === 'unreachable' ? 1 : 0;
       } finally {
@@ -288,7 +428,16 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         if (!to) throw new OperationError(`no active source ${toId}`);
         const fromEntity = sourceEntity(store, from.id, from.kind)!;
         const toEntity = sourceEntity(store, to.id, to.kind)!;
-        const rel = addRelation(store, { id: ctx.nextId('rel'), kind: relation as RelationKind, fromId: fromEntity.id, toId: toEntity.id, basis: 'declared', confidence: 1, confirmed: true, at });
+        const rel = addRelation(store, {
+          id: ctx.nextId('rel'),
+          kind: relation as RelationKind,
+          fromId: fromEntity.id,
+          toId: toEntity.id,
+          basis: 'declared',
+          confidence: 1,
+          confirmed: true,
+          at,
+        });
         if (args.json) writeJson(rel);
         else say(`recorded: ${esc(fromId)} ${relation} ${esc(toId)} (declared by you, confirmed)`);
         return 0;

@@ -31,11 +31,27 @@ export function isValidTimezone(timezone: string): boolean {
 export function wallClock(instant: Date, timezone: string): WallClock {
   let f = formatters.get(timezone);
   if (!f) {
-    f = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hourCycle: 'h23', year: 'numeric', minute: '2-digit', hour: '2-digit', day: '2-digit', month: '2-digit', weekday: 'short' });
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hourCycle: 'h23',
+      year: 'numeric',
+      minute: '2-digit',
+      hour: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      weekday: 'short',
+    });
     formatters.set(timezone, f);
   }
   const parts = Object.fromEntries(f.formatToParts(instant).map((p) => [p.type, p.value]));
-  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day), hour: Number(parts.hour), minute: Number(parts.minute), weekday: WEEKDAYS[parts.weekday!] ?? 0 };
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    weekday: WEEKDAYS[parts.weekday!] ?? 0,
+  };
 }
 
 /** The calendar date (YYYY-MM-DD) an instant falls on in `timezone`. */

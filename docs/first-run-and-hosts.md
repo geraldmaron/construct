@@ -28,7 +28,7 @@ Then it connects the agent hosts you use here. `--client=<host>` names them
 (repeat it, or comma-separate: `--client=claude-code,cursor`). Without it,
 `init` picks in this order: the host it is running inside, when that host
 marks its sessions (Claude Code and Cursor do; IBM Bob does only through its
-IDE integration); the hosts already wired in this project, so re-running
+IDE integration; Hermes Agent does in the terminal its agent runs commands in); the hosts already wired in this project, so re-running
 `init` repairs them; the only agent host installed on this machine, found by
 its command on PATH or its configuration directory. When it finds several
 and you are at a terminal of your own, it asks once which you use; otherwise
@@ -92,6 +92,7 @@ Construct. `init` prints it, and writes none of these settings for you.
 | OpenCode | `opencode.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | None: start `opencode` in the folder |
 | Codex | `.codex/config.toml` | `.agents/skills` | Trust the project when Codex asks (it reads `.codex/config.toml` only in trusted projects), and approve `construct`'s tool calls |
 | IBM Bob | `.bob/mcp.json` | `.bob/skills` | Open the folder in Bob and approve `construct`'s tools |
+| Hermes Agent | `~/.hermes/config.yaml` (under `HERMES_HOME` when set) | `.agents/skills` | Run `hermes skills trust` in the folder so Hermes loads its project skills, and approve `construct`'s write tools when Hermes asks |
 
 How each host prompts for these approvals, and which project skills
 directory it reads, are as its own documentation describes. Construct has
@@ -314,7 +315,7 @@ what was actually exercised.
 
 ## Supported hosts
 
-All six hosts are wired by file, with `init --client=<host>`:
+All seven hosts are wired by file, with `init --client=<host>`:
 
 | Host | File | How it finds the project |
 |---|---|---|
@@ -324,6 +325,7 @@ All six hosts are wired by file, with `init --client=<host>`:
 | OpenCode | `opencode.json` | the directory OpenCode starts the server in, which its docs do not state |
 | Codex | `.codex/config.toml` | the directory Codex starts the server in, which its docs do not state |
 | IBM Bob | `.bob/mcp.json` | the directory Bob starts the server in, which its docs do not state |
+| Hermes Agent | `~/.hermes/config.yaml` | `--project=<this project>` and `cwd`, both written by `init` |
 
 Codex reads `.codex/config.toml` only in a project you have trusted, and
 Construct sets its tool timeout to 120 seconds so a question Construct shows
@@ -336,10 +338,30 @@ entry; anything not listed there is untested, not assumed.
 [release-verification.md](release-verification.md) says how live host
 conformance is run.
 
+Hermes Agent has no project MCP file: it reads servers only from
+`config.yaml` in its own data directory (`~/.hermes`, or `HERMES_HOME`). So
+its entry is the one host file that names this project by path, lives
+outside the repository, and is never committed. One Hermes profile serves
+one Construct project: `init` refuses to point an entry that already serves
+another project at this one, and says to run Hermes for this project with
+its own `HERMES_HOME`. The entry marks `construct` as `trust: untrusted`, so
+Hermes asks before every Construct tool that changes something and runs the
+read-only ones without asking. Construct edits only its own
+`mcp_servers.construct` block and refuses a file it cannot read safely (tabs,
+a byte-order mark, several documents, an indented or non-key top level, the
+servers written inline, or a `construct` entry with nested settings) rather
+than rewrite it. An entry that names another project in any form, or names
+none, is left alone. Hermes strips the environment of the
+servers it starts, so `construct serve` names the host from `--client=hermes`;
+a `construct` command run from Hermes's own terminal is recognized by
+`HERMES_AGENT=true`.
+
 ## What to commit
 
 `.construct/*.json`, the host MCP files above, and the project skill
 directories `init` plants carry no machine paths, so they are safe to commit.
+Hermes's `config.yaml` is the exception: it is yours, outside the
+repository, and names this project's path.
 Each teammate needs Construct on their PATH (`npm
 install -g @geraldmaron/construct@alpha`) or as a project dependency.
 `.construct/state/`, which holds the hooks' launcher, stays on this machine

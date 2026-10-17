@@ -5,7 +5,7 @@
  * fixture builder constructs a Paths rooted in a tmpdir, and nothing else can escape it.
  */
 
-import { homedir } from 'node:os';
+import { homedir, userInfo } from 'node:os';
 import { join } from 'node:path';
 
 export interface Paths {
@@ -23,6 +23,7 @@ export interface PathsEnv {
   HOME?: string;
   CLAUDE_CONFIG_DIR?: string;
   CODEX_HOME?: string;
+  HERMES_HOME?: string;
 }
 
 const APP = 'construct';
@@ -37,10 +38,7 @@ function xdgBase(value: string | undefined, fallback: string): string {
   return value !== undefined && value !== '' ? value : fallback;
 }
 
-export function resolvePaths(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): Paths {
+export function resolvePaths(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): Paths {
   return {
     configDir: join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), APP),
     stateDir: join(xdgBase(env.XDG_STATE_HOME, join(home, '.local', 'state')), APP),
@@ -59,10 +57,7 @@ export function resolvePaths(
  * module is the only one permitted to, so a test that redirects HOME redirects
  * every path the tool will touch.
  */
-export function resolveSkillsDir(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string {
+export function resolveSkillsDir(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
   return join(home, '.claude', 'skills');
 }
 
@@ -77,17 +72,30 @@ export function resolveSkillsDir(
  * systemd reads its user units under `$XDG_CONFIG_HOME/systemd/user`, so the
  * variable is honored; launchd names an absolute path under home and has no
  * equivalent.
+ *
+ * The environment is a required argument, never defaulted to this process's:
+ * a caller states which home it means, so a test cannot reach the real one by
+ * forgetting to pass its own.
  */
-export function resolveScheduleDir(
-  platform: NodeJS.Platform,
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string | null {
+export function resolveScheduleDir(platform: NodeJS.Platform, env: PathsEnv, home: string = xdgBase(env.HOME, homedir())): string | null {
   if (platform === 'darwin') return join(home, 'Library', 'LaunchAgents');
   if (platform === 'linux') {
     return join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'systemd', 'user');
   }
   return null;
+}
+
+/**
+ * The directory the platform scheduler itself reads for this OS account,
+ * from the account database rather than HOME or XDG variables. launchd and a
+ * default systemd user manager read their units here whatever the shell
+ * exported. A unit is loaded only when it was written to this directory: a
+ * redirected HOME (a test, a scratch install) resolves resolveScheduleDir
+ * elsewhere, and loading a unit from there would hand a scratch project to
+ * the person's real scheduler.
+ */
+export function resolveAccountScheduleDir(platform: NodeJS.Platform): string | null {
+  return resolveScheduleDir(platform, {}, userInfo().homedir);
 }
 
 /**
@@ -116,6 +124,8 @@ const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   codex: ['.agents', 'skills'],
   // https://code.visualstudio.com/docs/agent-customization/agent-skills — checked 2026-10-08
   vscode: ['.copilot', 'skills'],
+  // Hermes Agent website/docs/user-guide/features/skills.md — checked 2026-10-17; HERMES_HOME moves it (resolveHostSkillsDir)
+  hermes: ['.hermes', 'skills'],
 };
 
 /** Every host name `--host` accepts, `claude` included, in a stable order. */
@@ -133,6 +143,7 @@ export function resolveHostSkillsDir(
   home: string = xdgBase(env.HOME, homedir()),
 ): string {
   if (host === 'claude') return resolveSkillsDir(env, home);
+  if (host === 'hermes') return join(resolveHermesHome(env, home), 'skills');
   return join(home, ...OTHER_HOST_SKILLS_PATH[host]);
 }
 
@@ -141,24 +152,41 @@ export function resolveHostSkillsDir(
  * `.claude` under home. Read here for the same reason as every home-rooted
  * path: a test that redirects HOME redirects this too.
  */
-export function resolveClaudeConfigDir(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string {
+export function resolveClaudeConfigDir(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
   const configured = env.CLAUDE_CONFIG_DIR;
   return configured && configured.trim() ? configured : join(home, '.claude');
 }
 
+/**
+ * Claude Code's user-scope configuration file, which holds MCP servers added
+ * with `claude mcp add -s user`: `.claude.json` in CLAUDE_CONFIG_DIR when set,
+ * else in home. Read here for the same reason as every home-rooted path.
+ */
+export function resolveClaudeUserConfigFile(env: PathsEnv, home: string = xdgBase(env.HOME, homedir())): string {
+  const configured = env.CLAUDE_CONFIG_DIR;
+  return configured && configured.trim() ? join(configured, '.claude.json') : join(home, '.claude.json');
+}
+
+/**
+ * Hermes Agent's data directory: HERMES_HOME when set, else `.hermes` under
+ * home. Hermes reads its MCP servers only from `config.yaml` here, never from
+ * a project file (Hermes Agent website/docs/user-guide/features/mcp.md and
+ * getting-started/installation.md, checked 2026-10-17).
+ */
+export function resolveHermesHome(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
+  return xdgBase(env.HERMES_HOME, join(home, '.hermes'));
+}
+
 /** The agent hosts whose per-user configuration directories `resolveHostConfigDirs` names. */
-export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob';
+export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob' | 'hermes';
 
 /**
  * Where each agent host keeps its per-user configuration. A directory that
  * exists is evidence the host has run on this machine, which is how setup
  * finds a host whose command is not on this shell's PATH (an editor started
  * from the desktop). Read here for the same reason as every home-rooted path.
- * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, and OpenCode
- * XDG_CONFIG_HOME.
+ * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, OpenCode
+ * XDG_CONFIG_HOME, and Hermes HERMES_HOME.
  */
 export function resolveHostConfigDirs(
   env: PathsEnv = process.env,
@@ -172,6 +200,7 @@ export function resolveHostConfigDirs(
     opencode: [join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'opencode')],
     codex: [codexHome && codexHome.trim() ? codexHome : join(home, '.codex')],
     bob: [join(home, '.bob')],
+    hermes: [resolveHermesHome(env, home)],
   };
 }
 

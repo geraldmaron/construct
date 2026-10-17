@@ -10,7 +10,7 @@
  *   8000 chars when the window is unknown)
  * - SKILL.md under 500 lines (progressive-disclosure companion: long
  *   material belongs in references/)
- * - Severability: no tracker bead ids, no repo-relative source paths, no
+ * - Severability: no tracker ids, no repo-relative source paths, no
  *   absolute machine paths
  * - The operational skill named in src/kernel/skills/bundle.ts ships on disk
  *
@@ -29,14 +29,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 
-const ALLOWED_FIELDS = new Set([
-  'name',
-  'description',
-  'license',
-  'compatibility',
-  'metadata',
-  'allowed-tools',
-]);
+const ALLOWED_FIELDS = new Set(['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools']);
 const NAME_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BEAD = /construct-(?!mcp)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
 const SRC_PATH = /(?:^|[\s`>("'])(?:src|tests|scripts|fixtures)\//;
@@ -128,7 +121,7 @@ for (const file of files) {
 
   body.split('\n').forEach((line, i) => {
     const at = close + 2 + i;
-    if (BEAD.test(line)) fail(file, `line ${at}: tracker bead id - lineage lives in the tracker, never in a shipped skill`);
+    if (BEAD.test(line)) fail(file, `line ${at}: tracker id - lineage lives in the ledger, never in a shipped skill`);
     if (SRC_PATH.test(line)) fail(file, `line ${at}: repository path - a severable skill cannot point into this repo`);
     if (ABSOLUTE_PATH.test(line)) fail(file, `line ${at}: absolute path - the file must work on a machine that is not this one`);
   });
@@ -166,6 +159,6 @@ console.log(
   files.length === 0
     ? 'lint-skill-spec: clean (no skills yet)'
     : `lint-skill-spec: clean - ${files.length} skill(s) conform, descriptions ${descriptionBudgetUsed}/` +
-      `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Format checks only; ` +
-      'Construct record/enforcement ceremony is optional under references/.',
+        `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Format checks only; ` +
+        'Construct record/enforcement ceremony is optional under references/.',
 );

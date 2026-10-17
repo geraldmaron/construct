@@ -3,85 +3,19 @@
   "formatVersion": 1,
   "id": "experience-design",
   "title": "Experience design",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "customers abandon the signup at this step",
-    "support keeps asking where the button is",
-    "nobody can find anything on this page",
-    "the checkout takes too many screens",
-    "is this flow usable and accessible",
-    "does this screen follow our design system",
-    "people get stuck in the onboarding",
-    "review this screen, this flow, this interface for usability and accessibility",
-    "can people complete the task, what happens when it fails, is it accessible",
-    "does this design follow our design system, is it consistent",
-    "what does the research say about how people use this"
-  ],
-  "standDown": [
-    "which color or font looks nicer with no task in view",
-    "implementation detail of a component",
-    "backend behavior with no interface",
-    "change the database, the backend, the index, the server"
-  ],
-  "interactionClasses": [
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "an experience review naming task success, accessibility, error states, consistency, and evidence"
-  ],
-  "deliverableTypes": [
-    "review/experience"
-  ],
-  "inputs": [
-    "the screen, flow, prototype, or component under review",
-    "the design system and accessibility target the project declares",
-    "research and usage evidence declared as sources"
-  ],
-  "outputSchemas": [
-    "experience-design/review/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every usability claim names the heuristic or the research it rests on; every accessibility finding names the WCAG success criterion",
   "capabilities": [
     "read_project_files",
     "read_project_context",
     "read_source"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings",
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a finding that would exclude people by disability is reported as serious or fatal, never minor",
-    "a claim about how people actually behave that no research supports is labeled an assumption and handed to research"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json",
-    "evals/fixtures.json",
-    "evals/behavior.json"
-  ]
+  "skillDependencies": []
 }

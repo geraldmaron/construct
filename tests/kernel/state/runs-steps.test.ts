@@ -6,20 +6,32 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createRun, getRun, transitionRun, listActiveRuns, RUN_STATES, RUN_TRANSITIONS } from '../../../src/kernel/state/runs.ts';
 import {
-  createRun, getRun, transitionRun, listActiveRuns, RUN_STATES, RUN_TRANSITIONS,
-} from '../../../src/kernel/state/runs.ts';
-import {
-  addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, listAttempts, transitionStep,
-  countStepsByState, EXPIRED_ATTEMPTS_ALLOWED, StaleLeaseError, STEP_TRANSITIONS,
+  addStep,
+  claimStep,
+  completeStep,
+  expireDeadLeases,
+  failStep,
+  getStep,
+  listAttempts,
+  transitionStep,
+  countStepsByState,
+  EXPIRED_ATTEMPTS_ALLOWED,
+  StaleLeaseError,
+  STEP_TRANSITIONS,
 } from '../../../src/kernel/state/steps.ts';
 import { IllegalTransitionError } from '../../../src/kernel/state/rows.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
 import { freshStore, clock } from './support.ts';
 
 const base = {
-  workflowId: 'design-conformance', workflowVersion: '1.0.0', interactionClass: 'manage' as const,
-  triggerKind: 'manual' as const, executorKind: 'interactive' as const, executorId: 'session:claude',
+  workflowId: 'design-conformance',
+  workflowVersion: '1.0.0',
+  interactionClass: 'manage' as const,
+  triggerKind: 'manual' as const,
+  executorKind: 'interactive' as const,
+  executorId: 'session:claude',
   input: { target: 'feature-x' },
 };
 
@@ -76,7 +88,10 @@ test('every run state either reaches a terminal state or is one', () => {
       seen.add(s);
       queue.push(...RUN_TRANSITIONS[s as keyof typeof RUN_TRANSITIONS]);
     }
-    assert.ok(['succeeded', 'failed', 'cancelled'].some((t) => seen.has(t)), `${state} can never finish`);
+    assert.ok(
+      ['succeeded', 'failed', 'cancelled'].some((t) => seen.has(t)),
+      `${state} can never finish`,
+    );
   }
   for (const state of Object.keys(STEP_TRANSITIONS) as Array<keyof typeof STEP_TRANSITIONS>) {
     assert.ok(Array.isArray(STEP_TRANSITIONS[state]));
@@ -89,7 +104,16 @@ test('steps are leased in order with a fencing token; a stale holder cannot sett
     const at = clock();
     createRun(fx.store, { ...base, id: 'run-1', idempotencyKey: 'k1', at: at() });
     addStep(fx.store, { id: 's-b', runId: 'run-1', stepId: 'review', ordinal: 1, permissionTier: 'draft', ready: true, at: at() });
-    addStep(fx.store, { id: 's-a', runId: 'run-1', stepId: 'read', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 3, at: at() });
+    addStep(fx.store, {
+      id: 's-a',
+      runId: 'run-1',
+      stepId: 'read',
+      ordinal: 0,
+      permissionTier: 'observe',
+      ready: true,
+      maxAttempts: 3,
+      at: at(),
+    });
 
     const t0 = at();
     const lease1 = claimStep(fx.store, { owner: 'w1', now: t0, leaseUntil: '2026-09-02T10:00:30.000Z', runId: 'run-1' });
@@ -97,7 +121,12 @@ test('steps are leased in order with a fencing token; a stale holder cannot sett
     assert.equal(lease1?.token, 1);
 
     // Lease expires; another worker takes over with a new token.
-    const lease2 = claimStep(fx.store, { owner: 'w2', now: '2026-09-02T10:00:31.000Z', leaseUntil: '2026-09-02T10:01:00.000Z', runId: 'run-1' });
+    const lease2 = claimStep(fx.store, {
+      owner: 'w2',
+      now: '2026-09-02T10:00:31.000Z',
+      leaseUntil: '2026-09-02T10:01:00.000Z',
+      runId: 'run-1',
+    });
     assert.equal(lease2?.id, 's-a');
     assert.equal(lease2?.token, 2);
 
@@ -111,7 +140,13 @@ test('steps are leased in order with a fencing token; a stale holder cannot sett
     assert.equal(done.leaseOwner, null);
 
     const attempts = listAttempts(fx.store, 's-a');
-    assert.deepEqual(attempts.map((a) => [a.attempt, a.owner, a.outcome]), [[1, 'w1', 'expired'], [2, 'w2', 'succeeded']]);
+    assert.deepEqual(
+      attempts.map((a) => [a.attempt, a.owner, a.outcome]),
+      [
+        [1, 'w1', 'expired'],
+        [2, 'w2', 'succeeded'],
+      ],
+    );
 
     // The next claim is the second step; the finished one is not re-leased.
     const next = claimStep(fx.store, { owner: 'w2', now: '2026-09-02T10:00:50.000Z', leaseUntil: '2026-09-02T10:02:00.000Z' });
@@ -126,7 +161,16 @@ test('an expired lease returns the step to ready without spending its retry budg
   try {
     const at = clock();
     createRun(fx.store, { ...base, id: 'run-retry', idempotencyKey: 'k-retry', at: at() });
-    addStep(fx.store, { id: 's-retry', runId: 'run-retry', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 2, at: at() });
+    addStep(fx.store, {
+      id: 's-retry',
+      runId: 'run-retry',
+      stepId: 'fetch',
+      ordinal: 0,
+      permissionTier: 'observe',
+      ready: true,
+      maxAttempts: 2,
+      at: at(),
+    });
     claimStep(fx.store, { owner: 'w1', now: '2026-09-02T10:00:00.000Z', leaseUntil: '2026-09-02T10:00:30.000Z' });
     assert.equal(expireDeadLeases(fx.store, '2026-09-02T10:00:31.000Z'), 1);
     assert.equal(getStep(fx.store, 's-retry')?.state, 'ready');
@@ -135,14 +179,34 @@ test('an expired lease returns the step to ready without spending its retry budg
 
     // One attempt allowed: a holder walking away does not fail the step.
     createRun(fx.store, { ...base, id: 'run-spent', idempotencyKey: 'k-spent', at: at() });
-    addStep(fx.store, { id: 's-spent', runId: 'run-spent', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 1, at: at() });
+    addStep(fx.store, {
+      id: 's-spent',
+      runId: 'run-spent',
+      stepId: 'fetch',
+      ordinal: 0,
+      permissionTier: 'observe',
+      ready: true,
+      maxAttempts: 1,
+      at: at(),
+    });
     for (let i = 0; i < EXPIRED_ATTEMPTS_ALLOWED; i += 1) {
       const start = Date.parse('2026-09-02T11:00:00.000Z') + i * 60_000;
-      assert.ok(claimStep(fx.store, { owner: `w${String(i)}`, now: new Date(start).toISOString(), leaseUntil: new Date(start + 30_000).toISOString(), runId: 'run-spent' }), `claim ${String(i + 1)}`);
+      assert.ok(
+        claimStep(fx.store, {
+          owner: `w${String(i)}`,
+          now: new Date(start).toISOString(),
+          leaseUntil: new Date(start + 30_000).toISOString(),
+          runId: 'run-spent',
+        }),
+        `claim ${String(i + 1)}`,
+      );
       assert.equal(expireDeadLeases(fx.store, new Date(start + 31_000).toISOString(), 'run-spent'), 1);
       assert.equal(getStep(fx.store, 's-spent')?.state, i + 1 < EXPIRED_ATTEMPTS_ALLOWED ? 'ready' : 'failed');
     }
-    assert.equal(claimStep(fx.store, { owner: 'w9', now: '2026-09-02T12:00:00.000Z', leaseUntil: '2026-09-02T12:01:00.000Z', runId: 'run-spent' }), null);
+    assert.equal(
+      claimStep(fx.store, { owner: 'w9', now: '2026-09-02T12:00:00.000Z', leaseUntil: '2026-09-02T12:01:00.000Z', runId: 'run-spent' }),
+      null,
+    );
   } finally {
     fx.cleanup();
   }
@@ -153,21 +217,47 @@ test('failing an attempt retries until max attempts, then fails for good', () =>
   try {
     const at = clock();
     createRun(fx.store, { ...base, id: 'run-1', idempotencyKey: 'k1', at: at() });
-    addStep(fx.store, { id: 's-a', runId: 'run-1', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 2, at: at() });
+    addStep(fx.store, {
+      id: 's-a',
+      runId: 'run-1',
+      stepId: 'fetch',
+      ordinal: 0,
+      permissionTier: 'observe',
+      ready: true,
+      maxAttempts: 2,
+      at: at(),
+    });
 
     const l1 = claimStep(fx.store, { owner: 'w', now: at(), leaseUntil: '2026-09-02T11:00:00.000Z' })!;
-    const afterFirst = failStep(fx.store, { id: 's-a', owner: 'w', token: l1.token, at: at(), error: { code: 'ETIMEDOUT' }, reason: 'timeout' });
+    const afterFirst = failStep(fx.store, {
+      id: 's-a',
+      owner: 'w',
+      token: l1.token,
+      at: at(),
+      error: { code: 'ETIMEDOUT' },
+      reason: 'timeout',
+    });
     assert.equal(afterFirst.state, 'ready');
 
     const l2 = claimStep(fx.store, { owner: 'w', now: at(), leaseUntil: '2026-09-02T11:00:00.000Z' })!;
     assert.equal(l2.token, 2);
-    const afterSecond = failStep(fx.store, { id: 's-a', owner: 'w', token: l2.token, at: at(), error: { code: 'ETIMEDOUT' }, reason: 'timeout again' });
+    const afterSecond = failStep(fx.store, {
+      id: 's-a',
+      owner: 'w',
+      token: l2.token,
+      at: at(),
+      error: { code: 'ETIMEDOUT' },
+      reason: 'timeout again',
+    });
     assert.equal(afterSecond.state, 'failed');
     assert.equal(afterSecond.stateReason, 'timeout again');
     assert.ok(afterSecond.finishedAt);
 
     assert.equal(claimStep(fx.store, { owner: 'w', now: at(), leaseUntil: '2026-09-02T11:00:00.000Z' }), null);
-    assert.deepEqual(listAttempts(fx.store, 's-a').map((a) => a.outcome), ['failed', 'failed']);
+    assert.deepEqual(
+      listAttempts(fx.store, 's-a').map((a) => a.outcome),
+      ['failed', 'failed'],
+    );
     assert.equal(countStepsByState(fx.store, 'run-1').failed, 1);
   } finally {
     fx.cleanup();
@@ -227,7 +317,16 @@ test('an expiry reaped inside another session’s call is recorded as the kernel
   try {
     const at = clock();
     createRun(fx.store, { ...base, id: 'run-reap', idempotencyKey: 'k-reap', at: at() });
-    addStep(fx.store, { id: 's-reap', runId: 'run-reap', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 2, at: at() });
+    addStep(fx.store, {
+      id: 's-reap',
+      runId: 'run-reap',
+      stepId: 'fetch',
+      ordinal: 0,
+      permissionTier: 'observe',
+      ready: true,
+      maxAttempts: 2,
+      at: at(),
+    });
     claimStep(fx.store, { owner: 'gone', now: '2026-09-02T10:00:00.000Z', leaseUntil: '2026-09-02T10:00:30.000Z' });
     Object.assign(fx.store.attribution, { sessionId: 'sess-caller', agent: 'caller-agent', channel: 'relay' });
     assert.equal(expireDeadLeases(fx.store, '2026-09-02T10:00:31.000Z'), 1);

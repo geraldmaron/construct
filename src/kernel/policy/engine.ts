@@ -139,14 +139,19 @@ function approvalQuestion(request: ActionRequest): string {
   const facts: string[] = [];
   if (d.destination) {
     const s = d.destinationSource;
-    const about = s ? ` (registered source ${s.id}${s.locator ? `, ${quoteHost(s.locator)}` : ''}, ${s.sensitivity}${s.declaredByAssistant ? ', declared by your assistant, not added by you' : ''})` : '';
+    const about = s
+      ? ` (registered source ${s.id}${s.locator ? `, ${quoteHost(s.locator)}` : ''}, ${s.sensitivity}${s.declaredByAssistant ? ', declared by your assistant, not added by you' : ''})`
+      : '';
     facts.push(`To ${quoteHost(d.destination)}${about}.`);
   }
   if (d.sensitivity) facts.push(`It rests on ${d.sensitivity} material.`);
-  if (d.unclassified) facts.push(`${String(d.unclassified)} ${d.unclassified === 1 ? 'citation has' : 'citations have'} no known sensitivity.`);
+  if (d.unclassified)
+    facts.push(`${String(d.unclassified)} ${d.unclassified === 1 ? 'citation has' : 'citations have'} no known sensitivity.`);
   if (d.waived?.length) facts.push(`Checks waived earlier in this run: ${capped(d.waived)}.`);
   if (d.external) facts.push('Construct cannot see where your assistant’s connector writes.');
-  facts.push(`The approval covers only ${request.targetSystem} ${quoteHost(request.targetResource!)}, only ${request.executorId}${request.runId ? ', only this run' : ''}, and expires.`);
+  facts.push(
+    `The approval covers only ${request.targetSystem} ${quoteHost(request.targetResource!)}, only ${request.executorId}${request.runId ? ', only this run' : ''}, and expires.`,
+  );
   return renderPersonPrompt({
     lead: `Approve exactly this: ${request.operation}.`,
     facts,
@@ -187,40 +192,33 @@ export function evaluateAction(store: StateStore, request: ActionRequest, contex
   if (request.tier === 'project_write') {
     if (context.interactionClass === 'remember') {
       if (context.explicitRememberRequest) return allow('explicit_request');
-      return deny(
-        attempted,
-        'an explicit request to remember or record this',
-        ['answer without recording anything'],
-        { kind: 'none', description: 'Ask the person whether they want this remembered; record it only if they say so.' },
-      );
+      return deny(attempted, 'an explicit request to remember or record this', ['answer without recording anything'], {
+        kind: 'none',
+        description: 'Ask the person whether they want this remembered; record it only if they say so.',
+      });
     }
     if (context.projectWritePolicy === 'never') {
-      return deny(
-        attempted,
-        'project policy allows no project writes (policy.projectWrite is never)',
-        SAFE_BELOW_WRITE,
-        { kind: 'project_policy', description: 'Change policy.projectWrite to managed in .construct/project.json if writes inside managed outcomes should be allowed.' },
-      );
+      return deny(attempted, 'project policy allows no project writes (policy.projectWrite is never)', SAFE_BELOW_WRITE, {
+        kind: 'project_policy',
+        description:
+          'Change policy.projectWrite to managed in .construct/project.json if writes inside managed outcomes should be allowed.',
+      });
     }
     if (context.interactionClass === 'manage' || context.interactionClass === 'maintain') {
       return allow('managed_outcome');
     }
-    return deny(
-      attempted,
-      'a managed outcome; a plain question never writes',
-      SAFE_BELOW_WRITE,
-      { kind: 'managed_outcome', description: 'Start a managed outcome for this change so the write is scoped, recorded, and verifiable.' },
-    );
+    return deny(attempted, 'a managed outcome; a plain question never writes', SAFE_BELOW_WRITE, {
+      kind: 'managed_outcome',
+      description: 'Start a managed outcome for this change so the write is scoped, recorded, and verifiable.',
+    });
   }
 
   // external_write and destructive
   if (!request.targetResource) {
-    return deny(
-      attempted,
-      `the exact ${request.targetSystem} resource this would change`,
-      SAFE_BELOW_WRITE,
-      { kind: 'name_the_target', description: 'Name the exact resource (a ticket, a repository, a path) before asking for approval.' },
-    );
+    return deny(attempted, `the exact ${request.targetSystem} resource this would change`, SAFE_BELOW_WRITE, {
+      kind: 'name_the_target',
+      description: 'Name the exact resource (a ticket, a repository, a path) before asking for approval.',
+    });
   }
   const covering = coveringGrants(store, {
     actionTier: request.tier,
@@ -231,7 +229,9 @@ export function evaluateAction(store: StateStore, request: ActionRequest, contex
     runId: request.runId,
     at: context.at,
   }).filter((g) => request.tier !== 'destructive' || g.breakGlass || g.executorId !== null);
-  const withinBudget = covering.filter((g) => g.budgetCents === null || request.budgetCents === undefined || request.budgetCents <= g.budgetCents);
+  const withinBudget = covering.filter(
+    (g) => g.budgetCents === null || request.budgetCents === undefined || request.budgetCents <= g.budgetCents,
+  );
   if (withinBudget.length > 0) {
     const grant = withinBudget[0]!;
     if (grant.breakGlass) return allow('break_glass', grant);
@@ -306,7 +306,13 @@ export function approveAction(store: StateStore, input: ApproveInput): Grant {
       kind: 'policy.approved',
       runId: request.runId ?? null,
       actor: input.by,
-      payload: { grantId: grant.id, operation: request.operation, tier: request.tier, targetSystem: request.targetSystem, targetResource: request.targetResource },
+      payload: {
+        grantId: grant.id,
+        operation: request.operation,
+        tier: request.tier,
+        targetSystem: request.targetSystem,
+        targetResource: request.targetResource,
+      },
     });
     return grant;
   });

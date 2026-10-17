@@ -3,252 +3,180 @@
   "formatVersion": 1,
   "skills": {
     "adversarial-review": {
-      "version": "0.3.1",
-      "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+      "version": "0.3.4",
+      "digest": "sha256:764687f0613171c53788dda1eb93183b4e5b0745a107c0f861e6552c15eb1c36",
       "category": "method",
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "3.1.0",
-      "digest": "sha256:29f69056715d8ead737bfbb7ee03837e3933d1d2b3c4010ea577bb82292e2e7c",
+      "version": "3.2.2",
+      "digest": "sha256:80ae19ee796f67cbf4712052d0dd295e3390688b38d4e25ac0c954a7cd8cd605",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
-      "version": "0.4.1",
-      "digest": "sha256:7efedf491f1328df2d9c14f75293dd755f5b7c58234e2f3d5be4b1c57d96759f",
+      "version": "0.4.4",
+      "digest": "sha256:9c61f59a1eeefc7075a0dde1bba0f221ba5d4bf48a8a54a1c2ccaadcf7104a3f",
       "category": "method",
       "title": "Context mapping"
     },
     "decision-framing": {
-      "version": "0.3.1",
-      "digest": "sha256:61daccfdd108504898557f85348ab4623f8419ea79076528e169bdcfbc4ad593",
+      "version": "0.3.4",
+      "digest": "sha256:d45805f94783888051910a44a485d9f39428e6abf2ba3fd2a32505f98678456c",
       "category": "method",
       "title": "Decision framing"
     },
     "experience-design": {
-      "version": "1.0.1",
-      "digest": "sha256:45d589440a87309faf5fc1feea401d025751cc5ee105077429cdd0bb1dfe043c",
+      "version": "1.0.4",
+      "digest": "sha256:3a46605789ba6dd958ce3db986d15ad7dd286c4a0ee6c524774b3b59af17fd24",
       "category": "professional",
       "title": "Experience design"
     },
     "governance-risk": {
-      "version": "1.0.2",
-      "digest": "sha256:8388bdc43386f9749f0d6599478db04cda9cdba0d5c3ec4211f8f974823e68ea",
+      "version": "1.0.5",
+      "digest": "sha256:2b793776b43fe483443acbe35f2360ee866238646809afb2c8188f08540660a8",
       "category": "professional",
       "title": "Governance and risk"
     },
     "intake": {
-      "version": "0.3.0",
-      "digest": "sha256:0c5763c6e98e8605bfa63d1dcbef645ed251329b8f38f01072f409259f6992e2",
+      "version": "0.3.4",
+      "digest": "sha256:7a9e24d65d83787f929eb95cc5dab3c24068e969cd1ea6e7b2864747bb45e149",
       "category": "method",
       "title": "Intake"
     },
     "investigative-research": {
-      "version": "0.3.3",
-      "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+      "version": "0.3.6",
+      "digest": "sha256:5a723488fcf0692f8122f1adb12b4f6dd6348d287f2db57a8b47fdf1c771ac8a",
       "category": "method",
       "title": "Investigative research"
     },
     "operations-reliability": {
-      "version": "1.0.1",
-      "digest": "sha256:3d49f56a15d153ee03fc9827823ec8bb7305d5eb51c92fe908b68d29ec987e94",
+      "version": "1.0.4",
+      "digest": "sha256:9c407bf356bc15d36295ba842e16fa9f7f828ea848287f63109522c4b016013d",
       "category": "professional",
       "title": "Operations and reliability"
     },
     "product-management": {
-      "version": "1.0.2",
-      "digest": "sha256:5f82b17659285d7111e2b92d23d849b5208144785ac4784195ee7895b9dbce68",
+      "version": "1.0.5",
+      "digest": "sha256:ed08672abd52363d316670c0a8a7c044a84639c936e6e38b99e86a6acdffeb70",
       "category": "professional",
       "title": "Product management"
     },
     "program-delivery": {
-      "version": "1.0.1",
-      "digest": "sha256:f74f69699592d695a78b9900e3e00f5418952cad1d1eaf13a7ff27c4408e7464",
+      "version": "1.0.4",
+      "digest": "sha256:58ede61d9f7704be0afaba79d1abb276b9cc336eb5c1df0def491b05d1d8ff4e",
       "category": "professional",
       "title": "Program delivery"
     },
     "requirements-structuring": {
-      "version": "0.5.1",
-      "digest": "sha256:50ea1e66611967ad67973500fb0bd9307e8f673308e187fbc90f09a32f855c71",
+      "version": "0.5.4",
+      "digest": "sha256:a2626eb314f616f3a748b3e9e6256e832dbdb3514018f3a271146b25efa74609",
       "category": "method",
       "title": "Requirements structuring"
     },
     "security-privacy": {
-      "version": "1.0.1",
-      "digest": "sha256:8731d1bdbc046eff94a2ba1aedcecaa503353aa687b597941b00e9313b1c7714",
+      "version": "1.0.4",
+      "digest": "sha256:60fd4afa0af550549f06072b9a3efca806b9314fd405e06e0d95e4def00a2681",
       "category": "professional",
       "title": "Security and privacy"
     },
     "software-engineering": {
-      "version": "1.0.1",
-      "digest": "sha256:e34bdfb5178e59311f1ae5ad718ce47701821256bbefc564c27243f3a5d9038b",
+      "version": "1.0.4",
+      "digest": "sha256:2167ff133d5f99ba50d404d5d78d3064f7e93bb88ae448a3a67264d769fefe17",
       "category": "professional",
       "title": "Software engineering"
     },
     "strategy-research": {
-      "version": "1.0.1",
-      "digest": "sha256:79e8d18b1657a94381778c991d1a802ced26acd4d8e190cf78686c5dd2b52498",
+      "version": "1.0.4",
+      "digest": "sha256:07724d68b4d19d30ce8a8be2052e23b44d8459a4469d2e482a4bf269ae02a567",
       "category": "professional",
       "title": "Strategy and research"
     },
     "system-architecture": {
-      "version": "1.0.1",
-      "digest": "sha256:de2c72905ba77b47c1005298f2fa98addd0c54d757c51fa2328074925305b5e3",
+      "version": "1.0.4",
+      "digest": "sha256:a4775788a67d696bfe4e2dfa49fbbd624d58fb9c1f3165cf358ac7253f99858e",
       "category": "professional",
       "title": "System architecture"
     },
     "written-voice": {
-      "version": "0.5.0",
-      "digest": "sha256:73cc3d00a5f38796b109c82c3bbbac9e2f5c2ea35f362c476b920deb3f744347",
+      "version": "0.5.3",
+      "digest": "sha256:551cf4e5df46f1ab3f32a4f03448b317c76cf3520cdc634a39b12a303d6d4b53",
       "category": "method",
       "title": "Written voice"
     }
   },
   "workflows": {
     "adversarial-deliverable-review": {
-      "version": "1.0.0",
-      "digest": "sha256:29c282c876be7c652c576db28d7888139b5773a67ff9d8fcfe051a86bf444e20",
+      "version": "1.0.2",
+      "digest": "sha256:c92af147b5da34d42e6da4c91786d8999a24484d983107854eb9eb0a1dee6ce9",
       "title": "Adversarial deliverable review",
       "interactionClass": "manage"
     },
-    "architecture-decision-review": {
-      "version": "1.1.0",
-      "digest": "sha256:0b9131d7968a93f5526394eb0017babf984a624abe3ae8b5f94e4f9b0a173998",
-      "title": "Architecture decision review",
+    "authoring": {
+      "version": "2.0.0",
+      "digest": "sha256:39348dff7957729d84d2815aa9dee623e820012da992eccd1198711b76b9ef02",
+      "title": "Author a deliverable",
       "interactionClass": "manage"
     },
     "decision-support": {
-      "version": "1.0.0",
-      "digest": "sha256:d6c35672a6cea3c81ae1d8e1cf18ac958b59d31d9d72dbca9531c1de7f4459cf",
+      "version": "1.0.2",
+      "digest": "sha256:cfe1f347f4b60d1ad3565ef5c4be4781115fd37e901902f40f9f12a86a469139",
       "title": "Frame an evidence-backed decision",
       "interactionClass": "manage"
     },
-    "delivery-plan-review": {
-      "version": "1.0.1",
-      "digest": "sha256:9eb87dbc10d5470a22abe4c30ee211087c8e6958a59c64bfcd38d1a2a1eb3d97",
-      "title": "Delivery plan review",
-      "interactionClass": "manage"
-    },
     "design-conformance": {
-      "version": "2.0.1",
-      "digest": "sha256:2cdc264bed50c21b2d912e70c5a8f988f2fb3ebd786d2b83460f789d71b2e6c3",
+      "version": "2.0.3",
+      "digest": "sha256:1cd54a6e733d04c943c95876583d610af74a93e5a550037a8490184f2b29bc9f",
       "title": "Design-principle conformance review",
       "interactionClass": "manage"
     },
-    "experience-review": {
-      "version": "1.0.1",
-      "digest": "sha256:bc03066b92e1d8213e7ec56837e52588043bf7be0a52311e4f53865fbfbfdf4a",
-      "title": "Experience review",
-      "interactionClass": "manage"
-    },
-    "governance-issue-spotting": {
-      "version": "1.0.1",
-      "digest": "sha256:9374b6a2662b05ed37c22209b3d61e6285b664f1975ea5d7b6eb864642f7cf93",
-      "title": "Governance issue spotting",
-      "interactionClass": "manage"
-    },
     "guided-outcome": {
-      "version": "1.0.0",
-      "digest": "sha256:262736a922bb234b4155c89d40ad4a0475279c3119eb89e454fc34b62917fece",
+      "version": "1.0.2",
+      "digest": "sha256:649393426d96116b9547e5980cfb93417e30fc8cd02ddabb1b5f9e9bd946a7e3",
       "title": "Produce a grounded outcome",
       "interactionClass": "manage"
     },
-    "implementation-review": {
-      "version": "1.0.1",
-      "digest": "sha256:eee33efae696827b642864b0f2cd4c9e42233d6c8624138264c76de23b8f96ef",
-      "title": "Implementation review",
-      "interactionClass": "manage"
-    },
     "managed-outcome": {
-      "version": "2.1.1",
-      "digest": "sha256:107e7302e70982a3796ebeb41c3b90250c4f523910988fa4bafb7460177ae9b9",
+      "version": "2.1.3",
+      "digest": "sha256:864e85b42c341489a9c65a916a480f2c3078f48f7bb5e06ce94fbea7408e1d10",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },
-    "operational-readiness-review": {
-      "version": "1.0.1",
-      "digest": "sha256:48c8d51dfe7aab353a47bb9e89fe453603b459c89cfb30c90b50626911946e2b",
-      "title": "Operational readiness review",
-      "interactionClass": "manage"
-    },
-    "prd-authoring": {
-      "version": "1.1.1",
-      "digest": "sha256:e5b2847505e5b5b362f9410aac4d7223fe36cdbf90dbeba06f3292b1709c3187",
-      "title": "Write a PRD",
-      "interactionClass": "manage"
-    },
-    "product-requirements-review": {
-      "version": "1.0.1",
-      "digest": "sha256:49c8f2db64c109bded7efcfa3bcede29ae9723b635cc66a4561236dd13225eab",
-      "title": "Product requirements review",
-      "interactionClass": "manage"
-    },
     "project-bootstrap": {
-      "version": "1.0.1",
-      "digest": "sha256:f7bcfcdfe8166055a1647cb64fd1b546adcd01e50f6ac080efd8d34715b75472",
+      "version": "1.0.4",
+      "digest": "sha256:117673cb70ce13a5fae42ba19c1555868d59f9f590ee1dc18dd50348aa603d8b",
       "title": "Project bootstrap and constitution review",
       "interactionClass": "manage"
     },
-    "proposal-authoring": {
-      "version": "1.1.1",
-      "digest": "sha256:35b2f81bb1cae7fa90c317077462be0896fb9bebbfb791abe52a0f82bb3fc4e5",
-      "title": "Write a proposal",
-      "interactionClass": "manage"
-    },
     "publish-deliverable": {
-      "version": "1.0.0",
-      "digest": "sha256:b3354daef0b46ff47cf0c73834ccc128b76798f3cb074477739b3117d88cbbbc",
+      "version": "1.0.2",
+      "digest": "sha256:e88c139bcbe9ee0b7c5a5dd3be26cb81faa08a9756fb2f47f79b66ec13445264",
       "title": "Publish a deliverable",
       "interactionClass": "manage"
     },
-    "remember": {
-      "version": "1.0.0",
-      "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
-      "title": "Remember one thing",
-      "interactionClass": "remember"
-    },
-    "research-brief": {
-      "version": "1.3.0",
-      "digest": "sha256:8b05832f5faab645841113e3dcc3cbfc71980a53e1626deba2e3c91bd944c5ad",
-      "title": "Research a question",
+    "review": {
+      "version": "2.0.0",
+      "digest": "sha256:d700d32946ac2669c2bc45ba13fa84ceb77d2e93160579b76f7baa9cc35e3f3f",
+      "title": "Review a domain",
       "interactionClass": "manage"
     },
     "revise-deliverable": {
-      "version": "1.0.1",
-      "digest": "sha256:c13d0185f37eb5f60ed1722e9ffeab1a9f65302279075609f08c0e99be941d78",
+      "version": "1.0.3",
+      "digest": "sha256:67e7ae4de94082a8e204fd6b27e70f0ec2c3f2281b1a506b1b76c9fb1098ffb8",
       "title": "Revise a deliverable",
       "interactionClass": "manage"
     },
-    "rfc-authoring": {
-      "version": "1.1.1",
-      "digest": "sha256:0faff07df6e7c27decc8ca528cd46884edc18a6c521b3f81b63027edd03224ac",
-      "title": "Write an RFC",
-      "interactionClass": "manage"
-    },
-    "security-privacy-review": {
-      "version": "1.0.1",
-      "digest": "sha256:98f3cb2fd515aad2ae0f0d01747ea5221b19c7acbb7339e3044a534b2e1085c6",
-      "title": "Security and privacy review",
-      "interactionClass": "manage"
-    },
     "source-drift-review": {
-      "version": "1.0.1",
-      "digest": "sha256:f0c62aa5602ab9c6a0e5008df5d19cabde3958b0e1523c65fb9d022d801c20e6",
+      "version": "1.0.3",
+      "digest": "sha256:50c26ae60d4763dd1f06cf2b526476f86ba26e317ff299dabf28ac868bd2d029",
       "title": "Source freshness and drift review",
       "interactionClass": "maintain"
     },
     "standing-review": {
-      "version": "1.0.0",
-      "digest": "sha256:2bcf938fc423f942a258c7221d4d961abffb155211d285d754b7c037044bbffb",
+      "version": "1.0.2",
+      "digest": "sha256:99effc29656ecfe787cf427d3a9a74c2302a4d14274f7d139472cfa4265bf34c",
       "title": "Standing review",
       "interactionClass": "maintain"
-    },
-    "strategy-execution-review": {
-      "version": "1.0.1",
-      "digest": "sha256:17bb2b211233d8ceee6ee63641dd589cf9edac04c91adc35ef900d8112f3b4ff",
-      "title": "Strategy-to-execution and capacity review",
-      "interactionClass": "manage"
     }
   }
 }

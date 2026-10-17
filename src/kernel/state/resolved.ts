@@ -21,12 +21,7 @@ export interface ResolvedBundle {
 
 type Table = 'resolved_skills' | 'resolved_workflows';
 
-function record(
-  store: StateStore,
-  table: Table,
-  idColumn: 'skill_id' | 'workflow_id',
-  input: ResolvedBundle,
-): void {
+function record(store: StateStore, table: Table, idColumn: 'skill_id' | 'workflow_id', input: ResolvedBundle): void {
   requireNonEmpty(input.id, `${table}.id`);
   requireNonEmpty(input.version, `${table}.version`);
   requireNonEmpty(input.digest, `${table}.digest`);

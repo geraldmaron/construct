@@ -7,26 +7,9 @@
 
 import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
-import {
-  assertTransition,
-  isTerminal,
-  parseJson,
-  requireInstant,
-  requireNonEmpty,
-  requireOneOf,
-  toJson,
-} from './rows.ts';
+import { assertTransition, isTerminal, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from './rows.ts';
 
-export const RUN_STATES = [
-  'preflight',
-  'blocked',
-  'ready',
-  'running',
-  'waiting_for_decision',
-  'succeeded',
-  'failed',
-  'cancelled',
-] as const;
+export const RUN_STATES = ['preflight', 'blocked', 'ready', 'running', 'waiting_for_decision', 'succeeded', 'failed', 'cancelled'] as const;
 export type RunState = (typeof RUN_STATES)[number];
 
 export const RUN_TRANSITIONS: Readonly<Record<RunState, readonly RunState[]>> = {
@@ -149,10 +132,7 @@ export interface CreateRunInput {
  * Create a run in `preflight`, or return the existing run for the same
  * idempotency key. `created` tells the caller which happened.
  */
-export function createRun(
-  store: StateStore,
-  input: CreateRunInput,
-): { readonly run: WorkflowRun; readonly created: boolean } {
+export function createRun(store: StateStore, input: CreateRunInput): { readonly run: WorkflowRun; readonly created: boolean } {
   requireNonEmpty(input.id, 'run.id');
   requireNonEmpty(input.workflowId, 'run.workflowId');
   requireNonEmpty(input.workflowVersion, 'run.workflowVersion');
@@ -209,9 +189,7 @@ export function getRun(store: StateStore, id: string): WorkflowRun | null {
 }
 
 export function getRunByKey(store: StateStore, idempotencyKey: string): WorkflowRun | null {
-  const row = store.db
-    .prepare('SELECT * FROM workflow_runs WHERE idempotency_key = ?')
-    .get(idempotencyKey) as Row | undefined;
+  const row = store.db.prepare('SELECT * FROM workflow_runs WHERE idempotency_key = ?').get(idempotencyKey) as Row | undefined;
   return row ? toRun(row) : null;
 }
 
@@ -226,13 +204,7 @@ export function listRuns(
         WHERE (? IS NULL OR state = ?) AND (? IS NULL OR workflow_id = ?)
         ORDER BY created_at DESC, id LIMIT ?`,
     )
-    .all(
-      filter.state ?? null,
-      filter.state ?? null,
-      filter.workflowId ?? null,
-      filter.workflowId ?? null,
-      limit,
-    ) as unknown as Row[];
+    .all(filter.state ?? null, filter.state ?? null, filter.workflowId ?? null, filter.workflowId ?? null, limit) as unknown as Row[];
   return rows.map(toRun);
 }
 
@@ -273,14 +245,7 @@ export function transitionRun(
                 preflight_json = COALESCE(?, preflight_json)
           WHERE id = ?`,
       )
-      .run(
-        input.to,
-        input.reason ?? null,
-        input.at,
-        finished,
-        input.preflight === undefined ? null : toJson(input.preflight),
-        input.id,
-      );
+      .run(input.to, input.reason ?? null, input.at, finished, input.preflight === undefined ? null : toJson(input.preflight), input.id);
     appendActivity(store, {
       at: input.at,
       kind: 'run.transition',
@@ -308,4 +273,3 @@ export function findActiveByWorkIdentity(
   const includeBlocked = opts.includeBlocked ?? true;
   return listActiveRuns(store).find((r) => r.workIdentity === workIdentity && (includeBlocked || r.state !== 'blocked')) ?? null;
 }
-

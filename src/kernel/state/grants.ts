@@ -14,10 +14,7 @@ import { boolFrom, requireInstant, requireNonEmpty, requireOneOf } from './rows.
 import { ACTION_TIERS, type ActionTier } from './steps.ts';
 
 /** Tiers a grant can carry. Licensed judgment is never grantable. */
-export const GRANTABLE_TIERS = ACTION_TIERS.filter((t) => t !== 'licensed_judgment') as readonly Exclude<
-  ActionTier,
-  'licensed_judgment'
->[];
+export const GRANTABLE_TIERS = ACTION_TIERS.filter((t) => t !== 'licensed_judgment') as readonly Exclude<ActionTier, 'licensed_judgment'>[];
 export type GrantableTier = (typeof GRANTABLE_TIERS)[number];
 
 export const MAX_BREAK_GLASS_TTL_MS = 4 * 3_600_000;
@@ -250,10 +247,7 @@ export function coveringGrants(store: StateStore, query: GrantQuery): Grant[] {
   return rows.map(toGrant);
 }
 
-export function listGrants(
-  store: StateStore,
-  filter: { readonly activeAt?: string } = {},
-): Grant[] {
+export function listGrants(store: StateStore, filter: { readonly activeAt?: string } = {}): Grant[] {
   const rows =
     filter.activeAt === undefined
       ? (store.db.prepare('SELECT * FROM grants ORDER BY created_at, id').all() as unknown as Row[])

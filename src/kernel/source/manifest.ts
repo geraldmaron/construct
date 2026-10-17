@@ -49,11 +49,22 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
     return {
       ref: i.externalRef,
       kind: i.kind,
-      ...(i.attributes?.schema && typeof i.attributes.schema === 'object' ? { schema: i.attributes.schema as Record<string, unknown> } : {}),
+      ...(i.attributes?.schema && typeof i.attributes.schema === 'object'
+        ? { schema: i.attributes.schema as Record<string, unknown> }
+        : {}),
       fingerprint: typeof fp === 'string' ? fp : '',
       ...(typeof text === 'string' ? { text } : {}),
       ...(typeof by === 'string' ? { supersededBy: by } : {}),
-      ...(i.attributes && ('size' in i.attributes || 'supersedes' in i.attributes) ? { attributes: { size: i.attributes.size, mtimeMs: i.attributes.mtimeMs, supersedes: i.attributes.supersedes, declaredSupersededBy: i.attributes.declaredSupersededBy } } : {}),
+      ...(i.attributes && ('size' in i.attributes || 'supersedes' in i.attributes)
+        ? {
+            attributes: {
+              size: i.attributes.size,
+              mtimeMs: i.attributes.mtimeMs,
+              supersedes: i.attributes.supersedes,
+              declaredSupersededBy: i.attributes.declaredSupersededBy,
+            },
+          }
+        : {}),
       ...(typeof i.attributes?.updatedAt === 'string' ? { updatedAt: i.attributes.updatedAt } : {}),
       ...(i.attributes?.weak === true ? { weak: true } : {}),
       ...(typeof i.attributes?.url === 'string' ? { url: i.attributes.url } : {}),
@@ -74,15 +85,26 @@ export function snapshotItemRef(snapshotId: string, itemRef: string): string {
   return `snapshot:${encodeURIComponent(snapshotId)}:${encodeURIComponent(itemRef)}`;
 }
 
-export function snapshotManifestRecord(store: StateStore, snapshotId: string): (CurrentManifest & { sourceId: string; digest: string; takenAt: string }) | null {
-  const row = store.db.prepare(`SELECT s.source_id, s.digest, s.taken_at, o.evidence_json
+export function snapshotManifestRecord(
+  store: StateStore,
+  snapshotId: string,
+): (CurrentManifest & { sourceId: string; digest: string; takenAt: string }) | null {
+  const row = store.db
+    .prepare(`SELECT s.source_id, s.digest, s.taken_at, o.evidence_json
     FROM source_snapshots s JOIN observations o ON o.source_id = s.source_id
     AND o.kind = 'source.changed' AND json_extract(o.evidence_json, '$.digest') = s.digest
     WHERE s.id = ? AND json_type(o.evidence_json, '$.manifest') = 'array'
-    ORDER BY o.rowid ASC LIMIT 1`).get(snapshotId) as { source_id: string; digest: string; taken_at: string; evidence_json: string } | undefined;
+    ORDER BY o.rowid ASC LIMIT 1`)
+    .get(snapshotId) as { source_id: string; digest: string; taken_at: string; evidence_json: string } | undefined;
   if (!row) return null;
   const ev = JSON.parse(row.evidence_json) as { manifest: ManifestEntry[]; evidence?: string };
-  return { entries: ev.manifest, provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', sourceId: row.source_id, digest: row.digest, takenAt: row.taken_at };
+  return {
+    entries: ev.manifest,
+    provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed',
+    sourceId: row.source_id,
+    digest: row.digest,
+    takenAt: row.taken_at,
+  };
 }
 
 /** The manifest recorded at the source's most recent change, with how it was obtained, or null when none was recorded. */
@@ -114,6 +136,10 @@ export function diffManifests(before: readonly ManifestEntry[] | null, after: re
 
 export function describeChanges(c: ItemChanges, cap = 8): string {
   const part = (label: string, refs: readonly string[]) =>
-    refs.length === 0 ? null : `${label} ${refs.slice(0, cap).join(', ')}${refs.length > cap ? ` (+${String(refs.length - cap)} more)` : ''}`;
-  return [part('added', c.added), part('modified', c.modified), part('removed', c.removed)].filter(Boolean).join('; ') || 'no item-level change';
+    refs.length === 0
+      ? null
+      : `${label} ${refs.slice(0, cap).join(', ')}${refs.length > cap ? ` (+${String(refs.length - cap)} more)` : ''}`;
+  return (
+    [part('added', c.added), part('modified', c.modified), part('removed', c.removed)].filter(Boolean).join('; ') || 'no item-level change'
+  );
 }

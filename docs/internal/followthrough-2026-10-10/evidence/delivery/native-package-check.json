@@ -1,7 +1,0 @@
-{
-  "packageSha256": "db4a67bded812638a476f3196c38a4e63587e9267978be7b17cedee955b0a14b",
-  "regularFilesChecked": 502,
-  "mismatches": [],
-  "passed": true,
-  "scope": "Every regular archive member compared byte-for-byte with fresh-codex-delivery-one installed package. This proves package identity, not native behavior."
-}

@@ -3,69 +3,15 @@
   "formatVersion": 1,
   "id": "construct",
   "title": "Construct operating skill",
-  "version": "3.1.0",
+  "version": "3.2.2",
   "category": "operational",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "remember that we decided",
-    "note this down for later",
-    "what did we decide about",
-    "kick off the review for",
-    "start the release readiness check",
-    "every Monday compare the roadmap to the board",
-    "keep this reviewed on a schedule",
-    "Construct is bound to this project and the person is talking in their agent session",
-    "remember that",
-    "record this, note this, keep in mind",
-    "review this against our principles, do this piece of work and hand it back",
-    "every month, every January, keep this reviewed on a schedule, start the review",
-    "can you put together a diagram or a brief from our sources",
-    "could you check this against our principles",
-    "I need a write-up of what changed last quarter"
-  ],
-  "standDown": [
-    "a plain question about how something works, explain, what does this function do",
-    "thanks",
-    "that is all, nothing more, no work or memory was asked for"
-  ],
-  "interactionClasses": [
-    "answer",
-    "remember",
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "the four interaction classes handled in the host: answer, remember, manage, maintain"
-  ],
-  "deliverableTypes": [],
-  "inputs": [
-    "what the person says, in their words"
-  ],
-  "outputSchemas": [],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context",
     "write_project_context",
     "ask_user"
   ],
-  "actionTiers": [
-    "observe",
-    "draft",
-    "project_write"
-  ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [],
-  "escalation": [
-    "every decision, approval, and clarification is surfaced to the person in conversation and relayed with decide; none is answered by the session on its own"
-  ],
-  "licensedReviewBoundaries": [
-    "legal, medical, regulated, or fiduciary sign-off is prepared for a qualified person, never given"
-  ],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json",
-    "evals/behavior.json"
-  ]
+  "maxTier": "project_write",
+  "requiredValidators": [],
+  "skillDependencies": []
 }

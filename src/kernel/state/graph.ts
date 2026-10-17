@@ -8,15 +8,7 @@
  */
 
 import type { StateStore } from './open.ts';
-import {
-  assertTransition,
-  parseJson,
-  requireInstant,
-  requireNonEmpty,
-  requireOneOf,
-  requireUnitInterval,
-  toJson,
-} from './rows.ts';
+import { assertTransition, parseJson, requireInstant, requireNonEmpty, requireOneOf, requireUnitInterval, toJson } from './rows.ts';
 import { AUTHORITY_LEVELS, SENSITIVITIES, type AuthorityLevel, type Sensitivity } from './sources.ts';
 
 export const ENTITY_KINDS = [
@@ -105,20 +97,14 @@ export function addEntity(
 }
 
 export function getEntity(store: StateStore, id: string): Entity | null {
-  const row = store.db.prepare('SELECT * FROM entities WHERE id = ?').get(id) as
-    | EntityRow
-    | undefined;
+  const row = store.db.prepare('SELECT * FROM entities WHERE id = ?').get(id) as EntityRow | undefined;
   return row ? toEntity(row) : null;
 }
 
-export function findEntityByRef(
-  store: StateStore,
-  kind: EntityKind,
-  externalRef: string,
-): Entity | null {
-  const row = store.db
-    .prepare('SELECT * FROM entities WHERE kind = ? AND external_ref = ?')
-    .get(kind, externalRef) as EntityRow | undefined;
+export function findEntityByRef(store: StateStore, kind: EntityKind, externalRef: string): Entity | null {
+  const row = store.db.prepare('SELECT * FROM entities WHERE kind = ? AND external_ref = ?').get(kind, externalRef) as
+    | EntityRow
+    | undefined;
   return row ? toEntity(row) : null;
 }
 
@@ -133,27 +119,14 @@ export function listEntities(
         WHERE (? IS NULL OR kind = ?) AND (? IS NULL OR status = ?)
         ORDER BY created_at, id LIMIT ?`,
     )
-    .all(
-      filter.kind ?? null,
-      filter.kind ?? null,
-      filter.status ?? null,
-      filter.status ?? null,
-      limit,
-    ) as unknown as EntityRow[];
+    .all(filter.kind ?? null, filter.kind ?? null, filter.status ?? null, filter.status ?? null, limit) as unknown as EntityRow[];
   return rows.map(toEntity);
 }
 
-export function setEntityStatus(
-  store: StateStore,
-  id: string,
-  status: EntityStatus,
-  at: string,
-): Entity {
+export function setEntityStatus(store: StateStore, id: string, status: EntityStatus, at: string): Entity {
   requireOneOf(status, ENTITY_STATUSES, 'entity.status');
   requireInstant(at, 'entity.at');
-  const result = store.db
-    .prepare('UPDATE entities SET status = ?, updated_at = ? WHERE id = ?')
-    .run(status, at, id);
+  const result = store.db.prepare('UPDATE entities SET status = ?, updated_at = ? WHERE id = ?').run(status, at, id);
   if (result.changes === 0) throw new Error(`no entity ${id}`);
   return getEntity(store, id)!;
 }
@@ -191,16 +164,7 @@ const WORK: readonly EntityKind[] = [
   'metric',
   'decision',
 ];
-const OWNABLE: readonly EntityKind[] = [
-  'artifact',
-  'system',
-  'initiative',
-  'requirement',
-  'work_item',
-  'code_component',
-  'test',
-  'metric',
-];
+const OWNABLE: readonly EntityKind[] = ['artifact', 'system', 'initiative', 'requirement', 'work_item', 'code_component', 'test', 'metric'];
 
 /** Which entity kinds each relation may connect. Anything else is nonsense. */
 export const RELATION_ENDPOINTS: Readonly<
@@ -286,11 +250,7 @@ export class InvalidRelationError extends Error {
   }
 }
 
-export function validateRelationEndpoints(
-  kind: RelationKind,
-  from: Entity,
-  to: Entity,
-): void {
+export function validateRelationEndpoints(kind: RelationKind, from: Entity, to: Entity): void {
   if (from.id === to.id) {
     throw new InvalidRelationError(`an entity cannot ${kind} itself (${from.id})`);
   }
@@ -338,9 +298,7 @@ export function addRelation(
     validateRelationEndpoints(input.kind, from, to);
     const inferred = input.basis === 'observed' || input.basis === 'inferred';
     if (input.confirmed && inferred) {
-      throw new InvalidRelationError(
-        `an ${input.basis} ${input.kind} relation is proposed, not confirmed; confirm it separately`,
-      );
+      throw new InvalidRelationError(`an ${input.basis} ${input.kind} relation is proposed, not confirmed; confirm it separately`);
     }
     if (input.confirmed && CONFIRMATION_REQUIRED_RELATIONS.includes(input.kind) && input.sourceId !== undefined) {
       throw new InvalidRelationError(
@@ -368,11 +326,7 @@ export function addRelation(
   });
 }
 
-export function setRelationStatus(
-  store: StateStore,
-  id: string,
-  status: RelationStatus,
-): Relation {
+export function setRelationStatus(store: StateStore, id: string, status: RelationStatus): Relation {
   requireOneOf(status, RELATION_STATUSES, 'relation.status');
   const result = store.db.prepare('UPDATE relations SET status = ? WHERE id = ?').run(status, id);
   if (result.changes === 0) throw new Error(`no relation ${id}`);
@@ -530,8 +484,7 @@ export function addClaim(
   requireInstant(input.observedAt, 'claim.observedAt');
   requireInstant(input.at, 'claim.at');
   if (input.freshUntil !== undefined) requireInstant(input.freshUntil, 'claim.freshUntil');
-  const status: ClaimStatus =
-    input.provenance === 'user' ? 'confirmed' : input.provenance === 'source' ? 'observed' : 'inferred';
+  const status: ClaimStatus = input.provenance === 'user' ? 'confirmed' : input.provenance === 'source' ? 'observed' : 'inferred';
   const row = store.db
     .prepare(
       `INSERT INTO claims
@@ -604,17 +557,12 @@ export function confirmClaim(store: StateStore, id: string, at: string): Claim {
     const current = getClaim(store, id);
     if (!current) throw new Error(`no claim ${id}`);
     assertTransition(CLAIM_TRANSITIONS, `claim ${id}`, current.status, 'confirmed');
-    store.db
-      .prepare(`UPDATE claims SET status = 'confirmed', updated_at = ? WHERE id = ?`)
-      .run(at, id);
+    store.db.prepare(`UPDATE claims SET status = 'confirmed', updated_at = ? WHERE id = ?`).run(at, id);
     return getClaim(store, id)!;
   });
 }
 
-export function supersedeClaim(
-  store: StateStore,
-  input: { readonly id: string; readonly by: string; readonly at: string },
-): Claim {
+export function supersedeClaim(store: StateStore, input: { readonly id: string; readonly by: string; readonly at: string }): Claim {
   requireInstant(input.at, 'claim.at');
   return store.transaction(() => {
     const current = getClaim(store, input.id);

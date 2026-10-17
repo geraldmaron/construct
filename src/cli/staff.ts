@@ -16,9 +16,35 @@ const assignmentFlags = [
 export const STAFF_SPECS: readonly CommandSpec[] = [
   { path: ['staff', 'list'], gloss: 'every staff member and what they hold', group, positionals: [], flags: [], readOnly: true },
   { path: ['staff', 'show'], gloss: 'one staff member', group, positionals: ['<id>'], flags: [], readOnly: true },
-  { path: ['staff', 'add'], gloss: 'add a staff member with a title, a mission, and assignments', group, positionals: ['<id>'], flags: [{ name: 'name', gloss: 'their name', takesValue: true }, { name: 'title', gloss: 'their title', takesValue: true }, { name: 'mission', gloss: 'what they are for, in a sentence', takesValue: true }, ...assignmentFlags], readOnly: false },
-  { path: ['staff', 'update'], gloss: 'replace a member’s capability and skill assignments', group, positionals: ['<id>'], flags: [...assignmentFlags], readOnly: false },
-  { path: ['staff', 'pause'], gloss: 'pause a member; nothing is assigned to them until resumed', group, positionals: ['<id>'], flags: [{ name: 'resume', gloss: 'make them active again', takesValue: false }], readOnly: false },
+  {
+    path: ['staff', 'add'],
+    gloss: 'add a staff member with a title, a mission, and assignments',
+    group,
+    positionals: ['<id>'],
+    flags: [
+      { name: 'name', gloss: 'their name', takesValue: true },
+      { name: 'title', gloss: 'their title', takesValue: true },
+      { name: 'mission', gloss: 'what they are for, in a sentence', takesValue: true },
+      ...assignmentFlags,
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['staff', 'update'],
+    gloss: 'replace a member’s capability and skill assignments',
+    group,
+    positionals: ['<id>'],
+    flags: [...assignmentFlags],
+    readOnly: false,
+  },
+  {
+    path: ['staff', 'pause'],
+    gloss: 'pause a member; nothing is assigned to them until resumed',
+    group,
+    positionals: ['<id>'],
+    flags: [{ name: 'resume', gloss: 'make them active again', takesValue: false }],
+    readOnly: false,
+  },
   { path: ['staff', 'retire'], gloss: 'retire a member; their history stays', group, positionals: ['<id>'], flags: [], readOnly: false },
 ];
 
@@ -51,8 +77,17 @@ export function staffCommand(sub: string, args: ParsedArgs, ctx: CliContext = cr
         const title = stringFlag(args, 'title');
         const mission = stringFlag(args, 'mission');
         if (!name || !title || !mission) throw new UsageError('--name, --title, and --mission are all needed');
-        if (getStaffMember(store, id)) throw new OperationError(`staff member ${id} already exists`, '`construct staff update` changes assignments.');
-        const m = createStaffMember(store, { id, name, title, mission, capabilities: listFlag(args, 'capability'), skillIds: listFlag(args, 'skill'), at });
+        if (getStaffMember(store, id))
+          throw new OperationError(`staff member ${id} already exists`, '`construct staff update` changes assignments.');
+        const m = createStaffMember(store, {
+          id,
+          name,
+          title,
+          mission,
+          capabilities: listFlag(args, 'capability'),
+          skillIds: listFlag(args, 'skill'),
+          at,
+        });
         if (args.json) writeJson(m);
         else show(m);
         return 0;

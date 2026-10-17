@@ -1,4 +1,4 @@
-# Authoring and qualifying skills and workflows
+# Authoring and evaluating skills and workflows
 
 [Documentation index](README.md) · [Project README](../README.md)
 
@@ -6,14 +6,20 @@
 
 A skill is a directory: `SKILL.md` (Agent Skills frontmatter and body),
 `construct.skill.json`, and optional `references/`, `assets/`, `scripts/`,
-`schemas/`, and `evals/`. The manifest declares id, title, semantic version,
-category, owner, activation and stand-down phrases, interaction classes,
-outcomes and deliverable types, inputs and output schemas, required source
-types and minimum evidence, capabilities (never tools), action tiers,
-versioned skill and workflow dependencies, quality gates, escalation,
-licensed-review boundaries, observations (which may not claim success
-without naming a run), and eval files. Name and version must agree with the
-frontmatter.
+`schemas/`, and `evals/`. The manifest carries only what something
+enforces: id, title, semantic version, category, owner, the capabilities a
+host must provide (never tools), `maxTier` (the highest action tier a step
+may apply the skill at), `requiredValidators` (validators the deliverable
+must pass wherever the skill is bound), and versioned skill dependencies.
+The resolver refuses a step above `maxTier`, a workflow whose
+steps name none of a required validator, a missing capability, and a
+missing or incompatible dependency; and the registry lock pins the version.
+Any other key is refused: what the method
+produces, its inputs, its evidence bar, and its limits and escalations are
+the `SKILL.md` body's to say. Name and version must agree with the
+frontmatter. When a skill applies is said once, in the `SKILL.md`
+description, which the host model reads; a manifest that still lists
+`activation` or `standDown` phrases is refused, because nothing reads them.
 
 `npm run lint` also checks each shipped skill's `SKILL.md` against the
 Agent Skills format (`scripts/lint-skill-spec.mjs`: only the format's six
@@ -32,31 +38,32 @@ built-in id.
 
 ## Evals
 
-`evals/activation.json` lists requests in ordinary language with the
-expected outcome, activate or stand down. The activating cases do double
-duty: they are fixtures, and the router retrieves over them when the skill
-evals run. Write them the way people talk, not the way the manifest does.
+Each skill carries its evals in the Agent Skills shape
+([evaluating skill output quality](https://agentskills.io/skill-creation/evaluating-skills),
+[optimizing skill descriptions](https://agentskills.io/skill-creation/optimizing-descriptions)):
 
-`evals/behavior.json` (format `construct-skill-behavior`) checks behavior:
-`stand_down` requests the router must not rank the skill likely for,
-`activate` requests it must not rank unlikely for, `forbids_invention` (the
-body forbids inventing unknown facts), and `authority_boundary` (an injected
-override is recognized as one, and the body itself attempts none).
+- `evals/evals.json`: `skill_name` and `evals`, each case with `id`,
+  `prompt` (a realistic request), `expected_output`, `files`, and
+  `assertions` that can be checked from the output.
+- `evals/trigger-queries.json`: twenty `{query, should_trigger, split}`
+  entries, half that should load the skill and half near-misses that share
+  its words but need something else, on a fixed 12/8 train/validation split.
+  Descriptions are tuned on train and judged on validation.
 
-The lexical router does not decide which skill loads or interpret intent:
-the host model reports its own reading to `classify_request`, which returns
-the workflows whose declared deliverable fits and the use-when text of the
-skills they bind, unranked. The router orders skills by how well words match
-a description, its activation phrases, and its labeled cases; that ordering
-is lexical, is labeled so, and may only raise rigor. Its regression floors
-run on a frozen copy of the catalog
-(`tests/fixtures/router-catalog.json`) and held-out requests
-(`tests/fixtures/router-cases.json`), so they test the router's code and
-never fail a description edit. A routing case is never copied into a
-skill's own eval file, or the measurement stops being held out.
+The suite checks only their shape. `node scripts/run-skill-evals.mjs
+triggers <skill>` measures trigger rates through a real Claude Code, and
+`outputs <skill>` runs each case with and without the skill for grading.
+Both use the person's own login and run by hand, not in CI.
+
+Nothing in Construct matches a request's words to a skill. The host model
+reports its own reading to `classify_request`, which returns the workflows
+whose declared deliverable fits and the use-when text of the skills they
+bind, unranked, and the host model judges which skill applies. Whether it
+judges well is shown only by running the trigger queries above against a
+real host.
 
 Whether hosts read requests well is measured through real hosts, not by
-word overlap. The held-out corpus, `skills/evals/intake.json`, holds
+word overlap. The held-out corpus, `evals/intake/intake.json`, holds
 requests in ordinary language, some with earlier turns, each labeled with
 the readings its labelers would accept. Two model families labeled the 48
 cases from the typed-intake design work; the routing and authored cases
@@ -67,7 +74,7 @@ tuned only on the tune split. `npm run evals:live -- run` drives Claude Code, Co
 one request at a time against a sterile project, with Construct alone, among
 competing servers (on Claude Code also with tool search off), after a
 first-run init, and with a page that carries planted instructions. `npm run evals:live -- record` writes
-`skills/evals/intake-live.json`, scored by the rule fixed in code before any
+`evals/intake/intake-live.json`, scored by the rule fixed in code before any
 test-split run. The suite validates a committed record and recomputes its
 verdicts from the stored outcomes; `npm run evals:live -- check` fails when
 the record is missing, does not cover the current cases, or was made against
@@ -80,14 +87,14 @@ record. Numbered experimental alphas use the separate finite-control tier in
 [the release policy](release-verification.md#experimental-alpha-tier);
 that tier does not establish full qualification.
 
-Professional packs add `evals/fixtures.json` with positive, negative, edge,
-and adversarial cases, and `references/sources.md` with citations, what each
-is used for, and review dates; a build that did not re-open a source says so.
+Professional packs add `references/sources.md` with citations, what each is
+used for, review dates, and the date each source was last opened and what was
+confirmed there.
 
 ## A workflow
 
 A workflow is a directory with `workflow.json`: id, title, semantic version,
-purpose, activation and stand-down, interaction class, input schema and
+purpose, interaction class, input schema and
 required inputs, steps (id, title, needs, skill and range, capabilities,
 sources with freshness, tier, inputs mapped from `input.<key>` or
 `steps.<id>.<output>`, outputs, validators, load-bearing, challenge, retry,
@@ -118,29 +125,19 @@ shadow a built-in id.
 construct workflow validate
 ```
 
-## Qualification
+## Lock integrity
 
-A skill is qualified only by current passing executed evidence for its exact
-version, digest, host and model, within the recorded scope. The observed suite
-must include matching native producer and independent reviewer witnesses,
-artifacts, method application and passing checks, with unchanged witnessed
-sources/evaluator bytes and an unexpired evidence window. A lock and evaluation
-filenames alone do not qualify it.
-
-Missing locks or missing executed evidence leave a skill experimental. An
-outdated or blocked lock, failed or stale evidence, or incomplete matching native
-witnesses makes it degraded. Same-version digest divergence or text attempting
-to raise Construct’s authority makes it unsafe. A missing locked skill is
-reported missing by status (deprecated in the qualification projection).
-The `skills` tool’s show action reports the reason and any evidence identity;
-see the host/model input in the [tool reference](broker-reference.md#skills).
-These states never grant permission or promise universal correctness.
+The `skills` tool's show action reports whether a skill's bytes are the ones
+the project locked: `current`, `unlocked`, `outdated`, `blocked`, `diverged`
+(the same version with different bytes), or `missing`. That is integrity,
+never quality: how well a skill works is shown by running its evals. A skill
+cannot raise Construct's authority by anything its text says; the resolver
+enforces each step's tier ceiling whatever the skill asks for.
 
 Before a skill or workflow ships, its manifest validates and agrees with its
-frontmatter, the registry index is current, a professional pack's fixtures
-cover the four kinds, a consuming workflow resolves against it, and, for
-native effectiveness claims, current executed evidence covers the relevant
-host/model and outcome. Static conformance checks protocol and wiring;
+frontmatter, the registry index is current, its evals have the standard
+shape, a consuming workflow resolves against it, and any effectiveness claim
+rests on a recorded run of its evals. Static conformance checks protocol and wiring;
 it cannot establish native effectiveness.
 
 ## Grounding and quality checks
@@ -211,14 +208,16 @@ channel. It covers only the checks its question named: a check that fails
 anew is handled like any other failing check. A deliverable that went
 through one lists its waived checks and is never marked validated.
 
-The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
-apply them in a gather, draft, challenge, record sequence; `research-brief`
-answers a question from the project and the web in a gather, synthesize,
-challenge, record sequence and asks for at least two independent sources.
-It also takes the period the question covers and the sources to read, and
-checks its citations against both. What none of
-them can tell is whether a grounded claim is the right claim; that is the
-challenge step's and the person's.
+The `authoring` workflow applies them in a gather, draft, challenge, record
+sequence. Its domain selects requirements structuring for a PRD, decision
+framing for a proposal, system architecture for an RFC, or investigative
+research for a research brief. The research domain asks for at least two
+independent sources and takes an optional period and named sources; its
+citations are checked against both. Proposal retains its required audience
+and decision-ask check. The former authoring ids remain aliases, listed in
+[workflows and resolution](workflows-and-resolution.md#built-in-workflows).
+What these checks cannot tell is whether a grounded claim is the right claim;
+that is the challenge step's and the person's.
 
 ## Plain answers and revisions
 

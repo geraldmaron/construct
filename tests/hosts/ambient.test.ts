@@ -58,6 +58,12 @@ test('claude is checked before cursor, when a process somehow carries both', () 
 test('AMBIENT_ENV_KEYS names every key a detector reads, for test isolation elsewhere', () => {
   assert.deepEqual(
     [...AMBIENT_ENV_KEYS].sort(),
-    ['BOB_SHELL_CLI_IDE_SERVER_PORT', 'CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'CURSOR_AGENT', 'CURSOR_CLI'].sort(),
+    ['BOB_SHELL_CLI_IDE_SERVER_PORT', 'CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT', 'CURSOR_AGENT', 'CURSOR_CLI', 'HERMES_AGENT'].sort(),
   );
+});
+
+test('a Hermes terminal is detected by HERMES_AGENT=true and nothing looser', () => {
+  assert.deepEqual(detectAmbientHost({ HERMES_AGENT: 'true' }), { host: 'hermes', marker: 'HERMES_AGENT' });
+  assert.equal(detectAmbientHost({ HERMES_AGENT: '1' }), null);
+  assert.equal(detectAmbientHost({ AI_AGENT: 'hermes-agent' }), null);
 });

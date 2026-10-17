@@ -81,9 +81,24 @@ export function emptyConstitution(name: string | null = null): Constitution {
 }
 
 const CONSTITUTION_KEYS = new Set<string>([
-  'format', 'formatVersion', 'name', 'purpose', 'scale', 'lifecycleStage', 'primaryOutcome',
-  'successMeasures', 'principles', 'constraints', 'nonGoals', 'canonicalArtifacts', 'owners',
-  'boundaries', 'riskPosture', 'reviewCadence', 'glossary', 'unknowns',
+  'format',
+  'formatVersion',
+  'name',
+  'purpose',
+  'scale',
+  'lifecycleStage',
+  'primaryOutcome',
+  'successMeasures',
+  'principles',
+  'constraints',
+  'nonGoals',
+  'canonicalArtifacts',
+  'owners',
+  'boundaries',
+  'riskPosture',
+  'reviewCadence',
+  'glossary',
+  'unknowns',
 ]);
 
 export function validateConstitution(raw: unknown, path: string): Constitution {

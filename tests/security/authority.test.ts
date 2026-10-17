@@ -40,8 +40,15 @@ test('a relayed approval of an external write mints no grant and leaves the deci
   const fx = fixture();
   try {
     const { decisionId } = pausedForApproval(fx);
-    assert.throws(() => fx.service.decide({ decisionId, resolution: 'approve', by: 'model via claude-code', channel: 'relay' }), PersonChannelRequiredError);
-    assert.throws(() => fx.service.decide({ decisionId, resolution: 'approve', by: 'model via claude-code' }), PersonChannelRequiredError, 'relay is the default');
+    assert.throws(
+      () => fx.service.decide({ decisionId, resolution: 'approve', by: 'model via claude-code', channel: 'relay' }),
+      PersonChannelRequiredError,
+    );
+    assert.throws(
+      () => fx.service.decide({ decisionId, resolution: 'approve', by: 'model via claude-code' }),
+      PersonChannelRequiredError,
+      'relay is the default',
+    );
     assert.equal(listGrants(fx.store).length, 0);
     assert.equal(getDecision(fx.store, decisionId)!.state, 'open');
     const person = fx.service.decide({ decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
@@ -74,7 +81,11 @@ test('an approval covers the executor it was given to; another claimer neither i
     fx.service.decide({ decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
     const intruder = fx.service.claimNext({ runId, owner: 'session:other' });
     assert.equal(intruder.packet, null, 'the approved step is not handed to a different session');
-    assert.equal(intruder.waitingOn?.kind, 'held', 'it waits for the approved session, and no new question is raised in front of the person');
+    assert.equal(
+      intruder.waitingOn?.kind,
+      'held',
+      'it waits for the approved session, and no new question is raised in front of the person',
+    );
     const approved = fx.service.claimNext({ runId });
     assert.equal(approved.packet!.step.id, 'push', 'the session the person approved still gets its step');
   } finally {
@@ -90,11 +101,23 @@ test('the MCP decide tool relays: it reports that the person must answer, and no
       kind: 'approval',
       question: 'Approve exactly this: push PROJ-14',
       options: ['approve', 'decline'],
-      subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+      subject: {
+        request: {
+          tier: 'external_write',
+          targetSystem: 'jira',
+          targetResource: 'PROJ-14',
+          operation: 'push PROJ-14',
+          executorId: 'session:claude-code',
+        },
+      },
       at: fx.broker.now(),
     });
     const decide = toolsFor('interactive').find((t) => t.name === 'decide')!;
-    const result = (await decide.run(fx.broker, { decisionId: decision.id, resolution: 'approve' })) as { personRequired?: boolean; decision: { state: string }; next?: string };
+    const result = (await decide.run(fx.broker, { decisionId: decision.id, resolution: 'approve' })) as {
+      personRequired?: boolean;
+      decision: { state: string };
+      next?: string;
+    };
     assert.equal(result.personRequired, true);
     assert.equal(result.decision.state, 'open');
     assert.match(result.next ?? '', /construct inbox resolve decision-ext/);
@@ -108,13 +131,23 @@ test('the command line is a person channel only on a terminal with no agent host
   const none = {} as NodeJS.ProcessEnv;
   assert.equal(channelFor(none, { interactive: true, agentAncestor: null }), 'tty_cli');
   assert.equal(channelFor(none, { interactive: false, agentAncestor: null }), 'relay', 'no terminal: a shell tool, a pipe, CI');
-  assert.equal(channelFor(none, { interactive: true, agentAncestor: '/Applications/Claude.app/Contents/MacOS/claude' }), 'relay', 'a terminal pane the host controls');
-  assert.equal(channelFor({ CLAUDECODE: '1' } as NodeJS.ProcessEnv, { interactive: true, agentAncestor: null }), 'relay', 'launched by an agent host');
+  assert.equal(
+    channelFor(none, { interactive: true, agentAncestor: '/Applications/Claude.app/Contents/MacOS/claude' }),
+    'relay',
+    'a terminal pane the host controls',
+  );
+  assert.equal(
+    channelFor({ CLAUDECODE: '1' } as NodeJS.ProcessEnv, { interactive: true, agentAncestor: null }),
+    'relay',
+    'launched by an agent host',
+  );
   assert.equal(channelFor({ CURSOR_AGENT: '1' } as NodeJS.ProcessEnv, { interactive: true, agentAncestor: null }), 'relay');
 });
 
 test('tools that mint approvals, settle trust, or close work say so to the host', () => {
-  const byName = new Map(toolsFor('interactive').map((t) => [t.name, mcpTool(t) as { annotations: { destructiveHint: boolean; readOnlyHint: boolean } }]));
+  const byName = new Map(
+    toolsFor('interactive').map((t) => [t.name, mcpTool(t) as { annotations: { destructiveHint: boolean; readOnlyHint: boolean } }]),
+  );
   for (const name of ['decide', 'promote_deliverable', 'work']) assert.equal(byName.get(name)!.annotations.destructiveHint, true, name);
   for (const [name, tool] of byName) if (tool.annotations.readOnlyHint) assert.equal(tool.annotations.destructiveHint, false, name);
 });
@@ -141,22 +174,43 @@ test('an answer relayed over MCP is recorded as relayed through its host, never 
       kind: 'approval',
       question: 'Approve exactly this: push PROJ-14',
       options: ['approve', 'decline'],
-      subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+      subject: {
+        request: {
+          tier: 'external_write',
+          targetSystem: 'jira',
+          targetResource: 'PROJ-14',
+          operation: 'push PROJ-14',
+          executorId: 'session:claude-code',
+        },
+      },
       at: fx.broker.now(),
     });
     const decide = toolsFor('interactive').find((t) => t.name === 'decide')!;
-    const result = (await decide.run(fx.broker, { decisionId: decision.id, resolution: 'decline' })) as { decision: { state: string; resolvedBy: string } };
+    const result = (await decide.run(fx.broker, { decisionId: decision.id, resolution: 'decline' })) as {
+      decision: { state: string; resolvedBy: string };
+    };
     assert.equal(result.decision.state, 'resolved');
     assert.match(result.decision.resolvedBy, /^relayed via claude-code$/);
     assert.match(getDecision(fx.broker.store, decision.id)!.resolvedBy!, /^relayed via /);
-    const resolved = listActivity(fx.broker.store).find((e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === decision.id)!;
+    const resolved = listActivity(fx.broker.store).find(
+      (e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === decision.id,
+    )!;
     assert.equal(resolved.actor, 'relayed via claude-code');
     assert.equal((resolved.payload as { channel: string }).channel, 'relay');
 
     // A proposed statement confirmed through the relay is confirmed, and the record says it was relayed.
-    const proposed = addStatement(fx.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at: fx.broker.now() });
+    const proposed = addStatement(fx.broker.store, {
+      id: 'st-proposed',
+      kind: 'principle',
+      text: 'Keep the kernel host-agnostic',
+      provenance: 'discovery',
+      at: fx.broker.now(),
+    });
     assert.equal(proposed.status, 'proposed');
-    const confirmed = (await decide.run(fx.broker, { decisionId: proposed.id, resolution: 'confirm' })) as { decision: { resolvedBy: string }; statement: { status: string } };
+    const confirmed = (await decide.run(fx.broker, { decisionId: proposed.id, resolution: 'confirm' })) as {
+      decision: { resolvedBy: string };
+      statement: { status: string };
+    };
     assert.equal(confirmed.statement.status, 'confirmed');
     assert.match(confirmed.decision.resolvedBy, /^relayed via /);
     assert.equal(getStatement(fx.broker.store, proposed.id)!.status, 'confirmed');
@@ -184,29 +238,60 @@ test('a person-channel answer carries its channel into the activity record', () 
 test('the person accepts and finalizes a deliverable on their own channel; a relay can do neither', () => {
   const fx = fixture();
   try {
-    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const started = fx.service.start({
+      workflowId: 'ship',
+      input: { request: 'Rename a private helper in the invoice formatter' },
+      trigger: 'manual',
+    });
     const claimed = fx.service.claimNext({ runId: started.run.id });
     const done = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } });
     const deliverableId = done.deliverable!.id;
     assert.equal(done.deliverable!.trustState, 'validated');
 
     for (const to of ['accepted', 'final'] as const) {
-      assert.throws(() => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError, `relay to ${to}`);
-      assert.throws(() => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code' }), PersonChannelRequiredError, `relay is the default, to ${to}`);
+      assert.throws(
+        () => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code', channel: 'relay' }),
+        PersonChannelRequiredError,
+        `relay to ${to}`,
+      );
+      assert.throws(
+        () => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code' }),
+        PersonChannelRequiredError,
+        `relay is the default, to ${to}`,
+      );
     }
 
-    const asked = fx.service.requestPromotion({ deliverableId, to: 'accepted', by: 'relayed via claude-code', reason: 'the session asks the person to accept' });
+    const asked = fx.service.requestPromotion({
+      deliverableId,
+      to: 'accepted',
+      by: 'relayed via claude-code',
+      reason: 'the session asks the person to accept',
+    });
     assert.equal(asked.kind, 'approval');
-    assert.equal(fx.service.requestPromotion({ deliverableId, to: 'accepted', by: 'relayed via claude-code' }).id, asked.id, 'one open question, not one per ask');
-    assert.throws(() => fx.service.decide({ decisionId: asked.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
-    assert.equal(fx.service.status(started.run.id)!.deliverables.find((d) => d.id === deliverableId)!.trustState, 'validated', 'a relayed approval moves nothing');
+    assert.equal(
+      fx.service.requestPromotion({ deliverableId, to: 'accepted', by: 'relayed via claude-code' }).id,
+      asked.id,
+      'one open question, not one per ask',
+    );
+    assert.throws(
+      () => fx.service.decide({ decisionId: asked.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }),
+      PersonChannelRequiredError,
+    );
+    assert.equal(
+      fx.service.status(started.run.id)!.deliverables.find((d) => d.id === deliverableId)!.trustState,
+      'validated',
+      'a relayed approval moves nothing',
+    );
     assert.equal(getDecision(fx.store, asked.id)!.state, 'open');
 
     const accepted = fx.service.decide({ decisionId: asked.id, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
     assert.equal(accepted.decision.state, 'resolved');
     assert.equal(fx.service.status(started.run.id)!.deliverables.find((d) => d.id === deliverableId)!.trustState, 'accepted');
 
-    assert.throws(() => fx.service.promote({ deliverableId, to: 'final', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
+    assert.throws(
+      () => fx.service.promote({ deliverableId, to: 'final', by: 'relayed via claude-code', channel: 'relay' }),
+      PersonChannelRequiredError,
+    );
     const final = fx.service.promote({ deliverableId, to: 'final', by: 'person via cli', channel: 'tty_cli' });
     assert.equal(final.trustState, 'final');
   } finally {
@@ -222,7 +307,10 @@ test('a relayed approval of a destructive action mints nothing and leaves the st
     assert.equal(asked.waitingOn?.kind, 'decision');
     const decision = (asked.waitingOn as { decision: { id: string; subject: { request: { tier: string } } } }).decision;
     assert.equal(decision.subject.request.tier, 'destructive');
-    assert.throws(() => fx.service.decide({ decisionId: decision.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
+    assert.throws(
+      () => fx.service.decide({ decisionId: decision.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }),
+      PersonChannelRequiredError,
+    );
     assert.equal(listGrants(fx.store).length, 0);
     assert.equal(getDecision(fx.store, decision.id)!.state, 'open');
     assert.equal(fx.service.claimNext({ runId: started.run.id }).waitingOn?.kind, 'decision', 'the step still waits on the person');
@@ -244,10 +332,24 @@ test('inbox resolve approves only from a terminal of the person’s own', async 
         kind: 'approval',
         question: 'Approve exactly this: push PROJ-14',
         options: ['approve', 'decline'],
-        subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+        subject: {
+          request: {
+            tier: 'external_write',
+            targetSystem: 'jira',
+            targetResource: 'PROJ-14',
+            operation: 'push PROJ-14',
+            executorId: 'session:claude-code',
+          },
+        },
         at: ctx.now(),
       });
-      addStatement(store, { id: 'st-cli-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at: ctx.now() });
+      addStatement(store, {
+        id: 'st-cli-proposed',
+        kind: 'principle',
+        text: 'Keep the kernel host-agnostic',
+        provenance: 'discovery',
+        at: ctx.now(),
+      });
     } finally {
       store.close();
     }
@@ -271,7 +373,9 @@ test('inbox resolve approves only from a terminal of the person’s own', async 
       assert.equal(getDecision(after, 'decision-cli')!.resolvedBy, 'person via cli');
       assert.equal(listGrants(after).length, 1);
       const events = listActivity(after);
-      const resolved = events.find((e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === 'decision-cli')!;
+      const resolved = events.find(
+        (e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === 'decision-cli',
+      )!;
       assert.equal((resolved.payload as { channel: string }).channel, 'tty_cli');
       const confirmed = events.find((e) => e.kind === 'proposal.resolved')!;
       assert.equal(confirmed.actor, 'relayed via cli (no person at a terminal)');

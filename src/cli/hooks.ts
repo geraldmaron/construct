@@ -53,15 +53,36 @@ const group = 'Host';
 export const HOOK_PACK_HOSTS = ['claude-code'] as const;
 
 export const HOOKS_SPECS: readonly CommandSpec[] = [
-  { path: ['hooks', 'install'], gloss: 'install an opt-in hook: --git adds a pre-commit guard; --host=claude-code adds session-start and after-edit notes', group, positionals: [], flags: [
-    { name: 'git', gloss: 'the git pre-commit guard (warns, never blocks)', takesValue: false },
-    { name: 'host', gloss: `a host hook pack for this checkout: ${HOOK_PACK_HOSTS.join(' | ')}`, takesValue: true },
-  ], readOnly: false },
-  { path: ['hooks', 'uninstall'], gloss: 'remove a hook Construct installed, restoring what was there', group, positionals: [], flags: [
-    { name: 'git', gloss: 'the git pre-commit guard', takesValue: false },
-    { name: 'host', gloss: `the host hook pack for this checkout: ${HOOK_PACK_HOSTS.join(' | ')}`, takesValue: true },
-  ], readOnly: false },
-  { path: ['hooks', 'list'], gloss: 'the hooks Construct installed here, and whether each is intact', group, positionals: [], flags: [], readOnly: true },
+  {
+    path: ['hooks', 'install'],
+    gloss: 'install an opt-in hook: --git adds a pre-commit guard; --host=claude-code adds session-start and after-edit notes',
+    group,
+    positionals: [],
+    flags: [
+      { name: 'git', gloss: 'the git pre-commit guard (warns, never blocks)', takesValue: false },
+      { name: 'host', gloss: `a host hook pack for this checkout: ${HOOK_PACK_HOSTS.join(' | ')}`, takesValue: true },
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['hooks', 'uninstall'],
+    gloss: 'remove a hook Construct installed, restoring what was there',
+    group,
+    positionals: [],
+    flags: [
+      { name: 'git', gloss: 'the git pre-commit guard', takesValue: false },
+      { name: 'host', gloss: `the host hook pack for this checkout: ${HOOK_PACK_HOSTS.join(' | ')}`, takesValue: true },
+    ],
+    readOnly: false,
+  },
+  {
+    path: ['hooks', 'list'],
+    gloss: 'the hooks Construct installed here, and whether each is intact',
+    group,
+    positionals: [],
+    flags: [],
+    readOnly: true,
+  },
 ];
 
 /** The file beside the pre-commit guard that holds the hook it replaced. */
@@ -145,7 +166,13 @@ function installGitGuard(root: string, stateDir: string, env: NodeJS.ProcessEnv,
   if (current !== null && current.includes(GUARD_MARKER)) {
     if (current === script && inv.git) return { record: inv.git, changed: false };
     writeFileSync(hook, script, { mode: 0o755 });
-    const record: GitGuardRecord = { hooksDir, hook, sha256: sha256(script), chained: existsSync(chainedPath) ? chainedPath : null, installedAt: at };
+    const record: GitGuardRecord = {
+      hooksDir,
+      hook,
+      sha256: sha256(script),
+      chained: existsSync(chainedPath) ? chainedPath : null,
+      installedAt: at,
+    };
     writeInventory(stateDir, { ...inv, git: record });
     return { record, changed: true };
   }
@@ -155,7 +182,13 @@ function installGitGuard(root: string, stateDir: string, env: NodeJS.ProcessEnv,
   }
   writeFileSync(hook, script, { mode: 0o755 });
   chmodSync(hook, 0o755);
-  const record: GitGuardRecord = { hooksDir, hook, sha256: sha256(script), chained: current === null ? null : chainedPath, installedAt: at };
+  const record: GitGuardRecord = {
+    hooksDir,
+    hook,
+    sha256: sha256(script),
+    chained: current === null ? null : chainedPath,
+    installedAt: at,
+  };
   writeInventory(stateDir, { ...inv, git: record });
   return { record, changed: true };
 }
@@ -208,8 +241,14 @@ export function hooksCommand(sub: string, args: ParsedArgs, ctx: CliContext = cr
         const { record, changed } = asOperationError(() => installClaudeLocal(checkout, stateDir, ctx.env, ctx.now(), 'coordination'));
         if (args.json) writeJson({ pack: { host: record.host, file: record.file }, changed });
         else {
-          say(changed ? `installed the ${record.host} hook pack in ${esc(record.file)}` : `the ${record.host} hook pack is already installed in ${esc(record.file)}`);
-          say('  at session start it says who else works here; after an edit, whether that file is reserved by another agent in this checkout');
+          say(
+            changed
+              ? `installed the ${record.host} hook pack in ${esc(record.file)}`
+              : `the ${record.host} hook pack is already installed in ${esc(record.file)}`,
+          );
+          say(
+            '  at session start it says who else works here; after an edit, whether that file is reserved by another agent in this checkout',
+          );
           say('  it never blocks anything; set CONSTRUCT_HOOKS=off to silence it; construct hooks uninstall --host=claude-code removes it');
         }
         return 0;
@@ -242,7 +281,9 @@ export function hooksCommand(sub: string, args: ParsedArgs, ctx: CliContext = cr
       const inv = readInventory(stateDir) as GuardInventory;
       const guard = inv.git ? { ...inv.git, state: gitGuardState(inv.git) } : null;
       // One line per set of hooks in each machine-local settings file: the pack, and the grounding hooks init installs.
-      const packs = Object.values(inv.packs ?? {}).flatMap((p) => setsOf(p).map((set) => ({ host: p.host, set, file: p.file, state: setState(p.file, p.written, set) })));
+      const packs = Object.values(inv.packs ?? {}).flatMap((p) =>
+        setsOf(p).map((set) => ({ host: p.host, set, file: p.file, state: setState(p.file, p.written, set) })),
+      );
       if (args.json) writeJson({ git: guard, packs });
       else if (!guard && packs.length === 0) say('no hooks installed here');
       else {

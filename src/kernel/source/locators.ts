@@ -47,20 +47,30 @@ function readDocsLocator(locator: string): { ok: true; value: DocsLocator } | { 
   if (trimmed === '') return { ok: false, reason: 'a docs locator names nothing to read' };
   const first = trimmed.indexOf(':');
   if (first < 0) {
-    return { ok: false, reason: `a docs locator is "<provider>:<container>:<id>" (for example confluence:space:ENG); "${trimmed}" names no provider` };
+    return {
+      ok: false,
+      reason: `a docs locator is "<provider>:<container>:<id>" (for example confluence:space:ENG); "${trimmed}" names no provider`,
+    };
   }
   const provider = trimmed.slice(0, first).trim();
   const rest = trimmed.slice(first + 1);
   const second = rest.indexOf(':');
   if (second < 0) {
-    return { ok: false, reason: `a docs locator names its container after the provider, as "<provider>:<container>:<id>"; "${trimmed}" names no container` };
+    return {
+      ok: false,
+      reason: `a docs locator names its container after the provider, as "<provider>:<container>:<id>"; "${trimmed}" names no container`,
+    };
   }
   if (!(DOCS_PROVIDERS as readonly string[]).includes(provider)) {
     return { ok: false, reason: `"${provider}" is not a docs provider Construct knows (${DOCS_PROVIDERS.join(', ')})` };
   }
   const container = rest.slice(0, second).trim();
   const id = rest.slice(second + 1).trim();
-  if (container === '') return { ok: false, reason: `a docs locator names what groups pages inside ${provider} (space, folder, workspace); "${trimmed}" leaves it empty` };
+  if (container === '')
+    return {
+      ok: false,
+      reason: `a docs locator names what groups pages inside ${provider} (space, folder, workspace); "${trimmed}" leaves it empty`,
+    };
   if (id === '') return { ok: false, reason: `a docs locator names which ${container} to read; "${trimmed}" leaves the id empty` };
   return { ok: true, value: { provider: provider as DocsProvider, container, id } };
 }
@@ -86,7 +96,7 @@ export function directoryLocatorProblem(locator: string): string | null {
 export function gitLocatorProblem(locator: string): string | null {
   const trimmed = locator.trim();
   if (trimmed === '') return 'a git locator names no repository';
-  if (locatorCarriesCredentials(trimmed) || /^[^@\s/]+@[^:\s]+:/.test(trimmed) && /:[^@]*@/.test(trimmed)) {
+  if (locatorCarriesCredentials(trimmed) || (/^[^@\s/]+@[^:\s]+:/.test(trimmed) && /:[^@]*@/.test(trimmed))) {
     return 'a git locator carries no credentials; the host or connector holds them';
   }
   return null;

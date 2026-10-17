@@ -3,67 +3,16 @@
   "formatVersion": 1,
   "id": "context-mapping",
   "title": "Context mapping",
-  "version": "0.4.1",
+  "version": "0.4.4",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "I just inherited this codebase",
-    "new job and they handed me the repo",
-    "where do I even start with this system",
-    "before I touch this I want to know what will break",
-    "who actually owns this and what depends on it",
-    "we took over a vendor integration and the docs are wrong",
-    "what reads the output of this job",
-    "acting inside a system you did not build or do not hold in your head",
-    "inheriting a codebase, service, program, or vendor relationship; onboarding; integrating; resuming shifted ground",
-    "map the dependencies, owners, boundaries, and unknowns before changing anything",
-    "how the parts relate, what depends on what, who owns it"
-  ],
-  "standDown": [
-    "you already hold the map, know the system, just implement",
-    "a one-line fix whose neighbors do not matter, rename a variable",
-    "a plain question with no system to map"
-  ],
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a dated one-page context map"
-  ],
-  "deliverableTypes": [
-    "map/context"
-  ],
-  "inputs": [
-    "the system's own material: code, documents, ownership files, declared sources"
-  ],
-  "outputSchemas": [
-    "map/context/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_files",
     "read_project_context"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "an unknown that blocks safe action is raised as a question, never guessed"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json"
-  ]
+  "skillDependencies": []
 }

@@ -25,7 +25,13 @@ async function call(ctx: BrokerContext, name: string, args: Record<string, unkno
 }
 
 function secondSession(fx: ReturnType<typeof brokerFixture>): BrokerContext {
-  const binding: BrokerBinding = { client: 'cursor', surface: 'interactive', sessionId: 'ses_other', executorId: 'session:cursor:ses_other', actor: 'model via cursor' };
+  const binding: BrokerBinding = {
+    client: 'cursor',
+    surface: 'interactive',
+    sessionId: 'ses_other',
+    executorId: 'session:cursor:ses_other',
+    actor: 'model via cursor',
+  };
   const project = { root: fx.broker.root, layout: fx.broker.layout, files: fx.broker.files, store: fx.broker.store, lane: null };
   return createBrokerContext(fx.ctx, project, binding);
 }
@@ -33,24 +39,39 @@ function secondSession(fx: ReturnType<typeof brokerFixture>): BrokerContext {
 test('a lease is proved by its secret and its session, never by the attempt number or a claimed name', async () => {
   const fx = brokerFixture();
   try {
-    const started = (await call(fx.broker, 'start_outcome', { workflowId: 'design-conformance', input: { target: 'src/kernel/state' } })) as { run: { id: string } };
-    const claimed = (await call(fx.broker, 'claim_work', { runId: started.run.id })) as { work: { stepRunId: string; owner: string; token: string } };
+    const started = (await call(fx.broker, 'start_outcome', {
+      workflowId: 'design-conformance',
+      input: { target: 'src/kernel/state' },
+    })) as { run: { id: string } };
+    const claimed = (await call(fx.broker, 'claim_work', { runId: started.run.id })) as {
+      work: { stepRunId: string; token: string };
+    };
     assert.match(claimed.work.token, /^[0-9a-f-]{36}$/, 'the token is a random secret');
     const attempt = String(getStep(fx.broker.store, claimed.work.stepRunId)!.attempts);
-    await assert.rejects(call(fx.broker, 'submit_work', { stepRunId: claimed.work.stepRunId, token: attempt, output: {} }), /not held by this session/);
+    await assert.rejects(
+      call(fx.broker, 'submit_work', { stepRunId: claimed.work.stepRunId, token: attempt, output: {} }),
+      /not held by this session/,
+    );
 
     const other = secondSession(fx);
     await assert.rejects(
-      call(other, 'submit_work', { stepRunId: claimed.work.stepRunId, owner: claimed.work.owner, token: claimed.work.token, output: {} }),
+      call(other, 'submit_work', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, output: {} }),
       /not held by this session/,
       'a session that learned the token still cannot submit another session’s step',
     );
-    await assert.rejects(call(other, 'heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token }), /not held by this session/);
+    await assert.rejects(
+      call(other, 'heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token }),
+      /not held by this session/,
+    );
 
-    const beat = (await call(fx.broker, 'heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token })) as { leaseUntil: string };
+    const beat = (await call(fx.broker, 'heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token })) as {
+      leaseUntil: string;
+    };
     assert.ok(beat.leaseUntil > fx.broker.now(), 'the interactive session keeps its own lease alive');
 
-    const activity = (fx.broker.store.db.prepare('SELECT payload_json FROM activity_events').all() as Array<{ payload_json: string }>).map((r) => r.payload_json).join('\n');
+    const activity = (fx.broker.store.db.prepare('SELECT payload_json FROM activity_events').all() as Array<{ payload_json: string }>)
+      .map((r) => r.payload_json)
+      .join('\n');
     assert.doesNotMatch(activity, new RegExp(claimed.work.token));
   } finally {
     fx.cleanup();
@@ -61,13 +82,45 @@ test('a session that keeps calling has its leases extended past half their term'
   const fx = brokerFixture();
   try {
     const store = fx.broker.store;
-    createRun(store, { workflowId: 'design-conformance', workflowVersion: '1.0.0', interactionClass: 'manage', triggerKind: 'manual', executorKind: 'interactive', executorId: 'session:claude-code', input: {}, id: 'run-l', idempotencyKey: 'k-l', at: '2026-09-24T12:00:00.000Z' });
-    addStep(store, { id: 's-l', runId: 'run-l', stepId: 'a', ordinal: 0, permissionTier: 'draft', ready: true, at: '2026-09-24T12:00:00.000Z' });
-    claimStep(store, { owner: 'session:claude-code', now: '2026-09-24T12:00:00.000Z', leaseUntil: '2026-09-24T12:30:00.000Z', runId: 'run-l' });
-    assert.equal(renewExecutorLeases(store, { owner: 'session:claude-code', now: '2026-09-24T12:05:00.000Z', termMs: 30 * 60_000 }), 0, 'not yet halfway');
+    createRun(store, {
+      workflowId: 'design-conformance',
+      workflowVersion: '1.0.0',
+      interactionClass: 'manage',
+      triggerKind: 'manual',
+      executorKind: 'interactive',
+      executorId: 'session:claude-code',
+      input: {},
+      id: 'run-l',
+      idempotencyKey: 'k-l',
+      at: '2026-09-24T12:00:00.000Z',
+    });
+    addStep(store, {
+      id: 's-l',
+      runId: 'run-l',
+      stepId: 'a',
+      ordinal: 0,
+      permissionTier: 'draft',
+      ready: true,
+      at: '2026-09-24T12:00:00.000Z',
+    });
+    claimStep(store, {
+      owner: 'session:claude-code',
+      now: '2026-09-24T12:00:00.000Z',
+      leaseUntil: '2026-09-24T12:30:00.000Z',
+      runId: 'run-l',
+    });
+    assert.equal(
+      renewExecutorLeases(store, { owner: 'session:claude-code', now: '2026-09-24T12:05:00.000Z', termMs: 30 * 60_000 }),
+      0,
+      'not yet halfway',
+    );
     assert.equal(renewExecutorLeases(store, { owner: 'session:claude-code', now: '2026-09-24T12:20:00.000Z', termMs: 30 * 60_000 }), 1);
     assert.equal(getStep(store, 's-l')!.leaseUntil, '2026-09-24T12:50:00.000Z');
-    assert.equal(renewExecutorLeases(store, { owner: 'session:cursor:ses_other', now: '2026-09-24T12:20:00.000Z', termMs: 30 * 60_000 }), 0, 'another executor’s call renews nothing it does not hold');
+    assert.equal(
+      renewExecutorLeases(store, { owner: 'session:cursor:ses_other', now: '2026-09-24T12:20:00.000Z', termMs: 30 * 60_000 }),
+      0,
+      'another executor’s call renews nothing it does not hold',
+    );
   } finally {
     fx.cleanup();
   }
@@ -77,10 +130,40 @@ test('claiming a step and walking away cannot fail it for everyone else', () => 
   const fx = brokerFixture();
   try {
     const store = fx.broker.store;
-    createRun(store, { workflowId: 'design-conformance', workflowVersion: '1.0.0', interactionClass: 'manage', triggerKind: 'manual', executorKind: 'interactive', executorId: 'session:claude-code', input: {}, id: 'run-d', idempotencyKey: 'k-d', at: '2026-09-24T12:00:00.000Z' });
-    addStep(store, { id: 's-d', runId: 'run-d', stepId: 'a', ordinal: 0, permissionTier: 'draft', ready: true, maxAttempts: 1, at: '2026-09-24T12:00:00.000Z' });
-    claimStep(store, { owner: 'session:claude-code:ses_careless', now: '2026-09-24T12:00:00.000Z', leaseUntil: '2026-09-24T12:01:00.000Z', runId: 'run-d' });
-    const next = claimStep(store, { owner: 'session:cursor:ses_other', now: '2026-09-24T12:02:00.000Z', leaseUntil: '2026-09-24T12:03:00.000Z', runId: 'run-d' });
+    createRun(store, {
+      workflowId: 'design-conformance',
+      workflowVersion: '1.0.0',
+      interactionClass: 'manage',
+      triggerKind: 'manual',
+      executorKind: 'interactive',
+      executorId: 'session:claude-code',
+      input: {},
+      id: 'run-d',
+      idempotencyKey: 'k-d',
+      at: '2026-09-24T12:00:00.000Z',
+    });
+    addStep(store, {
+      id: 's-d',
+      runId: 'run-d',
+      stepId: 'a',
+      ordinal: 0,
+      permissionTier: 'draft',
+      ready: true,
+      maxAttempts: 1,
+      at: '2026-09-24T12:00:00.000Z',
+    });
+    claimStep(store, {
+      owner: 'session:claude-code:ses_careless',
+      now: '2026-09-24T12:00:00.000Z',
+      leaseUntil: '2026-09-24T12:01:00.000Z',
+      runId: 'run-d',
+    });
+    const next = claimStep(store, {
+      owner: 'session:cursor:ses_other',
+      now: '2026-09-24T12:02:00.000Z',
+      leaseUntil: '2026-09-24T12:03:00.000Z',
+      runId: 'run-d',
+    });
     assert.ok(next, 'the abandoned lease expired and the step went to the next session');
     assert.equal(getStep(store, 's-d')!.state, 'leased');
   } finally {
@@ -91,7 +174,10 @@ test('claiming a step and walking away cannot fail it for everyone else', () => 
 test('a runner cannot take an id Construct minted for another runner or session', () => {
   const fx = brokerFixture();
   try {
-    assert.throws(() => bindingFor(fx.ctx, { headless: true, executor: 'runner:ses_0f9c' }), /Construct mints for a runner started without one/);
+    assert.throws(
+      () => bindingFor(fx.ctx, { headless: true, executor: 'runner:ses_0f9c' }),
+      /Construct mints for a runner started without one/,
+    );
     assert.throws(() => bindingFor(fx.ctx, { headless: true, executor: 'session:claude-code:ses_1' }), /names an interactive session/);
     assert.equal(bindingFor(fx.ctx, { headless: true, executor: 'runner:nightly' }).executorId, 'runner:nightly');
   } finally {
@@ -104,12 +190,48 @@ test('heartbeat validates bounds, preserves a longer lease and never resurrects 
   const fx = brokerFixture();
   const now = '2026-10-15T12:00:00.000Z';
   try {
-    createRun(fx.broker.store, { workflowId: 'test', workflowVersion: '1.0.0', interactionClass: 'manage', triggerKind: 'manual', executorKind: 'interactive', executorId: 'owner', input: {}, id: 'bounds-run', idempotencyKey: 'bounds', at: now });
-    addStep(fx.broker.store, { id: 'bounds-step', runId: 'bounds-run', stepId: 'a', ordinal: 0, permissionTier: 'draft', ready: true, at: now });
+    createRun(fx.broker.store, {
+      workflowId: 'test',
+      workflowVersion: '1.0.0',
+      interactionClass: 'manage',
+      triggerKind: 'manual',
+      executorKind: 'interactive',
+      executorId: 'owner',
+      input: {},
+      id: 'bounds-run',
+      idempotencyKey: 'bounds',
+      at: now,
+    });
+    addStep(fx.broker.store, {
+      id: 'bounds-step',
+      runId: 'bounds-run',
+      stepId: 'a',
+      ordinal: 0,
+      permissionTier: 'draft',
+      ready: true,
+      at: now,
+    });
     const lease = claimStep(fx.broker.store, { owner: 'owner', now, leaseUntil: '2026-10-15T13:00:00.000Z', runId: 'bounds-run' })!;
-    assert.throws(() => extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: 'not-a-date' }), /instant/);
-    assert.equal(extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: '2026-10-15T12:30:00.000Z' }), true);
+    assert.throws(
+      () => extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: 'not-a-date' }),
+      /instant/,
+    );
+    assert.equal(
+      extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: now, until: '2026-10-15T12:30:00.000Z' }),
+      true,
+    );
     assert.equal(getStep(fx.broker.store, lease.id)!.leaseUntil, '2026-10-15T13:00:00.000Z');
-    assert.equal(extendLease(fx.broker.store, { id: lease.id, owner: 'owner', nonce: lease.nonce, at: '2026-10-15T09:00:00-04:00', until: '2026-10-15T14:00:00.000Z' }), false);
-  } finally { fx.cleanup(); }
+    assert.equal(
+      extendLease(fx.broker.store, {
+        id: lease.id,
+        owner: 'owner',
+        nonce: lease.nonce,
+        at: '2026-10-15T09:00:00-04:00',
+        until: '2026-10-15T14:00:00.000Z',
+      }),
+      false,
+    );
+  } finally {
+    fx.cleanup();
+  }
 });

@@ -47,7 +47,12 @@ export function commandName(spec: CommandSpec): string {
 }
 
 export function commandHelp(spec: CommandSpec): string {
-  const usage = ['construct', ...spec.path, ...spec.positionals, ...spec.flags.map((f) => `[--${f.name}${f.takesValue ? '=<value>' : ''}]`)].join(' ');
+  const usage = [
+    'construct',
+    ...spec.path,
+    ...spec.positionals,
+    ...spec.flags.map((f) => `[--${f.name}${f.takesValue ? '=<value>' : ''}]`),
+  ].join(' ');
   const lines = [`${usage}`, `  ${spec.gloss}`];
   const flags = [...spec.flags, ...GLOBAL_FLAGS];
   if (flags.length > 0) {
@@ -139,7 +144,10 @@ export function parseArgs(spec: CommandSpec, argv: readonly string[]): ParsedArg
   }
   if (positionals.length > spec.positionals.length && flags.help !== true) {
     const extra = positionals.slice(spec.positionals.length);
-    throw new UsageError(`unexpected argument${extra.length === 1 ? '' : 's'}: ${extra.map((p) => JSON.stringify(p)).join(' ')}`, commandHelp(spec));
+    throw new UsageError(
+      `unexpected argument${extra.length === 1 ? '' : 's'}: ${extra.map((p) => JSON.stringify(p)).join(' ')}`,
+      commandHelp(spec),
+    );
   }
   return {
     flags,

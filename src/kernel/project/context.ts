@@ -19,12 +19,7 @@ export interface ProjectContext {
   /** Absolute, normalized project root. */
   readonly root: string;
   /** How the root was chosen, for doctor and provenance. */
-  readonly rootSource:
-    | 'host'
-    | 'binding'
-    | 'git'
-    | 'cwd'
-    | 'explicit';
+  readonly rootSource: 'host' | 'binding' | 'git' | 'cwd' | 'explicit';
 }
 
 export interface ResolveProjectContextInput {
@@ -67,7 +62,5 @@ export function resolveProjectContext(input: ResolveProjectContextInput): Projec
   if (input.allowCwdFallback && input.cwd !== undefined && input.cwd.trim() !== '') {
     return { root: normalizeProjectRoot(input.cwd), rootSource: 'cwd' };
   }
-  throw new Error(
-    'no project root: provide a host project root, Construct binding, or git workspace root',
-  );
+  throw new Error('no project root: provide a host project root, Construct binding, or git workspace root');
 }

@@ -27,12 +27,13 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { appendActivity } from '../../kernel/state/activity.ts';
 import { listOpenDecisions } from '../../kernel/state/decisions.ts';
 import { waitingOn } from '../../kernel/broker/tools.ts';
 import type { HostReportItem } from '../../kernel/source/service.ts';
-import { projectResolver } from '../../kernel/source/resolver.ts';
+import { checkoutResolver } from '../../kernel/source/resolver.ts';
 import { urlProblem } from '../../kernel/project/urls.ts';
 
 /**
@@ -75,18 +76,46 @@ function isObject(v: unknown): v is Record<string, unknown> {
 /** Enter ADF only at a recognized node. Generic provider envelopes also carry
  * type/text/attrs; unknown children inside an ADF tree are handled as partial. */
 function isRichText(o: Record<string, unknown>): boolean {
-  return typeof o.type === 'string' && (ADF_BLOCKS.has(o.type) || ['text', 'hardBreak', 'rule', 'mention', 'emoji', 'status', 'date', 'inlineCard', 'media'].includes(o.type));
+  return (
+    typeof o.type === 'string' &&
+    (ADF_BLOCKS.has(o.type) || ['text', 'hardBreak', 'rule', 'mention', 'emoji', 'status', 'date', 'inlineCard', 'media'].includes(o.type))
+  );
 }
 
-const ADF_BLOCKS = new Set(['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'panel', 'table', 'tableRow', 'tableCell', 'tableHeader', 'mediaGroup', 'mediaSingle']);
+const ADF_BLOCKS = new Set([
+  'doc',
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'listItem',
+  'blockquote',
+  'codeBlock',
+  'panel',
+  'table',
+  'tableRow',
+  'tableCell',
+  'tableHeader',
+  'mediaGroup',
+  'mediaSingle',
+]);
 const TEXT_MARKS = new Set(['strong', 'em', 'code', 'underline', 'textColor', 'backgroundColor']);
-interface ReadableState { partial: boolean; readonly links: Set<string> }
+interface ReadableState {
+  partial: boolean;
+  readonly links: Set<string>;
+}
 
 function linkMarks(node: Record<string, unknown>, state: ReadableState): void {
   if (node.marks === undefined) return;
-  if (!Array.isArray(node.marks)) { state.partial = true; return; }
+  if (!Array.isArray(node.marks)) {
+    state.partial = true;
+    return;
+  }
   for (const mark of node.marks) {
-    if (!isObject(mark) || typeof mark.type !== 'string') { state.partial = true; continue; }
+    if (!isObject(mark) || typeof mark.type !== 'string') {
+      state.partial = true;
+      continue;
+    }
     if (mark.type === 'link') {
       const href = isObject(mark.attrs) ? mark.attrs.href : undefined;
       if (typeof href === 'string' && href.trim()) state.links.add(href);
@@ -102,7 +131,10 @@ function linkMarks(node: Record<string, unknown>, state: ReadableState): void {
  * display content stays partial rather than being guessed from identifiers.
  */
 function richText(node: unknown, depth: number, state: ReadableState): { readonly inline: boolean; readonly text: string } {
-  const missing = () => { state.partial = true; return { inline: true, text: '\n' }; };
+  const missing = () => {
+    state.partial = true;
+    return { inline: true, text: '\n' };
+  };
   if (depth > READABLE_DEPTH || !isObject(node) || typeof node.type !== 'string') return missing();
   if (node.type === 'doc' && node.version !== undefined && node.version !== 1) state.partial = true;
   linkMarks(node, state);
@@ -150,7 +182,10 @@ export function readableCapture(value: unknown): { readonly text: string; readon
   const lines: string[] = [];
   const state: ReadableState = { partial: false, links: new Set() };
   const walk = (v: unknown, depth: number): void => {
-    if (depth > READABLE_DEPTH) { state.partial = true; return; }
+    if (depth > READABLE_DEPTH) {
+      state.partial = true;
+      return;
+    }
     const x = parseMaybeJson(v);
     if (typeof x === 'string') {
       if (x.trim() !== '') lines.push(x);
@@ -212,7 +247,16 @@ export function jiraItemsIn(response: unknown, projectKey: string): HostReportIt
     const url = issueUrl(o, key) ?? prev?.url;
     // The fullest object for a key wins; a bare link to an issue should not displace the issue itself.
     // Without the tracker's own updated time, a response cannot say whether the ticket changed, only that it exists.
-    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(url ? { url } : {}), ...(updatedAt ? { updatedAt } : { weak: true }), text, truncated: capture.truncated, kind: 'work_item' });
+    if (!prev || (prev.text?.length ?? 0) < text.length)
+      byKey.set(key, {
+        ref: key,
+        ...(title ? { title } : {}),
+        ...(url ? { url } : {}),
+        ...(updatedAt ? { updatedAt } : { weak: true }),
+        text,
+        truncated: capture.truncated,
+        kind: 'work_item',
+      });
     else if (url && !prev.url) byKey.set(key, { ...prev, url });
   }
   return [...byKey.values()];
@@ -237,7 +281,12 @@ export function onPostTool(ctx: BrokerContext, input: PostToolInput): { readonly
     if (items.length === 0) continue;
     ctx.sources.reportRead(s.id, { items, partial: true }, ctx.now(), () => ctx.nextId('snap'));
     reported[s.id] = items.length;
-    appendActivity(ctx.store, { at: ctx.now(), kind: 'hook.read_reported', actor: ctx.actor, payload: { sourceId: s.id, items: items.length, tool: name } });
+    appendActivity(ctx.store, {
+      at: ctx.now(),
+      kind: 'hook.read_reported',
+      actor: ctx.actor,
+      payload: { sourceId: s.id, items: items.length, tool: name },
+    });
   }
   return { reported };
 }
@@ -251,11 +300,21 @@ interface TranscriptTurn {
 export function lastTurn(transcriptPath: string): TranscriptTurn {
   let lines: string[];
   try {
-    lines = readFileSync(transcriptPath, 'utf8').split('\n').filter((l) => l.trim() !== '');
+    lines = readFileSync(transcriptPath, 'utf8')
+      .split('\n')
+      .filter((l) => l.trim() !== '');
   } catch {
     return { texts: [], tools: [] };
   }
-  const entries = lines.map((l) => { try { return JSON.parse(l) as Record<string, unknown>; } catch { return null; } }).filter((e): e is Record<string, unknown> => e !== null);
+  const entries = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    })
+    .filter((e): e is Record<string, unknown> => e !== null);
   const isPrompt = (e: Record<string, unknown>) => {
     if (e.type !== 'user') return false;
     const c = (e.message as { content?: unknown } | undefined)?.content;
@@ -263,7 +322,11 @@ export function lastTurn(transcriptPath: string): TranscriptTurn {
     return Array.isArray(c) && c.some((b) => (b as { type?: string }).type === 'text');
   };
   let start = 0;
-  for (let i = entries.length - 1; i >= 0; i -= 1) if (isPrompt(entries[i]!)) { start = i + 1; break; }
+  for (let i = entries.length - 1; i >= 0; i -= 1)
+    if (isPrompt(entries[i]!)) {
+      start = i + 1;
+      break;
+    }
   const texts: string[] = [];
   const tools: string[] = [];
   for (const e of entries.slice(start)) {
@@ -282,12 +345,13 @@ export function lastTurn(transcriptPath: string): TranscriptTurn {
 export function projectFactsIn(ctx: BrokerContext, text: string): string[] {
   const out = new Set<string>();
   for (const s of ctx.sources.list()) {
-    if (s.kind === 'jira' && s.locator) for (const m of text.matchAll(new RegExp(`(?<![\\w-])${projectKeyPattern(s.locator)}-\\d+\\b`, 'g'))) out.add(m[0]);
+    if (s.kind === 'jira' && s.locator)
+      for (const m of text.matchAll(new RegExp(`(?<![\\w-])${projectKeyPattern(s.locator)}-\\d+\\b`, 'g'))) out.add(m[0]);
     if (new RegExp(`\\b${s.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text) && s.id.length >= 4) out.add(s.id);
   }
   // A file name is a project fact only when it names a file this project actually holds: "package.json" in
   // passing, or a dependency's README, is not.
-  const resolve = projectResolver(ctx.store, ctx.root);
+  const resolve = checkoutResolver(ctx.store, ctx);
   for (const m of text.matchAll(/\b[\w./-]+\.(?:md|markdown|txt|csv|json)\b/g)) {
     const r = resolve(m[0]);
     if (r?.kind === 'file' && r.sourceId) out.add(m[0]);
@@ -303,11 +367,122 @@ export interface StopInput {
 export type StopVerdict = { readonly decision: 'block'; readonly reason: string } | null;
 
 /** Send the host back once when it stated project facts it did not check. */
+const EDIT_TOOL = /^(Edit|Write|MultiEdit|NotebookEdit)$/;
+/** Construct's tools that put this session's work on the ledger or in a run. Classifying alone commits nothing. */
+const CLAIMING_TOOL = /^mcp__construct__(claim_work|start_outcome|work)$/;
+const CLAIMING_WORK_ACTIONS = new Set(['claim', 'accept', 'takeover']);
+
+interface ToolUse {
+  readonly id: string | null;
+  readonly name: string;
+  readonly input: Record<string, unknown>;
+}
+
+function transcriptEntries(path: string): Record<string, unknown>[] {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return [];
+  }
+  const out: Record<string, unknown>[] = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      out.push(JSON.parse(line) as Record<string, unknown>);
+    } catch {
+      // A line that is not JSON says nothing.
+    }
+  }
+  return out;
+}
+
+/** A tool result's text as JSON, when it is JSON; null otherwise. */
+function resultJson(content: unknown): unknown {
+  const text =
+    typeof content === 'string' ? content : Array.isArray(content) ? content.map((c) => (c as { text?: unknown }).text ?? '').join('') : '';
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function blocks(entry: Record<string, unknown>): Record<string, unknown>[] {
+  const c = (entry.message as { content?: unknown } | undefined)?.content;
+  return Array.isArray(c) ? (c as Record<string, unknown>[]) : [];
+}
+
+/**
+ * The number of edit calls in the last turn that touched this project, when
+ * the session has never successfully claimed work or started an outcome;
+ * null otherwise. Whole-session, so a task claimed in an earlier turn is never
+ * sent back again; successful only, so a refused claim does not count; inside
+ * the project only, so editing personal configuration is not Construct's to
+ * track.
+ */
+export function unclaimedEdits(transcriptPath: string, projectRoots: readonly string[]): number | null {
+  const entries = transcriptEntries(transcriptPath);
+  const failed = new Set<string>();
+  const results = new Map<string, unknown>();
+  for (const e of entries)
+    for (const b of blocks(e)) {
+      if (b.type !== 'tool_result' || typeof b.tool_use_id !== 'string') continue;
+      if (b.is_error === true) failed.add(b.tool_use_id);
+      results.set(b.tool_use_id, resultJson(b.content));
+    }
+  const uses: { use: ToolUse; index: number }[] = [];
+  let lastPrompt = -1;
+  entries.forEach((e, index) => {
+    if (e.type === 'user') {
+      const c = (e.message as { content?: unknown } | undefined)?.content;
+      if (typeof c === 'string' || (Array.isArray(c) && c.some((b) => (b as { type?: string }).type === 'text'))) lastPrompt = index;
+    }
+    if (e.type !== 'assistant') return;
+    for (const b of blocks(e))
+      if (b.type === 'tool_use' && typeof b.name === 'string')
+        uses.push({
+          use: { id: typeof b.id === 'string' ? b.id : null, name: b.name, input: (b.input ?? {}) as Record<string, unknown> },
+          index,
+        });
+  });
+  const claimed = uses.some(({ use }) => {
+    if (!CLAIMING_TOOL.test(use.name) || use.id === null || failed.has(use.id)) return false;
+    // Only a result that shows something granted counts: claim_work can answer with no work, and a claim can be refused.
+    const r = results.get(use.id) as Record<string, unknown> | null | undefined;
+    if (!r || typeof r !== 'object') return false;
+    if (use.name === 'mcp__construct__claim_work') return r.work !== null && typeof r.work === 'object';
+    if (use.name === 'mcp__construct__start_outcome')
+      return r.started === true || typeof (r.run as { id?: unknown } | undefined)?.id === 'string';
+    return CLAIMING_WORK_ACTIONS.has(String(use.input.action ?? '')) && r.status === 'claimed';
+  });
+  if (claimed) return null;
+  const inside = (file: unknown) =>
+    typeof file === 'string' && isAbsolute(file) && projectRoots.some((root) => file === root || file.startsWith(`${root}/`));
+  const edits = uses.filter(
+    ({ use, index }) =>
+      index > lastPrompt &&
+      EDIT_TOOL.test(use.name) &&
+      !(use.id !== null && failed.has(use.id)) &&
+      inside(use.input.file_path ?? use.input.notebook_path),
+  ).length;
+  return edits === 0 ? null : edits;
+}
+
 export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
   if ((ctx.policy?.answerCheck ?? 'nudge') === 'off') return null;
   if (input.stop_hook_active) return null;
   if (!input.transcript_path) return null;
   const turn = lastTurn(input.transcript_path);
+  const roots = [ctx.root, ...(ctx.worktrees?.().map((w) => w.checkout) ?? [])];
+  const unclaimed = unclaimedEdits(input.transcript_path, roots);
+  if (unclaimed) {
+    appendActivity(ctx.store, { at: ctx.now(), kind: 'hook.edits_unclaimed', actor: ctx.actor, payload: { edits: unclaimed } });
+    return {
+      decision: 'block',
+      reason: `This turn edited files (${String(unclaimed)} edit call(s)) and this session has not claimed the work or started an outcome. If this is work the person asked for, file and claim it with the work tool (action claim, with the paths), or run it through classify_request and start_outcome, and say so in one line. If the edits were trivial or not Construct's to track, say that in one line.`,
+    };
+  }
   if (turn.texts.length === 0) return null;
   const checked = turn.tools.some((t) => /check_answer$/.test(t));
   const gated = turn.tools.some((t) => /submit_work$/.test(t));
@@ -322,7 +497,8 @@ export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
 }
 
 /** The line every session starts with, whatever waits: the person's request is read by the host, through classify_request. */
-export const SESSION_START_LINE = 'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
+export const SESSION_START_LINE =
+  'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
 
 /**
  * A short note for the start of a session: the classify_request line, then
@@ -344,7 +520,9 @@ export async function onSessionStart(ctx: BrokerContext): Promise<string> {
   const parts: string[] = [];
   if (waits.inRuns.length > 0) parts.push(`${String(waits.inRuns.length)} decision(s) about runs wait on the person (inbox).`);
   if (moved.length > 0) parts.push(`Changed since last read: ${moved.join(', ')}; refresh before relying on them.`);
-  if (toReport.length > 0) parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
-  if (waits.setup.length > 0) parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
+  if (toReport.length > 0)
+    parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
+  if (waits.setup.length > 0)
+    parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
   return parts.length ? `${SESSION_START_LINE} ${parts.join(' ')} State project facts only after check_answer.` : SESSION_START_LINE;
 }

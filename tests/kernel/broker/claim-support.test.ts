@@ -11,59 +11,116 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, input: R
   return t.run(fx.broker, t.validate(input));
 }
 const cases = [
-  { name: 'polarity counterexample', source: 'The service does not store passwords.', answer: 'The service stores passwords.', expected: 'contradicted' },
-  { name: 'preserved negation paraphrase', source: 'The service does not store passwords.', answer: 'The service never stores passwords.', expected: 'supported' },
-  { name: 'contraction paraphrase', source: 'The service never stores passwords.', answer: "The service doesn't store passwords.", expected: 'supported' },
-  { name: 'positive clause', source: 'The service encrypts passwords.', answer: 'The service encrypts passwords.', expected: 'supported' },
-  { name: 'misleading quoted substring', source: 'The marketing claim "The service stores passwords" is false.', answer: 'The service stores passwords.', expected: 'unknown' },
-  { name: 'conditional quote', source: 'If enabled, the service stores passwords.', answer: 'The service stores passwords.', expected: 'unknown' },
+  {
+    name: 'polarity counterexample',
+    source: 'The service does not store passwords.',
+    answer: 'The service stores passwords.',
+    expected: 'unknown',
+  },
+  {
+    name: 'preserved negation paraphrase',
+    source: 'The service does not store passwords.',
+    answer: 'The service never stores passwords.',
+    expected: 'unknown',
+  },
+  {
+    name: 'contraction paraphrase',
+    source: 'The service never stores passwords.',
+    answer: "The service doesn't store passwords.",
+    expected: 'unknown',
+  },
+  { name: 'positive clause', source: 'The service encrypts passwords.', answer: 'The service encrypts passwords.', expected: 'unknown' },
+  {
+    name: 'misleading quoted substring',
+    source: 'The marketing claim "The service stores passwords" is false.',
+    answer: 'The service stores passwords.',
+    expected: 'unknown',
+  },
+  {
+    name: 'conditional quote',
+    source: 'If enabled, the service stores passwords.',
+    answer: 'The service stores passwords.',
+    expected: 'unknown',
+  },
   { name: 'modal claim', source: 'The service may store passwords.', answer: 'The service stores passwords.', expected: 'unknown' },
-  { name: 'unfamiliar paraphrase', source: 'Credentials are retained transiently in volatile buffers.', answer: 'Password persistence is disabled.', expected: 'unknown' },
+  {
+    name: 'unfamiliar paraphrase',
+    source: 'Credentials are retained transiently in volatile buffers.',
+    answer: 'Password persistence is disabled.',
+    expected: 'unknown',
+  },
   { name: 'scope mismatch', source: 'The EU service stores passwords.', answer: 'The US service stores passwords.', expected: 'unknown' },
 ] as const;
-for (const c of cases) test(`plain answer claim support: ${c.name}`, async () => {
-  const fx = brokerFixture();
-  try {
-    writeFileSync(join(fx.box.cwd, 'docs/evidence.md'), c.source);
-    const r = await call(fx, 'check_answer', { answer: c.answer, citations: [{ ref: 'docs/evidence.md' }], claims: [{ claim: c.answer, refs: ['docs/evidence.md'] }] });
-    assert.equal(r.claimSupport.results[0].status, c.expected);
-    assert.equal(r.ok, c.expected === 'supported');
-    assert.equal(r.semanticSupportVerified, false, 'bounded checks do not claim whole-answer semantic truth');
-    assert.equal(r.claimSupport.complete, false);
-    assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM workflow_runs').get()!.n, 0, 'Q&A starts no managed work');
-    assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM work_items').get()!.n, 0);
-  } finally { fx.cleanup(); }
-});
+for (const c of cases)
+  test(`plain answer claim support: ${c.name}`, async () => {
+    const fx = brokerFixture();
+    try {
+      writeFileSync(join(fx.box.cwd, 'docs/evidence.md'), c.source);
+      const r = await call(fx, 'check_answer', {
+        answer: c.answer,
+        citations: [{ ref: 'docs/evidence.md' }],
+        claims: [{ claim: c.answer, refs: ['docs/evidence.md'] }],
+      });
+      assert.equal(r.claimSupport.results[0].status, c.expected);
+      assert.equal(r.ok, false, 'a non-calculation claim cannot certify an answer');
+      assert.equal(r.semanticSupportVerified, false, 'bounded checks do not claim whole-answer semantic truth');
+      assert.equal(r.claimSupport.complete, false);
+      assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM workflow_runs').get()!.n, 0, 'Q&A starts no managed work');
+      assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM work_items').get()!.n, 0);
+    } finally {
+      fx.cleanup();
+    }
+  });
 
-test('ordinary answer without explicit claims still catches the known polarity failure', async () => {
+test('ordinary answer without explicit claims leaves polarity unknown', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.box.cwd, 'docs/security.md'), 'The service does not store passwords.');
-    const r = await call(fx, 'check_answer', { answer: 'The service stores passwords.', citations: [{ ref: 'docs/security.md', excerpt: 'The service does not store passwords.' }] });
-    assert.equal(r.ok, false);
-    assert.equal(r.claimSupport.status, 'contradicted');
-  } finally { fx.cleanup(); }
+    const r = await call(fx, 'check_answer', {
+      answer: 'The service stores passwords.',
+      citations: [{ ref: 'docs/security.md', excerpt: 'The service does not store passwords.' }],
+    });
+    assert.equal(r.ok, true, 'structural checks can pass without establishing semantic support');
+    assert.equal(r.semanticSupportVerified, false);
+    assert.equal(r.claimSupport.status, 'unknown');
+    assert.deepEqual(r.claimSupport.results, []);
+  } finally {
+    fx.cleanup();
+  }
 });
 
-test('independent disagreement and changed source bytes stay visible instead of fabricated consensus', async () => {
+test('non-calculation claims stay unknown across disagreement and changed source bytes', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.box.cwd, 'docs/a.md'), 'The service stores passwords.');
     writeFileSync(join(fx.box.cwd, 'docs/b.md'), 'The service does not store passwords.');
     const answer = 'The service stores passwords.';
-    const check = () => call(fx, 'check_answer', { answer, citations: [{ ref: 'docs/a.md' }, { ref: 'docs/b.md' }], claims: [{ claim: answer, refs: ['docs/a.md', 'docs/b.md'] }] });
+    const check = () =>
+      call(fx, 'check_answer', {
+        answer,
+        citations: [{ ref: 'docs/a.md' }, { ref: 'docs/b.md' }],
+        claims: [{ claim: answer, refs: ['docs/a.md', 'docs/b.md'] }],
+      });
     const first = await check();
     assert.equal(first.claimSupport.results[0].status, 'unknown');
-    assert.match(first.claimSupport.results[0].basis, /disagree/);
+    assert.match(first.claimSupport.results[0].basis, /No bounded check establishes this claim/);
+    assert.equal(first.ok, false);
     const before = first.claimSupport.results[0].evidence[1].digest;
     writeFileSync(join(fx.box.cwd, 'docs/b.md'), 'The service stores passwords.');
     const second = await check();
-    assert.equal(second.claimSupport.results[0].status, 'supported');
+    assert.equal(second.claimSupport.results[0].status, 'unknown');
+    assert.equal(second.ok, false, 'matching prose still does not establish support');
     assert.notEqual(second.claimSupport.results[0].evidence[1].digest, before);
     assert.equal(second.claimSupport.results[0].evidence.length, 2);
-    const forged = await call(fx, 'check_answer', { answer, citations: [{ ref: 'docs/a.md' }], claims: [{ claim: 'The service encrypts passwords.', refs: ['docs/a.md'] }] });
+    const forged = await call(fx, 'check_answer', {
+      answer,
+      citations: [{ ref: 'docs/a.md' }],
+      claims: [{ claim: 'The service encrypts passwords.', refs: ['docs/a.md'] }],
+    });
     assert.equal(forged.ok, false, 'a different, easier claim cannot certify this answer');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('arithmetic support requires mapped units, complete coverage and the exact typed proposition', async () => {
@@ -71,10 +128,47 @@ test('arithmetic support requires mapped units, complete coverage and the exact 
   try {
     writeFileSync(join(fx.box.cwd, 'docs/units.md'), 'Counts measure cases per row.');
     await call(fx, 'sources', { action: 'declare', id: 'stock', kind: 'other' });
-    const report = async (complete: boolean, unit = 'cases', n = 4) => call(fx, 'sources', { action: 'report', id: 'stock', coverage: { complete }, partial: !complete, items: [{ ref: 'inventory', text: JSON.stringify([{ sku: 'A', count: 12 }, { sku: 'B', count: n }]), schema: { type: 'array', items: { type: 'object', properties: { count: { type: 'number', unit } } } } }] });
+    const report = async (complete: boolean, unit = 'cases', n = 4) =>
+      call(fx, 'sources', {
+        action: 'report',
+        id: 'stock',
+        coverage: { complete },
+        partial: !complete,
+        items: [
+          {
+            ref: 'inventory',
+            text: JSON.stringify([
+              { sku: 'A', count: 12 },
+              { sku: 'B', count: n },
+            ]),
+            schema: { type: 'array', items: { type: 'object', properties: { count: { type: 'number', unit } } } },
+          },
+        ],
+      });
     await report(true);
-    await call(fx, 'sources', { action: 'map', id: 'stock', mapping: { item: 'inventory', records: '', identity: '/sku', fields: [{ name: 'stock', path: '/count', type: 'number', unit: 'cases' }], evidence: ['docs/units.md'] } });
-    const check = (expected = 16, text = `Total stock is ${String(expected)} cases.`) => call(fx, 'check_answer', { answer: text, citations: [{ ref: 'stock:inventory' }], claims: [{ claim: text, refs: ['stock:inventory'], calculation: { sourceId: 'stock', item: 'inventory', field: 'stock', operation: 'sum', expected, unit: 'cases' } }] });
+    await call(fx, 'sources', {
+      action: 'map',
+      id: 'stock',
+      mapping: {
+        item: 'inventory',
+        records: '',
+        identity: '/sku',
+        fields: [{ name: 'stock', path: '/count', type: 'number', unit: 'cases' }],
+        evidence: ['docs/units.md'],
+      },
+    });
+    const check = (expected = 16, text = `Total stock is ${String(expected)} cases.`) =>
+      call(fx, 'check_answer', {
+        answer: text,
+        citations: [{ ref: 'stock:inventory' }],
+        claims: [
+          {
+            claim: text,
+            refs: ['stock:inventory'],
+            calculation: { sourceId: 'stock', item: 'inventory', field: 'stock', operation: 'sum', expected, unit: 'cases' },
+          },
+        ],
+      });
     assert.equal((await check()).claimSupport.results[0].status, 'supported');
     assert.equal((await check()).ok, true, JSON.stringify(await check()));
     assert.equal((await check(17)).claimSupport.results[0].status, 'contradicted');
@@ -86,7 +180,9 @@ test('arithmetic support requires mapped units, complete coverage and the exact 
     assert.equal((await check()).claimSupport.results[0].status, 'unknown');
     await report(true, 'cases', 3);
     assert.equal((await check()).claimSupport.results[0].status, 'contradicted');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 for (const context of [
@@ -96,23 +192,36 @@ for (const context of [
   'The service stores passwords.\nThe preceding statement was rejected.',
   '# Hypothetical system\nThe service stores passwords.',
   'The service stores passwords. The service encrypts passwords.',
-]) test(`discourse surrounding a matching clause remains unknown: ${context.split('\n')[0]}`, async () => {
-  const fx = brokerFixture();
-  try {
-    writeFileSync(join(fx.box.cwd, 'docs/context.md'), context);
-    const answer = 'The service stores passwords.';
-    const r = await call(fx, 'check_answer', { answer, citations: [{ ref: 'docs/context.md' }], claims: [{ claim: answer, refs: ['docs/context.md'] }] });
-    assert.equal(r.claimSupport.results[0].status, 'unknown');
-    assert.equal(r.ok, false);
-  } finally { fx.cleanup(); }
-});
+])
+  test(`discourse surrounding a matching clause remains unknown: ${context.split('\n')[0]}`, async () => {
+    const fx = brokerFixture();
+    try {
+      writeFileSync(join(fx.box.cwd, 'docs/context.md'), context);
+      const answer = 'The service stores passwords.';
+      const r = await call(fx, 'check_answer', {
+        answer,
+        citations: [{ ref: 'docs/context.md' }],
+        claims: [{ claim: answer, refs: ['docs/context.md'] }],
+      });
+      assert.equal(r.claimSupport.results[0].status, 'unknown');
+      assert.equal(r.ok, false);
+    } finally {
+      fx.cleanup();
+    }
+  });
 
 test('explicit claim cannot discard the answer context either', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.box.cwd, 'docs/context.md'), 'The service stores passwords.');
-    const r = await call(fx, 'check_answer', { answer: 'This statement is false. The service stores passwords.', citations: [{ ref: 'docs/context.md' }], claims: [{ claim: 'The service stores passwords.', refs: ['docs/context.md'] }] });
+    const r = await call(fx, 'check_answer', {
+      answer: 'This statement is false. The service stores passwords.',
+      citations: [{ ref: 'docs/context.md' }],
+      claims: [{ claim: 'The service stores passwords.', refs: ['docs/context.md'] }],
+    });
     assert.equal(r.claimSupport.results[0].status, 'unknown');
     assert.equal(r.ok, false);
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });

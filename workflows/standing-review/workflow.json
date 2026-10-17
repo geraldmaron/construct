@@ -1,19 +1,10 @@
 {
   "format": "construct-workflow",
   "formatVersion": 1,
-  "evals": [],
   "id": "standing-review",
   "title": "Standing review",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "purpose": "The wrapper an external clock fires: check source freshness, run the deterministic drift checks, review conformance to the confirmed principles with every finding cited, and deliver a no-drift record, a cited drift report, or a concise blocked decision; stale or missing sources follow the declared policy.",
-  "activation": [
-    "every month review the governing documents against the implementation",
-    "keep this reviewed on a schedule",
-    "standing review"
-  ],
-  "standDown": [
-    "a one-off review (use source-drift-review or design-conformance)"
-  ],
   "interactionClass": "maintain",
   "inputSchema": {
     "scope": "string"

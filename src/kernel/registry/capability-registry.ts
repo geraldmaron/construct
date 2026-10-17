@@ -10,16 +10,46 @@ import type { CapabilityDeclaration, CapabilityName } from './models.ts';
 
 export const BUILTIN_CAPABILITIES: readonly CapabilityDeclaration[] = Object.freeze([
   { name: 'read_project_files', description: 'Read files inside the project root.', tier: 'observe', kind: 'read' },
-  { name: 'read_project_context', description: 'Read Construct’s own context: constitution, sources, claims, runs.', tier: 'observe', kind: 'read' },
+  {
+    name: 'read_project_context',
+    description: 'Read Construct’s own context: constitution, sources, claims, runs.',
+    tier: 'observe',
+    kind: 'read',
+  },
   { name: 'read_source', description: 'Read a declared source of a given kind (scope: the kind).', tier: 'observe', kind: 'read' },
   { name: 'write_project_files', description: 'Change files inside the project root, reversibly.', tier: 'project_write', kind: 'write' },
-  { name: 'write_project_context', description: 'Record statements, claims, decisions, lessons in Construct state.', tier: 'project_write', kind: 'write' },
-  { name: 'write_source', description: 'Change an external system through a declared source (scope: the kind).', tier: 'external_write', kind: 'write' },
-  { name: 'run_validator', description: 'Run a deterministic validator over a step output (scope: the validator).', tier: 'observe', kind: 'validator' },
-  { name: 'model_review', description: 'Ask the session’s model to review with an explicit input and output schema.', tier: 'draft', kind: 'review' },
+  {
+    name: 'write_project_context',
+    description: 'Record statements, claims, decisions, lessons in Construct state.',
+    tier: 'project_write',
+    kind: 'write',
+  },
+  {
+    name: 'write_source',
+    description: 'Change an external system through a declared source (scope: the kind).',
+    tier: 'external_write',
+    kind: 'write',
+  },
+  {
+    name: 'run_validator',
+    description: 'Run a deterministic validator over a step output (scope: the validator).',
+    tier: 'observe',
+    kind: 'validator',
+  },
+  {
+    name: 'model_review',
+    description: 'Ask the session’s model to review with an explicit input and output schema.',
+    tier: 'draft',
+    kind: 'review',
+  },
   { name: 'ask_user', description: 'Raise a decision or clarification to the person and wait.', tier: 'observe', kind: 'interaction' },
   { name: 'run_tests', description: 'Run the project’s own test command and read the result.', tier: 'observe', kind: 'validator' },
-  { name: 'kernel', description: 'A deterministic check Construct runs itself when the step is reached (scope: drift_detect).', tier: 'observe', kind: 'validator' },
+  {
+    name: 'kernel',
+    description: 'A deterministic check Construct runs itself when the step is reached (scope: drift_detect).',
+    tier: 'observe',
+    kind: 'validator',
+  },
 ]);
 
 export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([

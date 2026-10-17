@@ -1,1 +1,0 @@
-Gallery public register: the gallery opened in 1998.

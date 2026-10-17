@@ -16,7 +16,8 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { DatabaseSync } from 'node:sqlite';
 import { sterile, type SterileFixture } from '../harness/sterile.ts';
 import { resolveRepository } from '../../src/cli/context.ts';
 
@@ -55,7 +56,11 @@ function git(fx: SterileFixture, cwd: string, args: string[]): string {
 
 /** A pattern matching a path however the temp directory is spelled (macOS /var or /private/var). */
 function pathPattern(path: string): RegExp {
-  return new RegExp(realpathSync(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/^\/private/, '(?:/private)?'));
+  return new RegExp(
+    realpathSync(path)
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/^\/private/, '(?:/private)?'),
+  );
 }
 
 interface Repo {
@@ -91,7 +96,7 @@ function titles(fx: SterileFixture, cwd: string): string[] {
   const r = cli(fx, cwd, ['work', 'list', '--json']);
   assert.equal(r.status, 0, r.out);
   const parsed = JSON.parse(r.out.trim().split('\n').pop()!) as { items?: Array<{ title: string }> } | Array<{ title: string }>;
-  const items = Array.isArray(parsed) ? parsed : parsed.items ?? [];
+  const items = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
   return items.map((i) => i.title).sort();
 }
 
@@ -133,16 +138,22 @@ test('doctor in a worktree reports the shared project, and init there is refused
   }
 });
 
-test('doctor in a worktree checks that worktree\'s own Claude Code hooks and never says init in the main checkout adds them there', () => {
+test("doctor in a worktree checks that worktree's own Claude Code hooks and never says init in the main checkout adds them there", () => {
   const fx = sterile();
   try {
     const r = repo(fx, true);
     const wired = cli(fx, r.main, ['init', '--client=claude-code']);
     assert.equal(wired.status, 0, wired.out);
-    assert.match(cli(fx, r.main, ['doctor']).out, /ok\s+host-hooks: \.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/);
+    assert.match(
+      cli(fx, r.main, ['doctor']).out,
+      /ok\s+host-hooks: \.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/,
+    );
     const lane = cli(fx, r.external, ['doctor']).out;
     const line = lane.split('\n').find((l) => /host-hooks:/.test(l)) ?? '';
-    assert.match(line, /^ok\s+host-hooks: no construct hooks in \.claude\/settings\.local\.json; `construct init` writes the hooks only in the main checkout, .*, not in this worktree's own \.claude\/settings\.local\.json$/);
+    assert.match(
+      line,
+      /^ok\s+host-hooks: no construct hooks in \.claude\/settings\.local\.json; `construct init` writes the hooks only in the main checkout, .*, not in this worktree's own \.claude\/settings\.local\.json$/,
+    );
     assert.match(line, pathPattern(r.main));
     assert.doesNotMatch(line, /adds them/);
     assert.equal(existsSync(join(r.external, '.claude', 'settings.local.json')), false);
@@ -161,7 +172,10 @@ test('removing a worktree loses nothing, and a store copied into a worktree is n
     assert.equal(cli(fx, r.nested, ['work', 'add', 'made in lane a after the copy']).status, 0);
     const doctor = cli(fx, r.nested, ['doctor']);
     assert.notEqual(doctor.status, 0, 'a store inside a worktree is not healthy, even though it is never opened');
-    assert.match(doctor.out, /FAIL worktree-store: .*\.claude\/worktrees\/a\/\.construct\/state\/construct\.sqlite is a store inside this worktree that Construct never opens/);
+    assert.match(
+      doctor.out,
+      /FAIL worktree-store: .*\.claude\/worktrees\/a\/\.construct\/state\/construct\.sqlite is a store inside this worktree that Construct never opens/,
+    );
     assert.equal(sh(fx, r.main, 'git', ['worktree', 'remove', '--force', r.external]).status, 0);
     assert.deepEqual(titles(fx, r.main), ['made in lane a after the copy', 'made in lane b']);
   } finally {
@@ -199,7 +213,10 @@ function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): P
       for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
         const line = buffer.slice(0, nl);
         buffer = buffer.slice(nl + 1);
-        const msg = JSON.parse(line) as { id: number; result?: { structuredContent?: { construct?: { project?: { root: string; lane: BootstrapLane | null } } } } };
+        const msg = JSON.parse(line) as {
+          id: number;
+          result?: { structuredContent?: { construct?: { project?: { root: string; lane: BootstrapLane | null } } } };
+        };
         if (msg.id !== 2) continue;
         child.stdin.end();
         const project = msg.result?.structuredContent?.construct?.project;
@@ -207,7 +224,9 @@ function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): P
         resolve(project);
       }
     });
-    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lanes', version: '0' } } })}\n`);
+    child.stdin.write(
+      `${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lanes', version: '0' } } })}\n`,
+    );
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })}\n`);
   });
 }
@@ -223,7 +242,11 @@ test('a server started in a worktree binds the main store and reports its lane',
     assert.equal(fromLane.lane!.head, git(fx, r.external, ['rev-parse', 'HEAD']), 'a lane on a branch reports the commit it is at');
     const pinned = await bootstrapFrom(fx, r.nested, [`--project=${r.main}`]);
     assert.equal(realpathSync(pinned.root), realpathSync(r.main));
-    assert.equal(realpathSync(pinned.lane!.checkout), realpathSync(r.nested), 'a pinned --project still reports the worktree the session runs in');
+    assert.equal(
+      realpathSync(pinned.lane!.checkout),
+      realpathSync(r.nested),
+      'a pinned --project still reports the worktree the session runs in',
+    );
     const main = await bootstrapFrom(fx, r.main);
     assert.equal(main.lane, null);
   } finally {
@@ -231,7 +254,9 @@ test('a server started in a worktree binds the main store and reports its lane',
   }
 });
 
-test('a server pinned to the main checkout refuses a session in a worktree whose project file names a different project', { timeout: 60_000 }, async () => {
+test('a server pinned to the main checkout refuses a session in a worktree whose project file names a different project', {
+  timeout: 60_000,
+}, async () => {
   const fx = sterile();
   try {
     const r = repo(fx, true);
@@ -285,7 +310,10 @@ test('worktrees of a bare repository are refused, never treated as projects of t
       assert.equal(found?.mainRoot, null, lane);
     }
     for (const dir of [bareLane, containerLane, container]) {
-      for (const args of [['init', '--no-wire'], ['work', 'list']]) {
+      for (const args of [
+        ['init', '--no-wire'],
+        ['work', 'list'],
+      ]) {
         const refused = cli(fx, dir, args);
         assert.notEqual(refused.status, 0, `${args.join(' ')} in ${dir}: ${refused.out}`);
         assert.match(refused.out, /bare/);
@@ -436,10 +464,17 @@ test('commands that edit committed project files are refused in a worktree; read
       assert.match(refused.out, /edits the project's committed \.construct files/, args.join(' '));
       assert.match(refused.out, pathPattern(r.main), args.join(' '));
     }
-    assert.deepEqual(committed.map((f) => readFileSync(f, 'utf8')), before, 'the main checkout\'s committed files are untouched');
+    assert.deepEqual(
+      committed.map((f) => readFileSync(f, 'utf8')),
+      before,
+      "the main checkout's committed files are untouched",
+    );
     assert.equal(cli(fx, r.external, ['config', 'get', 'sources.defaultFreshnessHours']).status, 0);
     assert.equal(cli(fx, r.external, ['skill', 'update', '--dry-run']).status, 0);
-    assert.equal(cli(fx, r.external, ['source', 'add', 'scratch', '--kind=directory', '--purpose=scratch', '--locator=.', '--local']).status, 0);
+    assert.equal(
+      cli(fx, r.external, ['source', 'add', 'scratch', '--kind=directory', '--purpose=scratch', '--locator=.', '--local']).status,
+      0,
+    );
   } finally {
     fx.cleanup();
   }
@@ -495,6 +530,147 @@ test('a worktree with a relative gitdir pointer is linked even when reached thro
     const described = cli(fx, fx.root, ['serve', '--describe', '--client=claude-code', `--project=${alias}`]);
     assert.equal(described.status, 0, described.out);
     assert.match(described.out, new RegExp(`bound to ${pathPattern(r.main).source}\\s`));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+interface HostSession {
+  readonly lane: BootstrapLane | null;
+  readonly answer: { readonly ok?: boolean; readonly problems?: Array<{ check: string; problem: string }> } | undefined;
+  readonly rootsAsked: number;
+}
+
+/**
+ * Serve as a host that lists `roots` does: it declares the capability at
+ * initialize, answers the server's roots/list, then bootstraps and checks an
+ * answer citing `cite` as a bare path.
+ */
+function sessionFrom(fx: SterileFixture, cwd: string, extra: string[], roots: readonly string[], cite: string): Promise<HostSession> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=claude-code', ...extra], { cwd, env: envFor(fx) });
+    const send = (m: unknown): void => {
+      child.stdin.write(`${JSON.stringify(m)}\n`);
+    };
+    let buffer = '';
+    let rootsAsked = 0;
+    let lane: BootstrapLane | null = null;
+    let stderr = '';
+    child.stderr.on('data', (d) => {
+      stderr += String(d);
+    });
+    child.on('exit', (code) => {
+      if (code !== 0) reject(new Error(`serve exited ${String(code)}: ${stderr}`));
+    });
+    child.stdout.on('data', (d) => {
+      buffer += String(d);
+      for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
+        const line = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        const msg = JSON.parse(line) as { id: number | string; method?: string; result?: { structuredContent?: Record<string, unknown> } };
+        if (msg.method === 'roots/list') {
+          rootsAsked += 1;
+          send({ jsonrpc: '2.0', id: msg.id, result: { roots: roots.map((dir) => ({ uri: pathToFileURL(dir).href })) } });
+        } else if (msg.id === 1) {
+          send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+          send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
+          send({
+            jsonrpc: '2.0',
+            id: 3,
+            method: 'tools/call',
+            params: {
+              name: 'check_answer',
+              arguments: { answer: 'The lane keeps 42 parsers.', citations: [{ ref: cite, excerpt: 'The lane keeps 42 parsers.' }] },
+            },
+          });
+        } else if (msg.id === 2) {
+          const project = (msg.result?.structuredContent?.construct as { project?: { lane: BootstrapLane | null } } | undefined)?.project;
+          if (!project) return reject(new Error(`no project in bootstrap: ${line}`));
+          lane = project.lane;
+        } else if (msg.id === 3) {
+          child.stdin.end();
+          resolve({ lane, answer: msg.result?.structuredContent as HostSession['answer'], rootsAsked });
+        }
+      }
+    });
+    send({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-11-25',
+        capabilities: { roots: { listChanged: true } },
+        clientInfo: { name: 'lanes', version: '0' },
+      },
+    });
+  });
+}
+
+/** The lane each session the store has seen was recorded in. */
+function sessionLanes(r: Repo): Array<string | null> {
+  const db = new DatabaseSync(r.db, { readOnly: true });
+  try {
+    return (db.prepare('SELECT lane_root FROM sessions ORDER BY started_at').all() as Array<{ lane_root: string | null }>).map(
+      (row) => row.lane_root,
+    );
+  } finally {
+    db.close();
+  }
+}
+
+for (const pinned of [true, false]) {
+  test(`a server started in the main checkout${pinned ? ' with --project' : ''} takes its lane from the host's roots, and cites what that worktree holds`, {
+    timeout: 60_000,
+  }, async () => {
+    const fx = sterile();
+    try {
+      const r = repo(fx, true);
+      // A file only the worktree has: the session's own work, cited by a bare path.
+      mkdirSync(join(r.nested, 'docs'), { recursive: true });
+      writeFileSync(join(r.nested, 'docs', 'lane-only.md'), 'The lane keeps 42 parsers.\n');
+      const extra = pinned ? [`--project=${r.main}`] : [];
+      const session = await sessionFrom(fx, r.main, extra, [r.nested], 'docs/lane-only.md');
+      assert.equal(session.rootsAsked, 1, 'the server asks the host where the session works, once');
+      assert.equal(realpathSync(session.lane!.checkout), realpathSync(r.nested), 'bootstrap reports the worktree the host named');
+      assert.equal(session.lane!.branch, 'lane-a');
+      assert.equal(session.lane!.head, git(fx, r.nested, ['rev-parse', 'HEAD']));
+      assert.equal(session.answer?.ok, true, `the worktree's own file resolves: ${JSON.stringify(session.answer)}`);
+      assert.deepEqual(
+        sessionLanes(r).map((lane) => lane && realpathSync(lane)),
+        [realpathSync(r.nested)],
+        'the session row records the lane too',
+      );
+      const unlisted = await sessionFrom(fx, r.main, extra, [], 'docs/lane-only.md');
+      assert.equal(unlisted.lane, null, 'a host that lists no roots leaves the session in the checkout it started in');
+      assert.notEqual(unlisted.answer?.ok, true, "and the main checkout does not hold the worktree's file");
+    } finally {
+      fx.cleanup();
+    }
+  });
+}
+
+test("roots outside the project's own checkouts are never trusted for a lane", { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    // A clone carries the same project file, but it is not one of the project's worktrees.
+    const clone = join(fx.root, 'clone');
+    git(fx, fx.root, ['clone', '-q', r.main, clone]);
+    const elsewhere = join(fx.root, 'elsewhere');
+    mkdirSync(elsewhere);
+    // A worktree whose project file names another project is not one of this project's checkouts.
+    const file = join(r.external, '.construct', 'project.json');
+    writeFileSync(file, JSON.stringify({ ...(JSON.parse(readFileSync(file, 'utf8')) as object), id: 'proj-someone-else' }, null, 2));
+    for (const roots of [[clone], [elsewhere], [r.external], [join(r.main, '..', 'repo', '..', 'clone')]]) {
+      const session = await sessionFrom(fx, r.main, [`--project=${r.main}`], roots, 'README.md');
+      assert.equal(session.lane, null, `${roots.join(', ')} names no lane`);
+    }
+    const ambiguous = await sessionFrom(fx, r.main, [`--project=${r.main}`], [r.nested, r.main], 'README.md');
+    assert.equal(ambiguous.lane, null, 'roots naming two checkouts settle nothing');
+    const back = await sessionFrom(fx, r.nested, [], [r.main], 'README.md');
+    assert.equal(back.lane, null, 'a host that says its session works in the main checkout is believed');
+    const deeper = await sessionFrom(fx, r.main, [], [join(r.nested, '.construct')], 'README.md');
+    assert.equal(realpathSync(deeper.lane!.checkout), realpathSync(r.nested), 'a directory inside a worktree names that worktree');
   } finally {
     fx.cleanup();
   }

@@ -16,15 +16,25 @@ import { NoProjectError } from '../kernel/project/discover.ts';
 import { StoreProjectError } from '../kernel/state/identity.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
-import { endSession, registerSession } from '../kernel/state/sessions.ts';
+import { endSession, moveSession, registerSession } from '../kernel/state/sessions.ts';
 import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, initRootFor, locateProject, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
+import {
+  createContext,
+  initRootFor,
+  laneAt,
+  locateProject,
+  mainCheckoutOf,
+  ProjectBusyError,
+  resolveRepository,
+  type CliContext,
+  type Lane,
+} from './context.ts';
 import { HostRequests } from '../hosts/mcp/outbound.ts';
 import { refreshLauncher } from '../hosts/wiring/claude-local.ts';
 import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
 import { managedClaudeSettingsPath, resolveClaudeConfigDir } from '../kernel/paths.ts';
-import { bindingFor, openBroker } from './broker-context.ts';
+import { bindingFor, createBrokerContext, openBroker } from './broker-context.ts';
 import { OperationError, say, writeJson } from './output.ts';
 import { packageVersion } from './version.ts';
 
@@ -54,15 +64,22 @@ const RETRY_INIT_NEXT = 'Run `construct init` in the project, then call again. T
 export function bindFailureFor(error: unknown): BindFailure {
   if (error instanceof ProjectBusyError || error instanceof StateBusyError) return { busy: true };
   if (error instanceof UnsupportedStateError) {
-    const next = error.kind === 'newer'
-      ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
-      : error.kind === 'older'
-        ? 'Run `construct migrate` in the project (it backs the store up first), then call again.'
-        : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
+    const next =
+      error.kind === 'newer'
+        ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
+        : error.kind === 'older'
+          ? 'Run `construct migrate` in the project (it backs the store up first), then call again.'
+          : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
     return { busy: false, reason: error.message.split('\n')[0]!, next };
   }
-  if (error instanceof ProjectFileError) return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
-  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError) return { busy: false, reason: error.message, next: 'Use a Construct build compatible with the project files, then restart this MCP server. Nothing was recorded.' };
+  if (error instanceof ProjectFileError)
+    return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
+  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError)
+    return {
+      busy: false,
+      reason: error.message,
+      next: 'Use a Construct build compatible with the project files, then restart this MCP server. Nothing was recorded.',
+    };
   if (error instanceof StoreProjectError) return { busy: false, reason: error.message, next: error.next };
   if (error instanceof NoProjectError) return { busy: false, reason: error.message.split('\n')[0]!, next: RETRY_INIT_NEXT };
   if (error instanceof OperationError) return { busy: false, reason: error.message, next: error.next ?? RETRY_INIT_NEXT };
@@ -94,6 +111,19 @@ export function personPromptAnswerers(ctx: CliContext, cwd: string): string[] {
   ]);
 }
 
+/** Two lanes are one checkout when their project directories resolve to the same place; null is the main checkout. */
+function sameLane(a: Lane | null, b: Lane | null): boolean {
+  if (a === null || b === null) return a === b;
+  const real = (path: string): string => {
+    try {
+      return realpathSync(path);
+    } catch {
+      return resolve(path);
+    }
+  };
+  return real(a.root) === real(b.root);
+}
+
 export async function serve(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const projectFlag = stringFlag(args, 'project');
   const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag), sessionCwd: ctx.cwd } : ctx;
@@ -105,26 +135,54 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   // Capture the intended root before retrying. A missing file is not permission
   // to forget an identity already observed before a format or lock refusal.
   const repository = resolveRepository(bound.cwd);
-  let intendedRoot = repository?.linked ? mainCheckoutOf(repository) ?? initRootFor(bound.cwd) : initRootFor(bound.cwd);
-  try { intendedRoot = locateProject(bound).root; } catch { /* The opener reports the actual failure below. */ }
+  let intendedRoot = repository?.linked ? (mainCheckoutOf(repository) ?? initRootFor(bound.cwd)) : initRootFor(bound.cwd);
+  try {
+    intendedRoot = locateProject(bound).root;
+  } catch {
+    /* The opener reports the actual failure below. */
+  }
   intendedRoot = realpathSync(intendedRoot);
   let projectId: string | null = null;
   const openPinned = (timeout: number): ReturnType<typeof openBroker> => {
     const location = locateProject(bound);
-    if (realpathSync(location.root) !== intendedRoot) throw new OperationError(
-      'The project root changed while this connection was waiting to bind.',
-      'Restart the MCP server in the intended project. Nothing was recorded.',
-    );
+    if (realpathSync(location.root) !== intendedRoot)
+      throw new OperationError(
+        'The project root changed while this connection was waiting to bind.',
+        'Restart the MCP server in the intended project. Nothing was recorded.',
+      );
     const id = readJsonFile(intendedRoot, projectFilePath(intendedRoot), validateProjectConfig)?.id ?? null;
-    if (projectId !== null && id !== projectId) throw new OperationError(
-      'The project identity changed while this connection was waiting to bind.',
-      'Restart the MCP server after checking the intended project identity. Nothing was recorded.',
-    );
+    if (projectId !== null && id !== projectId)
+      throw new OperationError(
+        'The project identity changed while this connection was waiting to bind.',
+        'Restart the MCP server after checking the intended project identity. Nothing was recorded.',
+      );
     projectId ??= id;
     return openBroker({ ...bound, stateBusyTimeoutMs: timeout }, flags, binding, { root: intendedRoot, id: projectId });
   };
 
   let opened: ReturnType<typeof openBroker> | null = null;
+  /**
+   * The checkout the host says this session works in, from its MCP roots:
+   * undefined until it names one of the project's own checkouts. A host that
+   * starts every server in one directory (Claude's desktop app starts them in
+   * the main checkout) still reports the worktree its session runs in.
+   */
+  let reportedLane: Lane | null | undefined;
+  /** `o` serving from the checkout the host reported, when that is not the one it was started in. */
+  const inReportedLane = (o: ReturnType<typeof openBroker>): ReturnType<typeof openBroker> => {
+    if (reportedLane === undefined || sameLane(reportedLane, o.project.lane)) return o;
+    const project = { ...o.project, lane: reportedLane };
+    // No call has run yet, so the replaced context has no delegated work to hand over.
+    void o.broker.delegation?.close();
+    return { project, binding: o.binding, broker: createBrokerContext(bound, project, o.binding) };
+  };
+  /** Keep the lane the host's roots name, when they name one of the project's checkouts. */
+  const hearRoots = (dirs: readonly string[]): boolean => {
+    const lane = laneAt(intendedRoot, dirs);
+    if (lane === undefined) return false;
+    reportedLane = lane;
+    return true;
+  };
   /**
    * Record this server as a session in the project it bound. A store too busy
    * to take the row now gets it before a later call; the server never fails
@@ -138,18 +196,18 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     const lane = o.project.lane;
     try {
       registerSession(o.project.store, {
-      id: o.binding.sessionId,
-      host: o.binding.client,
-      surface: o.binding.surface,
-      machine: hostname(),
-      pid: process.pid,
-      serveVersion: packageVersion(),
-      hostSessionId: identity?.hostSessionId,
-      hostSessionSource: identity?.source,
-      laneRoot: lane?.root,
-      branch: lane?.branch ?? undefined,
-      head: lane?.head ?? undefined,
-      at: ctx.now(),
+        id: o.binding.sessionId,
+        host: o.binding.client,
+        surface: o.binding.surface,
+        machine: hostname(),
+        pid: process.pid,
+        serveVersion: packageVersion(),
+        hostSessionId: identity?.hostSessionId,
+        hostSessionSource: identity?.source,
+        laneRoot: lane?.root,
+        branch: lane?.branch ?? undefined,
+        head: lane?.head ?? undefined,
+        at: ctx.now(),
       });
       registered = true;
     } catch (error) {
@@ -157,9 +215,10 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     }
   };
   /** End the session when the host stops this server by signal, as it would by closing the connection. */
-  const endOnSignal = (o: ReturnType<typeof openBroker>): void => {
+  const endOnSignal = (current: () => ReturnType<typeof openBroker>): void => {
     for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const) {
       process.once(signal, async () => {
+        const o = current();
         await o.broker.delegation?.close();
         end(o);
         o.project.store.close();
@@ -180,23 +239,44 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   } catch (error) {
     if (describe) throw error;
     const failed = bindFailureFor(error);
-    if (failed.busy || error instanceof NoProjectError || error instanceof OperationError || error instanceof UnsupportedStateError || error instanceof ProjectFileError || error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError || error instanceof StoreProjectError) {
+    if (
+      failed.busy ||
+      error instanceof NoProjectError ||
+      error instanceof OperationError ||
+      error instanceof UnsupportedStateError ||
+      error instanceof ProjectFileError ||
+      error instanceof UnsupportedProjectFileError ||
+      error instanceof LegacyProjectError ||
+      error instanceof StoreProjectError
+    ) {
       let lazy: ReturnType<typeof openBroker> | null = null;
       try {
-        await serveLazyMcp(binding.surface, () => {
-          const o = openPinned(LAZY_LOCK_WAIT_MS);
-          o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
-          lazy = o;
-          register(o);
-          refreshLauncher(o.project.layout.stateDir);
-          endOnSignal(o);
-          return o.broker;
-        }, packageVersion(), bindFailureFor, process.stdin, process.stdout, {
-          ...hostOptions,
-          beforeEachCall: () => {
-            if (lazy) register(lazy);
+        await serveLazyMcp(
+          binding.surface,
+          () => {
+            const o = inReportedLane(openPinned(LAZY_LOCK_WAIT_MS));
+            o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
+            lazy = o;
+            register(o);
+            refreshLauncher(o.project.layout.stateDir);
+            endOnSignal(() => o);
+            return o.broker;
           },
-        });
+          packageVersion(),
+          bindFailureFor,
+          process.stdin,
+          process.stdout,
+          {
+            ...hostOptions,
+            beforeEachCall: () => {
+              if (lazy) register(lazy);
+            },
+            sessionRoots: (dirs) => {
+              hearRoots(dirs);
+              return null;
+            },
+          },
+        );
       } finally {
         const done = lazy as ReturnType<typeof openBroker> | null;
         if (done) {
@@ -212,7 +292,14 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const { project, broker } = opened;
   try {
     if (describe) {
-      const record = { surface: binding.surface, client: binding.client, executor: binding.executorId, project: project.root, capabilities: [...broker.host.available].sort(), maxTier: broker.host.maxTier };
+      const record = {
+        surface: binding.surface,
+        client: binding.client,
+        executor: binding.executorId,
+        project: project.root,
+        capabilities: [...broker.host.available].sort(),
+        maxTier: broker.host.maxTier,
+      };
       if (args.json) writeJson(record);
       else {
         say(`would serve the ${record.surface} surface for ${record.client} bound to ${record.project}`);
@@ -220,14 +307,39 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       }
       return 0;
     }
-    const live = opened;
+    let live = opened;
     register(live);
     refreshLauncher(project.layout.stateDir);
-    endOnSignal(live);
+    endOnSignal(() => live);
+    const moveTo = (dirs: readonly string[]): ReturnType<typeof openBroker>['broker'] | null => {
+      if (!hearRoots(dirs)) return null;
+      const moved = inReportedLane(live);
+      if (moved === live) return null;
+      live = moved;
+      const lane = moved.project.lane;
+      if (registered) {
+        try {
+          moveSession(moved.project.store, {
+            id: moved.binding.sessionId,
+            laneRoot: lane?.root ?? null,
+            branch: lane?.branch ?? null,
+            head: lane?.head ?? null,
+            at: ctx.now(),
+          });
+        } catch {
+          // Where the session row says it works is awareness for peers; serving never fails for it.
+        }
+      }
+      return moved.broker;
+    };
     try {
-      await serveMcp(binding.surface, broker, process.stdin, process.stdout, { ...hostOptions, beforeEachCall: () => register(live) });
+      await serveMcp(binding.surface, broker, process.stdin, process.stdout, {
+        ...hostOptions,
+        beforeEachCall: () => register(live),
+        sessionRoots: moveTo,
+      });
     } finally {
-      await broker.delegation?.close();
+      await live.broker.delegation?.close();
       end(live);
     }
     return 0;

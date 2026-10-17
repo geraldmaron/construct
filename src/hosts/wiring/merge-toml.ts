@@ -207,8 +207,12 @@ function ownLines(s: Scanned, name: string): { readonly own: Set<number>; readon
     }
     if (shape.kind === 'key') {
       const full = [...s.tables[i]!, ...shape.path];
-      if (!inOwn && startsWith(full, prefix)) return { problem: `${full.join('.')} defines the ${name} server with a dotted key or an inline table, which Construct does not edit` };
-      if (!inOwn && full.length === 1 && full[0] === SERVERS_TABLE) return { problem: `${SERVERS_TABLE} is an inline table, which Construct does not edit` };
+      if (!inOwn && startsWith(full, prefix))
+        return {
+          problem: `${full.join('.')} defines the ${name} server with a dotted key or an inline table, which Construct does not edit`,
+        };
+      if (!inOwn && full.length === 1 && full[0] === SERVERS_TABLE)
+        return { problem: `${SERVERS_TABLE} is an inline table, which Construct does not edit` };
     }
     if (inOwn && shape.kind !== 'blank') {
       // A blank or comment line between two of the table's keys is the table's; trailing ones belong to what follows.
@@ -267,7 +271,11 @@ function tableOf(s: Scanned, own: Set<number>): Map<string, TomlValue | typeof U
     } else if (shape.kind === 'key') {
       flush();
       const table = s.tables[i]!;
-      pending = { key: [...table.slice(2), ...shape.path].join('.'), value: shape.value, readable: table.length === 2 && shape.path.length === 1 };
+      pending = {
+        key: [...table.slice(2), ...shape.path].join('.'),
+        value: shape.value,
+        readable: table.length === 2 && shape.path.length === 1,
+      };
     } else if (shape.kind === 'continuation' && pending) {
       pending.value += ` ${shape.value}`;
     }
@@ -325,7 +333,12 @@ function sameTable(found: Map<string, TomlValue | typeof UNREADABLE>, entry: Rea
   });
 }
 
-function read(path: string): { readonly kind: 'absent' } | { readonly kind: 'problem'; readonly problem: string } | { readonly kind: 'file'; readonly text: string; readonly scanned: Scanned } {
+function read(
+  path: string,
+):
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'problem'; readonly problem: string }
+  | { readonly kind: 'file'; readonly text: string; readonly scanned: Scanned } {
   if (!existsSync(path)) return { kind: 'absent' };
   const text = readFileSync(path, 'utf8');
   const scanned = scan(text);

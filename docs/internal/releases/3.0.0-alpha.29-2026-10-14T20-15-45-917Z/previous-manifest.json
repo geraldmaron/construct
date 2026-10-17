@@ -32,12 +32,12 @@
   ],
   "freshUserObservations": [
     {
-      "path": "docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-cursor/semantic-assessment/assessment.json",
+      "path": "docs/internal/releases/observations/fresh-cursor-semantic-assessment.json",
       "sha256": "66a11a5b0bc9edf3b0d2e800ec56354cc519275e76595b2374ad1357bd77473c",
       "summary": "Latest bounded Cursor artifacts failed the frozen independent rubric and its managed lifecycle remained unfinished; phase-scoped support judgments have limited coverage."
     },
     {
-      "path": "docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-codex/incomplete-observation.json",
+      "path": "docs/internal/releases/observations/fresh-codex-incomplete-observation.json",
       "sha256": "a4d3533a96172cbd100c5b478c2535e8851d05bcf77f7a6c3dfb350fc1e0b47b",
       "summary": "Latest Codex initial phase timed out without an artifact, and the changed phase had no result or completion receipt; no additional timeout or success is inferred."
     }

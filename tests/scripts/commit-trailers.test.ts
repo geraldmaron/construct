@@ -4,7 +4,6 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-// @ts-expect-error — hook helper is plain .mjs outside src/
 import { stripAttributionTrailers, findAttributionTrailers } from '../../scripts/hooks/commit-trailers.mjs';
 
 test('Co-authored-by and Signed-off-by lines are stripped', () => {
@@ -18,9 +17,7 @@ test('Co-authored-by and Signed-off-by lines are stripped', () => {
 });
 
 test('findAttributionTrailers names what is still present', () => {
-  const hits = findAttributionTrailers(
-    'Subject\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n',
-  );
+  const hits = findAttributionTrailers('Subject\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n');
   assert.deepEqual(hits, ['Co-authored-by: Cursor <cursoragent@cursor.com>']);
 });
 

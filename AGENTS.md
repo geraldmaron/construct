@@ -119,7 +119,7 @@ File operations must be non-interactive (`cp -f`, `mv -f`, `rm -f`,
 - No secrets in source. Fixtures use the sterile harness and never touch
   the real HOME.
 - AI-authored code never references tracker ids. Lineage lives in commit
-  messages and the ledger. Enforced by `scripts/lint-no-bead-refs.mjs`.
+  messages and the ledger. Enforced by `scripts/lint-no-tracker-refs.mjs`.
 - Commit messages state an invariant in plain language.
 - Documentation states what is true now. Provenance dates stay.
 - Development model calls use Gerald's subscriptions, never a local

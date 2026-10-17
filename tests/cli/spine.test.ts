@@ -24,7 +24,13 @@ test('init creates the exact layout, one database, the ignore rule, and plants t
     const { code, out } = await capture(() => run(['init', `--skills-dir=${skillsDir}`], box.ctx));
     assert.equal(code, 0, out);
     assert.match(out, /Initialized Construct project "demo"/);
-    assert.deepEqual(readdirSync(join(box.cwd, '.construct')).sort(), ['constitution.json', 'project.json', 'registry.lock.json', 'sources.json', 'state']);
+    assert.deepEqual(readdirSync(join(box.cwd, '.construct')).sort(), [
+      'constitution.json',
+      'project.json',
+      'registry.lock.json',
+      'sources.json',
+      'state',
+    ]);
     assert.deepEqual(readdirSync(join(box.cwd, '.construct', 'state')), ['construct.sqlite']);
     assert.match(readFileSync(join(box.cwd, '.gitignore'), 'utf8'), /\.construct\/state\//);
     assert.ok(existsSync(join(skillsDir, 'construct', 'SKILL.md')));
@@ -37,7 +43,9 @@ test('init creates the exact layout, one database, the ignore rule, and plants t
     assert.match(lock.skills.intake.digest, /^sha256:/);
 
     // Idempotent, and answers can come later.
-    const again = await capture(() => run(['init', '--scale=team', '--outcome=launch', '--constraint=keep the API', `--skills-dir=${skillsDir}`, '--json'], box.ctx));
+    const again = await capture(() =>
+      run(['init', '--scale=team', '--outcome=launch', '--constraint=keep the API', `--skills-dir=${skillsDir}`, '--json'], box.ctx),
+    );
     assert.equal(again.code, 0);
     const record = JSON.parse(again.out);
     assert.equal(record.profile.onboardingState, 'confirmed');
@@ -55,9 +63,14 @@ test('init refuses a bad scale before writing, and an earlier-alpha file with th
   try {
     const bad = await capture(() => run(['init', '--scale=huge'], box.ctx));
     assert.equal(bad.code, 2);
-    assert.match(bad.err, /--scale must be one of side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one: a side project \| your primary product, just you/);
+    assert.match(
+      bad.err,
+      /--scale must be one of side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one: a side project \| your primary product, just you/,
+    );
     // Off the person's own terminal, a side project is refused before anything is written.
-    const relayed = await capture(() => run(['init', '--no-wire', '--scale=a side project'], { ...box.ctx, terminal: { interactive: false, agentAncestor: null } }));
+    const relayed = await capture(() =>
+      run(['init', '--no-wire', '--scale=a side project'], { ...box.ctx, terminal: { interactive: false, agentAncestor: null } }),
+    );
     assert.equal(relayed.code, 1);
     assert.match(relayed.err, /side project, which lowers how much challenge work gets, needs your own answer/);
     assert.equal(existsSync(join(box.cwd, '.construct')), false);
@@ -98,14 +111,20 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     assert.equal(record.onboarding.state, 'confirmed');
     assert.equal(record.runs.active, 0);
     assert.equal(record.registry.skills, 17);
-    assert.equal(record.registry.workflows, 24);
+    assert.equal(record.registry.workflows, 12);
     assert.deepEqual(record.registry.skew, []);
     // A project no host is wired to is not healthy, and that is the only thing wrong with it.
     const unwired = await capture(() => run(['doctor', '--json'], ctx));
     assert.equal(unwired.code, 1, unwired.out);
     const failing = (JSON.parse(unwired.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.filter((c) => !c.ok);
-    assert.deepEqual(failing.map((c) => c.name), ['host-wiring']);
-    assert.match(failing[0]!.detail, /no host wired, so no agent session can reach Construct; no agent host found on this machine; `construct init --client=<host>` wires one/);
+    assert.deepEqual(
+      failing.map((c) => c.name),
+      ['host-wiring'],
+    );
+    assert.match(
+      failing[0]!.detail,
+      /no host wired, so no agent session can reach Construct; no agent host found on this machine; `construct init --client=<host>` wires one/,
+    );
     const wired = await capture(() => run(['init', '--client=claude-code'], ctx));
     assert.equal(wired.code, 0, wired.err);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
@@ -113,7 +132,7 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     const checks = JSON.parse(doctor.out);
     assert.equal(checks.healthy, true);
     assert.ok(checks.checks.some((c: { name: string }) => c.name === 'state'));
-    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /41\/41 current/);
+    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /29\/29 current/);
     // Break the state file: doctor fails and says why, status leads with the problem.
     writeFileSync(join(box.cwd, '.construct', 'state', 'construct.sqlite'), 'garbage', 'utf8');
     const broken = await capture(() => run(['doctor'], ctx));
@@ -179,7 +198,11 @@ test('project show and validate read the committed files; refresh proposes and c
     assert.ok(JSON.parse(refresh.out).newProposals >= 1);
     const constitution = JSON.parse(readFileSync(join(box.cwd, '.construct', 'constitution.json'), 'utf8'));
     assert.deepEqual(constitution.constraints, ['never break the API'], 'a refreshed proposal is not confirmed into the file');
-    writeFileSync(join(box.cwd, '.construct', 'sources.json'), '{"format":"construct-sources","formatVersion":2,"sources":[{"id":"x","kind":"jira","purpose":"p","authorityLevel":"informative","sensitivity":"internal","token":"abc"}]}', 'utf8');
+    writeFileSync(
+      join(box.cwd, '.construct', 'sources.json'),
+      '{"format":"construct-sources","formatVersion":2,"sources":[{"id":"x","kind":"jira","purpose":"p","authorityLevel":"informative","sensitivity":"internal","token":"abc"}]}',
+      'utf8',
+    );
     const invalid = await capture(() => run(['project', 'validate'], ctx));
     assert.equal(invalid.code, 1);
     assert.match(invalid.out, /cannot grant consent, carry secrets/);
@@ -191,7 +214,23 @@ test('sources are declared into the committed file, read by digest, related, and
     const ground = join(box.cwd, 'docs');
     mkdirSync(ground);
     writeFileSync(join(ground, 'design.md'), '# Design\n', 'utf8');
-    const add = await capture(() => run(['source', 'add', 'design', '--kind=directory', '--purpose=design docs', `--locator=${ground}`, '--authority=authoritative', '--authoritative-for=requirement', '--not-authoritative-for=capacity', '--freshness-hours=24'], ctx));
+    const add = await capture(() =>
+      run(
+        [
+          'source',
+          'add',
+          'design',
+          '--kind=directory',
+          '--purpose=design docs',
+          `--locator=${ground}`,
+          '--authority=authoritative',
+          '--authoritative-for=requirement',
+          '--not-authoritative-for=capacity',
+          '--freshness-hours=24',
+        ],
+        ctx,
+      ),
+    );
     assert.equal(add.code, 0, add.err);
     const declared = JSON.parse(readFileSync(join(box.cwd, '.construct', 'sources.json'), 'utf8'));
     assert.equal(declared.sources[0].id, 'design');
@@ -212,9 +251,15 @@ test('sources are declared into the committed file, read by digest, related, and
     const third = await capture(() => run(['source', 'refresh', 'design', '--json'], ctx));
     assert.equal(JSON.parse(third.out).outcome, 'changed');
 
-    const local = await capture(() => run(['source', 'add', 'tracker', '--kind=jira', '--purpose=tickets', '--locator=PROJ', '--local'], ctx));
+    const local = await capture(() =>
+      run(['source', 'add', 'tracker', '--kind=jira', '--purpose=tickets', '--locator=PROJ', '--local'], ctx),
+    );
     assert.equal(local.code, 0, local.err);
-    assert.equal(JSON.parse(readFileSync(join(box.cwd, '.construct', 'sources.json'), 'utf8')).sources.length, 1, 'a local source stays out of the committed file');
+    assert.equal(
+      JSON.parse(readFileSync(join(box.cwd, '.construct', 'sources.json'), 'utf8')).sources.length,
+      1,
+      'a local source stays out of the committed file',
+    );
     const unreachable = await capture(() => run(['source', 'refresh', 'tracker'], ctx));
     assert.equal(unreachable.code, 1);
     assert.match(unreachable.out, /unreachable \(nothing in this session can read a jira source/);
@@ -291,7 +336,11 @@ test('reset previews the exact targets, removes only them on --confirm, and recr
     assert.equal(confirmed.code, 0, confirmed.err);
     assert.equal(existsSync(join(box.cwd, '.construct', 'settings.json')), false);
     assert.ok(existsSync(join(box.cwd, '.construct', 'state', 'construct.sqlite')));
-    assert.equal(readFileSync(join(box.cwd, '.construct', 'project.json'), 'utf8'), projectBefore, 'the committed project file is untouched');
+    assert.equal(
+      readFileSync(join(box.cwd, '.construct', 'project.json'), 'utf8'),
+      projectBefore,
+      'the committed project file is untouched',
+    );
     const status = await capture(() => run(['status', '--json'], ctx));
     assert.equal(JSON.parse(status.out).onboarding.state, 'incomplete');
     const full = await capture(() => run(['reset', '--confirm', '--include-project-files', '--keep-state', '--json'], ctx));
@@ -317,7 +366,7 @@ test('an unreadable state directory is a failure sentence, not a stack trace', a
   });
 });
 
-test('init takes --scale in the setup question\'s words, and a side project from the person at their own terminal', async () => {
+test("init takes --scale in the setup question's words, and a side project from the person at their own terminal", async () => {
   const box = sandbox();
   try {
     const solo = await capture(() => run(['init', '--no-wire', '--scale=my primary product', '--json'], box.ctx));

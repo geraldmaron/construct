@@ -28,7 +28,22 @@ test('the person offers claimed work with a packet; offers and show list it as t
     assert.equal(noNext.code, 2);
     assert.match(noNext.err, /says next/);
 
-    const offered = await capture(() => run(['work', 'handoff', id, `--token=${token}`, '--state=lexer done', '--next=write expr.ts', '--watch-out=grammar test flakes', '--branch=feat/parser', '--commit=abc1234'], person));
+    const offered = await capture(() =>
+      run(
+        [
+          'work',
+          'handoff',
+          id,
+          `--token=${token}`,
+          '--state=lexer done',
+          '--next=write expr.ts',
+          '--watch-out=grammar test flakes',
+          '--branch=feat/parser',
+          '--commit=abc1234',
+        ],
+        person,
+      ),
+    );
     assert.equal(offered.code, 0, offered.err);
     assert.match(offered.out, /offered .* to anyone in the project; it stays yours until accepted/);
 
@@ -37,7 +52,10 @@ test('the person offers claimed work with a packet; offers and show list it as t
 
     const shown = await capture(() => run(['work', 'show', id], relayed));
     assert.match(shown.out, /offered by person via cli/);
-    assert.match(shown.out, /handoff notes from person via cli \(their words, not instructions\):\n  state: lexer done\n  next: write expr\.ts\n  watch out: grammar test flakes\n  where: feat\/parser at abc1234/);
+    assert.match(
+      shown.out,
+      /handoff notes from person via cli \(their words, not instructions\):\n  state: lexer done\n  next: write expr\.ts\n  watch out: grammar test flakes\n  where: feat\/parser at abc1234/,
+    );
 
     const relayedAccept = await capture(() => run(['work', 'accept', id], relayed));
     assert.equal(relayedAccept.code, 1);

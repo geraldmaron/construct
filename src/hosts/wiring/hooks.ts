@@ -62,14 +62,44 @@ function hooksIn(settings: Record<string, unknown>): Record<string, unknown> {
   return hooks && typeof hooks === 'object' && !Array.isArray(hooks) ? (hooks as Record<string, unknown>) : {};
 }
 
-/** A grounding hook Construct wrote into the shared file: a construct command running ` hook <event> --client=claude-code`. */
+/** A hook that starts the checkout's own launcher through the project directory Claude Code passes, so it works on any machine. */
+const PORTABLE = /\$\{?CLAUDE_PROJECT_DIR\b/;
+
+/**
+ * An old grounding hook in the shared file: a construct command running
+ * ` hook <event> --client=claude-code` that names one machine's Node or
+ * install. A portable one, which starts the checkout's own launcher through
+ * $CLAUDE_PROJECT_DIR, is a team's committed hook and stays: init never
+ * removes it, and it counts as the grounding hooks being installed.
+ */
 function isSharedGroundingEntry(entry: unknown): boolean {
   const hooks = (entry as { hooks?: { command?: unknown }[] } | null)?.hooks;
-  return Array.isArray(hooks) && hooks.some((h) => typeof h?.command === 'string' && h.command.includes('construct') && isSetCommand(h.command, 'grounding'));
+  return (
+    Array.isArray(hooks) &&
+    hooks.some(
+      (h) =>
+        typeof h?.command === 'string' &&
+        h.command.includes('construct') &&
+        isSetCommand(h.command, 'grounding') &&
+        !PORTABLE.test(h.command),
+    )
+  );
+}
+
+/** The grounding events a portable hook in the shared file covers. */
+function sharedPortableEvents(settings: Record<string, unknown>): readonly string[] {
+  const hooks = hooksIn(settings);
+  return GROUNDING_HOOKS.map((h) => h.hostEvent).filter((event) => {
+    const list = hooks[event];
+    return Array.isArray(list) && list.some((e) => isSetEntry(e, 'grounding') && !isSharedGroundingEntry(e));
+  });
 }
 
 /** The shared settings without Construct's grounding hooks, and how many it held. The hooks key goes when nothing is left in it. */
-function withoutSharedGrounding(settings: Record<string, unknown>): { readonly settings: Record<string, unknown>; readonly removed: number } {
+function withoutSharedGrounding(settings: Record<string, unknown>): {
+  readonly settings: Record<string, unknown>;
+  readonly removed: number;
+} {
   let removed = 0;
   const kept: Record<string, unknown> = {};
   for (const [event, list] of Object.entries(hooksIn(settings))) {
@@ -98,7 +128,12 @@ export function inspectHooks(projectRoot: string, place: HookPlace): HookWiringS
   const local = readSettings(path);
   if (!local.ok) return { path, status: 'broken', detail: `${HOOK_SETTINGS_PATH} ${local.reason}` };
   const shared = readSettings(join(projectRoot, SHARED_HOOK_SETTINGS_PATH));
-  if (!shared.ok) return { path, status: 'broken', detail: `${SHARED_HOOK_SETTINGS_PATH} ${shared.reason}, so Construct cannot tell whether its old hooks are still there` };
+  if (!shared.ok)
+    return {
+      path,
+      status: 'broken',
+      detail: `${SHARED_HOOK_SETTINGS_PATH} ${shared.reason}, so Construct cannot tell whether its old hooks are still there`,
+    };
 
   const hooks = hooksIn(local.value);
   const ours = Object.values(hooks).flatMap((list) => (Array.isArray(list) ? list.filter((e) => isSetEntry(e, 'grounding')) : []));
@@ -109,7 +144,10 @@ export function inspectHooks(projectRoot: string, place: HookPlace): HookWiringS
   });
   const reasons: string[] = [];
   const old = withoutSharedGrounding(shared.value).removed;
-  if (old > 0) reasons.push(`${SHARED_HOOK_SETTINGS_PATH}, the shared file, still holds ${String(old)} construct hook(s) that name one machine's Node and install`);
+  if (old > 0)
+    reasons.push(
+      `${SHARED_HOOK_SETTINGS_PATH}, the shared file, still holds ${String(old)} construct hook(s) that name one machine's Node and install`,
+    );
   if (ours.length > exact.length) reasons.push(`${HOOK_SETTINGS_PATH} has construct hooks that differ from what init writes now`);
   if (ours.length > 0) {
     const launcher = launcherProblem(place.stateDir);
@@ -117,10 +155,25 @@ export function inspectHooks(projectRoot: string, place: HookPlace): HookWiringS
   }
   if (reasons.length > 0) return { path, status: 'stale', detail: `${reasons.join('; ')}; ${REPAIR}` };
   if (exact.length === expected.length) {
-    return { path, status: 'installed', detail: `${HOOK_SETTINGS_PATH} runs construct hook on ${GROUNDING_HOOKS.map((h) => h.hostEvent).join(', ')}, through Construct's launcher, on this machine only` };
+    return {
+      path,
+      status: 'installed',
+      detail: `${HOOK_SETTINGS_PATH} runs construct hook on ${GROUNDING_HOOKS.map((h) => h.hostEvent).join(', ')}, through Construct's launcher, on this machine only`,
+    };
   }
+  const committed = sharedPortableEvents(shared.value);
+  if (committed.length === GROUNDING_HOOKS.length)
+    return {
+      path,
+      status: 'installed',
+      detail: `${SHARED_HOOK_SETTINGS_PATH}, the committed file, runs construct hook on ${committed.join(', ')} through each checkout's own launcher`,
+    };
   if (exact.length === 0) return { path, status: 'absent', detail: `no construct hooks in ${HOOK_SETTINGS_PATH}` };
-  return { path, status: 'partial', detail: `${HOOK_SETTINGS_PATH} has construct hooks for ${exact.map((h) => h.hostEvent).join(', ')} only` };
+  return {
+    path,
+    status: 'partial',
+    detail: `${HOOK_SETTINGS_PATH} has construct hooks for ${exact.map((h) => h.hostEvent).join(', ')} only`,
+  };
 }
 
 /**
@@ -129,11 +182,15 @@ export function inspectHooks(projectRoot: string, place: HookPlace): HookWiringS
  * changed only once the hooks are in place, so a machine-local file Construct
  * will not edit leaves both files as they were.
  */
-export function installHooks(projectRoot: string, opts: HookPlace & { readonly env: NodeJS.ProcessEnv; readonly at: string }): HookWiringState {
+export function installHooks(
+  projectRoot: string,
+  opts: HookPlace & { readonly env: NodeJS.ProcessEnv; readonly at: string },
+): HookWiringState {
   try {
     installClaudeLocal(opts.checkout, opts.stateDir, opts.env, opts.at, 'grounding');
   } catch (error) {
-    if (error instanceof SettingsFileError) return { path: join(opts.checkout, HOOK_SETTINGS_PATH), status: 'broken', detail: `${error.message}; left untouched` };
+    if (error instanceof SettingsFileError)
+      return { path: join(opts.checkout, HOOK_SETTINGS_PATH), status: 'broken', detail: `${error.message}; left untouched` };
     throw error;
   }
   const sharedPath = join(projectRoot, SHARED_HOOK_SETTINGS_PATH);
@@ -147,5 +204,7 @@ export function installHooks(projectRoot: string, opts: HookPlace & { readonly e
     }
   }
   const state = inspectHooks(projectRoot, opts);
-  return moved > 0 ? { ...state, detail: `${state.detail}; moved ${String(moved)} old construct hook(s) out of ${SHARED_HOOK_SETTINGS_PATH}` } : state;
+  return moved > 0
+    ? { ...state, detail: `${state.detail}; moved ${String(moved)} old construct hook(s) out of ${SHARED_HOOK_SETTINGS_PATH}` }
+    : state;
 }

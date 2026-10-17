@@ -36,10 +36,16 @@ already use, recorded, cited, and handed back finished.
    never spends through another executor because one is installed. A
    headless runner exists only when explicitly configured and can claim,
    heartbeat, and submit; it cannot decide, grant, or finalize.
-3. **Local-first, no daemon.** Nothing runs resident. Standing outcomes are
-   fired by an external clock (cron, CI, a host's own scheduler) under an
-   idempotency key; Construct keeps the ledger, the lock, the retries, the
-   evidence, and the deliverable.
+3. **Local-first, nothing resident unless asked.** Standing outcomes are
+   fired by a clock under an idempotency key; Construct keeps the ledger,
+   the lock, the retries, the evidence, and the deliverable. The clock is
+   the person's own (cron, CI, a host's scheduler) or the platform timer an
+   explicit command installs for them: a per-user launchd agent or systemd
+   user timer that starts one short-lived firing and exits, removed by the
+   same command, and shown by status and doctor. Init, install, library
+   code, and tests never install or start one. A long-running or on-demand
+   Construct process stays unlicensed until a recorded decision admits it
+   (`RESEARCH-DECISIONS.md` §29, §36).
 4. **Registries describe; the resolver binds.** Skills carry a Construct
    manifest beside their portable `SKILL.md`; workflows carry a manifest of
    typed inputs and DAG steps. Both are versioned and digested, locked per
@@ -89,8 +95,9 @@ toggle, the 37-verb command line and its legacy aliases, the format-1 project
 state, host spawn adapters and per-host trial packets as the proof of
 host-independence, external-subject and stakeholder-packet phase gates as
 acceptance of a surface that no longer exists, workspace presets, any
-online registry or marketplace, and inferring the kind of request or the
-workflow from the person's words.
+online registry or marketplace, inferring the kind of request or the
+workflow from the person's words, and anything resident that no explicit
+command asked for.
 
 ## Program shape
 

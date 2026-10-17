@@ -18,8 +18,9 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
   await inProject(async (ctx, box) => {
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
-    assert.match(list.out, /^design-conformance\s+2\.0\.1\s+builtin\s+manage/m);
-    assert.match(list.out, /^remember\s+1\.0\.0\s+builtin\s+remember/m);
+    assert.match(list.out, /^design-conformance\s+\d+\.\d+\.\d+\s+builtin\s+manage/m);
+    assert.match(list.out, /^review\s+2\.0\.0\s+builtin\s+manage/m);
+    assert.doesNotMatch(list.out, /^remember\s/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
     assert.match(show.out, /gather\s+observe\s+context-mapping/);
@@ -27,7 +28,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.equal(missing.code, 1);
     const validate = await capture(() => run(['workflow', 'validate'], ctx));
     assert.equal(validate.code, 0);
-    assert.match(validate.out, /17 skill\(s\) and 24 workflow\(s\) validate/);
+    assert.match(validate.out, /17 skill\(s\) and 12 workflow\(s\) validate/);
 
     const resolve = await capture(() => run(['workflow', 'resolve', 'design-conformance', '--input=target=src'], ctx));
     assert.equal(resolve.code, 0, resolve.out + resolve.err);
@@ -52,7 +53,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.match(again.out, /already running: run /);
 
     const runs = await capture(() => run(['run', 'list'], ctx));
-    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.1\\s+ready\\s+manual`, 'm'));
+    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@\\d+\\.\\d+\\.\\d+\\s+ready\\s+manual`, 'm'));
     const filtered = await capture(() => run(['run', 'list', '--state=succeeded', '--json'], ctx));
     assert.deepEqual(JSON.parse(filtered.out), []);
     const badState = await capture(() => run(['run', 'list', '--state=done'], ctx));
@@ -70,24 +71,41 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
 
 test('workflow run says when a corrected start replaced a blocked run and when a reused run was started with other values', async () => {
   await inProject(async (ctx) => {
-    const wrong = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    const wrong = await capture(() =>
+      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx),
+    );
     assert.equal(wrong.code, 1);
     assert.match(wrong.out, /^started: run (\S+) \(blocked\)/m);
     assert.match(wrong.out, /or run this again with the input corrected; it says when it replaces this run\./);
     const blockedId = /^started: run (\S+) \(blocked\)/m.exec(wrong.out)![1]!;
-    const retried = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    const retried = await capture(() =>
+      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx),
+    );
     assert.equal(retried.code, 1);
-    assert.match(retried.out, new RegExp(`^checked again: run ${blockedId} \\(blocked\\)$`, 'm'), 'the same start checks the blocked run again; it is not called running');
-    const fixed = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=enterprise'], ctx));
+    assert.match(
+      retried.out,
+      new RegExp(`^checked again: run ${blockedId} \\(blocked\\)$`, 'm'),
+      'the same start checks the blocked run again; it is not called running',
+    );
+    const fixed = await capture(() =>
+      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=enterprise'], ctx),
+    );
     assert.equal(fixed.code, 0, fixed.out + fixed.err);
     assert.match(fixed.out, new RegExp(`^superseded blocked run ${blockedId}$`, 'm'));
-    const reused = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve', '--json'], ctx));
+    const reused = await capture(() =>
+      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve', '--json'], ctx),
+    );
     const record = JSON.parse(reused.out) as { created: boolean; differs: string[]; superseded: string | null };
     assert.equal(record.created, false);
     assert.deepEqual(record.differs, ['scope']);
     assert.equal(record.superseded, null);
-    const prose = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve'], ctx));
-    assert.match(prose.out, /^note: run \S+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/m);
+    const prose = await capture(() =>
+      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve'], ctx),
+    );
+    assert.match(
+      prose.out,
+      /^note: run \S+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/m,
+    );
   });
 });
 
@@ -95,12 +113,29 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
   await inProject(async (ctx, box) => {
     mkdirSync(join(box.cwd, 'docs'));
     writeFileSync(join(box.cwd, 'docs', 'a.md'), 'a', 'utf8');
-    const bad = await capture(() => run(['workflow', 'schedule', 'design-conformance', '--cron=0 9 * * 1', '--max-tier=draft', '--input=target=docs'], ctx));
+    const bad = await capture(() =>
+      run(['workflow', 'schedule', 'design-conformance', '--cron=0 9 * * 1', '--max-tier=draft', '--input=target=docs'], ctx),
+    );
     assert.equal(bad.code, 1);
     assert.match(bad.err, /permission boundary \(draft\) is below/);
     const noClock = await capture(() => run(['workflow', 'schedule', 'design-conformance'], ctx));
     assert.equal(noClock.code, 2);
-    const scheduled = await capture(() => run(['workflow', 'schedule', 'design-conformance', '--cron=0 9 1 * *', '--timezone=Europe/Berlin', '--max-tier=project_write', '--input=target=docs', '--trigger-id=monthly', '--json'], ctx));
+    const scheduled = await capture(() =>
+      run(
+        [
+          'workflow',
+          'schedule',
+          'design-conformance',
+          '--cron=0 9 1 * *',
+          '--timezone=Europe/Berlin',
+          '--max-tier=project_write',
+          '--input=target=docs',
+          '--trigger-id=monthly',
+          '--json',
+        ],
+        ctx,
+      ),
+    );
     assert.equal(scheduled.code, 0, scheduled.err);
     assert.equal(JSON.parse(scheduled.out).nextDueAt, '2026-10-01T07:00:00.000Z');
     const triggers = await capture(() => run(['workflow', 'triggers'], ctx));
@@ -133,7 +168,10 @@ test('the inbox lists what waits on the person and records their answer', async 
     // Flags answered the three questions; discovery proposals still wait.
     const afterFlags = await capture(() => run(['inbox', 'list', '--json'], ctx));
     const waiting = JSON.parse(afterFlags.out) as { id: string; kind: string; text?: string }[];
-    assert.ok(waiting.every((d) => d.kind === 'proposal'), 'no setup questions remain after flags');
+    assert.ok(
+      waiting.every((d) => d.kind === 'proposal'),
+      'no setup questions remain after flags',
+    );
     assert.ok(waiting.length > 0, 'proposed statements are reachable');
     const first = waiting[0]!;
     const shown = await capture(() => run(['inbox', 'show', first.id], ctx));
@@ -170,7 +208,7 @@ test('the inbox lists what waits on the person and records their answer', async 
     const resolved = await capture(() => run(['inbox', 'resolve', scale.id, 'primary product'], ctx));
     assert.equal(resolved.code, 0, resolved.err);
     assert.match(resolved.out, /recorded: /);
-    assert.equal(scaleNow(), 'solo', 'the question\'s own words land in the profile');
+    assert.equal(scaleNow(), 'solo', "the question's own words land in the profile");
     const after = await capture(() => run(['inbox', 'list', '--json'], ctx));
     assert.equal((JSON.parse(after.out) as { kind: string }[]).filter((d) => d.kind === 'inbox_item').length, 2);
     const missing = await capture(() => run(['inbox', 'show', 'nope'], ctx));
@@ -191,7 +229,10 @@ test('inbox show prints the whole question a person-only prompt had to cut, and 
         question: 'Move deliverable d-1 (outcome) from validated to accepted?\n(more: construct inbox show decision-cut)',
         runId,
         options: ['approve', 'decline'],
-        subject: { promote: { deliverableId: 'd-1', to: 'accepted', reason: null, requestedBy: 'relayed via claude-code' }, brief: 'Move deliverable d-1 (outcome) from validated to accepted?\nHighest sensitivity cited: confidential.' },
+        subject: {
+          promote: { deliverableId: 'd-1', to: 'accepted', reason: null, requestedBy: 'relayed via claude-code' },
+          brief: 'Move deliverable d-1 (outcome) from validated to accepted?\nHighest sensitivity cited: confidential.',
+        },
         at: '2026-09-02T12:00:00.000Z',
       });
     } finally {
@@ -199,17 +240,31 @@ test('inbox show prints the whole question a person-only prompt had to cut, and 
     }
     const shown = await capture(() => run(['inbox', 'show', 'decision-cut'], ctx));
     assert.equal(shown.code, 0, shown.err);
-    assert.match(shown.out, /^decision-cut \(approval, open\): Move deliverable d-1 \(outcome\) from validated to accepted\?\nHighest sensitivity cited: confidential\.\n/);
+    assert.match(
+      shown.out,
+      /^decision-cut \(approval, open\): Move deliverable d-1 \(outcome\) from validated to accepted\?\nHighest sensitivity cited: confidential\.\n/,
+    );
     assert.doesNotMatch(shown.out, /\(more: construct inbox show/, 'the whole text is shown, not the pointer to it');
     assert.match(shown.out, /about: \{"promote":\{"deliverableId":"d-1"/);
     assert.doesNotMatch(shown.out, /"brief"/, 'the whole text is not printed twice');
     const listed = await capture(() => run(['inbox', 'list'], ctx));
     assert.equal(listed.code, 0, listed.err);
-    assert.match(listed.out, new RegExp(`^decision-cut {2}approval {2}Move deliverable d-1 \\(outcome\\) from validated to accepted\\? {2}\\[approve \\| decline\\] {2}run ${runId}\n`, 'm'), listed.out);
+    assert.match(
+      listed.out,
+      new RegExp(
+        `^decision-cut {2}approval {2}Move deliverable d-1 \\(outcome\\) from validated to accepted\\? {2}\\[approve \\| decline\\] {2}run ${runId}\n`,
+        'm',
+      ),
+      listed.out,
+    );
     assert.doesNotMatch(listed.out, /\(more: construct inbox show/, 'the list shows each question\u2019s first line only');
     const shownRun = await capture(() => run(['run', 'show', runId], ctx));
     assert.equal(shownRun.code, 0, shownRun.err);
-    assert.match(shownRun.out, /^ {2}waiting on you: Move deliverable d-1 \(outcome\) from validated to accepted\? \[approve \| decline\] \(decision decision-cut\)$/m, shownRun.out);
+    assert.match(
+      shownRun.out,
+      /^ {2}waiting on you: Move deliverable d-1 \(outcome\) from validated to accepted\? \[approve \| decline\] \(decision decision-cut\)$/m,
+      shownRun.out,
+    );
     assert.doesNotMatch(shownRun.out, /\(more: construct inbox show/, 'a run shows each question\u2019s first line only');
   });
 });
@@ -220,7 +275,22 @@ test('staff members are added, updated, paused, and retired', async () => {
     assert.match(none.out, /no staff members/);
     const incomplete = await capture(() => run(['staff', 'add', 'reviewer', '--name=Rev'], ctx));
     assert.equal(incomplete.code, 2);
-    const added = await capture(() => run(['staff', 'add', 'reviewer', '--name=Rev', '--title=Design reviewer', '--mission=keep principles honest', '--capability=review', '--skill=adversarial-review', '--json'], ctx));
+    const added = await capture(() =>
+      run(
+        [
+          'staff',
+          'add',
+          'reviewer',
+          '--name=Rev',
+          '--title=Design reviewer',
+          '--mission=keep principles honest',
+          '--capability=review',
+          '--skill=adversarial-review',
+          '--json',
+        ],
+        ctx,
+      ),
+    );
     assert.equal(added.code, 0, added.err);
     assert.deepEqual(JSON.parse(added.out).capabilities, ['review']);
     const dup = await capture(() => run(['staff', 'add', 'reviewer', '--name=Rev', '--title=x', '--mission=y'], ctx));
@@ -246,18 +316,40 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const current = await capture(() => run(['skill', 'update', '--dry-run'], ctx));
     assert.equal(current.code, 0, current.err);
     assert.match(current.out, /would update: nothing/);
-    assert.match(current.out, /41\/41 current/);
+    assert.match(current.out, /29\/29 current/);
     // A project-authored skill appears: unlocked, then locked.
     const dir = join(box.cwd, '.construct', 'skills', 'house-style');
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, 'SKILL.md'), '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style\n', 'utf8');
-    writeFileSync(join(dir, 'construct.skill.json'), JSON.stringify({ format: 'construct-skill', formatVersion: 1, id: 'house-style', title: 'House style', version: '0.1.0', category: 'method', owner: 'us', activation: ['when writing'], standDown: ['otherwise'], interactionClasses: ['manage'], capabilities: [], actionTiers: ['draft'] }), 'utf8');
+    writeFileSync(
+      join(dir, 'SKILL.md'),
+      '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style\n',
+      'utf8',
+    );
+    writeFileSync(
+      join(dir, 'construct.skill.json'),
+      JSON.stringify({
+        format: 'construct-skill',
+        formatVersion: 1,
+        id: 'house-style',
+        title: 'House style',
+        version: '0.1.0',
+        category: 'method',
+        owner: 'us',
+        capabilities: [],
+        maxTier: 'draft',
+      }),
+      'utf8',
+    );
     const locked = await capture(() => run(['skill', 'update'], ctx));
     assert.match(locked.out, /updated: skill:house-style/);
     const lock = JSON.parse(readFileSync(join(box.cwd, '.construct', 'registry.lock.json'), 'utf8'));
     assert.equal(lock.skills['house-style'].origin, 'project');
     // The project edits it without a version bump: diverged, and not re-locked until named.
-    writeFileSync(join(dir, 'SKILL.md'), '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style (edited)\n', 'utf8');
+    writeFileSync(
+      join(dir, 'SKILL.md'),
+      '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style (edited)\n',
+      'utf8',
+    );
     const status = await capture(() => run(['status'], ctx));
     assert.match(status.out, /house-style diverged/);
     const held = await capture(() => run(['skill', 'update'], ctx));
@@ -265,6 +357,9 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const confirmed = await capture(() => run(['skill', 'update', '--confirm=house-style'], ctx));
     assert.match(confirmed.out, /updated: skill:house-style/);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
-    assert.match((JSON.parse(doctor.out).checks as { name: string; detail: string }[]).find((c) => c.name === 'registry')!.detail, /42\/42 current/);
+    assert.match(
+      (JSON.parse(doctor.out).checks as { name: string; detail: string }[]).find((c) => c.name === 'registry')!.detail,
+      /30\/30 current/,
+    );
   });
 });

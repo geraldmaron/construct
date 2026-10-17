@@ -27,7 +27,7 @@ export const INTERACTIVE_CONTRACT = [
   'Plain question: answer it, record nothing.',
   'Asked to keep something: remember.',
   'To hand work on: work handoff.',
-  'To produce or review work, even asked as a question: classify_request with kind=manage. For schedules use kind=maintain. Give your reading, settle its questions, then start_outcome; do each step here with claim_work and submit_work.',
+  'To produce or review work, even asked as a question: classify_request with kind=manage and its stakes. For schedules use kind=maintain. Give your reading, settle its questions, then start_outcome; do each step here with claim_work and submit_work.',
   UNTRUSTED_TEXT,
 ].join(' ');
 
@@ -37,12 +37,12 @@ const REST = [
   'Leave unknown facts unknown; never invent them.',
   'Challenge consequential work when claim_work says so; do not wait to be asked.',
   'Only the person approves an action that leaves the project or destroys something, and only they accept a deliverable; a relayed answer is not theirs.',
-  'Setup questions and the proposed statements in inbox never come before the person\'s request; relay their answers, and confirm or retire, with decide.',
+  "Setup questions and the proposed statements in inbox never come before the person's request; relay their answers, and confirm or retire, with decide.",
   'Before citing a system the person named, declare it with sources, then report the items you cite.',
   'Observations are not work.',
   'Other sessions may work here. claim_work delivery already reserves its requested file; use it without another commitment. For other edits, use work claim with agent and paths, keeping its token. One writer per path; refused paths mean wait, never edit anyway.',
   'The next agent accepts a handoff with its packet.',
-  'Another session\'s claim is theirs until it expires or they go quiet.',
+  "Another session's claim is theirs until it expires or they go quiet.",
   'delegate launches explicitly authorized local workers only after configuration and live verification; you stay the lead, and workers cannot delegate, approve, commit, push, or publish.',
 ].join(' ');
 

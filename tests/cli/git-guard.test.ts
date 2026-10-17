@@ -30,7 +30,13 @@ function envFor(fx: SterileFixture, extra: NodeJS.ProcessEnv = {}): NodeJS.Proce
   });
 }
 
-function run(fx: SterileFixture, cwd: string, cmd: string, args: readonly string[], extra: NodeJS.ProcessEnv = {}): { status: number | null; out: string; err: string } {
+function run(
+  fx: SterileFixture,
+  cwd: string,
+  cmd: string,
+  args: readonly string[],
+  extra: NodeJS.ProcessEnv = {},
+): { status: number | null; out: string; err: string } {
   const r = spawnSync(cmd, [...args], { cwd, env: envFor(fx, extra), encoding: 'utf8' });
   return { status: r.status, out: r.stdout, err: r.stderr };
 }
@@ -46,7 +52,9 @@ function commit(fx: SterileFixture, cwd: string, file: string, extra: NodeJS.Pro
   return run(fx, cwd, 'git', ['commit', '-q', '-m', `touch ${file}`], extra);
 }
 
-test('the git guard warns about a reserved staged file, never blocks, chains the earlier hook, and uninstalls to the original bytes', { timeout: 120_000 }, () => {
+test('the git guard warns about a reserved staged file, never blocks, chains the earlier hook, and uninstalls to the original bytes', {
+  timeout: 120_000,
+}, () => {
   const fx = sterile();
   try {
     const main = join(fx.root, 'repo');
@@ -75,7 +83,14 @@ test('the git guard warns about a reserved staged file, never blocks, chains the
     try {
       const at = new Date().toISOString();
       createWork(store, { id: 'w-peer', kind: 'task', title: 'peer work', description: 'x', at, actor: 'test' });
-      claimWork(store, { id: 'w-peer', owner: 'ses_peer/main', session: 'ses_peer', until: new Date(Date.now() + 3_600_000).toISOString(), now: at, paths: ['src/held.ts'] });
+      claimWork(store, {
+        id: 'w-peer',
+        owner: 'ses_peer/main',
+        session: 'ses_peer',
+        until: new Date(Date.now() + 3_600_000).toISOString(),
+        now: at,
+        paths: ['src/held.ts'],
+      });
     } finally {
       store.close();
     }

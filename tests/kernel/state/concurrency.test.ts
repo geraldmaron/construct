@@ -69,7 +69,10 @@ test('a nested failure undoes only its own writes', () => {
         }),
       );
     });
-    assert.deepEqual(listActivity(fx.store).map((e) => e.kind), ['outer']);
+    assert.deepEqual(
+      listActivity(fx.store).map((e) => e.kind),
+      ['outer'],
+    );
   } finally {
     fx.cleanup();
   }
@@ -84,7 +87,11 @@ test('a newer format is refused with the upgrade instruction and is not changed'
     db.close();
     assert.throws(
       () => openStateStore(fx.dbPath),
-      (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'newer' && err.message === NEWER_STATE_MESSAGE && !/reset`/.test(err.message.split('\n')[1] ?? ''),
+      (err: unknown) =>
+        err instanceof UnsupportedStateError &&
+        err.kind === 'newer' &&
+        err.message === NEWER_STATE_MESSAGE &&
+        !/reset`/.test(err.message.split('\n')[1] ?? ''),
     );
     const check = new DatabaseSync(fx.dbPath);
     assert.equal((check.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '99');
@@ -151,7 +158,10 @@ test('connections wait the configured time for a lock, and a lock released durin
     await new Promise<void>((resolve) => worker.once('message', () => resolve()));
     const at = clock();
     store.transaction(() => appendActivity(store, { at: at(), kind: 'after-retry', payload: {} }));
-    assert.deepEqual(listActivity(store).map((e) => e.kind), ['after-retry']);
+    assert.deepEqual(
+      listActivity(store).map((e) => e.kind),
+      ['after-retry'],
+    );
     await worker.terminate();
     store.close();
   } finally {
@@ -163,7 +173,9 @@ test('when SQLite itself aborts inside a nested call, the original error surface
   const fx = freshStore();
   try {
     const at = clock();
-    fx.store.db.exec(`CREATE TEMP TRIGGER abort_on_boom BEFORE INSERT ON activity_events WHEN NEW.kind = 'boom' BEGIN SELECT RAISE(ROLLBACK, 'boom rolled back the transaction'); END;`);
+    fx.store.db.exec(
+      `CREATE TEMP TRIGGER abort_on_boom BEFORE INSERT ON activity_events WHEN NEW.kind = 'boom' BEGIN SELECT RAISE(ROLLBACK, 'boom rolled back the transaction'); END;`,
+    );
     assert.throws(
       () =>
         fx.store.transaction(() => {
@@ -179,9 +191,16 @@ test('when SQLite itself aborts inside a nested call, the original error surface
       /boom rolled back the transaction/,
     );
     assert.equal(listActivity(fx.store).length, 0);
-    assert.equal(fx.store.db.prepare(`SELECT value FROM meta WHERE key = 'escaped'`).get(), undefined, 'a write after the abort must not commit on its own');
+    assert.equal(
+      fx.store.db.prepare(`SELECT value FROM meta WHERE key = 'escaped'`).get(),
+      undefined,
+      'a write after the abort must not commit on its own',
+    );
     fx.store.transaction(() => appendActivity(fx.store, { at: at(), kind: 'later', payload: {} }));
-    assert.deepEqual(listActivity(fx.store).map((e) => e.kind), ['later']);
+    assert.deepEqual(
+      listActivity(fx.store).map((e) => e.kind),
+      ['later'],
+    );
   } finally {
     fx.cleanup();
   }
@@ -194,7 +213,10 @@ test('a write transaction refuses a store another build re-stamped, even without
     const other = new DatabaseSync(fx.dbPath);
     other.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
     other.close();
-    assert.throws(() => fx.store.transaction(() => appendActivity(fx.store, { at: at(), kind: 'late', payload: {} })), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'newer');
+    assert.throws(
+      () => fx.store.transaction(() => appendActivity(fx.store, { at: at(), kind: 'late', payload: {} })),
+      (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'newer',
+    );
     const check = new DatabaseSync(fx.dbPath);
     assert.equal((check.prepare('SELECT COUNT(*) AS n FROM activity_events').get() as { n: number }).n, 0);
     check.close();
@@ -293,7 +315,10 @@ test('a read-only open of a WAL store in a directory this user cannot write stil
     writeFileSync(`${fx.dbPath}-wal`, log);
     rmSync(`${fx.dbPath}-shm`, { force: true });
     chmodSync(dir, 0o555);
-    assert.throws(() => openStateStore(fx.dbPath, { readOnly: true }), /non-empty write-ahead log, and reading it safely needs SQLite's shared-memory file/);
+    assert.throws(
+      () => openStateStore(fx.dbPath, { readOnly: true }),
+      /non-empty write-ahead log, and reading it safely needs SQLite's shared-memory file/,
+    );
   } finally {
     chmodSync(dir, 0o755);
     fx.cleanup();

@@ -3,78 +3,18 @@
   "formatVersion": 1,
   "id": "investigative-research",
   "title": "Investigative research",
-  "version": "0.3.3",
+  "version": "0.3.6",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "is that claim real",
-    "someone claims this, check it against the facts",
-    "find out whether their numbers are actually true",
-    "what actually happened, the timeline does not add up",
-    "verify this before we publish it",
-    "who said what and when",
-    "a conclusion someone will decide, spend, accuse, publish, or rely on",
-    "due diligence on a vendor or company, background investigation, competitive or market claim, incident or timeline reconstruction, verify this claim",
-    "sources classed, independence checked, survive a hostile reader, primary sources"
-  ],
-  "standDown": [
-    "a single-fact question one authoritative source settles, what year was it released",
-    "brainstorm names, draft a tweet, an opinion, speed over certainty",
-    "quick opinion on popularity"
-  ],
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a verified finding with sources classed and independence checked"
-  ],
-  "deliverableTypes": [
-    "report/research"
-  ],
-  "inputs": [
-    "the claim or question",
-    "the records and material provided or reachable through declared sources"
-  ],
-  "outputSchemas": [
-    "report/research/v1"
-  ],
-  "requiredSourceTypes": [
-    "docs",
-    "directory",
-    "github",
-    "jira",
-    "other"
-  ],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_source",
     "read_project_context",
     "model_review"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "project_write",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a load-bearing claim that cannot be cited is marked unverified, never asserted"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json"
-  ]
+  "skillDependencies": []
 }

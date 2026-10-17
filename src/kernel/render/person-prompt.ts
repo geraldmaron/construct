@@ -95,7 +95,9 @@ export function renderPersonPrompt(prompt: PersonPrompt): string {
   const cap = prompt.cap ?? PERSON_PROMPT_CAP;
   const facts = prompt.facts.map((f) => f.trim()).filter((f) => f !== '');
   const said = prompt.hostSaid
-    .map((h): { readonly about: string; readonly text: string; readonly answer?: string } => (typeof h === 'string' ? { about: '', text: h } : h))
+    .map((h): { readonly about: string; readonly text: string; readonly answer?: string } =>
+      typeof h === 'string' ? { about: '', text: h } : h,
+    )
     .filter((h) => h.text.trim() !== '')
     .map((h) => `${h.about ? `${h.about}: ` : ''}${quoteHost(h.text)}${h.answer === undefined ? '' : ` → ${quoteHost(h.answer)}`}`);
   const lines = [prompt.lead, ...facts, ...(said.length ? [HOST_SAID_LABEL, ...said] : [])];

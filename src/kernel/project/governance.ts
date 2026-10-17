@@ -42,12 +42,20 @@ export function nameIn(phrase: string): string {
   const hit = NAMEISH.exec(phrase);
   const raw = (hit ? hit[0] : phrase).trim().replace(/^["'`]|["'`]$/g, '');
   const base = raw.slice(raw.lastIndexOf('/') + 1);
-  return base.replace(/\.(?:md|markdown|txt|pdf|docx?|json|csv)$/i, '').toLowerCase().replace(/\s+/g, '-');
+  return base
+    .replace(/\.(?:md|markdown|txt|pdf|docx?|json|csv)$/i, '')
+    .toLowerCase()
+    .replace(/\s+/g, '-');
 }
 
 /** Whether a declared supersession names this document or item. */
 export function supersessionFor(names: readonly string[], declared: readonly DeclaredSupersession[]): DeclaredSupersession | undefined {
-  const candidates = names.map((n) => n.slice(n.lastIndexOf('/') + 1).replace(/\.(?:md|markdown|txt|pdf|docx?|json|csv)$/i, '').toLowerCase());
+  const candidates = names.map((n) =>
+    n
+      .slice(n.lastIndexOf('/') + 1)
+      .replace(/\.(?:md|markdown|txt|pdf|docx?|json|csv)$/i, '')
+      .toLowerCase(),
+  );
   return declared.find((d) => candidates.some((c) => c === d.match || c.startsWith(`${d.match}-`) || c.startsWith(`${d.match}_`)));
 }
 
@@ -92,7 +100,10 @@ export function settledTerms(constraints: readonly GoverningText[]): { term: str
  * says so, for the reader; without it, or when it knows nothing, `by` says
  * only that the person confirmed it, and the statement id stays beside it.
  */
-export function outdatedTerms(constraints: readonly GoverningText[], describe?: (statementId: string) => string | null): DeclaredSupersession[] {
+export function outdatedTerms(
+  constraints: readonly GoverningText[],
+  describe?: (statementId: string) => string | null,
+): DeclaredSupersession[] {
   return constraints.flatMap((st) => {
     if (st.voice !== 'person') return [];
     const text = st.text.trim();

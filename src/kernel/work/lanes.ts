@@ -12,7 +12,7 @@
  * names that would be. The kernel never asks git itself.
  */
 
-import { lstatSync, realpathSync, readdirSync, statSync } from 'node:fs';
+import { lstatSync, realpathSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { symlinkBetween } from '../project/files.ts';
 import { listLiveLeases, MAIN_LANE, normalizeLeasePath, pathsOverlap } from './leases.ts';
@@ -23,8 +23,8 @@ import type { StateStore } from '../state/open.ts';
  * Release/reconcile such a reservation before taking another write claim. */
 export function assertLeasePaths(input: { root: string; lane?: string; paths: readonly string[]; store: StateStore; now: string }): void {
   const root = input.lane ?? input.root;
-  const held = listLiveLeases(input.store, input.now).filter(l => l.laneRoot === (input.lane ?? MAIN_LANE));
-  for (const raw of new Set([...input.paths, ...held.map(l => l.path)])) assertUnaliasedPath(root, raw);
+  const held = listLiveLeases(input.store, input.now).filter((l) => l.laneRoot === (input.lane ?? MAIN_LANE));
+  for (const raw of new Set([...input.paths, ...held.map((l) => l.path)])) assertUnaliasedPath(root, raw);
   // Missing leaves have no canonical filesystem spelling yet. Treat possible
   // case/Unicode aliases conservatively unless existing distinct ancestors
   // prove they are separate objects (as on a case-sensitive filesystem).
@@ -33,15 +33,26 @@ export function assertLeasePaths(input: { root: string; lane?: string; paths: re
     const path = normalizeLeasePath(raw, 'check');
     for (const lease of held) {
       if (pathsOverlap(path, lease.path) || !pathsOverlap(fold(path), fold(lease.path))) continue;
-      const a = path.split('/').filter(Boolean), b = lease.path.split('/').filter(Boolean);
+      const a = path.split('/').filter(Boolean),
+        b = lease.path.split('/').filter(Boolean);
       let separate = false;
       for (let n = 1; n <= Math.min(a.length, b.length); n++) {
         try {
-          const left = statSync(resolve(root, ...a.slice(0, n))), right = statSync(resolve(root, ...b.slice(0, n)));
-          if (left.dev !== right.dev || left.ino !== right.ino) { separate = true; break; }
-        } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; break; }
+          const left = statSync(resolve(root, ...a.slice(0, n))),
+            right = statSync(resolve(root, ...b.slice(0, n)));
+          if (left.dev !== right.dev || left.ino !== right.ino) {
+            separate = true;
+            break;
+          }
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+          break;
+        }
       }
-      if (!separate) throw new Error(`Cannot coordinate ${JSON.stringify(path)}: a possible case or Unicode filename alias is reserved as ${JSON.stringify(lease.path)} by ${lease.workId}. Use the same canonical spelling or reconcile that reservation.`);
+      if (!separate)
+        throw new Error(
+          `Cannot coordinate ${JSON.stringify(path)}: a possible case or Unicode filename alias is reserved as ${JSON.stringify(lease.path)} by ${lease.workId}. Use the same canonical spelling or reconcile that reservation.`,
+        );
     }
   }
 }
@@ -51,13 +62,22 @@ export function assertUnaliasedPath(root: string, raw: string): void {
   const path = normalizeLeasePath(raw, 'check');
   const base = realpathSync.native(root);
   const target = path === '/' ? base : resolve(base, path);
-  if (symlinkBetween(base, target)) throw new Error(`Cannot coordinate ${JSON.stringify(path)} through a symbolic link. Use its canonical repository path; release or reconcile any existing alias reservation before continuing.`);
+  if (symlinkBetween(base, target))
+    throw new Error(
+      `Cannot coordinate ${JSON.stringify(path)} through a symbolic link. Use its canonical repository path; release or reconcile any existing alias reservation before continuing.`,
+    );
   let current = target;
   for (;;) {
     try {
       const stat = lstatSync(current);
-      if (stat.isFile() && stat.nlink > 1) throw new Error(`Cannot coordinate ${JSON.stringify(path)}: multiple hard links share its bytes. Use an independent file or reconcile its aliases before claiming it.`);
-      if (realpathSync.native(current) !== current) throw new Error(`Cannot coordinate ${JSON.stringify(path)}: use the canonical filesystem spelling, including case and Unicode form.`);
+      if (stat.isFile() && stat.nlink > 1)
+        throw new Error(
+          `Cannot coordinate ${JSON.stringify(path)}: multiple hard links share its bytes. Use an independent file or reconcile its aliases before claiming it.`,
+        );
+      if (realpathSync.native(current) !== current)
+        throw new Error(
+          `Cannot coordinate ${JSON.stringify(path)}: use the canonical filesystem spelling, including case and Unicode form.`,
+        );
       break;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
@@ -70,12 +90,20 @@ export function assertUnaliasedPath(root: string, raw: string): void {
   // must not conceal links to files outside their lexical reservation.
   if (path === '/' || !path.endsWith('/')) return;
   const visit = (directory: string): void => {
-    let entries;
-    try { entries = readdirSync(directory, { withFileTypes: true }); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return; throw error; }
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(directory, { withFileTypes: true });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+      throw error;
+    }
     for (const entry of entries) {
-      const file = join(directory, entry.name), stat = lstatSync(file);
-      if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink > 1)) throw new Error(`Cannot coordinate directory ${JSON.stringify(path)} because it contains symbolic or hard links. Name independent canonical files, reserve the repository root exclusively, or reconcile the aliases.`);
+      const file = join(directory, entry.name),
+        stat = lstatSync(file);
+      if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink > 1))
+        throw new Error(
+          `Cannot coordinate directory ${JSON.stringify(path)} because it contains symbolic or hard links. Name independent canonical files, reserve the repository root exclusively, or reconcile the aliases.`,
+        );
       if (stat.isDirectory()) visit(file);
     }
   };
@@ -112,11 +140,12 @@ export class UnknownWorktreeError extends Error {
   /** `valid` is null when the caller cannot read the project's worktrees at all. */
   constructor(named: string, valid: readonly ProjectWorktree[] | null) {
     const shown = JSON.stringify(named.length > 200 ? `${named.slice(0, 200)}…` : named);
-    const why = valid === null
-      ? 'this caller cannot read the project\'s worktrees; leave "worktree" out'
-      : valid.length === 0
-        ? 'this project is in no git repository Construct can read, so it has no worktrees to name; leave "worktree" out'
-        : `name one of: ${valid.map(describe).join('; ')}`;
+    const why =
+      valid === null
+        ? 'this caller cannot read the project\'s worktrees; leave "worktree" out'
+        : valid.length === 0
+          ? 'this project is in no git repository Construct can read, so it has no worktrees to name; leave "worktree" out'
+          : `name one of: ${valid.map(describe).join('; ')}`;
     super(`${shown} is not a git worktree of this project; ${why}`);
     this.name = 'UnknownWorktreeError';
     this.named = named;

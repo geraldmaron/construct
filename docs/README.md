@@ -2,7 +2,7 @@
 
 This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
-alpha.31 code; static wiring and structural checks are not broad effectiveness
+alpha.32 code; static wiring and structural checks are not broad effectiveness
 qualification. [Release notes](../CHANGELOG.md) carry measured limits. The
 records of how it was built live in [`internal/`](internal/), separately and
 labeled as history, so a reader can tell which they are holding. A lint holds
@@ -22,7 +22,7 @@ moment someone decides it is documentation rather than a record.
 - [`permissions-and-autonomy.md`](permissions-and-autonomy.md) — the action lattice, approvals, standing grants, break-glass, the headless runner.
 - [`bounded-delegation.md`](bounded-delegation.md) — opt-in local workers, review and integration, lifecycle limits, and the unverified release boundary.
 - [`work-ledger.md`](work-ledger.md) — filing work with its place, admission, readiness, claims, handoffs, and export and restore.
-- [`recurring-operation.md`](recurring-operation.md) — standing outcomes fired by an external clock.
+- [`recurring-operation.md`](recurring-operation.md) — standing outcomes fired by a clock, including the per-user timer `workflow install-timer` installs.
 - [`connectors-and-semantics.md`](connectors-and-semantics.md) — what a connector declares, locators, credentials, and systems a session declares.
 - [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, state in an older format and `construct migrate`, reset, blocked runs, registry skew, host wiring.
 
@@ -41,5 +41,5 @@ written by hand, and `tests/cli/exit-codes.test.ts` holds it to `src/cli/`.
 ## For contributors
 
 - [`architecture-and-state-model.md`](architecture-and-state-model.md) — the dependency direction and the state properties.
-- [`authoring-and-qualification.md`](authoring-and-qualification.md) — writing and qualifying skills and workflows.
+- [`authoring-and-qualification.md`](authoring-and-qualification.md) — writing and evaluating skills and workflows.
 - [`release-verification.md`](release-verification.md) — the gate and how an alpha is cut.

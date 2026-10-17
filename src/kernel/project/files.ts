@@ -8,16 +8,7 @@
  * temporary file and a rename so a crash never leaves half a file.
  */
 
-import {
-  closeSync,
-  constants,
-  lstatSync,
-  mkdirSync,
-  openSync,
-  readFileSync,
-  renameSync,
-  writeFileSync,
-} from 'node:fs';
+import { closeSync, constants, lstatSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 
 export const MAX_PROJECT_FILE_BYTES = 1_048_576;
@@ -130,12 +121,7 @@ export function expectRecord(raw: unknown, path: string, what = 'the file'): Rec
  * Check a file's format stamp. A different id or version is refused as
  * unsupported (never migrated); a missing stamp is a malformed file.
  */
-export function expectFormat(
-  record: Record<string, unknown>,
-  path: string,
-  formatId: string,
-  formatVersion: number,
-): void {
+export function expectFormat(record: Record<string, unknown>, path: string, formatId: string, formatVersion: number): void {
   const format = typeof record.format === 'string' ? record.format : null;
   const version = typeof record.formatVersion === 'number' ? record.formatVersion : null;
   if (format === null && version === null) {
@@ -194,7 +180,9 @@ export const FORBIDDEN_FILE_KEY_WORDS = [
  */
 export function refuseForbiddenKeys(value: unknown, path: string, trail = ''): void {
   if (Array.isArray(value)) {
-    value.forEach((item, i) => refuseForbiddenKeys(item, path, `${trail}[${String(i)}]`));
+    value.forEach((item, i) => {
+      refuseForbiddenKeys(item, path, `${trail}[${String(i)}]`);
+    });
     return;
   }
   if (!isRecord(value)) return;

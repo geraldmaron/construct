@@ -28,7 +28,8 @@ function refsOf(store: StateStore, d: Deliverable): string[] {
   const refs = new Set<string>();
   const take = (v: unknown) => {
     const ev = (v as { evidence?: unknown } | null)?.evidence;
-    if (Array.isArray(ev)) for (const e of ev) if (e && typeof (e as { ref?: unknown }).ref === 'string') refs.add((e as { ref: string }).ref);
+    if (Array.isArray(ev))
+      for (const e of ev) if (e && typeof (e as { ref?: unknown }).ref === 'string') refs.add((e as { ref: string }).ref);
   };
   take(d.body);
   for (const step of listSteps(store, d.runId)) if (step.state === 'succeeded') take(step.output);
@@ -76,13 +77,17 @@ export function flagStaleDeliverables(
     for (const ref of refsOf(store, d)) {
       const bare = stripLocator(ref);
       const resolvedItem = resolve(ref);
-      const item = sourceItemOf(ref, sourceId) ?? (resolvedItem?.sourceId === sourceId ? resolvedItem.itemRef ?? null : null);
+      const item = sourceItemOf(ref, sourceId) ?? (resolvedItem?.sourceId === sourceId ? (resolvedItem.itemRef ?? null) : null);
       const address = normalizeUrl(sourceItemOf(ref, sourceId) ?? ref);
       for (const gone of changes.removed) {
         const viaSource = item !== null && (source?.kind === 'directory' ? stripLocator(item) : item) === gone;
-        const viaPath = source?.kind === 'directory' && dirAbs !== null && resolvePath(input.root ?? '', bare.replace(/^file:/, '')) === joinPath(dirAbs, gone);
+        const viaPath =
+          source?.kind === 'directory' &&
+          dirAbs !== null &&
+          resolvePath(input.root ?? '', bare.replace(/^file:/, '')) === joinPath(dirAbs, gone);
         const viaKey = source !== null && source.kind !== 'directory' && ref.trim() === gone;
-        const viaUrl = address !== null && source?.kind !== 'directory' && (address === goneAddress.get(gone) || address === normalizeUrl(gone));
+        const viaUrl =
+          address !== null && source?.kind !== 'directory' && (address === goneAddress.get(gone) || address === normalizeUrl(gone));
         if (viaSource || viaPath || viaKey || viaUrl) hit.push(gone);
       }
     }
@@ -99,16 +104,22 @@ export function flagStaleDeliverables(
     if (!summary) continue;
     if (open.some((f) => f.summary === summary)) continue;
     const finding = addDriftFinding(store, {
-        id: `drift-${input.nextId()}`,
-        runId: d.runId,
-        kind: 'stale_dependent_claims',
-        summary,
-        evidence: [{ ref: `source:${sourceId}`, note: `changed at ${at}` }, ...[...uniqueHit, ...changes.added].slice(0, 10).map((ref) => ({ ref: `${sourceId}:${ref}`, note: changes.added.includes(ref) ? 'added' : changes.removed.includes(ref) ? 'removed' : 'modified' }))],
-        affected: [d.id],
-        confidence,
-        repairPath: 'review the changed material against the deliverable; revise or re-run it, or dismiss the finding if it does not bear',
-        at,
-      });
+      id: `drift-${input.nextId()}`,
+      runId: d.runId,
+      kind: 'stale_dependent_claims',
+      summary,
+      evidence: [
+        { ref: `source:${sourceId}`, note: `changed at ${at}` },
+        ...[...uniqueHit, ...changes.added].slice(0, 10).map((ref) => ({
+          ref: `${sourceId}:${ref}`,
+          note: changes.added.includes(ref) ? 'added' : changes.removed.includes(ref) ? 'removed' : 'modified',
+        })),
+      ],
+      affected: [d.id],
+      confidence,
+      repairPath: 'review the changed material against the deliverable; revise or re-run it, or dismiss the finding if it does not bear',
+      at,
+    });
     if (uniqueHit.length > 0) {
       // Something it cited changed: that is worth asking about, deliverable by deliverable.
       raiseDecision(store, {

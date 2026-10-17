@@ -27,7 +27,9 @@ export const FIXTURE_TEXT_CAP = SOURCE_TEXT_CAP_BYTES;
 function issuesOf(raw: unknown): Record<string, unknown>[] {
   const list = Array.isArray(raw) ? raw : (raw as { issues?: unknown } | null)?.issues;
   if (!Array.isArray(list)) throw new Error('fixture must be a list of issues or an object with an "issues" list');
-  return list.filter((i): i is Record<string, unknown> => i !== null && typeof i === 'object' && typeof (i as { key?: unknown }).key === 'string');
+  return list.filter(
+    (i): i is Record<string, unknown> => i !== null && typeof i === 'object' && typeof (i as { key?: unknown }).key === 'string',
+  );
 }
 
 function titleOf(issue: Record<string, unknown>): string {
@@ -62,12 +64,26 @@ export function createJiraFixtureReader(dir: string): SourceReader {
           kind: 'work_item',
           name: redact(titleOf(issue)),
           // The version is the whole issue as exported; what is kept is what a person would read in it.
-          attributes: { fingerprint: createHash('sha256').update(JSON.stringify(issue)).digest('hex'), text: capture.text, ...(capture.truncated || readable.truncated ? { truncated: true } : {}), ...(url ? { url } : {}) },
+          attributes: {
+            fingerprint: createHash('sha256').update(JSON.stringify(issue)).digest('hex'),
+            text: capture.text,
+            ...(capture.truncated || readable.truncated ? { truncated: true } : {}),
+            ...(url ? { url } : {}),
+          },
         };
       })
       .sort((a, b) => a.externalRef.localeCompare(b.externalRef));
     const content = items.map((i) => `${i.externalRef}\t${String(i.attributes?.fingerprint)}`).join('\n');
     const digest = `sha256:${createHash('sha256').update(`jira-text-v3:${content}`).digest('hex')}`;
-    return { outcome: 'read', report: { digest, summary: `${String(items.length)} issue(s) in fixture ${locator}`, evidenceRef: `jira:${locator}`, evidence: 'reported', items } };
+    return {
+      outcome: 'read',
+      report: {
+        digest,
+        summary: `${String(items.length)} issue(s) in fixture ${locator}`,
+        evidenceRef: `jira:${locator}`,
+        evidence: 'reported',
+        items,
+      },
+    };
   };
 }

@@ -9,7 +9,6 @@ import { existsSync, readdirSync, readFileSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { listShippedSkills, readShippedSkill, type ShippedSkill } from '../skills/bundle.ts';
 import { bundleDigest } from './digest.ts';
-import { examplesFrom } from '../skills/routing.ts';
 import { SKILL_MANIFEST_FILE, type BundleOrigin, type RegisteredSkill } from './models.ts';
 import { checkFrontmatterAgreement, validateSkillManifest, ManifestError } from './validation.ts';
 
@@ -46,7 +45,8 @@ function register(skill: ShippedSkill, origin: BundleOrigin): RegisteredSkill | 
   try {
     const manifest = validateSkillManifest(JSON.parse(readFileSync(manifestPath, 'utf8')) as unknown, manifestPath);
     checkFrontmatterAgreement(frontmatterVersion(skill), manifest, manifestPath);
-    if (manifest.id !== skill.name) throw new ManifestError(manifestPath, `manifest id "${manifest.id}" does not match the directory "${skill.name}"`);
+    if (manifest.id !== skill.name)
+      throw new ManifestError(manifestPath, `manifest id "${manifest.id}" does not match the directory "${skill.name}"`);
     const entry: RegisteredSkill = {
       manifest,
       origin,
@@ -54,7 +54,6 @@ function register(skill: ShippedSkill, origin: BundleOrigin): RegisteredSkill | 
       digest,
       description: skill.description,
       files: [...skill.files.map((f) => f.relativePath), SKILL_MANIFEST_FILE].sort(),
-      examples: examplesFrom(skill.files.find((f) => f.relativePath === 'evals/activation.json')?.bytes ?? null),
     };
     cache.set(digest, entry);
     return entry;
@@ -96,7 +95,10 @@ export function createSkillRegistry(input: SkillRegistryInput = {}): SkillRegist
         continue;
       }
       if (skills.has(result.manifest.id) && origin === 'project') {
-        problems.push({ dir: skill.dir, message: `project skill "${result.manifest.id}" shadows a built-in skill; rename it or remove one` });
+        problems.push({
+          dir: skill.dir,
+          message: `project skill "${result.manifest.id}" shadows a built-in skill; rename it or remove one`,
+        });
         continue;
       }
       skills.set(result.manifest.id, result);

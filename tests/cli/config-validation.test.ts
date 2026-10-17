@@ -11,7 +11,9 @@ const launcher = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.ur
 
 function validate(box: ReturnType<typeof sandbox>, json = true) {
   return spawnSync(process.execPath, [launcher, 'config', 'validate', ...(json ? ['--json'] : [])], {
-    cwd: box.cwd, env: box.ctx.env, encoding: 'utf8',
+    cwd: box.cwd,
+    env: box.ctx.env,
+    encoding: 'utf8',
   });
 }
 
@@ -49,5 +51,7 @@ test('config validation preserves the valid and projectless output contracts', a
     const result = validate(box);
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), { ok: true, problems: [] });
-  } finally { box.cleanup(); }
+  } finally {
+    box.cleanup();
+  }
 });

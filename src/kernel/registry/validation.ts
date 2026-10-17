@@ -4,7 +4,7 @@
  * and its Construct manifest.
  */
 
-import { ACTION_TIERS, type ActionTier } from '../state/steps.ts';
+import { ACTION_TIERS } from '../state/steps.ts';
 import { isRange, isVersion } from './semver.ts';
 import {
   INPUT_TYPES,
@@ -18,6 +18,7 @@ import {
   type SkillManifest,
   type VersionedDependency,
   type WorkflowManifest,
+  type WorkflowDomain,
   type WorkflowStep,
 } from './models.ts';
 
@@ -48,13 +49,31 @@ function str(r: Record<string, unknown>, key: string, path: string, opts: { read
   return v;
 }
 
-function strList(r: Record<string, unknown>, key: string, path: string, opts: { readonly optional?: boolean; readonly nonEmpty?: boolean } = {}): string[] {
+/**
+ * Phrase lists that once said when a bundle engages. Nothing reads them: the
+ * host model judges whether a skill applies from its SKILL.md description, and
+ * a workflow is matched by the deliverable it declares. A manifest that still
+ * carries one is refused so the dead vocabulary cannot grow back.
+ */
+function refuseTriggerPhrases(r: Record<string, unknown>, path: string, where: string): void {
+  for (const key of ['activation', 'standDown']) {
+    if (r[key] !== undefined) throw new ManifestError(path, `"${key}" is not read; ${where}, so remove it`);
+  }
+}
+
+function strList(
+  r: Record<string, unknown>,
+  key: string,
+  path: string,
+  opts: { readonly optional?: boolean; readonly nonEmpty?: boolean } = {},
+): string[] {
   const v = r[key];
   if (v === undefined) {
     if (opts.optional) return [];
     throw new ManifestError(path, `"${key}" is required`);
   }
-  if (!Array.isArray(v) || v.some((x) => typeof x !== 'string' || x.trim() === '')) throw new ManifestError(path, `"${key}" must be a list of non-empty strings`);
+  if (!Array.isArray(v) || v.some((x) => typeof x !== 'string' || x.trim() === ''))
+    throw new ManifestError(path, `"${key}" must be a list of non-empty strings`);
   if (opts.nonEmpty && v.length === 0) throw new ManifestError(path, `"${key}" must name at least one item`);
   return v as string[];
 }
@@ -74,7 +93,8 @@ function num(r: Record<string, unknown>, key: string, path: string, fallback: nu
 }
 
 function oneOf<T extends string>(value: string, allowed: readonly T[], path: string, key: string): T {
-  if (!(allowed as readonly string[]).includes(value)) throw new ManifestError(path, `"${key}" must be one of ${allowed.join(' | ')} (got ${value})`);
+  if (!(allowed as readonly string[]).includes(value))
+    throw new ManifestError(path, `"${key}" must be one of ${allowed.join(' | ')} (got ${value})`);
   return value as T;
 }
 
@@ -84,6 +104,10 @@ function deps(r: Record<string, unknown>, key: string, path: string): VersionedD
   if (!Array.isArray(v)) throw new ManifestError(path, `"${key}" must be a list`);
   return v.map((item, i) => {
     const d = rec(item, path, `"${key}[${String(i)}]"`);
+    for (const k of Object.keys(d)) {
+      if (k !== 'id' && k !== 'range')
+        throw new ManifestError(path, `"${key}[${String(i)}].${k}" is not read; a dependency carries only id and range`);
+    }
     const id = str(d, 'id', path);
     const range = str(d, 'range', path);
     if (!ID.test(id)) throw new ManifestError(path, `"${key}[${String(i)}].id" must be a kebab-case id`);
@@ -95,47 +119,46 @@ function deps(r: Record<string, unknown>, key: string, path: string): VersionedD
 function capabilities(r: Record<string, unknown>, key: string, path: string): string[] {
   const list = strList(r, key, path, { optional: true });
   for (const c of list) {
-    if (!CAPABILITY.test(c)) throw new ManifestError(path, `"${key}" names "${c}", which is not a capability name (lowercase, underscores, optional :scope)`);
+    if (!CAPABILITY.test(c))
+      throw new ManifestError(path, `"${key}" names "${c}", which is not a capability name (lowercase, underscores, optional :scope)`);
     if (TOOL_WORDS.test(c)) throw new ManifestError(path, `"${key}" names a tool ("${c}"); declare the capability it needs instead`);
   }
   return list;
 }
 
-function tiers(r: Record<string, unknown>, key: string, path: string): ActionTier[] {
-  return strList(r, key, path, { optional: true }).map((t) => oneOf(t, ACTION_TIERS, path, key));
-}
+/** Every field a skill manifest may carry: each is read by the resolver, the registry lock, or qualification. */
+export const SKILL_MANIFEST_KEYS = [
+  'format',
+  'formatVersion',
+  'id',
+  'title',
+  'version',
+  'category',
+  'owner',
+  'capabilities',
+  'maxTier',
+  'requiredValidators',
+  'skillDependencies',
+] as const;
 
 export function validateSkillManifest(raw: unknown, path: string): SkillManifest {
   const r = rec(raw, path, 'the manifest');
   if (r.format !== SKILL_MANIFEST_FORMAT || r.formatVersion !== SKILL_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${SKILL_MANIFEST_FORMAT} ${String(SKILL_MANIFEST_VERSION)}`);
   }
+  refuseTriggerPhrases(r, path, 'the host model reads the SKILL.md description to judge when the skill applies');
+  // Only fields something enforces belong here; the method, its limits and what it produces are SKILL.md's to say.
+  for (const key of Object.keys(r)) {
+    if (!(SKILL_MANIFEST_KEYS as readonly string[]).includes(key))
+      throw new ManifestError(
+        path,
+        `"${key}" is not a skill manifest field; the fields are ${SKILL_MANIFEST_KEYS.join(', ')}, and anything else belongs in SKILL.md`,
+      );
+  }
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
   if (!isVersion(version)) throw new ManifestError(path, '"version" must be a semantic version');
-  const gates = (() => {
-    const v = r.qualityGates;
-    if (v === undefined) return [];
-    if (!Array.isArray(v)) throw new ManifestError(path, '"qualityGates" must be a list');
-    return v.map((g, i) => {
-      const gate = rec(g, path, `"qualityGates[${String(i)}]"`);
-      return { validator: str(gate, 'validator', path), appliesTo: str(gate, 'appliesTo', path), required: bool(gate, 'required', path, true) };
-    });
-  })();
-  const observed = (() => {
-    const v = r.observedOn;
-    if (v === undefined) return [];
-    if (!Array.isArray(v)) throw new ManifestError(path, '"observedOn" must be a list');
-    return v.map((o, i) => {
-      const ob = rec(o, path, `"observedOn[${String(i)}]"`);
-      const note = str(ob, 'note', path);
-      if (/\b(works|passes|succeeds|verified)\b/i.test(note) && !/\b(on|dated|run)\b/i.test(note)) {
-        throw new ManifestError(path, `"observedOn[${String(i)}].note" claims success without naming the run or date that showed it`);
-      }
-      return { host: str(ob, 'host', path), model: str(ob, 'model', path), note };
-    });
-  })();
   return {
     format: SKILL_MANIFEST_FORMAT,
     formatVersion: SKILL_MANIFEST_VERSION,
@@ -144,24 +167,10 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
     version,
     category: oneOf(str(r, 'category', path), ['method', 'operational', 'professional'] as const, path, 'category'),
     owner: str(r, 'owner', path),
-    activation: strList(r, 'activation', path, { nonEmpty: true }),
-    standDown: strList(r, 'standDown', path, { nonEmpty: true }),
-    interactionClasses: strList(r, 'interactionClasses', path, { nonEmpty: true }).map((c) => oneOf(c, INTERACTION_CLASSES, path, 'interactionClasses')),
-    outcomes: strList(r, 'outcomes', path, { optional: true }),
-    deliverableTypes: strList(r, 'deliverableTypes', path, { optional: true }),
-    inputs: strList(r, 'inputs', path, { optional: true }),
-    outputSchemas: strList(r, 'outputSchemas', path, { optional: true }),
-    requiredSourceTypes: strList(r, 'requiredSourceTypes', path, { optional: true }),
-    minimumEvidence: str(r, 'minimumEvidence', path, { optional: true }),
     capabilities: capabilities(r, 'capabilities', path),
-    actionTiers: tiers(r, 'actionTiers', path),
+    maxTier: oneOf(str(r, 'maxTier', path), ACTION_TIERS, path, 'maxTier'),
+    requiredValidators: strList(r, 'requiredValidators', path, { optional: true }),
     skillDependencies: deps(r, 'skillDependencies', path),
-    workflowDependencies: deps(r, 'workflowDependencies', path),
-    qualityGates: gates,
-    escalation: strList(r, 'escalation', path, { optional: true }),
-    licensedReviewBoundaries: strList(r, 'licensedReviewBoundaries', path, { optional: true }),
-    observedOn: observed,
-    evals: strList(r, 'evals', path, { optional: true }),
   };
 }
 
@@ -173,9 +182,11 @@ export interface SkillFrontmatter {
 }
 
 export function checkFrontmatterAgreement(frontmatter: SkillFrontmatter, manifest: SkillManifest, path: string): void {
-  if (frontmatter.name !== manifest.id) throw new ManifestError(path, `SKILL.md name "${frontmatter.name}" and manifest id "${manifest.id}" disagree`);
+  if (frontmatter.name !== manifest.id)
+    throw new ManifestError(path, `SKILL.md name "${frontmatter.name}" and manifest id "${manifest.id}" disagree`);
   if (frontmatter.version === null) throw new ManifestError(path, 'SKILL.md carries no metadata.version to agree with the manifest');
-  if (frontmatter.version !== manifest.version) throw new ManifestError(path, `SKILL.md version ${frontmatter.version} and manifest version ${manifest.version} disagree`);
+  if (frontmatter.version !== manifest.version)
+    throw new ManifestError(path, `SKILL.md version ${frontmatter.version} and manifest version ${manifest.version} disagree`);
 }
 
 function step(raw: unknown, path: string, i: number): WorkflowStep {
@@ -234,6 +245,7 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
   if (r.format !== WORKFLOW_MANIFEST_FORMAT || r.formatVersion !== WORKFLOW_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${WORKFLOW_MANIFEST_FORMAT} ${String(WORKFLOW_MANIFEST_VERSION)}`);
   }
+  refuseTriggerPhrases(r, path, 'a workflow is matched by the deliverable it declares');
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
@@ -244,7 +256,8 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     inputSchema[k] = oneOf(String(v), INPUT_TYPES, path, `inputSchema.${k}`);
   }
   const requiredInputs = strList(r, 'requiredInputs', path, { optional: true });
-  for (const k of requiredInputs) if (!(k in inputSchema)) throw new ManifestError(path, `"requiredInputs" names "${k}", which inputSchema does not declare`);
+  for (const k of requiredInputs)
+    if (!(k in inputSchema)) throw new ManifestError(path, `"requiredInputs" names "${k}", which inputSchema does not declare`);
   const periods = Object.values(inputSchema).filter((t) => t === 'period').length;
   if (periods > 1) throw new ManifestError(path, 'declares more than one period input; a run covers one period');
   const hasPeriod = periods === 1;
@@ -252,7 +265,8 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
   if (dedupeKey.length > 0) {
     // An empty dedupe key already identifies the work by every input.
     for (const [k, t] of Object.entries(inputSchema)) {
-      if ((t === 'period' || t === 'source_ids') && !dedupeKey.includes(k)) throw new ManifestError(path, `"dedupeKey" leaves out ${k}; work for a different ${k} is different work`);
+      if ((t === 'period' || t === 'source_ids') && !dedupeKey.includes(k))
+        throw new ManifestError(path, `"dedupeKey" leaves out ${k}; work for a different ${k} is different work`);
     }
   }
   const stepsRaw = r.steps;
@@ -269,53 +283,165 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     for (const [k, ref] of Object.entries(s.inputs)) {
       if (ref.startsWith('input.')) {
         const key = ref.slice('input.'.length);
-        if (!(key in inputSchema)) throw new ManifestError(path, `step "${s.id}" input "${k}" reads ${ref}, which inputSchema does not declare`);
+        if (!(key in inputSchema))
+          throw new ManifestError(path, `step "${s.id}" input "${k}" reads ${ref}, which inputSchema does not declare`);
       } else {
         const [, upstreamId, output] = ref.split('.') as [string, string, string];
         const upstream = steps.find((u) => u.id === upstreamId);
         if (!upstream) throw new ManifestError(path, `step "${s.id}" input "${k}" reads ${ref}, but there is no step "${upstreamId}"`);
-        if (!upstream.outputs.includes(output)) throw new ManifestError(path, `step "${s.id}" input "${k}" reads ${ref}, but step "${upstreamId}" declares no output "${output}"`);
-        if (!s.needs.includes(upstreamId)) throw new ManifestError(path, `step "${s.id}" reads from "${upstreamId}" without listing it in needs`);
+        if (!upstream.outputs.includes(output))
+          throw new ManifestError(
+            path,
+            `step "${s.id}" input "${k}" reads ${ref}, but step "${upstreamId}" declares no output "${output}"`,
+          );
+        if (!s.needs.includes(upstreamId))
+          throw new ManifestError(path, `step "${s.id}" reads from "${upstreamId}" without listing it in needs`);
       }
     }
     if (s.loadBearing && s.validators.length === 0) throw new ManifestError(path, `step "${s.id}" is load-bearing but names no validator`);
     // A run that covers a period checks every citation against it, wherever citations are checked.
-    if (hasPeriod && s.validators.some((v) => v === 'citations_present' || v === 'evidence_refs_resolve') && !s.validators.includes('within_period')) {
+    if (
+      hasPeriod &&
+      s.validators.some((v) => v === 'citations_present' || v === 'evidence_refs_resolve') &&
+      !s.validators.includes('within_period')
+    ) {
       throw new ManifestError(path, `step "${s.id}" cites evidence but does not check it against the period (add within_period)`);
     }
   }
+  const domains: Record<string, WorkflowDomain> = {};
+  const aliases: Record<string, string> = {};
+  const legacyDigests: Record<string, { version: string; digest: string }> = {};
+  let domainStep: string | undefined;
+  if (r.domains !== undefined) {
+    domainStep = str(r, 'domainStep', path);
+    if (!ids.has(domainStep)) throw new ManifestError(path, 'domainStep must name a step');
+    for (const [domain, raw] of Object.entries(rec(r.domains, path, 'domains'))) {
+      if (!ID.test(domain)) throw new ManifestError(path, `invalid domain ${domain}`);
+      const d = rec(raw, path, `domains.${domain}`);
+      const skill = rec(d.skill, path, `domains.${domain}.skill`);
+      if (skill.id !== domain) throw new ManifestError(path, `domain ${domain} must be keyed by its skill id`);
+      const patches = d.steps === undefined ? {} : rec(d.steps, path, `domains.${domain}.steps`);
+      for (const key of Object.keys(patches))
+        if (!ids.has(key)) throw new ManifestError(path, `domain ${domain} overrides unknown step ${key}`);
+      for (const [id, raw] of Object.entries(patches)) {
+        const patch = rec(raw, path, 'domain step');
+        const original = steps.find((s) => s.id === id)!;
+        for (const key of Object.keys(patch))
+          if (key === 'id' || !Object.hasOwn(original, key))
+            throw new ManifestError(path, `domain ${domain} cannot override step ${id}.${key}`);
+      }
+      // Validate the complete bound contract with the same rules as any ordinary workflow.
+      validateWorkflowManifest(
+        {
+          ...r,
+          ...d,
+          domains: undefined,
+          aliases: undefined,
+          domainStep: undefined,
+          legacyDigests: undefined,
+          steps: steps.map((s) => ({ ...s, ...rec(patches[s.id] ?? {}, path, 'domain step'), ...(s.id === domainStep ? { skill } : {}) })),
+        },
+        `${path}#${domain}`,
+      );
+      const allowed = new Set([
+        'skill',
+        'title',
+        'purpose',
+        'interactionClass',
+        'inputSchema',
+        'requiredInputs',
+        'steps',
+        'triggers',
+        'onNoData',
+        'onStaleData',
+        'concurrency',
+        'dedupeKey',
+        'cancellation',
+        'deliverable',
+        'proposes',
+        'execution',
+      ]);
+      for (const key of Object.keys(d)) if (!allowed.has(key)) throw new ManifestError(path, `domain ${domain} cannot override ${key}`);
+      domains[domain] = d as WorkflowDomain;
+    }
+    if (!Object.keys(domains).length) throw new ManifestError(path, 'domains must not be empty');
+    for (const [alias, domain] of Object.entries(rec(r.aliases, path, 'aliases'))) {
+      if (!ID.test(alias) || typeof domain !== 'string' || !Object.hasOwn(domains, domain))
+        throw new ManifestError(path, `alias ${alias} must name a declared domain`);
+      aliases[alias] = domain;
+    }
+  }
+  if (r.legacyDigests !== undefined) {
+    for (const [alias, raw] of Object.entries(rec(r.legacyDigests, path, 'legacyDigests'))) {
+      const legacy = rec(raw, path, 'legacy digest');
+      const version = str(legacy, 'version', path);
+      const digest = str(legacy, 'digest', path);
+      if (!Object.hasOwn(aliases, alias) || !isVersion(version) || !/^sha256:[a-f0-9]{64}$/.test(digest))
+        throw new ManifestError(path, `invalid legacy digest for ${alias}`);
+      legacyDigests[alias] = { version, digest };
+    }
+  }
   const deliverableRaw = rec(r.deliverable, path, '"deliverable"');
-  const execution = r.execution === undefined ? undefined : (() => {
-    const e = rec(r.execution, path, 'execution');
-    const calls = num(e, 'maxGatherCalls', path, 12, 1);
-    if (!Number.isSafeInteger(calls) || calls > 100) throw new ManifestError(path, 'execution.maxGatherCalls must be an integer between 1 and 100');
-    return { path: oneOf(str(e, 'path', path), ['research', 'decision', 'artifact', 'implementation', 'review'] as const, path, 'execution.path'),
-      checkpoints: strList(e, 'checkpoints', path, { nonEmpty: true }), evidenceObligations: strList(e, 'evidenceObligations', path, { nonEmpty: true }),
-      maxGatherCalls: calls, stopWhen: strList(e, 'stopWhen', path, { nonEmpty: true }),
-      assurance: oneOf(str(e, 'assurance', path), ['structural', 'independent_review'] as const, path, 'execution.assurance') };
-  })();
+  const execution =
+    r.execution === undefined
+      ? undefined
+      : (() => {
+          const e = rec(r.execution, path, 'execution');
+          const calls = num(e, 'maxGatherCalls', path, 12, 1);
+          if (!Number.isSafeInteger(calls) || calls > 100)
+            throw new ManifestError(path, 'execution.maxGatherCalls must be an integer between 1 and 100');
+          return {
+            path: oneOf(
+              str(e, 'path', path),
+              ['research', 'decision', 'artifact', 'implementation', 'review'] as const,
+              path,
+              'execution.path',
+            ),
+            checkpoints: strList(e, 'checkpoints', path, { nonEmpty: true }),
+            evidenceObligations: strList(e, 'evidenceObligations', path, { nonEmpty: true }),
+            maxGatherCalls: calls,
+            stopWhen: strList(e, 'stopWhen', path, { nonEmpty: true }),
+            assurance: oneOf(str(e, 'assurance', path), ['structural', 'independent_review'] as const, path, 'execution.assurance'),
+          };
+        })();
   return {
     ...(execution ? { execution } : {}),
+    ...(domainStep ? { domainStep, domains, aliases, legacyDigests } : {}),
     format: WORKFLOW_MANIFEST_FORMAT,
     formatVersion: WORKFLOW_MANIFEST_VERSION,
     id,
     title: str(r, 'title', path),
     version,
     purpose: str(r, 'purpose', path),
-    activation: strList(r, 'activation', path, { nonEmpty: true }),
-    standDown: strList(r, 'standDown', path, { nonEmpty: true }),
     interactionClass: oneOf(str(r, 'interactionClass', path), INTERACTION_CLASSES, path, 'interactionClass') as InteractionClass,
     inputSchema,
     requiredInputs,
     steps,
-    triggers: strList(r, 'triggers', path, { nonEmpty: true }).map((t) => oneOf(t, ['manual', 'schedule', 'event'] as const, path, 'triggers')),
+    triggers: strList(r, 'triggers', path, { nonEmpty: true }).map((t) =>
+      oneOf(t, ['manual', 'schedule', 'event'] as const, path, 'triggers'),
+    ),
     onNoData: oneOf(typeof r.onNoData === 'string' ? r.onNoData : 'block', ['succeed_empty', 'block', 'fail'] as const, path, 'onNoData'),
-    onStaleData: oneOf(typeof r.onStaleData === 'string' ? r.onStaleData : 'block', ['block', 'proceed_flagged', 'fail'] as const, path, 'onStaleData'),
+    onStaleData: oneOf(
+      typeof r.onStaleData === 'string' ? r.onStaleData : 'block',
+      ['block', 'proceed_flagged', 'fail'] as const,
+      path,
+      'onStaleData',
+    ),
     concurrency: oneOf(typeof r.concurrency === 'string' ? r.concurrency : 'single', ['single', 'per_input'] as const, path, 'concurrency'),
     dedupeKey,
-    cancellation: oneOf(typeof r.cancellation === 'string' ? r.cancellation : 'after_step', ['immediate', 'after_step'] as const, path, 'cancellation'),
-    deliverable: { kind: str(deliverableRaw, 'kind', path), schema: str(deliverableRaw, 'schema', path), challenge: bool(deliverableRaw, 'challenge', path, false) },
-    proposes: strList(r, 'proposes', path, { optional: true }).map((p) => oneOf(p, ['constitution', 'sources', 'skills', 'workflows', 'lessons'] as const, path, 'proposes')),
-    evals: strList(r, 'evals', path, { optional: true }),
+    cancellation: oneOf(
+      typeof r.cancellation === 'string' ? r.cancellation : 'after_step',
+      ['immediate', 'after_step'] as const,
+      path,
+      'cancellation',
+    ),
+    deliverable: {
+      kind: str(deliverableRaw, 'kind', path),
+      schema: str(deliverableRaw, 'schema', path),
+      challenge: bool(deliverableRaw, 'challenge', path, false),
+    },
+    proposes: strList(r, 'proposes', path, { optional: true }).map((p) =>
+      oneOf(p, ['constitution', 'sources', 'skills', 'workflows', 'lessons'] as const, path, 'proposes'),
+    ),
   };
 }

@@ -33,13 +33,6 @@ export interface VersionedDependency {
   readonly range: string;
 }
 
-export interface QualityGate {
-  /** A validator id from the capability registry (deterministic), or a review the workflow must run. */
-  readonly validator: string;
-  readonly appliesTo: string;
-  readonly required: boolean;
-}
-
 export interface SkillManifest {
   readonly format: typeof SKILL_MANIFEST_FORMAT;
   readonly formatVersion: typeof SKILL_MANIFEST_VERSION;
@@ -48,24 +41,13 @@ export interface SkillManifest {
   readonly version: string;
   readonly category: 'method' | 'operational' | 'professional';
   readonly owner: string;
-  readonly activation: readonly string[];
-  readonly standDown: readonly string[];
-  readonly interactionClasses: readonly InteractionClass[];
-  readonly outcomes: readonly string[];
-  readonly deliverableTypes: readonly string[];
-  readonly inputs: readonly string[];
-  readonly outputSchemas: readonly string[];
-  readonly requiredSourceTypes: readonly string[];
-  readonly minimumEvidence: string;
+  /** What the host must provide wherever the skill is bound; the resolver blocks a step that cannot. */
   readonly capabilities: readonly CapabilityName[];
-  readonly actionTiers: readonly ActionTier[];
+  /** The highest action tier a step may apply this skill at; the resolver blocks a step above it. */
+  readonly maxTier: ActionTier;
+  /** Validators the deliverable must pass wherever the skill is bound; the resolver blocks a workflow whose steps name none of them. */
+  readonly requiredValidators: readonly string[];
   readonly skillDependencies: readonly VersionedDependency[];
-  readonly workflowDependencies: readonly VersionedDependency[];
-  readonly qualityGates: readonly QualityGate[];
-  readonly escalation: readonly string[];
-  readonly licensedReviewBoundaries: readonly string[];
-  readonly observedOn: readonly { readonly host: string; readonly model: string; readonly note: string }[];
-  readonly evals: readonly string[];
 }
 
 export interface WorkflowStep {
@@ -86,7 +68,18 @@ export interface WorkflowStep {
   readonly timeoutMs: number;
 }
 
+export type WorkflowDomain = Partial<
+  Omit<WorkflowManifest, 'domains' | 'aliases' | 'legacyDigests' | 'domainStep' | 'steps' | 'id' | 'version'>
+> & {
+  readonly skill: VersionedDependency;
+  readonly steps?: Readonly<Record<string, Partial<Omit<WorkflowStep, 'id'>>>>;
+};
+
 export interface WorkflowManifest {
+  readonly legacyDigests?: Readonly<Record<string, { readonly version: string; readonly digest: string }>>;
+  readonly domainStep?: string;
+  readonly domains?: Readonly<Record<string, WorkflowDomain>>;
+  readonly aliases?: Readonly<Record<string, string>>;
   readonly execution?: {
     readonly path: 'research' | 'decision' | 'artifact' | 'implementation' | 'review';
     readonly checkpoints: readonly string[];
@@ -101,8 +94,6 @@ export interface WorkflowManifest {
   readonly title: string;
   readonly version: string;
   readonly purpose: string;
-  readonly activation: readonly string[];
-  readonly standDown: readonly string[];
   readonly interactionClass: InteractionClass;
   readonly inputSchema: Readonly<Record<string, InputType>>;
   readonly requiredInputs: readonly string[];
@@ -115,7 +106,6 @@ export interface WorkflowManifest {
   readonly cancellation: 'immediate' | 'after_step';
   readonly deliverable: { readonly kind: string; readonly schema: string; readonly challenge: boolean };
   readonly proposes: readonly ('constitution' | 'sources' | 'skills' | 'workflows' | 'lessons')[];
-  readonly evals: readonly string[];
 }
 
 export interface CapabilityDeclaration {
@@ -134,11 +124,11 @@ export interface RegisteredSkill {
   readonly description: string;
   /** Files by relative path, so a selected body loads on demand. */
   readonly files: readonly string[];
-  /** Requests the skill's eval file labels as activating it; the router retrieves over them. */
-  readonly examples: readonly string[];
 }
 
 export interface RegisteredWorkflow {
+  readonly canonicalId?: string;
+  readonly domain?: string;
   readonly manifest: WorkflowManifest;
   readonly origin: BundleOrigin;
   readonly dir: string;

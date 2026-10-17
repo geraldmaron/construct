@@ -15,8 +15,20 @@ function cli(ctx: CliContext, args: string[], env = ctx.env) {
 test('reset refuses unavailable inspection with a live holder; force is explicit', async () => {
   await inProject(async (ctx, box) => {
     const path = join(box.cwd, '.construct/state/construct.sqlite');
-    const holder = spawn(process.execPath, ['--input-type=module', '-e', "import{DatabaseSync}from'node:sqlite';const db=new DatabaseSync(process.argv[1]);console.log('open');process.stdin.resume();process.stdin.on('end',()=>{db.close();process.exit(0)});", path], { env: ctx.env });
-    await new Promise<void>((resolve, reject) => { holder.stdout.once('data', () => resolve()); holder.once('error', reject); });
+    const holder = spawn(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        "import{DatabaseSync}from'node:sqlite';const db=new DatabaseSync(process.argv[1]);console.log('open');process.stdin.resume();process.stdin.on('end',()=>{db.close();process.exit(0)});",
+        path,
+      ],
+      { env: ctx.env },
+    );
+    await new Promise<void>((resolve, reject) => {
+      holder.stdout.once('data', () => resolve());
+      holder.once('error', reject);
+    });
     try {
       const env = { ...ctx.env, PATH: join(box.home, 'missing-tools') };
       const refused = cli(ctx, ['reset', '--confirm', '--keep-state'], env);
@@ -27,7 +39,10 @@ test('reset refuses unavailable inspection with a live holder; force is explicit
       const forced = cli(ctx, ['reset', '--confirm', '--keep-state', '--force'], env);
       assert.equal(forced.code, 0, forced.err);
       assert.equal(existsSync(path), false);
-    } finally { holder.stdin.end(); await new Promise<void>((resolve) => holder.once('close', () => resolve())); }
+    } finally {
+      holder.stdin.end();
+      await new Promise<void>((resolve) => holder.once('close', () => resolve()));
+    }
   });
 });
 test('skill impact refuses missing state without recreating it', async () => {
@@ -61,10 +76,10 @@ test('skill impact is byte-preserving and refuses another project identity', asy
 
 test('reset distinguishes an inspected empty result from diagnostics or invalid holder output', async () => {
   for (const probe of [
-    { body: "process.exit(1)", refused: false },
+    { body: 'process.exit(1)', refused: false },
     { body: "process.stderr.write('inspection denied');process.exit(1)", refused: true },
     { body: "process.stdout.write('not-a-pid');process.exit(0)", refused: true },
-    { body: "process.exit(2)", refused: true },
+    { body: 'process.exit(2)', refused: true },
   ]) {
     await inProject((ctx, box) => {
       const bin = join(box.home, 'holder-probe');

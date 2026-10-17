@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 /**
  * commit-trailers.mjs — strips and rejects git attribution trailers on commits.
- * Construct commit messages carry the bead id in the subject line only; no
- * Co-authored-by or similar trailers belong in this repository.
+ * No Co-authored-by or similar trailers belong in this repository; lineage
+ * lives in the ledger.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 /** Git attribution trailers this project refuses in commit messages. */
-export const ATTRIBUTION_TRAILER =
-  /^(Co-authored-by|Signed-off-by|Reviewed-by|Helped-by|Assisted-by|Reported-by):/i;
+export const ATTRIBUTION_TRAILER = /^(Co-authored-by|Signed-off-by|Reviewed-by|Helped-by|Assisted-by|Reported-by):/i;
 
 /** Remove attribution trailer lines; trim trailing blank lines. */
 export function stripAttributionTrailers(message) {
@@ -54,8 +53,7 @@ function main(argv) {
     const hits = findAttributionTrailers(message);
     if (hits.length === 0) return;
     process.stderr.write(
-      'commit-trailers: blocked commit — attribution trailers are not allowed in this repo\n' +
-        hits.map((line) => `  ${line}\n`).join(''),
+      'commit-trailers: blocked commit — attribution trailers are not allowed in this repo\n' + hits.map((line) => `  ${line}\n`).join(''),
     );
     process.exit(1);
   }

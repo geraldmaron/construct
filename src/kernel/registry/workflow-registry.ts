@@ -10,6 +10,8 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleDigest, type DigestFile } from './digest.ts';
 import { WORKFLOW_MANIFEST_FILE, type BundleOrigin, type RegisteredWorkflow } from './models.ts';
+import { createSkillRegistry } from './skill-registry.ts';
+import { bindWorkflow, workflowAlias } from './workflow-domains.ts';
 import { validateWorkflowManifest } from './validation.ts';
 
 /** `workflows/` beside the package root, whether running from src/ or dist/. */
@@ -19,7 +21,7 @@ export function builtinWorkflowsDir(): string {
 
 export interface WorkflowRegistry {
   list(): readonly RegisteredWorkflow[];
-  get(id: string): RegisteredWorkflow | null;
+  get(id: string, domain?: unknown): RegisteredWorkflow | null;
   file(id: string, relativePath: string): Uint8Array | null;
   problems(): readonly { readonly dir: string; readonly message: string }[];
 }
@@ -66,7 +68,13 @@ function dirs(root: string): string[] {
     .sort();
 }
 
-export function createWorkflowRegistry(input: { readonly builtinDir?: string; readonly projectDir?: string | null } = {}): WorkflowRegistry {
+export function createWorkflowRegistry(
+  input: { readonly builtinDir?: string; readonly projectDir?: string | null } = {},
+): WorkflowRegistry {
+  const skills = createSkillRegistry({
+    builtinDir: join(input.builtinDir ?? builtinWorkflowsDir(), '..', 'skills'),
+    projectDir: input.projectDir ? join(input.projectDir, '..', 'skills') : null,
+  });
   const workflows = new Map<string, RegisteredWorkflow>();
   const problems: { dir: string; message: string }[] = [];
   const sets: Array<[BundleOrigin, string[]]> = [
@@ -81,6 +89,14 @@ export function createWorkflowRegistry(input: { readonly builtinDir?: string; re
         problems.push({ dir, message: result.problem });
         continue;
       }
+      const aliases = Object.keys(result.manifest.aliases ?? {});
+      const collision =
+        workflowAlias([...workflows.values()], result.manifest.id) ||
+        aliases.find((id) => id === result.manifest.id || workflows.has(id) || workflowAlias([...workflows.values()], id));
+      if (collision) {
+        problems.push({ dir, message: `workflow ${result.manifest.id} collides with a reserved workflow alias` });
+        continue;
+      }
       if (workflows.has(result.manifest.id) && origin === 'project') {
         problems.push({ dir, message: `project workflow "${result.manifest.id}" shadows a built-in workflow; rename it or remove one` });
         continue;
@@ -90,9 +106,15 @@ export function createWorkflowRegistry(input: { readonly builtinDir?: string; re
   }
   return {
     list: () => [...workflows.values()].sort((a, b) => (a.manifest.id < b.manifest.id ? -1 : 1)),
-    get: (id) => workflows.get(id) ?? null,
+    get: (id, domain) => {
+      const direct = workflows.get(id);
+      if (direct) return typeof domain === 'string' && direct.manifest.domains ? bindWorkflow(direct, domain, undefined, skills) : direct;
+      const alias = workflowAlias([...workflows.values()], id);
+      if (!alias || (domain !== undefined && domain !== alias.domain)) return null;
+      return bindWorkflow(alias.workflow, alias.domain, id, skills);
+    },
     file: (id, relativePath) => {
-      const w = workflows.get(id);
+      const w = workflows.get(id) ?? workflowAlias([...workflows.values()], id)?.workflow;
       if (!w || !w.files.includes(relativePath)) return null;
       return readFileSync(join(w.dir, relativePath));
     },

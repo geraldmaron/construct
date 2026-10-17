@@ -24,7 +24,8 @@ test('stdio capability acceptance fences a delayed unused request and recovers d
   const fx = sterile();
   try {
     const { dir } = initProject(fx);
-    const a = new Session(dir, envFor(fx)), b = new Session(dir, envFor(fx));
+    const a = new Session(dir, envFor(fx)),
+      b = new Session(dir, envFor(fx));
     try {
       await Promise.all([a.request('initialize', INITIALIZE), b.request('initialize', INITIALIZE)]);
       const reason = await a.ok('remember', { kind: 'outcome', text: 'Recover a lost acceptance response safely' });
@@ -43,22 +44,40 @@ test('stdio capability acceptance fences a delayed unused request and recovers d
       assert.equal(responses[0]!.claimUntil, responses[1]!.claimUntil);
       assert.equal(responses[0]!.revision, responses[1]!.revision);
       assert.ok(!JSON.stringify(await b.ok('work', { action: 'show', id: item.id })).includes(String(prepared.acceptanceKey)));
-    } finally { await Promise.all([a.close(), b.close()]); }
-  } finally { fx.cleanup(); }
+    } finally {
+      await Promise.all([a.close(), b.close()]);
+    }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('concurrent acceptance retries share one generation while another recipient cannot recover it', { timeout: 30_000 }, async () => {
   const fx = freshStore();
   try {
     for (const competing of [false, true]) {
-      const id = `recover-${String(competing)}`, now = '2026-10-15T12:00:00.000Z', until = '2026-10-15T13:00:00.000Z';
+      const id = `recover-${String(competing)}`,
+        now = '2026-10-15T12:00:00.000Z',
+        until = '2026-10-15T13:00:00.000Z';
       createWork(fx.store, { id, kind: 'task', title: id, description: id, at: now });
       const held = claimWork(fx.store, { id, owner: 'offerer', paths: [`src/${id}.ts`], now, until });
-      const offerId = handoffWork(fx.store, { id, owner: 'offerer', token: held.claimToken, packet: { state: 'Ready', next: 'Review' }, now }).handoff.offerId;
-      const acceptanceKey = randomBytes(32).toString('hex'), barrier = new SharedArrayBuffer(4);
-      const inputs = [{ owner: 'acceptor', acceptanceKey }, { owner: 'acceptor', acceptanceKey }, ...(competing ? [{ owner: 'competitor', acceptanceKey: randomBytes(32).toString('hex') }] : [])];
-      const jobs = inputs.map(input => {
-        const worker = new Worker(`
+      const offerId = handoffWork(fx.store, {
+        id,
+        owner: 'offerer',
+        token: held.claimToken,
+        packet: { state: 'Ready', next: 'Review' },
+        now,
+      }).handoff.offerId;
+      const acceptanceKey = randomBytes(32).toString('hex'),
+        barrier = new SharedArrayBuffer(4);
+      const inputs = [
+        { owner: 'acceptor', acceptanceKey },
+        { owner: 'acceptor', acceptanceKey },
+        ...(competing ? [{ owner: 'competitor', acceptanceKey: randomBytes(32).toString('hex') }] : []),
+      ];
+      const jobs = inputs.map((input) => {
+        const worker = new Worker(
+          `
           const { parentPort, workerData } = require('node:worker_threads');
           (async () => {
             const { openStateStore } = await import(workerData.open);
@@ -73,27 +92,54 @@ test('concurrent acceptance retries share one generation while another recipient
             } catch (error) { parentPort.postMessage({ error: error.message }); }
             finally { store.close(); }
           })().catch(error => { throw error; });
-        `, { eval: true, workerData: { db: fx.dbPath, open: new URL('../../src/kernel/state/open.ts', import.meta.url).href, service: new URL('../../src/kernel/work/service.ts', import.meta.url).href, barrier, input: { id, now, until, offerId, ...input } } });
+        `,
+          {
+            eval: true,
+            workerData: {
+              db: fx.dbPath,
+              open: new URL('../../src/kernel/state/open.ts', import.meta.url).href,
+              service: new URL('../../src/kernel/work/service.ts', import.meta.url).href,
+              barrier,
+              input: { id, now, until, offerId, ...input },
+            },
+          },
+        );
         let ready!: () => void, result!: (value: { owner?: string; digest?: string; error?: string }) => void;
-        const started = new Promise<void>((resolve, reject) => { ready = resolve; worker.once('error', reject); });
-        const completed = new Promise<{ owner?: string; digest?: string; error?: string }>((resolve, reject) => { result = resolve; worker.on('error', reject); });
-        worker.on('message', message => { if (message.ready) ready(); else result(message); });
+        const started = new Promise<void>((resolve, reject) => {
+          ready = resolve;
+          worker.once('error', reject);
+        });
+        const completed = new Promise<{ owner?: string; digest?: string; error?: string }>((resolve, reject) => {
+          result = resolve;
+          worker.on('error', reject);
+        });
+        worker.on('message', (message) => {
+          if (message.ready) ready();
+          else result(message);
+        });
         return { started, completed, worker };
       });
       try {
-        await Promise.all(jobs.map(job => job.started));
-        Atomics.store(new Int32Array(barrier), 0, 1); Atomics.notify(new Int32Array(barrier), 0);
-        const results = await Promise.all(jobs.map(job => job.completed));
-        const successes = results.filter(result => result.digest);
-        assert.equal(new Set(successes.map(result => result.owner)).size, 1);
-        assert.equal(new Set(successes.map(result => result.digest)).size, 1);
+        await Promise.all(jobs.map((job) => job.started));
+        Atomics.store(new Int32Array(barrier), 0, 1);
+        Atomics.notify(new Int32Array(barrier), 0);
+        const results = await Promise.all(jobs.map((job) => job.completed));
+        const successes = results.filter((result) => result.digest);
+        assert.equal(new Set(successes.map((result) => result.owner)).size, 1);
+        assert.equal(new Set(successes.map((result) => result.digest)).size, 1);
         assert.equal(successes.length, successes[0]!.owner === 'acceptor' ? 2 : 1);
-        assert.ok(!results.some(result => /locked|busy/.test(result.error ?? '')));
-        const receipts = fx.store.db.prepare("SELECT COUNT(*) AS n FROM work_events WHERE work_id = ? AND kind = 'handoff_acceptance_receipt'").get(id) as { n: number };
+        assert.ok(!results.some((result) => /locked|busy/.test(result.error ?? '')));
+        const receipts = fx.store.db
+          .prepare("SELECT COUNT(*) AS n FROM work_events WHERE work_id = ? AND kind = 'handoff_acceptance_receipt'")
+          .get(id) as { n: number };
         assert.equal(receipts.n, 1);
-      } finally { await Promise.all(jobs.map(job => job.worker.terminate())); }
+      } finally {
+        await Promise.all(jobs.map((job) => job.worker.terminate()));
+      }
     }
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 /** A fixed, per-racer shuffle, so a failure replays. */
@@ -118,11 +164,18 @@ test('four sessions racing to accept 250 handoffs take each exactly once', { tim
       await offerer.request('initialize', INITIALIZE);
       await Promise.all(racers.map((r) => r.request('initialize', INITIALIZE)));
       const ids: string[] = [];
-      const reason = (await offerer.ok('remember', { kind: 'outcome', text: 'Handoffs land exactly once' })) as { remembered: { id: string } };
+      const reason = (await offerer.ok('remember', { kind: 'outcome', text: 'Handoffs land exactly once' })) as {
+        remembered: { id: string };
+      };
       for (let i = 0; i < OFFERS; i += 1) {
         const added = await offerer.ok('work', { action: 'add', serves: reason.remembered.id, title: `offer ${String(i)}` });
         const claimed = await offerer.ok('work', { action: 'claim', id: added.id, paths: [`src/f${String(i)}.ts`] });
-        await offerer.ok('work', { action: 'handoff', id: added.id, token: claimed.claimToken, packet: { state: `item ${String(i)} started`, next: 'finish it' } });
+        await offerer.ok('work', {
+          action: 'handoff',
+          id: added.id,
+          token: claimed.claimToken,
+          packet: { state: `item ${String(i)} started`, next: 'finish it' },
+        });
         ids.push(String(added.id));
       }
 
@@ -152,15 +205,24 @@ test('four sessions racing to accept 250 handoffs take each exactly once', { tim
       const check = new DatabaseSync(db, { readOnly: true });
       try {
         for (const w of winners) {
-          const row = check.prepare('SELECT claim_owner, handoff_json FROM work_items WHERE id = ?').get(w.id) as { claim_owner: string; handoff_json: string };
+          const row = check.prepare('SELECT claim_owner, handoff_json FROM work_items WHERE id = ?').get(w.id) as {
+            claim_owner: string;
+            handoff_json: string;
+          };
           assert.equal(row.claim_owner, w.owner);
           assert.equal((JSON.parse(row.handoff_json) as { takenBy: string }).takenBy, w.owner);
         }
         const leaseHolders = check
-          .prepare(`SELECT l.work_id, l.session_id, w.claim_session FROM path_leases l JOIN work_items w ON w.id = l.work_id WHERE l.released_at IS NULL`)
+          .prepare(
+            `SELECT l.work_id, l.session_id, w.claim_session FROM path_leases l JOIN work_items w ON w.id = l.work_id WHERE l.released_at IS NULL`,
+          )
           .all() as { work_id: string; session_id: string; claim_session: string }[];
         assert.equal(leaseHolders.length, OFFERS);
-        assert.deepEqual(leaseHolders.filter((l) => l.session_id !== l.claim_session), [], 'each reservation moved to its acceptor');
+        assert.deepEqual(
+          leaseHolders.filter((l) => l.session_id !== l.claim_session),
+          [],
+          'each reservation moved to its acceptor',
+        );
       } finally {
         check.close();
       }

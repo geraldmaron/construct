@@ -113,10 +113,12 @@ export const CHECKOUT_LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs'
  * another binary adds it here rather than inheriting the real PATH.
  */
 export function sterileBin(root: string): string {
-  systemTools ??= new Map(SYSTEM_TOOLS.flatMap((name) => {
-    const found = findOnPath(name, process.env);
-    return found ? [[name, found] as const] : [];
-  }));
+  systemTools ??= new Map(
+    SYSTEM_TOOLS.flatMap((name) => {
+      const found = findOnPath(name, process.env);
+      return found ? [[name, found] as const] : [];
+    }),
+  );
   const bin = join(root, 'bin');
   mkdirSync(bin, { recursive: true });
   for (const [name, target] of systemTools) symlinkSync(target, join(bin, name));

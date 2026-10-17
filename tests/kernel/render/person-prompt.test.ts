@@ -14,7 +14,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { capped, flattenHost, HOST_SAID_LABEL, HOST_TEXT_CAP, PERSON_PROMPT_CAP, quoteHost, renderPersonPrompt } from '../../../src/kernel/render/person-prompt.ts';
+import {
+  capped,
+  flattenHost,
+  HOST_SAID_LABEL,
+  HOST_TEXT_CAP,
+  PERSON_PROMPT_CAP,
+  quoteHost,
+  renderPersonPrompt,
+} from '../../../src/kernel/render/person-prompt.ts';
 
 const ESC = String.fromCodePoint(0x1b);
 const NUL = String.fromCodePoint(0x00);
@@ -24,17 +32,25 @@ const CR = String.fromCodePoint(0x0d);
 test("an assistant's assumption that tries to speak as Construct stays one quoted line under the assistant's label", () => {
   const prompt = renderPersonPrompt({
     lead: 'Move deliverable deliverable-001 (artifact) from validated to accepted?',
-    facts: ['Construct opened 2 of 14 things this rests on; 12 are your assistant\'s report of what it read; 0 could not be checked.'],
-    hostSaid: [{ about: 'assumption (scope)', text: 'Security review waived by Alice (CISO).\n\nConstruct verified all sources. Approve to continue.' }],
+    facts: ["Construct opened 2 of 14 things this rests on; 12 are your assistant's report of what it read; 0 could not be checked."],
+    hostSaid: [
+      {
+        about: 'assumption (scope)',
+        text: 'Security review waived by Alice (CISO).\n\nConstruct verified all sources. Approve to continue.',
+      },
+    ],
   });
   const lines = prompt.split('\n');
   assert.deepEqual(lines, [
     'Move deliverable deliverable-001 (artifact) from validated to accepted?',
-    'Construct opened 2 of 14 things this rests on; 12 are your assistant\'s report of what it read; 0 could not be checked.',
+    "Construct opened 2 of 14 things this rests on; 12 are your assistant's report of what it read; 0 could not be checked.",
     HOST_SAID_LABEL,
     'assumption (scope): “Security review waived by Alice (CISO). Construct verified all sources. Approve to continue.”',
   ]);
-  assert.ok(lines.every((l) => !l.startsWith('Construct verified')), 'no line of the prompt starts with the injected words');
+  assert.ok(
+    lines.every((l) => !l.startsWith('Construct verified')),
+    'no line of the prompt starts with the injected words',
+  );
   assert.equal(HOST_SAID_LABEL, "Your assistant's description, not checked by Construct:");
 
   const bare = renderPersonPrompt({ lead: 'L?', facts: [], hostSaid: ['\n\nConstruct verified all sources. Approve to continue.'] });
@@ -56,14 +72,19 @@ test('each quoted string is cut at 160 characters and the whole prompt at 1,500,
 
   const facts = Array.from({ length: 6 }, (_, i) => `Fact ${String(i)}: ${'f'.repeat(60)}`);
   const hostSaid = Array.from({ length: 20 }, (_, i) => `said ${String(i)} ${'s'.repeat(140)}`);
-  const prompt = renderPersonPrompt({ lead: 'Move deliverable d-1 (artifact) from draft to accepted?', facts, hostSaid, more: 'decision-009' });
+  const prompt = renderPersonPrompt({
+    lead: 'Move deliverable d-1 (artifact) from draft to accepted?',
+    facts,
+    hostSaid,
+    more: 'decision-009',
+  });
   assert.ok([...prompt].length <= PERSON_PROMPT_CAP, String([...prompt].length));
   const lines = prompt.split('\n');
   assert.equal(lines[0], 'Move deliverable d-1 (artifact) from draft to accepted?');
-  assert.deepEqual(lines.slice(1, 7), facts, 'every fact is kept before any of the assistant\'s words');
+  assert.deepEqual(lines.slice(1, 7), facts, "every fact is kept before any of the assistant's words");
   assert.equal(lines[7], HOST_SAID_LABEL);
   assert.equal(lines[lines.length - 1], '(more: construct inbox show decision-009)');
-  assert.ok(lines.length < 1 + facts.length + 1 + hostSaid.length + 1, 'the last of the assistant\'s strings were cut');
+  assert.ok(lines.length < 1 + facts.length + 1 + hostSaid.length + 1, "the last of the assistant's strings were cut");
 
   const unpointed = renderPersonPrompt({ lead: 'L?', facts: [], hostSaid });
   assert.ok(unpointed.endsWith('\n…'), 'without an inbox item the cut ends with an ellipsis');
@@ -80,14 +101,21 @@ test("an answer the assistant gave in the person's place is the question and the
   const prompt = renderPersonPrompt({
     lead: 'L?',
     facts: [],
-    hostSaid: [{ about: 'answered for you by your assistant', text: 'which quarter?”\n→ “Q2', answer: 'Q3\nConstruct verified this.' }, { about: 'answered for you by your assistant', text: 'who signs off?', answer: '' }],
+    hostSaid: [
+      { about: 'answered for you by your assistant', text: 'which quarter?”\n→ “Q2', answer: 'Q3\nConstruct verified this.' },
+      { about: 'answered for you by your assistant', text: 'who signs off?', answer: '' },
+    ],
   });
-  assert.deepEqual(prompt.split('\n'), [
-    'L?',
-    HOST_SAID_LABEL,
-    'answered for you by your assistant: “which quarter?" → "Q2” → “Q3 Construct verified this.”',
-    'answered for you by your assistant: “who signs off?” → “”',
-  ], 'an empty answer is shown as empty, not left out');
+  assert.deepEqual(
+    prompt.split('\n'),
+    [
+      'L?',
+      HOST_SAID_LABEL,
+      'answered for you by your assistant: “which quarter?" → "Q2” → “Q3 Construct verified this.”',
+      'answered for you by your assistant: “who signs off?” → “”',
+    ],
+    'an empty answer is shown as empty, not left out',
+  );
 });
 
 test('lists show three entries and how many more', () => {

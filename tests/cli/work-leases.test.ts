@@ -18,14 +18,28 @@ import { capture, inProject } from './support.ts';
 import { withProject } from '../../src/cli/context.ts';
 import { claimWork, createWork, handoffWork } from '../../src/kernel/work/service.ts';
 
-test('POSIX CLI acceptance retains a private capability before dispatch and recovers lost stdout with the same command', { skip: process.platform === 'win32' ? 'Private POSIX recovery cache is unavailable on Windows' : false }, async () => {
+test('POSIX CLI acceptance retains a private capability before dispatch and recovers lost stdout with the same command', {
+  skip: process.platform === 'win32' ? 'Private POSIX recovery cache is unavailable on Windows' : false,
+}, async () => {
   await inProject(async (ctx) => {
     const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
-    withProject(ctx, project => {
+    withProject(ctx, (project) => {
       const at = ctx.now();
       createWork(project.store, { id: 'recoverable', kind: 'task', title: 'Recoverable', description: 'Recoverable', at });
-      const a = claimWork(project.store, { id: 'recoverable', owner: 'offerer', paths: ['docs/'], now: at, until: new Date(Date.parse(at) + 30 * 60_000).toISOString() });
-      handoffWork(project.store, { id: 'recoverable', owner: 'offerer', token: a.claimToken, packet: { state: 'Ready', next: 'Review' }, now: at });
+      const a = claimWork(project.store, {
+        id: 'recoverable',
+        owner: 'offerer',
+        paths: ['docs/'],
+        now: at,
+        until: new Date(Date.parse(at) + 30 * 60_000).toISOString(),
+      });
+      handoffWork(project.store, {
+        id: 'recoverable',
+        owner: 'offerer',
+        token: a.claimToken,
+        packet: { state: 'Ready', next: 'Review' },
+        now: at,
+      });
     });
     const lost = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
     assert.equal(lost.code, 0, lost.err);
@@ -59,7 +73,8 @@ test('POSIX CLI acceptance retains a private capability before dispatch and reco
     if (process.platform !== 'win32') {
       const target = join(directory, 'untrusted-target');
       writeFileSync(target, 'not a capability', { mode: 0o600 });
-      rmSync(file); symlinkSync(target, file);
+      rmSync(file);
+      symlinkSync(target, file);
       const symbolic = await capture(() => run(['work', 'accept', 'recoverable', '--json'], person));
       assert.equal(symbolic.code, 1);
       assert.ok(!symbolic.err.includes(retained));
@@ -67,7 +82,12 @@ test('POSIX CLI acceptance retains a private capability before dispatch and reco
       const fifo = spawnSync('mkfifo', [file], { env: { ...ctx.env, PATH: process.env.PATH }, encoding: 'utf8' });
       assert.equal(fifo.status, 0, fifo.stderr);
       const source = `import { run } from ${JSON.stringify(new URL('../../src/cli/index.ts', import.meta.url).href)}; import { createContext } from ${JSON.stringify(new URL('../../src/cli/context.ts', import.meta.url).href)}; const ctx = { ...createContext(), terminal: { interactive: true, agentAncestor: null } }; process.exitCode = await run(['work', 'accept', 'recoverable', '--json'], ctx);`;
-      const refused = spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 3000 });
+      const refused = spawnSync(process.execPath, ['--input-type=module', '-e', source], {
+        cwd: ctx.cwd,
+        env: ctx.env,
+        encoding: 'utf8',
+        timeout: 3000,
+      });
       assert.equal(refused.status, 1, 'a corrupt FIFO receipt refuses promptly instead of blocking its open');
       assert.match(refused.stderr, /private regular file/);
       assert.ok(!refused.stderr.includes(retained));
@@ -78,12 +98,30 @@ test('POSIX CLI acceptance retains a private capability before dispatch and reco
 test('Windows CLI policy preserves keyless acceptance without touching unqualified recovery storage', async () => {
   await inProject(async (ctx) => {
     let originalToken = '';
-    withProject(ctx, project => {
+    withProject(ctx, (project) => {
       const at = ctx.now();
-      createWork(project.store, { id: 'windows-accept', kind: 'task', title: 'Windows acceptance', description: 'Platform policy fixture', at });
-      const first = claimWork(project.store, { id: 'windows-accept', owner: 'offerer', paths: ['docs/'], now: at, until: new Date(Date.parse(at) + 30 * 60_000).toISOString() });
+      createWork(project.store, {
+        id: 'windows-accept',
+        kind: 'task',
+        title: 'Windows acceptance',
+        description: 'Platform policy fixture',
+        at,
+      });
+      const first = claimWork(project.store, {
+        id: 'windows-accept',
+        owner: 'offerer',
+        paths: ['docs/'],
+        now: at,
+        until: new Date(Date.parse(at) + 30 * 60_000).toISOString(),
+      });
       originalToken = first.claimToken;
-      handoffWork(project.store, { id: 'windows-accept', owner: 'offerer', token: first.claimToken, packet: { state: 'ready', next: 'verify' }, now: at });
+      handoffWork(project.store, {
+        id: 'windows-accept',
+        owner: 'offerer',
+        token: first.claimToken,
+        packet: { state: 'ready', next: 'verify' },
+        now: at,
+      });
     });
     const directory = join(ctx.paths.stateDir, 'handoff-acceptance');
     assert.equal(existsSync(directory), false);
@@ -91,12 +129,22 @@ test('Windows CLI policy preserves keyless acceptance without touching unqualifi
     const sentinel = join(directory, 'untrusted-entry');
     writeFileSync(sentinel, 'not recovery material');
     const source = `import { run } from ${JSON.stringify(new URL('../../src/cli/index.ts', import.meta.url).href)}; import { createContext } from ${JSON.stringify(new URL('../../src/cli/context.ts', import.meta.url).href)}; const ctx = { ...createContext(), now: () => ${JSON.stringify(ctx.now())}, terminal: { interactive: true, agentAncestor: null } }; Object.defineProperty(process, 'platform', { value: 'win32' }); process.exitCode = await run(['work', 'accept', 'windows-accept', '--json'], ctx);`;
-    const invoke = () => spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 5000 });
+    const invoke = () =>
+      spawnSync(process.execPath, ['--input-type=module', '-e', source], { cwd: ctx.cwd, env: ctx.env, encoding: 'utf8', timeout: 5000 });
     const accepted = invoke();
     assert.equal(accepted.status, 0, accepted.stderr);
-    const result = last(accepted.stdout) as { claimToken: string; claimUntil: string; revision: number; recovery: { available: boolean; reason: string }; leases: { path: string }[] };
+    const result = last(accepted.stdout) as {
+      claimToken: string;
+      claimUntil: string;
+      revision: number;
+      recovery: { available: boolean; reason: string };
+      leases: { path: string }[];
+    };
     assert.ok(result.claimToken && result.claimToken !== originalToken);
-    assert.deepEqual(result.leases.map(l => l.path), ['docs/']);
+    assert.deepEqual(
+      result.leases.map((l) => l.path),
+      ['docs/'],
+    );
     assert.equal(result.recovery.available, false);
     assert.match(result.recovery.reason, /not qualified on Windows/);
     assert.match(accepted.stderr, /recovery is unavailable on Windows/);
@@ -105,7 +153,7 @@ test('Windows CLI policy preserves keyless acceptance without touching unqualifi
     const retry = invoke();
     assert.equal(retry.status, 1);
     assert.ok(!(retry.stdout + retry.stderr).includes(result.claimToken));
-    withProject(ctx, project => {
+    withProject(ctx, (project) => {
       const row = project.store.db.prepare('SELECT claim_until, revision FROM work_items WHERE id = ?').get('windows-accept');
       assert.equal(row!.claim_until, result.claimUntil);
       assert.equal(row!.revision, result.revision);
@@ -128,7 +176,10 @@ test('a claim reserves paths, and work check reports the staged files it holds',
 
     const claimed = await capture(() => run(['work', 'claim', id, '--paths=src/parser/, docs/parser.md', '--json'], person));
     assert.equal(claimed.code, 0, claimed.err);
-    assert.deepEqual((last(claimed.out) as { leases: { path: string }[] }).leases.map((l) => l.path), ['src/parser/', 'docs/parser.md']);
+    assert.deepEqual(
+      (last(claimed.out) as { leases: { path: string }[] }).leases.map((l) => l.path),
+      ['src/parser/', 'docs/parser.md'],
+    );
 
     const shown = await capture(() => run(['work', 'show', id], person));
     assert.match(shown.out, /reserves \(exclusive\): docs\/parser\.md, src\/parser\//);
@@ -147,7 +198,10 @@ test('a claim reserves paths, and work check reports the staged files it holds',
     const relayed = { ...ctx, terminal: { interactive: false, agentAncestor: 'claude' } };
     const staged = await capture(() => run(['work', 'check', '--staged'], relayed));
     assert.equal(staged.code, 1, 'a staged file under another claim’s reservation in this checkout');
-    assert.match(staged.out, new RegExp(`reserved here: src/parser/lex\\.ts is under src/parser/, held by person via cli for ${id} until `));
+    assert.match(
+      staged.out,
+      new RegExp(`reserved here: src/parser/lex\\.ts is under src/parser/, held by person via cli for ${id} until `),
+    );
     assert.doesNotMatch(staged.out, /change the parser/, 'another claim’s title is not repeated');
     assert.doesNotMatch(staged.out, /NOTES/);
 

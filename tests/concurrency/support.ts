@@ -29,7 +29,11 @@ export function initProject(fx: SterileFixture, name = 'concurrency'): { dir: st
   const dir = join(fx.root, 'project');
   mkdirSync(dir, { recursive: true });
   mkdirSync(join(fx.root, 'home'), { recursive: true });
-  const made = spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', `--name=${name}`, '--scale=solo'], { cwd: dir, env: envFor(fx), encoding: 'utf8' });
+  const made = spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', `--name=${name}`, '--scale=solo'], {
+    cwd: dir,
+    env: envFor(fx),
+    encoding: 'utf8',
+  });
   assert.equal(made.status, 0, made.stderr);
   return { dir, db: join(dir, '.construct', 'state', 'construct.sqlite') };
 }

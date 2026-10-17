@@ -578,7 +578,7 @@ It already owns the ledger and the leases, and MANDATE rows 152, 190, 196 and 19
 **Files:**
 - New `src/hosts/identity.ts`, `src/kernel/state/sessions.ts`, `src/kernel/work/sweep.ts`
 - `src/cli/broker-context.ts`, `src/kernel/broker/context.ts`, `tools.ts`
-- `src/kernel/work/service.ts` (`claimWork`, `releaseWork`, `setTerminal`, `restoreWork`, `readinessOf`)
+- `src/kernel/work/claims.ts` (`claimWork`, `releaseWork`), `completion.ts` (`setTerminal`), `export-restore.ts` (`restoreWork`), and `helpers.ts` (`readinessOf`)
 - `src/kernel/state/steps.ts`, `schema.ts`, `migrate.ts`, `grants.ts`, `decisions.ts`, `activity.ts`
 - `src/kernel/workflow/service.ts`
 - `src/cli/context.ts` (`resolveRepository`), `init.ts`, `work.ts`, `inbox.ts`

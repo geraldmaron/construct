@@ -97,7 +97,14 @@ export function listActivity(
         WHERE (? IS NULL OR run_id = ?) AND (? IS NULL OR kind = ?) AND id > ?
         ORDER BY id LIMIT ?`,
     )
-    .all(filter.runId ?? null, filter.runId ?? null, filter.kind ?? null, filter.kind ?? null, filter.afterId ?? 0, limit) as unknown as Row[];
+    .all(
+      filter.runId ?? null,
+      filter.runId ?? null,
+      filter.kind ?? null,
+      filter.kind ?? null,
+      filter.afterId ?? 0,
+      limit,
+    ) as unknown as Row[];
   return rows.map(toEvent);
 }
 
@@ -108,7 +115,10 @@ export function listActivity(
  * a hook, and checks a person waived. Counted from the activity log, so it
  * is a measurement, not a setting.
  */
-export function habitsSince(store: StateStore, since: string): { answersChecked: number; answersClean: number; uncheckedCaught: number; readsRecorded: number; checksWaived: number } {
+export function habitsSince(
+  store: StateStore,
+  since: string,
+): { answersChecked: number; answersClean: number; uncheckedCaught: number; readsRecorded: number; checksWaived: number } {
   const rows = store.db
     .prepare(
       `SELECT kind, payload_json FROM activity_events

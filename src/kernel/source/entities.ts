@@ -19,7 +19,13 @@ export function sourceEntityKind(kind: string): EntityKind {
 /** The entity for a source, created if it is missing. */
 export function ensureSourceEntity(
   store: StateStore,
-  input: { readonly sourceId: string; readonly kind: string; readonly name: string; readonly at: string; readonly nextId: (prefix: string) => string },
+  input: {
+    readonly sourceId: string;
+    readonly kind: string;
+    readonly name: string;
+    readonly at: string;
+    readonly nextId: (prefix: string) => string;
+  },
 ): Entity {
   return store.transaction(() => {
     // Lookup and insert are one write boundary for every caller, including
@@ -27,7 +33,13 @@ export function ensureSourceEntity(
     const kind = sourceEntityKind(input.kind);
     const existing = findEntityByRef(store, kind, sourceEntityRef(input.sourceId));
     if (existing) return existing;
-    return addEntity(store, { id: input.nextId('ent'), kind, name: input.name, externalRef: sourceEntityRef(input.sourceId), at: input.at });
+    return addEntity(store, {
+      id: input.nextId('ent'),
+      kind,
+      name: input.name,
+      externalRef: sourceEntityRef(input.sourceId),
+      at: input.at,
+    });
   });
 }
 

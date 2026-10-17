@@ -26,7 +26,12 @@ import type { AskPerson } from '../../../src/kernel/policy/channels.ts';
 import { brokerFixture, type BrokerFixture } from '../../kernel/broker/support.ts';
 import { fixture } from '../../kernel/workflow/support.ts';
 
-interface Message { id?: unknown; method?: string; params?: { message?: string; requestedSchema?: unknown }; result?: { structuredContent?: Record<string, unknown> } }
+interface Message {
+  id?: unknown;
+  method?: string;
+  params?: { message?: string; requestedSchema?: unknown };
+  result?: { structuredContent?: Record<string, unknown> };
+}
 
 /** A host on the other end of a stdio pair: it sends requests and answers the server's. */
 class FakeHost {
@@ -92,12 +97,23 @@ class FakeHost {
   }
 }
 
-async function session(fx: BrokerFixture, opts: { elicitation: boolean; personPrompts: boolean | (() => boolean); waitMs?: number }): Promise<{ host: FakeHost; served: Promise<void> }> {
+async function session(
+  fx: BrokerFixture,
+  opts: { elicitation: boolean; personPrompts: boolean | (() => boolean); waitMs?: number },
+): Promise<{ host: FakeHost; served: Promise<void> }> {
   const host = new FakeHost();
   const requests = new HostRequests();
-  const handler = createMcpHandler('interactive', fx.broker, { hostRequests: requests, personPrompts: opts.personPrompts, personPromptWaitMs: opts.waitMs ?? 5_000 });
+  const handler = createMcpHandler('interactive', fx.broker, {
+    hostRequests: requests,
+    personPrompts: opts.personPrompts,
+    personPromptWaitMs: opts.waitMs ?? 5_000,
+  });
   const served = serveHandler(handler, host.toServer, host.fromServer, requests);
-  await host.request('initialize', { protocolVersion: '2025-06-18', capabilities: opts.elicitation ? { elicitation: {} } : {}, clientInfo: { name: 'fake', version: '1' } });
+  await host.request('initialize', {
+    protocolVersion: '2025-06-18',
+    capabilities: opts.elicitation ? { elicitation: {} } : {},
+    clientInfo: { name: 'fake', version: '1' },
+  });
   return { host, served };
 }
 
@@ -107,13 +123,23 @@ function externalWrite(fx: BrokerFixture, id: string): void {
     kind: 'approval',
     question: 'Approve exactly this: push PROJ-14',
     options: ['approve', 'decline'],
-    subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+    subject: {
+      request: {
+        tier: 'external_write',
+        targetSystem: 'jira',
+        targetResource: 'PROJ-14',
+        operation: 'push PROJ-14',
+        executorId: 'session:claude-code',
+      },
+    },
     at: fx.broker.now(),
   });
 }
 
 const decide = (host: FakeHost, decisionId: string): Promise<Record<string, unknown>> =>
-  host.request('tools/call', { name: 'decide', arguments: { decisionId, resolution: 'approve' } }).then((m) => m.result!.structuredContent!);
+  host
+    .request('tools/call', { name: 'decide', arguments: { decisionId, resolution: 'approve' } })
+    .then((m) => m.result!.structuredContent!);
 
 test('the person’s own answer through the host resolves an approval a relay could not give', async () => {
   const fx = brokerFixture();
@@ -123,8 +149,15 @@ test('the person’s own answer through the host resolves an approval a relay co
     host.answer = () => ({ action: 'accept', content: { answer: 'approve' } });
     const r = await decide(host, 'decision-ext');
     assert.equal(host.asked.length, 1);
-    assert.match(host.asked[0]!.params!.message!, /^Construct needs your own answer; your assistant cannot give it for you\. Approve exactly this: push PROJ-14\nYour assistant relayed “approve”\.$/);
-    assert.deepEqual(host.asked[0]!.params!.requestedSchema, { type: 'object', properties: { answer: { type: 'string', title: 'Your answer', enum: ['approve', 'decline'] } }, required: ['answer'] });
+    assert.match(
+      host.asked[0]!.params!.message!,
+      /^Construct needs your own answer; your assistant cannot give it for you\. Approve exactly this: push PROJ-14\nYour assistant relayed “approve”\.$/,
+    );
+    assert.deepEqual(host.asked[0]!.params!.requestedSchema, {
+      type: 'object',
+      properties: { answer: { type: 'string', title: 'Your answer', enum: ['approve', 'decline'] } },
+      required: ['answer'],
+    });
     assert.equal((r.decision as { state: string }).state, 'resolved');
     assert.equal(r.channel, 'elicitation');
     const d = getDecision(fx.broker.store, 'decision-ext')!;
@@ -197,7 +230,9 @@ test('Bob gets the pending fallback before its response deadline and late approv
   try {
     externalWrite(fx, 'decision-bob');
     await host.request('initialize', { protocolVersion: '2025-06-18', capabilities: { elicitation: {} } });
-    const hostTimeout = new Promise<never>((_, reject) => { deadline = setTimeout(() => reject(new Error('simulated Bob response deadline expired')), 600); });
+    const hostTimeout = new Promise<never>((_, reject) => {
+      deadline = setTimeout(() => reject(new Error('simulated Bob response deadline expired')), 600);
+    });
     const result = await Promise.race([decide(host, 'decision-bob'), hostTimeout]);
     assert.equal(selectedWaitMs, 45_000);
     assert.equal(result.personRequired, true);
@@ -219,7 +254,11 @@ test('Bob gets the pending fallback before its response deadline and late approv
 test('person prompt timeout preserves other host defaults and explicit overrides', async () => {
   const fx = brokerFixture();
   try {
-    for (const [hostId, override, expected] of [['codex', undefined, 60_000], ['bob', 120_000, 120_000], ['bob', 0, 0]] as const) {
+    for (const [hostId, override, expected] of [
+      ['codex', undefined, 60_000],
+      ['bob', 120_000, 120_000],
+      ['bob', 0, 0],
+    ] as const) {
       let selected: number | undefined;
       class CapturingRequests extends HostRequests {
         override request(_method: string, _params: unknown, timeoutMs: number): Promise<unknown> {
@@ -228,9 +267,17 @@ test('person prompt timeout preserves other host defaults and explicit overrides
         }
       }
       externalWrite(fx, `decision-${hostId}-${String(override)}`);
-      const handler = createMcpHandler('interactive', { ...fx.broker, host: { ...fx.broker.host, hostId } }, { hostRequests: new CapturingRequests(), personPrompts: true, personPromptWaitMs: override });
+      const handler = createMcpHandler(
+        'interactive',
+        { ...fx.broker, host: { ...fx.broker.host, hostId } },
+        { hostRequests: new CapturingRequests(), personPrompts: true, personPromptWaitMs: override },
+      );
       await handler({ id: 1, method: 'initialize', params: { capabilities: { elicitation: {} } } });
-      await handler({ id: 2, method: 'tools/call', params: { name: 'decide', arguments: { decisionId: `decision-${hostId}-${String(override)}`, resolution: 'approve' } } });
+      await handler({
+        id: 2,
+        method: 'tools/call',
+        params: { name: 'decide', arguments: { decisionId: `decision-${hostId}-${String(override)}`, resolution: 'approve' } },
+      });
       assert.equal(selected, expected, `${hostId} preserves the configured timeout`);
     }
   } finally {
@@ -264,19 +311,34 @@ for (const [label, opts] of [
 test('accepting a deliverable asks the person the same way', async () => {
   const fx = fixture();
   try {
-    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const started = fx.service.start({
+      workflowId: 'ship',
+      input: { request: 'Rename a private helper in the invoice formatter' },
+      trigger: 'manual',
+    });
     const claimed = fx.service.claimNext({ runId: started.run.id });
-    const deliverableId = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } }).deliverable!.id;
+    const deliverableId = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } })
+      .deliverable!.id;
     const promote = toolsFor('interactive').find((t) => t.name === 'promote_deliverable')!;
     const asked: string[] = [];
     const yes: AskPerson = async (q) => (asked.push(q.message), { answered: true, choice: 'approve' });
-    const ctx = { store: fx.store, workflow: fx.service, actor: 'model via claude-code', host: { hostId: 'claude-code' }, askPerson: yes } as unknown as BrokerContext;
+    const ctx = {
+      store: fx.store,
+      workflow: fx.service,
+      actor: 'model via claude-code',
+      host: { hostId: 'claude-code' },
+      askPerson: yes,
+    } as unknown as BrokerContext;
     const r = (await promote.run(ctx, { deliverableId, to: 'accepted' })) as { deliverable: { trust: string }; channel: string };
     assert.equal(r.deliverable.trust, 'accepted');
     assert.equal(r.channel, 'elicitation');
     assert.match(asked[0]!, /Move deliverable .* to accepted\?/);
     const no: AskPerson = async () => ({ answered: false, why: 'declined' });
-    const r2 = (await promote.run({ ...ctx, askPerson: no } as BrokerContext, { deliverableId, to: 'final' })) as { deliverable: { trust: string }; personRequired: boolean; asked: string };
+    const r2 = (await promote.run({ ...ctx, askPerson: no } as BrokerContext, { deliverableId, to: 'final' })) as {
+      deliverable: { trust: string };
+      personRequired: boolean;
+      asked: string;
+    };
     assert.deepEqual([r2.deliverable.trust, r2.personRequired, r2.asked], ['unchanged', true, 'the person declined the prompt']);
   } finally {
     fx.cleanup();
@@ -284,17 +346,35 @@ test('accepting a deliverable asks the person the same way', async () => {
 });
 
 /** A deliverable the person was asked to accept and did not answer, then challenged with one objection left open. */
-async function askedThenChallenged(fx: ReturnType<typeof fixture>): Promise<{ deliverableId: string; oldId: string; ctx: BrokerContext; asked: string[] }> {
-  const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+async function askedThenChallenged(
+  fx: ReturnType<typeof fixture>,
+): Promise<{ deliverableId: string; oldId: string; ctx: BrokerContext; asked: string[] }> {
+  const started = fx.service.start({
+    workflowId: 'ship',
+    input: { request: 'Rename a private helper in the invoice formatter' },
+    trigger: 'manual',
+  });
   const claimed = fx.service.claimNext({ runId: started.run.id });
-  const deliverableId = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } }).deliverable!.id;
+  const deliverableId = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } })
+    .deliverable!.id;
   const asked: string[] = [];
   const no: AskPerson = async (q) => (asked.push(q.message), { answered: false, why: 'declined' });
-  const ctx = { store: fx.store, workflow: fx.service, actor: 'model via claude-code', host: { hostId: 'claude-code' }, askPerson: no } as unknown as BrokerContext;
+  const ctx = {
+    store: fx.store,
+    workflow: fx.service,
+    actor: 'model via claude-code',
+    host: { hostId: 'claude-code' },
+    askPerson: no,
+  } as unknown as BrokerContext;
   const promote = toolsFor('interactive').find((t) => t.name === 'promote_deliverable')!;
   const first = (await promote.run(ctx, { deliverableId, to: 'accepted' })) as { pendingDecision: string };
   assert.match(asked[0]!, /from validated to accepted\?/);
-  fx.service.promote({ deliverableId, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [{ objection: 'the rename misses a caller', disposition: 'open' }] } } });
+  fx.service.promote({
+    deliverableId,
+    to: 'challenged',
+    by: 'adversarial-review',
+    verification: { challenge: { objections: [{ objection: 'the rename misses a caller', disposition: 'open' }] } },
+  });
   return { deliverableId, oldId: first.pendingDecision, ctx, asked };
 }
 
@@ -304,10 +384,21 @@ test('a relayed approval of a question asked before a challenge puts the questio
     const { deliverableId, oldId, ctx, asked } = await askedThenChallenged(fx);
     const decideTool = toolsFor('interactive').find((t) => t.name === 'decide')!;
     const yes: AskPerson = async (q) => (asked.push(q.message), { answered: true, choice: 'approve' });
-    const r = (await decideTool.run({ ...ctx, askPerson: yes } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as { decision: { id: string; state: string }; channel: string; replaces: string };
+    const r = (await decideTool.run({ ...ctx, askPerson: yes } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as {
+      decision: { id: string; state: string };
+      channel: string;
+      replaces: string;
+    };
     const lines = asked[1]!.split('\n');
-    assert.equal(lines[0], `Construct needs your own answer; your assistant cannot give it for you. Move deliverable ${deliverableId} (outcome) from challenged to accepted?`);
-    assert.equal(lines[1], 'Your assistant relayed \u201capprove\u201d.', 'Construct says what was relayed on a line of its own, outside the assistant\u2019s quoted words');
+    assert.equal(
+      lines[0],
+      `Construct needs your own answer; your assistant cannot give it for you. Move deliverable ${deliverableId} (outcome) from challenged to accepted?`,
+    );
+    assert.equal(
+      lines[1],
+      'Your assistant relayed \u201capprove\u201d.',
+      'Construct says what was relayed on a line of its own, outside the assistant\u2019s quoted words',
+    );
     assert.ok(lines.includes('Challenged by adversarial-review, from the session that ran the work: 1 objection, 1 open.'), asked[1]);
     assert.ok(lines.indexOf('open objection: \u201cthe rename misses a caller\u201d') > lines.indexOf(HOST_SAID_LABEL), asked[1]);
     const old = getDecision(fx.store, oldId)!;
@@ -327,7 +418,12 @@ test('a relayed approval of a stale question where the host cannot ask names the
   try {
     const { deliverableId, oldId, ctx } = await askedThenChallenged(fx);
     const decideTool = toolsFor('interactive').find((t) => t.name === 'decide')!;
-    const r = (await decideTool.run({ ...ctx, askPerson: undefined } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as { decision: { id: string; state: string }; replaces: string; personRequired: boolean; next: string };
+    const r = (await decideTool.run({ ...ctx, askPerson: undefined } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as {
+      decision: { id: string; state: string };
+      replaces: string;
+      personRequired: boolean;
+      next: string;
+    };
     assert.notEqual(r.decision.id, oldId);
     assert.deepEqual([r.decision.state, r.replaces, r.personRequired], ['open', oldId, true]);
     assert.match(r.next, new RegExp(`construct inbox resolve ${r.decision.id} approve`));

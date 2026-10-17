@@ -1,1 +1,0 @@
-Survey of100 respondents:90 say they attended. Nonrespondent attendance was not collected.

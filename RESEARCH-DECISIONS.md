@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 35 are
+Nothing in §§1–32 describes the current product. Sections 33 to 46 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3173,3 +3173,742 @@ weak-tier kind accuracy without raising false engagement.
 **Adoption run.** Appended here, dated, when the full record lands, with
 per-host results, margins, end-to-end checkpoints and resolved model ids.
 Until then the change is not merged to staging or released.
+
+## 36. Tier 1 residency, restored from §29 (2026-10-17)
+
+Gerald, 2026-10-17: restore the §29 opt-in residency tiers in STRATEGY.md,
+scoped to Tier 1, a command that installs a launchd or systemd timer.
+
+**How the license was lost.** §29 (2026-08-25) admitted three opt-in tiers
+and STRATEGY carried them in its kill-list wording. The cutover rewrite of
+2026-09-02 restated commitment 3 as "no daemon" and marked §§1–32 as history
+without saying §29 was reversed. §33 lists no residency decision. The
+reversal was an omission, not a decision, so this section restores the part
+that is wanted now and says what stays closed.
+
+**Why Tier 1 and not more.** A saved standing trigger does not run after
+the session exits: `docs/recurring-operation.md` says the clock and executor
+stay unprovisioned, and `workflow recipe` prints a crontab line or a CI job
+for the person to install by hand. Every host now ships its own scheduler
+(Claude Code desktop scheduled tasks and routines, Codex scheduled
+automations, Cursor automations), and those stay valid clocks. None of them
+fires a Construct trigger on its own schedule with Construct's idempotency
+key, and a hand-installed crontab is the step people skip. A platform timer
+that starts one short-lived firing and exits closes that gap with nothing
+resident, no battery cost between firings, and catch-up after sleep owned by
+the OS. The `paths.ts` resolver for the per-user launchd and systemd
+directories already exists with no caller.
+
+**Challenge.** Strongest failure mode: the 2.x leak class returns through a
+new door. A test, a worktree, or a second checkout installs a second timer
+against the same store, or a firing runs with the wrong project or an
+expired host login and fails silently every week. Controls, each an
+acceptance criterion on the work:
+- Only the explicit command installs or removes a unit. Init, install,
+  library code, and the test harness cannot reach it, and the tests assert
+  the unit is written under the injected paths and never the real home.
+- One unit per trigger, named by project identity and trigger id, so a
+  repeated install replaces rather than duplicates; `status` and `doctor`
+  list installed units and flag one whose project or trigger is gone.
+- The unit fires the existing `workflow fire` path. Its key is the
+  schedule slot that was due, not the wall clock, so a late or coalesced
+  firing after sleep covers the window that was due and a repeat is
+  deduplicated.
+- No secret in the unit file or its environment; the firing resolves host
+  authentication at use time, and an unauthenticated host records a blocked
+  run with the reason rather than exiting quietly.
+- Without an explicit executor the command refuses to install, since a
+  firing with no model only records a blocked run.
+- macOS uses `StartCalendarInterval`, never `StartInterval`, because
+  interval firings that fall during sleep are lost; Linux uses `OnCalendar`
+  with `Persistent=true`. A cron expression launchd cannot express exactly
+  is refused, not approximated.
+
+Best alternative: keep "no daemon" and point people at their host's
+scheduler. Rejected as the only path, because a host scheduler runs a model
+session on its own schedule and cannot hand Construct a due-slot key. It
+stays documented as a valid clock. Verdict: **accepted with controls**.
+
+**Still closed.** §29's Tier 2 (an on-demand, idle-exiting process for
+sub-interval watches) and Tier 3 (a supervised always-on service) are not
+licensed. Construct reads only directories itself; every other source is
+read through a host's tools, so a resident Construct process could not watch
+most sources anyway. Either tier needs its own dated decision.
+
+## 37. Hermes Agent is a host, never the substrate (2026-10-17)
+
+Gerald, 2026-10-17: determine the changes needed for the pattern in which
+Hermes Agent calls Construct, and use Codex to validate that it works, for
+the next alpha.
+
+**What Hermes is, from its own repository and docs (v0.22.2, read
+2026-10-17).** An MIT-licensed personal agent with a long-running gateway
+(terminal and messaging apps), natural-language cron, agent-written skills
+and memory, and an MCP client. It reads MCP servers only from
+`config.yaml` under `HERMES_HOME` (`~/.hermes`); it reads project skills
+from `.agents/skills` once the person runs `hermes skills trust`, and
+`AGENTS.md` from the project. Its MCP children get a stripped environment
+with no Hermes marker; its terminal exports `HERMES_AGENT=true`. A server
+marked `trust: untrusted` asks before every tool without `readOnlyHint`.
+Its client accepts a server answering `initialize` with `2025-06-18`.
+
+**Decision.** Hermes is the seventh wirable host. `init --client=hermes`
+writes one `mcp_servers.construct` block, naming the project by
+`--project=` and `cwd` and marking the server untrusted. A narrow YAML block
+writer edits only that block, keeps an unchanged file byte-identical, and
+refuses forms it cannot read. Hermes's self-written skills and memory stay
+Hermes's; nothing Construct records comes from them, so commitments 1 and 9
+hold.
+
+**Challenge.** Strongest failure mode: Construct now writes a file in the
+person's home. A bad edit corrupts a large hand-kept YAML file, a second
+project silently takes over the first project's binding, or a test reaches
+the real home. The last one happened while building this: a wiring test
+called the writer without an environment and created `~/.hermes/config.yaml`
+on the development machine. It was removed, and the wiring entry points
+now require the environment as an argument, so a caller that forgets it
+fails to compile rather than reaching the real home. Other controls: the
+block writer refuses tabs, several documents, inline servers, anchors, and
+nested settings, and is covered by its own tests. An entry bound to another
+project is refused with the `HERMES_HOME` remedy. Conformance checks the
+user-level contract and starts the entry from home to prove the binding.
+Best alternative: print `hermes mcp add` and write nothing. Rejected
+because that command does not document `cwd` or `trust`, so the deterministic
+approval gate (untrusted) could not be set. Verdict: **accepted with
+controls**.
+
+**Not decided here.** Running Hermes always-on (its gateway) is Tier 3
+residency by another name and stays outside §36; a person may run it, and
+Construct's gate still applies to what it asks. Hermes's model-judged
+`smart` approvals and its agent-written skills are not trusted for anything
+Construct records.
+
+## 38. Nothing in Construct matches a person's words (2026-10-17)
+
+Gerald, 2026-10-17: skills and other files hard-code exact trigger words,
+which is rigid and fragile; validate, challenge, and reconcile it, and weed
+out weak patterns and their proliferation.
+
+**What the audit found.** Trigger phrases lived in five places per skill:
+the manifest's `activation` and `standDown`, the `SKILL.md` description,
+`evals/activation.json`, and two frozen router fixtures. Workflows carried a
+sixth copy. Almost none of it decided anything:
+- The BM25 router that read the phrases had no runtime caller. Only tests
+  used it, with CI floors and one exact-phrase pin.
+- Workflow phrase lists were checked for being non-empty and never read.
+- The skill phrase lists reached the host only as a duplicate of the
+  description.
+- `evals/activation.json` gated "qualified" by its presence, not its content.
+
+One runtime reader of the person's words remained: the consequence module's
+lexical floor. It was a regex, two weighted term clusters, and points
+hard-coded by skill id, and it could force a challenge that blocks
+acceptance. It was raise-only and labeled, which commitment-era wording
+allowed. A measurement on 2026-10-08 (not re-run here) put the lexical skill
+router at 27 of 74 top-1 against a model judge's 74 of 74. The floor's own
+vocabulary misses plain paraphrase ("remove the users table" matches no term)
+and fires on unrelated senses ("vendor this dependency" matches "vendor").
+
+**Decision.** Removed:
+- the `activation` and `standDown` fields, which validation now refuses so
+  the vocabulary cannot grow back;
+- `evals/activation.json` and its qualification gate;
+- the router, its fixtures, floors and pin;
+- the router-based behavior kinds;
+- the lexical floor and the per-skill points.
+
+The consequence judgment now reads structure (the workflow's challenge flag,
+step tiers, contradictions) and the stakes the host reports. When the host
+reports none, a non-raising signal says so instead of guessing. The
+live-eval harness moved out of the router file into `live-evals.ts`. Every
+changed bundle carries a bumped version.
+
+**Kept, and why.**
+- `SKILL.md` descriptions keep a few examples of how people ask. They are
+  read by the host model as the Agent Skills format intends, they are not
+  matched, and editing them changes model-facing text that the live record
+  gates.
+- The intake check that a system the host says the person named appears in
+  their words stays. It validates the host's typed reading, is labeled, and
+  never blocks.
+- The authority-override and forbids-invention checks stay. They read
+  authored skill text, not the person.
+
+**Challenge.** Strongest failure mode: a host that omits stakes on
+hard-to-reverse work that stays inside the project now gets standard rigor
+where the floor would have challenged it. Runs in flight recompute their
+judgment, so one raised only by words drops to standard. Controls: outward,
+destructive, and licensed steps still raise by tier; the person alone
+accepts a deliverable; the missing stakes are shown in the judgment.
+Best alternative: keep the floor only as a fallback when stakes are absent.
+Rejected because it keeps the same fragile vocabulary on exactly the path
+where nothing checks it. Verdict: **accepted with controls**. The remaining
+gap, a required `stakes` field on managed readings, changes model-facing
+schema and waits for the live record (work filed).
+
+## 39. A skill manifest declares only what something enforces (2026-10-17)
+
+Gerald, 2026-10-17: `construct.skill.json` lists many explicit terms and
+statements and feels fragile; make the necessary changes.
+
+**What was true.** Of the manifest's 23 fields, the resolver read four (id,
+version, skill dependencies, capabilities), the lock pinned the version,
+and qualification read the eval list. Twelve fields were validated and then
+never read. Some were declarations: action tiers, quality gates, deliverable
+types, output schemas, interaction classes, required source types and
+workflow dependencies. Others were prose: outcomes, inputs, minimum
+evidence, escalation and licensed-review boundaries. Observations were empty
+in every skill. The declarations had already drifted:
+- five shipped bindings ran a skill at `project_write` while it declared
+  `observe` and `draft` only;
+- `project-bootstrap` bound a skill whose required validator no step named;
+- skill deliverable types used a different vocabulary from workflow
+  deliverable kinds, so no check could be written against them.
+
+**Decision.** The manifest keeps id, title, version, category, owner,
+capabilities, skill dependencies and evals, plus two declarations the
+resolver now enforces:
+- `maxTier`, a ceiling that replaces the tier list: a step above it does
+  not resolve.
+- `requiredValidators`, a flat list that replaces gates whose `appliesTo`
+  and `required` never varied. Each must be named on the step that binds
+  the skill, or on a step whose inputs read that step's output, directly or
+  through another such step. A check on unrelated earlier work, or on a
+  step that only waits on it, does not count, and the workflow does not
+  resolve without one.
+
+Every other key is refused with the allowed list, so dead fields cannot
+return. The prose fields were checked skill by skill against the
+`SKILL.md` bodies, which already state each rule (escalations, licensed
+boundaries, evidence bars), and were deleted. The four drifted skills now
+declare `project_write`, matching the reviewed workflows that bind them,
+and `project-bootstrap` names the missing validator on its review step.
+
+**Challenge.** Strongest failure mode: raising the four ceilings to fit the
+workflows legalizes drift instead of catching it. The bindings were
+reviewed workflow designs: each writes a project document, and writing a
+document is what `project_write` means. The ceiling still stops any new
+step from applying them outward or destructively. A project-authored skill
+using a removed field stops loading until its author deletes the field;
+the refusal names the field and the allowed ones. Another option was to split
+each such step into a draft step within the old ceiling and a separate
+write step. Rejected as churn for its own sake: the step that drafts the
+document is the one whose output is the file. Best alternative: keep the
+fields and add readers for each. Rejected because deliverable types have no
+consistent target and the prose fields restate the body.
+
+**Independent review (Codex, 2026-10-17).** Codex found three defects, and
+each is fixed with a test:
+- A required validator satisfied by any step anywhere could be met by an
+  unrelated earlier step. Codex reproduced a run that reached `validated`
+  that way.
+- Dependency entries accepted unknown nested keys.
+- Intake's evidence rule existed only in the deleted field. Its body now
+  states it.
+- On re-check, a step that only waited on the skill's step through `needs`
+  still counted. Consumption is now read from step inputs.
+
+Verdict: **accepted with controls**.
+
+## 40. The clean-state audit: what was cut, what was kept, and what waits for its own decision (2026-10-17)
+
+Gerald, 2026-10-17: resolve the remaining issues, prune old code and
+patterns, and pick apart the skills, the evals and everything load-bearing
+beside them; no pattern stays only because it is in place. Four read-only
+teardowns (three Claude, one Codex) found the issues; each change below was
+reviewed by Codex before it was committed. The calls that are not obvious
+are recorded here with the strongest objection and the verdict.
+
+**Evals follow the Agent Skills shape.** Four formats of our own
+(`behavior.json`, `fixtures.json`, the intake corpus inside `skills/`, a
+native qualification suite) gave way to `evals/evals.json` and
+`evals/trigger-queries.json` from agentskills.io. Failure mode: the new
+cases are drafted, not measured, so a green shape test says nothing about
+the skills. Control: `scripts/run-skill-evals.mjs` measures trigger rates
+and with/without output through a real Claude Code, refuses to score a
+failed run, and names an installed copy of the skill as a confound. Verdict:
+accepted with controls.
+
+**Lock integrity replaces the qualification ladder.** Every skill reported
+experimental because `qualified` needed a Codex-only native witness run, and
+the authority regex flagged skills that forbid escalation while missing
+paraphrases. Failure mode: hosts that displayed the projection lose it.
+Alternative: keep the ladder and make it reachable; rejected, since its only
+reader was a display and the tier ceiling is the real boundary. Verdict:
+accepted.
+
+**A Claude Code plugin is not shipped yet.** A plugin rooted at this repo
+would be the whole repository, and with `package.json` and a lockfile
+present Claude Code would run an npm install of all of Construct in the
+plugin cache on every install. Alternative: a separate skills-only package
+or repository published as the plugin. Verdict: needs its own decision; the
+method skills reach hosts through `construct skill install` until then.
+
+**This repository wires Construct from every checkout.** A committed
+`.mcp.json` and `.claude/settings.json` start each checkout's own
+`bin/construct.mjs`, so a fresh worktree gets Construct. Failure mode: a
+broken branch breaks its own session's tools. Alternative: the user-scope
+entry, which serves worktrees through the main checkout but binds every
+repository on the machine; Gerald chose the committed wiring. The
+user-scope entry is removed after this reaches the main checkout, not
+before, so no checkout loses Construct in between. Verdict: accepted with
+controls (the hooks exit silently when the launcher or node is missing).
+
+**Worktree evidence waits for checkout-bound identity.** Resolving a
+worktree session's references against its own checkout first was built and
+reverted: one reference then resolves to different bytes depending on who
+verifies it, and submission, verification and delivery settlement disagree.
+Verdict: rejected as built; filed as its own work with the requirement that
+a receipt name its checkout and commit.
+
+**Kept on the merits.** claim-support's proposition check stays: it fires
+only when an answer and its evidence documents are each the same single
+assertion, returns unknown otherwise, and catches a known negation failure.
+The project-file format guard stays: it stops init from building on a
+project it would misread. The Jira fixture reader stays: it is a documented
+offline mode. `run_bindings` is no longer written, but the table goes at the
+next state-format change rather than forcing a migration for cleanup.
+RESEARCH-DECISIONS.md stays at the root, because STRATEGY, the ledger and
+code comments cite it by section.
+
+**Prose verdicts stay as they are until they become typed.** Three
+validators judge prose by vocabulary: settled-against terms (a sentence with
+"not" or "never" is exempt), superseded documents (a "superseded" anywhere
+in the output acknowledges them) and decision deadlines (a bare "by"). Each
+was narrowed and then reverted: Codex's adversarial review found every
+narrower word list wrong in both directions, passing "plaintext instead of
+hashing" while rejecting "we do not use plaintext". A better word list is
+the pattern §38 rejected. The fix is a typed field the host fills (the terms
+it set aside, the superseded references it relied on, the decision date) and
+checked as data, which belongs to the tool surface change below.
+
+**Waiting for their own decision, each a multi-day change to every host.**
+(1) Merge the nine review workflows that share one skeleton into one keyed
+by domain skill, and the four authoring workflows into one; remove the
+`remember` manifest that `start()` refuses. (2) One claim authority per
+artifact instead of a step lease plus a per-run work item. (3) Split
+`service.ts` (one closure of about 1,650 lines) by lifecycle and `tools.ts`
+per tool. (4) Cut the 22 MCP tools' descriptions to what each does, move the
+policy prose into typed errors, and drop the `owner` inputs that are already
+ignored; that changes model-facing text the live intake evals measure, and
+hosts echo `owner` today, so it is a versioned change measured before and
+after. The strongest objection to all four is churn across every host for
+no user-visible gain; the case for them is that a contributor or host
+developer meets this surface first.
+
+## 41. The five changes §40 deferred, each decided (2026-10-17)
+
+§40 left five changes waiting for their own decision because each reaches
+every host. Under the 2026-08-25 rule each is decided here with its
+strongest failure mode, its best alternative and a verdict, and each is its
+own ledger item under outcome `work-bdb9137a`. The figures were read from
+the tree at this commit.
+
+**(1) One review workflow and one authoring workflow (`work-c3476f42`).**
+Of 24 workflow manifests, nine (architecture-decision, delivery-plan,
+experience, governance-issue-spotting, implementation, operational-readiness,
+product-requirements, security-privacy and strategy-execution review) run
+the same gather, checks, review, record steps, and four (prd, proposal and
+rfc authoring and research-brief) run gather, draft, challenge, record. They
+differ in the bound domain skill, its validators and its inputs, which the
+skill can carry. `workflows/remember` is never started: `start_outcome`
+refuses kind remember and the `remember` tool writes through the service
+without reading the manifest. Seven workflows have no test that names them.
+Failure mode: a merged manifest silently drops a validator one domain
+needed, and saved runs and host transcripts cite the old ids. Alternative:
+keep the manifests and generate them from one template at build time, which
+removes the copy drift without changing what hosts see; it keeps 13 ids the
+model must choose between, which is the cost the merge removes. Verdict:
+accepted with controls: every old id resolves to the merged workflow with
+its skill, validators are diffed per domain before any manifest is deleted,
+and the live intake evals pick the same domain skill before and after.
+
+**(2) One claim authority per artifact (`work-0a36e600`).** A managed step
+holds a step lease (the steps table's owner, nonce and expiry) and
+`claim_work` also reserves the requested artifact as
+`work-<run>-delivery` in the native ledger, with its own token and expiry.
+One piece of work is held twice, and recovery has to settle both.
+Failure mode: the lease and the ledger reservation are the multi-agent
+safety boundary; a merge that loses the path-overlap check or the
+dead-session recovery lets two writers edit one file, which is worse than
+the duplication. Alternative: keep both and make the ledger reservation a
+pure projection of the step lease, derived rather than stored; that keeps
+one source of truth without a state-format change, at the cost of a read
+path that joins two tables. Verdict: needs validation. A design note
+choosing between collapse and projection, reviewed adversarially, comes
+before code, and either way the existing lease and concurrency tests keep
+their intent.
+
+**(3) Split `work/service.ts` and `broker/tools.ts` (`work-db112a00`).**
+`work/service.ts` is 1,609 lines, mostly one closure; `broker/tools.ts` is
+2,978 lines holding 23 tool definitions and their helpers. Failure mode:
+pure churn that conflicts with every in-flight branch touching either file,
+and today one is (the worktree-evidence branch holds `tools.ts`).
+Alternative: leave the files and split only when a change needs to touch a
+section. Verdict: accepted with controls: the split is mechanical, lands
+only when no claimed work holds these paths, and is proven by a
+byte-identical MCP `tools/list` before and after plus the full gate.
+
+**(4) The MCP tool surface (`work-4503dc02`).** The 23 tools carry 11,725
+characters of description; `classify_request` and `work` each pass 1,700.
+`submit_work` and `heartbeat` declared an `owner` input whose own text said
+it was ignored, and `claim_work` and `claim_step` returned `owner` in the
+claim packet, which is why hosts echoed it back. `claim_work`, `claim_step`
+and `work` action claim are three claim verbs over two kinds of claim.
+Failure mode: descriptions are what host models read, and policy prose cut
+from them can drop behavior the live intake evals measure; removing an
+input breaks a host that still sends it. Alternative: leave the text and
+inputs until the claim-authority decision settles the verbs, so the surface
+changes once. Verdict, split in two. The ignored `owner` input is removed
+now: it does nothing, the claim packet stops returning it so nothing
+prompts the echo, and a host that still sends it gets a typed
+`ToolInputError` naming the allowed inputs, which the recovery contract
+already tells hosts to repair and retry. Accepted. The descriptions and
+the claim verbs change with (2), measured with live intake evals on every
+host that has them before and after. Needs validation.
+
+**(5) Typed host fields replace the prose verdicts (`work-51bcd5b9`).**
+`settled_not_contradicted` exempts any sentence containing a word from its
+acknowledgment list, `superseded_acknowledged` accepts any "superseded"
+near a document's name, `decision_ask_present` accepts a bare "by" when no
+date was given, and claim-support's proposition check parses assertions by
+regex. §40 tried narrower word lists and Codex found each wrong in both
+directions. The fix is fields the host fills (the settled statements it set
+aside, by id; the superseded references it relied on and what replaces
+them; the decision date), checked against the store as data. Failure mode:
+a host that does not fill a new field fails a step that passed before, and
+a host model can fill a field falsely as easily as it writes a sentence.
+Alternative: drop the three checks and leave the judgment to the semantic
+reviewer. That removes the false verdicts but also the only check that the
+cited statement or document exists. Verdict: accepted with controls: the
+fields ship optional and checked when present, the skills say what to fill,
+live runs on Claude Code and Codex fill them, and only then do they become
+required and the vocabulary checks go. A filled field still has to name a
+statement or reference that resolves, so a false entry is checkable where
+a false sentence is not.
+
+**Smallest and reversible.** The `owner` removal in (4) is the only one of
+the five that changes no state, no stored format and no tool description; it
+removes two schema entries and one packet field, and restoring them reverts
+it. It landed with this record; the rest of `work-4503dc02` stays open.
+
+## 42. Evidence is identified by its bytes; the checkout is where they were read (2026-10-17)
+
+**Question.** A managed step submitted from a linked git worktree could not
+cite a file that exists only on that worktree's branch: every reference
+resolved against the main checkout. Resolving the session's own checkout
+first was built and reverted. Its receipts kept the bare reference as their
+identity, so the same reference meant different bytes depending on which
+checkout resolved it, and submission (in the worktree), `construct run
+verify` and delivery settlement (both against the main checkout) disagreed
+about whether the evidence was current. Construct's rule is that a model
+cannot manufacture a source, so one recorded identity may never stand for
+two contents.
+
+**Decision.**
+1. A bare reference names a file in the checkout the session works in:
+   its worktree when it runs in one, otherwise the main checkout. That is
+   what the session read and wrote.
+2. The identity Construct records for cited content is the reference plus
+   the SHA-256 of the bytes it read (the receipt `digest` that already
+   existed). The receipt also names the checkout the file was read from and
+   that checkout's commit, as provenance, never as identity.
+3. Every later comparison of a receipt (prior evidence going stale,
+   acceptance, the execution witness, delivery settlement, qualification,
+   the frozen verifier contract, semantic review freshness, which compares
+   what an item is and not the absolute path, checkout or commit it was
+   read at) asks the resolver for the receipt's bytes,
+   not for whatever the reference names here. The resolver looks in its own
+   checkout first, then in the checkout the receipt names, and returns a
+   file only when its digest matches. When neither holds those bytes it
+   returns what its own checkout holds, which does not match, so the
+   receipt is stale. A receipt's checkout is honored only when it is one of
+   the project's checkouts as the adapter reads them from the repository;
+   nothing a model writes names one.
+4. Submission, `construct run verify`, `construct run review`, delivery
+   settlement and the broker tools build their resolver through one
+   function bound to the session's checkout. A verification command runs in
+   that checkout, so its subjects are the files the command read.
+
+**Challenge.** The strongest failure: two sessions citing `docs/a.md` from
+different checkouts ground their work in different bytes under the same
+spelling, and a person reading the deliverable may open the main
+checkout's copy, which is not what grounded it. Controls: the receipt
+records the digest, checkout and commit, so the two are distinguishable,
+and no receipt can be satisfied by bytes other than its own from any
+checkout. A worktree removed before verification leaves its receipts
+unreachable, so they read as stale, failing closed; after a merge the main
+checkout holds the same bytes and they are current again. Files over the
+1 MiB text cap carry no digest and, as before, cannot be inherited. A
+worktree gives a model no new authority: it can write and cite a file in its
+own checkout exactly as it can in the main one, and the self-citation guard
+in `numbers_grounded` compares the file it wrote by where it really lives.
+
+The best alternative was an explicit citation grammar (`<path>@sha256:…`
+or `worktree:<branch>:<path>`) with bare references always meaning the main
+checkout. Rejected: a model would have to spell digests or branch names, a
+bare path from a worktree would still fail (the defect itself), and the
+check underneath would be the same digest comparison. Resolving through
+git (`<commit>:<path>`) was rejected because worktree sessions cite
+uncommitted work and the kernel never runs git.
+
+Verdict: accepted with controls (digest-pinned comparison everywhere a
+receipt is checked; checkouts only from the repository's own worktree list;
+fail closed when the bytes are gone).
+
+## 43. A session's lane is where its host says it works, within the project's checkouts (2026-10-17)
+
+**Question.** Section 42 binds a session's resolver to its lane, but the
+lane came only from the server's process directory (or, with `--project`,
+the directory it was started in). Claude's desktop app starts a session's
+MCP servers in the project's main checkout even when the session runs in a
+linked worktree, so bootstrap reported `lane: null` and every bare path
+resolved against the main checkout. Observed here: a desktop session whose
+`claude` process ran in `.claude/worktrees/<name>` had its Construct server
+running in the main checkout, with only the main checkout in its
+environment (`CLAUDE_PROJECT_DIR`).
+
+**What each host says.** Tested by an MCP server that asks `roots/list`,
+from a scratch linked worktree:
+- Claude Code (CLI 2.1.250, and the desktop app's bundled 2.1.295 started
+  with `--project-config-root <main checkout>` as the app starts it):
+  declares `roots`, answers with the session's directory, the worktree,
+  while the server's own directory is the main checkout in the desktop case.
+- Codex CLI 0.163.0: declares no `roots` (answers an empty list) and starts
+  the server in the session's directory, so the process directory already
+  carries the lane.
+- Cursor, VS Code, OpenCode and Bob were not observed. Cursor's agent
+  needed a login, and OpenCode did not start the probe server in the time
+  allowed. Each is covered by the same two paths: roots when the host
+  declares them, the process directory (or `--project` with the directory
+  the host starts the server in) otherwise.
+
+**Decision.**
+1. After the handshake, before any call runs, a server whose host declared
+   `roots` asks for them once. The first tool call waits for the answer, at
+   most five seconds. A host that does not answer keeps the lane the server
+   started with.
+2. A root counts only when it is a `file:` URI inside one of the project's
+   checkouts as `projectWorktrees()` reads them from the repository: the
+   main checkout means no lane, a linked worktree means that lane. A clone,
+   an unrelated directory, a worktree whose project file names another
+   project, or roots naming two different checkouts settle nothing.
+3. A lane the host names replaces the one from the process directory. The
+   server rebuilds its broker context on that lane, so bootstrap, the
+   resolver, claims, delegation and the session row all name it, and no
+   tool has run under the old one.
+4. The lane is settled once per connection. `notifications/roots/list_changed`
+   is not followed; a session that changes directory keeps its lane until
+   its server restarts.
+
+**Challenge.** The strongest failure: a host or a model that controls the
+roots could put the session in another checkout of the same project and
+cite that checkout's bytes as its own. Controls: roots come from the host's
+MCP client, not from tool input; only the project's own checkouts are
+accepted, which the session could already name as a claim's `worktree`;
+and section 42's receipts pin the bytes, so citing another checkout's file
+records exactly what was read there. The best alternative was reading the
+session's directory from hooks (Claude Code's hook input carries `cwd`).
+Rejected: hooks are Claude Code's alone, run after the server starts, and
+would need a side channel keyed by the host's session id, while roots are
+part of MCP and arrive before the first call.
+
+Verdict: accepted with controls (roots trusted only inside
+`projectWorktrees()`; asked once, before any call; fall back to the
+process directory).
+
+## 44. Domain workflows share their graph and preserve their contracts (2026-10-17)
+
+Implemented §41(1): nine professional review manifests are `review`, and PRD,
+proposal, RFC and research-brief authoring are `authoring`, both version 2.0.0.
+The workflow's domain key is its bound skill id. Skills keep their small
+manifest contract; domain input schemas and step overrides live in the merged
+workflow. Binding adds the skill's required validators to the domain step.
+
+The alias tables preserve all 13 former ids. An alias supplies its domain and
+refuses a conflicting one; new runs record the canonical id and domain. Saved
+runs keep their frozen steps, including research's former `synthesize` step.
+Only the recorded pre-merge version/digest pair with frozen steps bypasses the
+ordinary changed-workflow re-resolution check. Triggers and host-transcript
+interpretation retain alias/domain resolution. Domain scopes deduplication and
+single-run concurrency.
+
+The [per-domain diff](docs/internal/workflow-domain-diff.md) was captured before
+deleting manifests and compares validators, required and optional inputs, step
+inputs, tiers and sources against each merged binding. No validator or required
+input was lost; the RFC draft additionally inherits its architecture skill's
+uncited-finding check. Preservation tests and lifecycle tests cover all domains,
+all remaining workflows and saved alias runs. The unused `workflows/remember`
+was removed after searching src, scripts, tests and docs: no production path
+loaded it; an old registry expectation now asserts absence. The remember tool
+continues to record directly. Fourteen old manifests were removed in total.
+
+Challenge: a generic graph could erase domain obligations, or an alias could
+select another domain. The alternative was generated duplicate manifests.
+Verdict: accepted with controls: explicit domain bindings, preservation baselines,
+closed alias/domain checks, version/digest-limited saved-run compatibility, and
+full-plan lifecycle coverage. Live intake comparison remains the lead's separate
+eval step; this implementation makes no live qualification claim.
+
+## 45. Managed delivery has one stored claim authority, including custody between steps (2026-10-17)
+
+This resolves §41(2)'s design prerequisite for `work-0a36e600`, with the
+claim-verb boundary also informing `work-4503dc02`. The full lifecycle
+inventory, alternatives, adversarial self-review and implementation plan
+are in [the claim-authority design](docs/internal/claim-authority/DESIGN.md).
+No implementation is included; no live eval or migration rehearsal was run.
+
+**Failure mode.** Execution lives in a step lease, while the requested
+artifact's custody lives in an independently renewable delivery work claim.
+The user reported on 2026-10-17 that two runs cancelled on 2026-10-15 left
+their delivery items open indefinitely. CLI cancellation bypasses broker
+delivery settlement; settlement also requires the calling session to own
+the item, and its release path reopens the item rather than closing it.
+An open item is not necessarily an indefinitely live path lock: path
+exclusion ends at the ledger claim's expiry. Separate heartbeat, takeover,
+handoff and settlement paths can nevertheless separate execution from
+exclusion. The expired-lease cancellation wait was separately fixed on
+main in `c1ac4356`, whose behavior is already present in this worktree.
+In this baseline the broker helper handles blocked and waiting-for-decision
+runs as well as success, failure and cancellation.
+
+**Alternative.** Derive the ledger reservation purely from the active step
+lease. This removes duplicate cleanup and is the strongest smaller change.
+It loses custody after a step settles and before the next claim, and has
+nowhere to preserve a directed handoff hold without retaining execution
+authority or introducing stored custody state. Lane provenance and fencing
+old stored delivery claims also invalidate the tentative no-format-change
+advantage in §41(2). A projection remains appropriate for public reads of
+the chosen authority.
+
+**Decision.** Collapse authority into one stored claim with one secret,
+expiry and generation, plus explicit executing, custody, offered and
+released phases. Keep delivery work IDs and history, but derive their
+claim fields and the step's lease fields from this authority. Reuse the
+existing path-overlap, alias, lane and handoff machinery. A handoff moves
+custody, never execution approvals; the recipient reclaims a gated step.
+Serialize executable steps for one managed artifact, while retaining
+independent non-artifact DAG steps.
+
+**Verdict: accepted with controls.** The strongest objection is the larger
+shared-state migration; a cleanup patch cannot eliminate divergence through
+generic work mutations or direct workflow calls. Require atomic path
+refusal and rollback, observed-death recovery, preserved expiry/retry
+budgets, explicit dropped-path handling, recipient re-gating, and all
+existing lease/handoff/concurrency tests unchanged in safety intent.
+Upgrade format 5 to 6 through the backed-up, stopped-holder migration;
+fence both old credential families, preserve history and in-flight work,
+and refuse contradictory or parallel artifact holders rather than choose
+one. Test on a private copy of the live database before rollout.
+
+`claim_work` becomes the canonical gated workflow acquisition on both
+surfaces; `claim_step` remains a compatibility alias until host callers and
+the separate §41(4) evaluation gate permit retirement. `work` action claim
+remains ordinary ledger custody and never activates a workflow step or
+creates a second managed-delivery claim. Broad tool-description changes
+remain outside this storage change. The review is disclosed self-review;
+native semantic verification was unavailable. The implementation item's
+acceptance remains outstanding.
+
+**Revised after independent review (2026-10-17): option A is rejected as
+written, and a smaller fix landed instead.** A separate reviewer checked the
+design against the code and refuted both of its decisive premises:
+- *Handoff holds.* No host can hand off a delivery item today. `claim_work`
+  never returns its token, `handoffWork` needs that token, and the `work`
+  tool has no delivery branch.
+- *Custody between steps.* That custody is incidental: the item stays
+  claimed only because the reservation copies the step's lease expiry and
+  MCP renewal keeps extending it, and no test asserts it.
+
+The observed defects needed neither a single stored record nor a format
+bump, so what landed is:
+- A run that fails or is cancelled ends its reservation in the same
+  transition, whoever cancels it. That covers the CLI, another session, and
+  replacement by a trigger. The reservation is cancelled, not released back
+  to open.
+- `work ready` never lists a delivery item, and the generic `work` tool
+  refuses to claim, hand off or settle one, naming `claim_work` instead.
+
+The single-record design waits for evidence: it is re-proposed only if
+execution and custody are seen to diverge after this fix. If it comes back,
+step nonces survive the migration and only work tokens are reissued.
+
+## 46. Construct ships no plugin; skills reach hosts through init and ai-workflow-config (2026-10-17)
+
+§40 left a Claude Code plugin for the skills waiting for its own decision.
+The two choices it named were a plugin rooted at this repository, which
+would install all of Construct into the plugin cache, and a separate
+skills-only package. Since then, Gerald decided on 2026-10-17 that
+ai-workflow-config owns the personal copies of the method skills it shares
+with Construct, and `construct init` plants the operational skill in each
+project.
+
+**Decision.** No plugin. The operational skill reaches a host through `init`,
+in the project skills directory each wired host reads. The method skills
+reach a person's hosts through ai-workflow-config. Construct's own runs take
+a method's text from the registry, never from a host's skills directory.
+`construct skill install` stays for an explicit, by-name copy.
+
+**Challenge.** Strongest failure mode: a person who uses Construct without
+ai-workflow-config has no one-step way to get the method skills into their
+host. They do not need them for Construct's work, since every managed step
+receives its bound method in the claim packet, and `construct skill install`
+covers the rest. Best alternative: a skills-only plugin package. Rejected
+for now: it would be a third distribution channel for the same files, the
+kind of duplicate copy that drifted before, with nothing that needs it.
+Verdict: **accepted**. Reopen it when someone who does not use
+ai-workflow-config asks for the method skills in a host.
+
+
+## 47. The native reviewer follows the Codex the person runs, requalified live per version (2026-10-17)
+
+The held-text reviewer was pinned to Codex CLI 0.145.0. This machine and the
+people Construct serves run 0.163.0, so every release needed a second Codex
+installed beside the one in use. The 0.163.0 app-server schema adds message
+deliveries (async, `partial_answer`, questions), fifteen notifications and
+`functionCallOutput`. A live run also sends two notices the schema diff did
+not flag as load-bearing: `account/updated` with the session's auth mode, and
+a `warning` that code mode fails closed because the review disables its host.
+
+**Decision.** Pin 0.163.0 as profile `codex-app-server-held-text-v2`. Every
+new delivery, notification and item type refuses the review. `account/updated`
+passes only when it reports subscription auth (`chatgpt`); any other mode
+refuses. The one admitted warning is the exact fail-closed code-mode message,
+recorded as `native.fail_closed_warning`; any other warning refuses. Runs
+frozen with the v1 profile stay unverified rather than review under a binary
+they did not freeze. Live qualification on 2026-10-17: the correct control
+succeeded, and the incorrect and injected controls were rejected and held;
+`release:check --tier=experimental-alpha` accepted the record.
+
+**Challenge.** Strongest failure mode: admitting a warning by its text lets a
+later Codex send the same words for a different condition. The match is
+anchored to the full fail-closed sentence, the pin is one exact version, and
+any version change refuses until it is requalified, so the text cannot drift
+under the pin. Best alternative: keep 0.145.0 side by side. Rejected: it
+qualifies a binary no one uses for real work, and it already drifted from the
+installed CLI once. Verdict: **accepted with controls**. The control is the
+per-version pin plus a live run of the three release controls before any
+release that changes the pin.
+
+## 48. Releases are gated on Claude Code alone while Codex is out of use (2026-10-17)
+
+On 2026-10-17 Gerald directed that Construct stop using Codex and the gpt-6-astra model. Both were
+built into the release path: the gated live-eval matrix had Codex cells on gpt-6-astra, and the only
+qualified native semantic reviewer (§47) is the Codex held-text profile on that model. He chose to
+gate on Claude Code alone rather than hold the alpha.
+
+**Decision.** No live-eval scope gates a Codex cell; smoke is Claude Code haiku crowded, and full is
+the Claude Code matrix plus Cursor. An experimental alpha may ship without native semantic review,
+but only in an explicit form: its manifest carries `nativeReview` with status `unavailable`, a
+substantive reason and this decision's number, it holds no review cases, and its host-support
+disclosure says that semantic correctness of managed deliverables is unreviewed. `release:live
+--without-native-review` writes that form; `release:check --tier=experimental-alpha` refuses a
+manifest that drops the review cases without it. Codex stays a supported host: it is still wired,
+its conformance checks still run, and its Codex-home isolation fix stays.
+
+**Challenge.** Strongest failure mode: a release that validates deliverables with no independent
+semantic review reads as reviewed. The manifest, the gate result and the disclosure all say
+unreviewed, and the gate refuses a silent omission. Best alternative: hold alpha.32 until a
+Claude-based held-text reviewer exists. Rejected by Gerald for this alpha; that reviewer is filed as
+its own work. Verdict: **accepted with controls**: the explicit `nativeReview` form, and a gate
+test that refuses the omission.

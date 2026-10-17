@@ -32,15 +32,32 @@ const call = async (fx: ReturnType<typeof brokerFixture>, name: string, args: Re
 };
 
 const jiraResponse = {
-  content: [{ type: 'text', text: JSON.stringify({ issues: [
-    { key: 'PLAT-101', fields: { summary: 'Platform events', updated: '2026-09-29T10:00:00Z', description: 'Decision: v1 is gated to the Enterprise plan.' } },
-    { key: 'OTHER-1', fields: { summary: 'not ours' } },
-  ] }) }],
+  content: [
+    {
+      type: 'text',
+      text: JSON.stringify({
+        issues: [
+          {
+            key: 'PLAT-101',
+            fields: {
+              summary: 'Platform events',
+              updated: '2026-09-29T10:00:00Z',
+              description: 'Decision: v1 is gated to the Enterprise plan.',
+            },
+          },
+          { key: 'OTHER-1', fields: { summary: 'not ours' } },
+        ],
+      }),
+    },
+  ],
 };
 
 test('Jira issues are found in a connector response, including JSON inside text content, and only for the declared project', () => {
   const items = jiraItemsIn(jiraResponse, 'PLAT');
-  assert.deepEqual(items.map((i) => i.ref), ['PLAT-101']);
+  assert.deepEqual(
+    items.map((i) => i.ref),
+    ['PLAT-101'],
+  );
   assert.equal(items[0]!.title, 'Platform events');
   assert.equal(items[0]!.updatedAt, '2026-09-29T10:00:00Z');
 });
@@ -48,14 +65,31 @@ test('Jira issues are found in a connector response, including JSON inside text 
 test('a host tool that returns tracker items records them as a host read, without the model reporting anything', async () => {
   const fx = brokerFixture();
   try {
-    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    addSource(fx.broker.store, {
+      id: 'jira-plat',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
     const before = await call(fx, 'check_answer', { answer: 'v1 is Enterprise only.', citations: [{ ref: 'PLAT-101' }] });
-    assert.equal(before.evidence.unresolved, 1, 'a never-read host source is not taken on the host\'s word');
+    assert.equal(before.evidence.unresolved, 1, "a never-read host source is not taken on the host's word");
     const r = onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: jiraResponse });
     assert.deepEqual(r.reported, { 'jira-plat': 1 });
-    const after = await call(fx, 'check_answer', { answer: 'v1 is Enterprise only.', citations: [{ ref: 'PLAT-101', excerpt: 'gated to the Enterprise plan' }] });
+    const after = await call(fx, 'check_answer', {
+      answer: 'v1 is Enterprise only.',
+      citations: [{ ref: 'PLAT-101', excerpt: 'gated to the Enterprise plan' }],
+    });
     assert.equal(after.ok, true, JSON.stringify(after.problems));
-    assert.deepEqual(onPostTool(fx.broker, { tool_name: 'mcp__construct__sources', tool_response: jiraResponse }).reported, {}, 'Construct\'s own tools are not host reads');
+    assert.deepEqual(
+      onPostTool(fx.broker, { tool_name: 'mcp__construct__sources', tool_response: jiraResponse }).reported,
+      {},
+      "Construct's own tools are not host reads",
+    );
     assert.ok(listActivity(fx.broker.store, {}).some((a) => a.kind === 'hook.read_reported'));
   } finally {
     fx.cleanup();
@@ -72,22 +106,159 @@ test('an answer that names project facts without check_answer is sent back once;
   const fx = brokerFixture();
   const dir = mkdtempSync(join(tmpdir(), 'construct-transcript-'));
   try {
-    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    addSource(fx.broker.store, {
+      id: 'jira-plat',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
     const prompt = { type: 'user', message: { content: 'where are we on webhooks?' } };
-    const says = (text: string, tools: string[] = []) => ({ type: 'assistant', message: { content: [...tools.map((name) => ({ type: 'tool_use', name })), { type: 'text', text }] } });
+    const says = (text: string, tools: string[] = []) => ({
+      type: 'assistant',
+      message: { content: [...tools.map((name) => ({ type: 'tool_use', name })), { type: 'text', text }] },
+    });
     const unchecked = transcript(dir, [prompt, says('PLAT-101 gates v1 to Enterprise.')]);
     const verdict = onStop(fx.broker, { transcript_path: unchecked });
     assert.equal(verdict?.decision, 'block');
     assert.match(verdict!.reason, /PLAT-101/);
     assert.equal(onStop(fx.broker, { transcript_path: unchecked, stop_hook_active: true }), null, 'never twice: a hook must not loop');
-    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('PLAT-101 gates v1.', ['mcp__construct__check_answer'])]) }), null);
-    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Drafted the PRD from PLAT-101.', ['mcp__construct__submit_work'])]) }), null);
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('PLAT-101 gates v1.', ['mcp__construct__check_answer'])]) }),
+      null,
+    );
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, says('Drafted the PRD from PLAT-101.', ['mcp__construct__submit_work'])]),
+      }),
+      null,
+    );
     assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Sure, here is a haiku about autumn.')]) }), null);
     // A file name that is not one of the project's declared sources is not a project fact.
-    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Add it to package.json and see the README.md of the dependency.')]) }), null);
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, says('Add it to package.json and see the README.md of the dependency.')]),
+      }),
+      null,
+    );
     // An earlier, already-answered turn does not count against the current one.
-    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('PLAT-101 gates v1.'), { type: 'user', message: { content: 'thanks, now a haiku' } }, says('Leaves fall.')]) }), null);
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          says('PLAT-101 gates v1.'),
+          { type: 'user', message: { content: 'thanks, now a haiku' } },
+          says('Leaves fall.'),
+        ]),
+      }),
+      null,
+    );
     assert.equal(onStop({ ...fx.broker, policy: { hostReads: 'require', answerCheck: 'off' } }, { transcript_path: unchecked }), null);
+  } finally {
+    fx.cleanup();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('a turn that edited project files in a session that never claimed work or started an outcome is sent back once', () => {
+  const fx = brokerFixture();
+  const dir = mkdtempSync(join(tmpdir(), 'construct-transcript-'));
+  try {
+    const root = fx.broker.root;
+    const prompt = { type: 'user', message: { content: 'implement ledger item work-1234' } };
+    let n = 0;
+    const use = (name: string, input: Record<string, unknown> = {}) => ({ type: 'tool_use', id: `t${String(++n)}`, name, input });
+    const turn = (...parts: unknown[]) => ({ type: 'assistant', message: { content: [...parts, { type: 'text', text: 'Done.' }] } });
+    const edit = (file: string) => use('Edit', { file_path: file });
+    const failedResult = (id: string) => ({
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: id, is_error: true }] },
+    });
+    const result = (id: string, body: unknown) => ({
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: id, content: [{ type: 'text', text: JSON.stringify(body) }] }] },
+    });
+
+    const verdict = onStop(fx.broker, {
+      transcript_path: transcript(dir, [prompt, turn(use('Read'), edit(join(root, 'a.ts')), edit(join(root, 'b.ts')))]),
+    });
+    assert.equal(verdict?.decision, 'block');
+    assert.match(verdict!.reason, /edited files \(2 edit call\(s\)\) and this session has not claimed the work or started an outcome/);
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(edit(join(root, 'a.ts')))]), stop_hook_active: true }),
+      null,
+      'never twice in a row',
+    );
+    const claim = use('mcp__construct__work', { action: 'claim', id: 'w-1' });
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, turn(claim), result(claim.id, { status: 'claimed' }), turn(edit(join(root, 'a.ts')))]),
+      }),
+      null,
+      'claimed this turn',
+    );
+    const empty = use('mcp__construct__claim_work');
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(empty),
+          result(empty.id, { work: null, waitingOn: 'decision' }),
+          turn(edit(join(root, 'a.ts'))),
+        ]),
+      })?.decision,
+      'block',
+      'a claim_work that granted no work is not a claim',
+    );
+    const broken = edit(join(root, 'a.ts'));
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(broken), failedResult(broken.id)]) }),
+      null,
+      'a failed edit changed nothing',
+    );
+    const refused = use('mcp__construct__work', { action: 'claim', id: 'w-1' });
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, turn(refused), failedResult(refused.id), turn(edit(join(root, 'a.ts')))]),
+      })?.decision,
+      'block',
+      'a refused claim is not a claim',
+    );
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(use('mcp__other__work'), use('mcp__construct__classify_request'), edit(join(root, 'a.ts'))),
+        ]),
+      })?.decision,
+      'block',
+      'another server’s work tool or a classification alone commits nothing',
+    );
+    const started = use('mcp__construct__start_outcome');
+    const next = { type: 'user', message: { content: 'keep going' } };
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(started),
+          result(started.id, { started: true, run: { id: 'run-1' } }),
+          next,
+          turn(edit(join(root, 'a.ts'))),
+        ]),
+      }),
+      null,
+      'started earlier in the session',
+    );
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(edit('/Users/someone/.zshrc'))]) }),
+      null,
+      'edits outside the project are not its to track',
+    );
+    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(use('Read'), use('Grep'))]) }), null, 'no edits');
   } finally {
     fx.cleanup();
     rmSync(dir, { recursive: true, force: true });
@@ -97,7 +268,17 @@ test('an answer that names project facts without check_answer is sent back once;
 test('session start says what waits and which sources only the host can read', async () => {
   const fx = brokerFixture();
   try {
-    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    addSource(fx.broker.store, {
+      id: 'jira-plat',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
     const note = await onSessionStart(fx.broker);
     assert.ok(note.startsWith(SESSION_START_LINE), note);
     assert.match(note, /Only you can read jira-plat; report what you cite from them with sources action report\./);
@@ -106,13 +287,24 @@ test('session start says what waits and which sources only the host can read', a
   }
 });
 
-test('session start always says to read the person\'s request with classify_request, and a setup question is offered after it, never counted as waiting', async () => {
+test("session start always says to read the person's request with classify_request, and a setup question is offered after it, never counted as waiting", async () => {
   const fx = brokerFixture();
   try {
     assert.equal(await onSessionStart(fx.broker), SESSION_START_LINE, 'nothing waits: the one line');
-    assert.equal(SESSION_START_LINE, 'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.');
+    assert.equal(
+      SESSION_START_LINE,
+      'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.',
+    );
     const at = fx.broker.now();
-    for (const q of ONBOARDING_QUESTIONS) raiseDecision(fx.broker.store, { id: `q-${q.id}`, kind: 'clarification', question: q.question, options: q.options, subject: { onboarding: q.id }, at });
+    for (const q of ONBOARDING_QUESTIONS)
+      raiseDecision(fx.broker.store, {
+        id: `q-${q.id}`,
+        kind: 'clarification',
+        question: q.question,
+        options: q.options,
+        subject: { onboarding: q.id },
+        at,
+      });
     const note = await onSessionStart(fx.broker);
     assert.doesNotMatch(note, /decision\(s\)/, 'setup questions are not decisions that wait');
     assert.match(note, /After the person's request, offer the 3 setup question\(s\) bootstrap lists\./);
@@ -135,43 +327,77 @@ function checkout(fx: SterileFixture): { readonly root: string; readonly stateDi
 /** A grounding hook as an earlier release wrote it into the shared file: this machine's Node and install, by absolute path. */
 const committedHook = (event: string, matcher?: string) => ({
   ...(matcher ? { matcher } : {}),
-  hooks: [{ type: 'command', command: `/opt/teammate/node/bin/node /opt/teammate/lib/node_modules/@geraldmaron/construct/bin/construct.mjs hook ${event} --client=claude-code --project=/opt/teammate/repo`, timeout: 20 }],
+  hooks: [
+    {
+      type: 'command',
+      command: `/opt/teammate/node/bin/node /opt/teammate/lib/node_modules/@geraldmaron/construct/bin/construct.mjs hook ${event} --client=claude-code --project=/opt/teammate/repo`,
+      timeout: 20,
+    },
+  ],
 });
 
 const AT = '2026-10-08T12:00:00.000Z';
 
-test('the grounding hooks go into the checkout\'s machine-local settings and run through the launcher; Construct\'s old entries leave the shared file and the person\'s stay', () => {
+test("the grounding hooks go into the checkout's machine-local settings and run through the launcher; Construct's old entries leave the shared file and the person's stay", () => {
   const fx = sterile();
   try {
     const { root, stateDir, env } = checkout(fx);
     const place = { checkout: root, stateDir };
     const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
     const mine = { hooks: [{ type: 'command', command: 'say done' }] };
-    writeFileSync(shared, `${JSON.stringify({ model: 'x', hooks: { PostToolUse: [committedHook('post-tool', '*')], Stop: [mine, committedHook('stop')], SessionStart: [committedHook('session-start')] } }, null, 2)}\n`);
+    writeFileSync(
+      shared,
+      `${JSON.stringify({ model: 'x', hooks: { PostToolUse: [committedHook('post-tool', '*')], Stop: [mine, committedHook('stop')], SessionStart: [committedHook('session-start')] } }, null, 2)}\n`,
+    );
     const before = inspectHooks(root, place);
     assert.equal(before.status, 'stale');
-    assert.match(before.detail, /^\.claude\/settings\.json, the shared file, still holds 3 construct hook\(s\) that name one machine's Node and install; `construct init --client=claude-code` repairs them$/);
+    assert.match(
+      before.detail,
+      /^\.claude\/settings\.json, the shared file, still holds 3 construct hook\(s\) that name one machine's Node and install; `construct init --client=claude-code` repairs them$/,
+    );
 
     const state = installHooks(root, { ...place, env, at: AT });
     assert.equal(state.status, 'installed', state.detail);
     assert.equal(state.path, join(root, '.claude', 'settings.local.json'));
     assert.match(state.detail, /moved 3 old construct hook\(s\) out of \.claude\/settings\.json$/);
-    assert.deepEqual(JSON.parse(readFileSync(shared, 'utf8')), { model: 'x', hooks: { Stop: [mine] } }, 'the person\'s own Stop hook stays, and so do their settings');
+    assert.deepEqual(
+      JSON.parse(readFileSync(shared, 'utf8')),
+      { model: 'x', hooks: { Stop: [mine] } },
+      "the person's own Stop hook stays, and so do their settings",
+    );
 
-    const local = JSON.parse(readFileSync(join(root, HOOK_SETTINGS_PATH), 'utf8')) as { hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]> };
+    const local = JSON.parse(readFileSync(join(root, HOOK_SETTINGS_PATH), 'utf8')) as {
+      hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]>;
+    };
     assert.deepEqual(Object.keys(local.hooks), ['PostToolUse', 'Stop', 'SessionStart']);
     assert.equal(local.hooks.PostToolUse![0]!.matcher, '*');
-    for (const [hostEvent, event] of [['PostToolUse', 'post-tool'], ['Stop', 'stop'], ['SessionStart', 'session-start']] as const) {
+    for (const [hostEvent, event] of [
+      ['PostToolUse', 'post-tool'],
+      ['Stop', 'stop'],
+      ['SessionStart', 'session-start'],
+    ] as const) {
       assert.equal(local.hooks[hostEvent]!.length, 1, hostEvent);
       const { command, timeout } = local.hooks[hostEvent]![0]!.hooks[0]!;
       assert.equal(timeout, 20);
       assert.ok(command.startsWith(`/bin/sh -c 'l='\\''${join(stateDir, 'launcher')}'\\''; `), command);
       assert.ok(command.endsWith(`; "$n" "$c" hook ${event} --client=claude-code 2>/dev/null; exit 0'`), command);
-      assert.ok(!command.includes(process.execPath) && !command.includes('--project'), 'Node and the install are found through the launcher, and the project from the event');
+      assert.ok(
+        !command.includes(process.execPath) && !command.includes('--project'),
+        'Node and the install are found through the launcher, and the project from the event',
+      );
     }
     assert.equal(readFileSync(join(stateDir, 'launcher'), 'utf8'), `${process.execPath}\n${CHECKOUT_LAUNCHER}\n`);
-    assert.equal(spawnSync('git', ['check-ignore', '-q', '.claude/settings.local.json'], { cwd: root, env }).status, 0, 'the machine-local file stays out of git');
-    const ran = spawnSync('/bin/sh', ['-c', local.hooks.Stop![0]!.hooks[0]!.command], { cwd: root, env, input: JSON.stringify({ cwd: root }), encoding: 'utf8' });
+    assert.equal(
+      spawnSync('git', ['check-ignore', '-q', '.claude/settings.local.json'], { cwd: root, env }).status,
+      0,
+      'the machine-local file stays out of git',
+    );
+    const ran = spawnSync('/bin/sh', ['-c', local.hooks.Stop![0]!.hooks[0]!.command], {
+      cwd: root,
+      env,
+      input: JSON.stringify({ cwd: root }),
+      encoding: 'utf8',
+    });
     assert.equal(ran.status, 0, 'the hook runs as the host runs it, and exits 0');
   } finally {
     fx.cleanup();
@@ -184,28 +410,39 @@ test('re-running the install is byte-identical, and init repairs an entry that d
     const { root, stateDir, env } = checkout(fx);
     const place = { checkout: root, stateDir };
     const local = join(root, HOOK_SETTINGS_PATH);
-    writeFileSync(local, `${JSON.stringify({ permissions: { allow: ['Bash(npm test)'] }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo mine' }] }] } }, null, 2)}\n`);
+    writeFileSync(
+      local,
+      `${JSON.stringify({ permissions: { allow: ['Bash(npm test)'] }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo mine' }] }] } }, null, 2)}\n`,
+    );
     assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
     const files = [local, join(stateDir, 'launcher'), join(stateDir, 'installed.json'), join(fx.root, 'repo', '.git', 'info', 'exclude')];
     const first = files.map((f) => readFileSync(f, 'utf8'));
     assert.equal(installHooks(root, { ...place, env, at: '2026-10-09T12:00:00.000Z' }).status, 'installed');
-    assert.deepEqual(files.map((f) => readFileSync(f, 'utf8')), first, 'nothing changes on a second run');
+    assert.deepEqual(
+      files.map((f) => readFileSync(f, 'utf8')),
+      first,
+      'nothing changes on a second run',
+    );
     const settings = JSON.parse(first[0]!) as { permissions: unknown; hooks: Record<string, { hooks: { command: string }[] }[]> };
     assert.deepEqual(settings.permissions, { allow: ['Bash(npm test)'] });
     assert.equal(settings.hooks.Stop!.length, 2);
-    assert.equal(settings.hooks.Stop![0]!.hooks[0]!.command, 'echo mine', 'the person\'s hook stays first');
+    assert.equal(settings.hooks.Stop![0]!.hooks[0]!.command, 'echo mine', "the person's hook stays first");
 
     const launcher = join(stateDir, 'launcher');
     writeFileSync(launcher, `/no/such/node\n${CHECKOUT_LAUNCHER}\n`);
     const gone = inspectHooks(root, place);
     assert.equal(gone.status, 'stale');
-    assert.match(gone.detail, /the launcher names \/no\/such\/node, which no longer exists here; `construct init --client=claude-code` repairs them/);
+    assert.match(
+      gone.detail,
+      /the launcher names \/no\/such\/node, which no longer exists here; `construct init --client=claude-code` repairs them/,
+    );
     rmSync(launcher);
     assert.match(inspectHooks(root, place).detail, /the launcher .*launcher is missing, so the hooks cannot find Node/);
     assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
 
     const edited = JSON.parse(readFileSync(local, 'utf8')) as { hooks: Record<string, { hooks: { command: string }[] }[]> };
-    edited.hooks.PostToolUse![0]!.hooks[0]!.command = `/opt/old/node /opt/old/construct.mjs hook post-tool --client=claude-code --project=${root}`;
+    edited.hooks.PostToolUse![0]!.hooks[0]!.command =
+      `/opt/old/node /opt/old/construct.mjs hook post-tool --client=claude-code --project=${root}`;
     writeFileSync(local, JSON.stringify(edited, null, 2));
     const differs = inspectHooks(root, place);
     assert.equal(differs.status, 'stale');
@@ -218,7 +455,11 @@ test('re-running the install is byte-identical, and init repairs an entry that d
     const sharedBefore = readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8');
     assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'broken');
     assert.equal(readFileSync(local, 'utf8'), '{ not json', 'a file that is not JSON is never rewritten');
-    assert.equal(readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8'), sharedBefore, 'and the shared file keeps its hooks until the new ones are in place');
+    assert.equal(
+      readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8'),
+      sharedBefore,
+      'and the shared file keeps its hooks until the new ones are in place',
+    );
     assert.equal(inspectHooks(join(root, 'nowhere'), { checkout: join(root, 'nowhere'), stateDir }).status, 'absent');
   } finally {
     fx.cleanup();
@@ -238,12 +479,18 @@ test('one writer: removing one set of hooks leaves the other and the ignore line
     const both = readFileSync(local, 'utf8');
     assert.ok(holdsSet(both, 'grounding') && holdsSet(both, 'coordination'));
     assert.equal(installClaudeLocal(root, stateDir, env, AT, 'grounding').changed, false, 'a set already in place changes nothing');
-    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'grounding'), ['removed the grounding hooks', `${local} keeps the claude-code hook pack, and stays out of git`]);
+    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'grounding'), [
+      'removed the grounding hooks',
+      `${local} keeps the claude-code hook pack, and stays out of git`,
+    ]);
     const left = readFileSync(local, 'utf8');
     assert.ok(!holdsSet(left, 'grounding') && holdsSet(left, 'coordination'));
     assert.notEqual(excludeNow(), excludeBefore);
     assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'grounding'), ['no grounding hooks are installed in this checkout']);
-    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'coordination'), ['removed the claude-code hook pack', `restored ${local} as it was`]);
+    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'coordination'), [
+      'removed the claude-code hook pack',
+      `restored ${local} as it was`,
+    ]);
     assert.equal(existsSync(local), false, 'there was no file before Construct wrote one');
     assert.equal(excludeNow(), excludeBefore);
 
@@ -267,18 +514,32 @@ test('a machine-local settings file git tracks is never written, because what is
     const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
     writeFileSync(local, `${JSON.stringify({ permissions: { allow: ['Bash(ls)'] } }, null, 2)}\n`);
     writeFileSync(shared, `${JSON.stringify({ hooks: { Stop: [committedHook('stop')] } }, null, 2)}\n`);
-    const gitEnv = { ...env, GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid', GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' };
+    const gitEnv = {
+      ...env,
+      GIT_AUTHOR_NAME: 'fixture',
+      GIT_AUTHOR_EMAIL: 'fixture@example.invalid',
+      GIT_COMMITTER_NAME: 'fixture',
+      GIT_COMMITTER_EMAIL: 'fixture@example.invalid',
+    };
     assert.equal(spawnSync('git', ['add', '.claude'], { cwd: root, env: gitEnv }).status, 0);
     assert.equal(spawnSync('git', ['commit', '-q', '-m', 'tracked'], { cwd: root, env: gitEnv }).status, 0);
     const before = [readFileSync(local, 'utf8'), readFileSync(shared, 'utf8')];
 
     const state = installHooks(root, { checkout: root, stateDir, env, at: AT });
     assert.equal(state.status, 'broken');
-    assert.match(state.detail, /settings\.local\.json is tracked by git, so hooks written there would be committed; Construct will not edit it; left untouched$/);
+    assert.match(
+      state.detail,
+      /settings\.local\.json is tracked by git, so hooks written there would be committed; Construct will not edit it; left untouched$/,
+    );
     assert.deepEqual([readFileSync(local, 'utf8'), readFileSync(shared, 'utf8')], before, 'neither file changes');
     assert.throws(() => installClaudeLocal(root, stateDir, env, AT, 'coordination'), /tracked by git/);
     assert.equal(readFileSync(local, 'utf8'), before[0]);
-    assert.equal(existsSync(join(root, '.git', 'info', 'exclude')) && readFileSync(join(root, '.git', 'info', 'exclude'), 'utf8').includes('/.claude/settings.local.json'), false, 'no ignore line that would do nothing for a tracked file');
+    assert.equal(
+      existsSync(join(root, '.git', 'info', 'exclude')) &&
+        readFileSync(join(root, '.git', 'info', 'exclude'), 'utf8').includes('/.claude/settings.local.json'),
+      false,
+      'no ignore line that would do nothing for a tracked file',
+    );
   } finally {
     fx.cleanup();
   }
@@ -290,7 +551,11 @@ test('the hook command never wedges a session: bad input or no project still exi
   const bin = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
   const dir = mkdtempSync(join(tmpdir(), 'construct-nohook-'));
   try {
-    for (const [event, input] of [['stop', '{ not json'], ['post-tool', JSON.stringify({ tool_name: 'x', tool_response: {} })], ['session-start', '']] as const) {
+    for (const [event, input] of [
+      ['stop', '{ not json'],
+      ['post-tool', JSON.stringify({ tool_name: 'x', tool_response: {} })],
+      ['session-start', ''],
+    ] as const) {
       const r = spawnSync(process.execPath, [bin, 'hook', event], { cwd: dir, input, encoding: 'utf8' });
       assert.equal(r.status, 0, `${event}: ${r.stderr}`);
       assert.equal(r.stdout, '', `${event} says nothing when there is nothing to say`);
@@ -304,19 +569,52 @@ test('review findings: a thinner view of the same ticket is not a change, and un
   const fx = brokerFixture();
   try {
     const at = fx.ctx.now();
-    addSource(fx.broker.store, { id: 'jira-pa', kind: 'jira', locator: 'PLAT_A', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
-    const full = { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events', updated: '2026-09-29T10:00:00Z', description: 'Decision: Enterprise only.' } }] };
-    assert.deepEqual(jiraItemsIn(full, 'PLAT_A').map((i) => i.ref), ['PLAT_A-7']);
+    addSource(fx.broker.store, {
+      id: 'jira-pa',
+      kind: 'jira',
+      locator: 'PLAT_A',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at,
+    });
+    const full = {
+      issues: [
+        { key: 'PLAT_A-7', fields: { summary: 'Events', updated: '2026-09-29T10:00:00Z', description: 'Decision: Enterprise only.' } },
+      ],
+    };
+    assert.deepEqual(
+      jiraItemsIn(full, 'PLAT_A').map((i) => i.ref),
+      ['PLAT_A-7'],
+    );
     assert.deepEqual(jiraItemsIn({ key: 'PLATA-7' }, 'PLAT_A'), [], 'the underscore is part of the key, not noise to strip');
     onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: full });
     // A later search returns the same ticket with fewer fields and no updated time.
-    const thin = onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events' } }] } });
+    const thin = onPostTool(fx.broker, {
+      tool_name: 'mcp__atlassian__searchJiraIssues',
+      tool_response: { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events' } }] },
+    });
     assert.deepEqual(thin.reported, { 'jira-pa': 1 });
-    const same = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-29T10:00:00Z', text: '{"key":"PLAT_A-7"}', weak: true }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    const same = fx.broker.sources.reportRead(
+      'jira-pa',
+      { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-29T10:00:00Z', text: '{"key":"PLAT_A-7"}', weak: true }], partial: true },
+      at,
+      () => fx.ctx.nextId('snap'),
+    );
     assert.equal(same.outcome, 'unchanged', 'same updated time, thinner text: unchanged');
-    const ans = await call(fx, 'check_answer', { answer: 'Enterprise only.', citations: [{ ref: 'PLAT_A-7', excerpt: 'Decision: Enterprise only' }] });
+    const ans = await call(fx, 'check_answer', {
+      answer: 'Enterprise only.',
+      citations: [{ ref: 'PLAT_A-7', excerpt: 'Decision: Enterprise only' }],
+    });
     assert.equal(ans.ok, true, 'the fuller text recorded first is kept for checking quotes');
-    const edited = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-30T08:00:00Z', text: 'Decision: Pro at launch.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    const edited = fx.broker.sources.reportRead(
+      'jira-pa',
+      { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-30T08:00:00Z', text: 'Decision: Pro at launch.' }], partial: true },
+      at,
+      () => fx.ctx.nextId('snap'),
+    );
     assert.deepEqual(edited.changes?.modified, ['PLAT_A-7'], 'a new updated time is a change');
   } finally {
     fx.cleanup();
@@ -327,18 +625,57 @@ test('a weak search hit preserves a full read, but additional strong content inv
   const fx = brokerFixture();
   try {
     const at = fx.ctx.now();
-    addSource(fx.broker.store, { id: 'jira-p', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    addSource(fx.broker.store, {
+      id: 'jira-p',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at,
+    });
     // First seen in a search: no updated time, a thin object.
-    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: { issues: [{ key: 'PLAT-9', fields: { summary: 'Events' } }] } });
+    onPostTool(fx.broker, {
+      tool_name: 'mcp__atlassian__searchJiraIssues',
+      tool_response: { issues: [{ key: 'PLAT-9', fields: { summary: 'Events' } }] },
+    });
     // Then read in full, with its version.
-    const full = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    const full = fx.broker.sources.reportRead(
+      'jira-p',
+      {
+        items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan.' }],
+        partial: true,
+      },
+      at,
+      () => fx.ctx.nextId('snap'),
+    );
     assert.deepEqual(full.changes?.modified ?? [], [], 'a passing sighting gaining its version is not an edit');
     // Then the same version again through a search with less text, then a get-issue with more.
-    fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Events', weak: true }], partial: true }, at, () => fx.ctx.nextId('snap'));
-    const richer = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan. Revisit Pro in Q3.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    fx.broker.sources.reportRead(
+      'jira-p',
+      { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Events', weak: true }], partial: true },
+      at,
+      () => fx.ctx.nextId('snap'),
+    );
+    const richer = fx.broker.sources.reportRead(
+      'jira-p',
+      {
+        items: [
+          { ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan. Revisit Pro in Q3.' },
+        ],
+        partial: true,
+      },
+      at,
+      () => fx.ctx.nextId('snap'),
+    );
     assert.deepEqual(richer.changes?.modified ?? [], ['PLAT-9'], 'a provider timestamp cannot hide additional strong content');
     assert.equal((richer.staleDeliverables ?? []).length, 0);
-    const ans = await call(fx, 'check_answer', { answer: 'Pro is revisited in Q3.', citations: [{ ref: 'PLAT-9', excerpt: 'Revisit Pro in Q3' }] });
+    const ans = await call(fx, 'check_answer', {
+      answer: 'Pro is revisited in Q3.',
+      citations: [{ ref: 'PLAT-9', excerpt: 'Revisit Pro in Q3' }],
+    });
     assert.equal(ans.ok, true, JSON.stringify(ans.problems));
   } finally {
     fx.cleanup();
@@ -356,15 +693,26 @@ const adfIssue = {
       type: 'doc',
       version: 1,
       content: [
-        { type: 'paragraph', content: [
-          { type: 'text', text: 'Sam said "ship v1 to ' },
-          { type: 'text', text: 'Enterprise', marks: [{ type: 'strong' }] },
-          { type: 'text', text: ' only" on the call.' },
-        ] },
-        { type: 'bulletList', content: [
-          { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Revisit Pro in Q3.' }] }] },
-        ] },
-        { type: 'paragraph', content: [{ type: 'text', text: 'First line' }, { type: 'hardBreak' }, { type: 'text', text: 'second line', marks: [{ type: 'link', attrs: { href: 'https://x.example' } }] }] },
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Sam said "ship v1 to ' },
+            { type: 'text', text: 'Enterprise', marks: [{ type: 'strong' }] },
+            { type: 'text', text: ' only" on the call.' },
+          ],
+        },
+        {
+          type: 'bulletList',
+          content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Revisit Pro in Q3.' }] }] }],
+        },
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'First line' },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'second line', marks: [{ type: 'link', attrs: { href: 'https://x.example' } }] },
+          ],
+        },
       ],
     },
   },
@@ -375,15 +723,36 @@ test('readable text keeps what a person reads in an issue: quotes, line breaks, 
   assert.match(text, /Sam said "ship v1 to Enterprise only" on the call\./, 'inline runs with marks join into one line, quotes intact');
   assert.match(text, /\nRevisit Pro in Q3\.\n/, 'a block goes on its own line');
   assert.match(text, /First line\nsecond line/);
-  for (const markup of ['paragraph', 'strong', 'bulletList', 'hardBreak', '{', '\\"']) assert.ok(!text.includes(markup), `no ${markup} in the text`);
+  for (const markup of ['paragraph', 'strong', 'bulletList', 'hardBreak', '{', '\\"'])
+    assert.ok(!text.includes(markup), `no ${markup} in the text`);
   assert.match(text, /https:\/\/x.example/, 'observed hyperlink destinations remain available for reference closure');
-  assert.equal(readableText(JSON.stringify({ a: 'one', b: [2, { c: 'three' }], d: true, e: null })), 'one\n2\nthree', 'JSON inside a string is opened; booleans and nulls are not words');
+  assert.equal(
+    readableText(JSON.stringify({ a: 'one', b: [2, { c: 'three' }], d: true, e: null })),
+    'one\n2\nthree',
+    'JSON inside a string is opened; booleans and nulls are not words',
+  );
 
   const fx = brokerFixture();
   try {
-    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
-    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: { content: [{ type: 'text', text: JSON.stringify(adfIssue) }] } });
-    const ans = await call(fx, 'check_answer', { answer: 'Sam wants v1 on Enterprise only.', citations: [{ ref: 'PLAT-101', excerpt: 'Sam said "ship v1 to Enterprise only" on the call' }] });
+    addSource(fx.broker.store, {
+      id: 'jira-plat',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
+    onPostTool(fx.broker, {
+      tool_name: 'mcp__atlassian__getJiraIssue',
+      tool_response: { content: [{ type: 'text', text: JSON.stringify(adfIssue) }] },
+    });
+    const ans = await call(fx, 'check_answer', {
+      answer: 'Sam wants v1 on Enterprise only.',
+      citations: [{ ref: 'PLAT-101', excerpt: 'Sam said "ship v1 to Enterprise only" on the call' }],
+    });
     assert.equal(ans.ok, true, JSON.stringify(ans.problems));
   } finally {
     fx.cleanup();
@@ -393,23 +762,50 @@ test('readable text keeps what a person reads in an issue: quotes, line breaks, 
 test('Jira hook preserves documented ADF attr-only text and marks unresolved display content partial', () => {
   const fx = brokerFixture();
   try {
-    addSource(fx.broker.store, { id: 'jira-adf', kind: 'jira', locator: 'APP', purpose: 'tickets', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
-    const description = { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [
-      { type: 'text', text: 'Owner ' }, { type: 'mention', attrs: { id: 'account', text: '@Sam' } },
-      { type: 'text', text: ' says ' }, { type: 'status', attrs: { text: 'Blocked', color: 'red' } },
-      { type: 'emoji', attrs: { shortName: ':warning:', text: '⚠️' } },
-      { type: 'text', text: ' ' }, { type: 'emoji', attrs: { shortName: ':custom:' } },
-      { type: 'inlineCard', attrs: { url: 'https://records.example/dependency' } },
-      { type: 'date', attrs: { timestamp: '1582152559' } },
-    ] }] };
-    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: { key: 'APP-1', fields: { updated: '2026-10-15T12:00:00Z', description } } });
+    addSource(fx.broker.store, {
+      id: 'jira-adf',
+      kind: 'jira',
+      locator: 'APP',
+      purpose: 'tickets',
+      authorityLevel: 'informative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
+    const description = {
+      type: 'doc',
+      version: 1,
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Owner ' },
+            { type: 'mention', attrs: { id: 'account', text: '@Sam' } },
+            { type: 'text', text: ' says ' },
+            { type: 'status', attrs: { text: 'Blocked', color: 'red' } },
+            { type: 'emoji', attrs: { shortName: ':warning:', text: '⚠️' } },
+            { type: 'text', text: ' ' },
+            { type: 'emoji', attrs: { shortName: ':custom:' } },
+            { type: 'inlineCard', attrs: { url: 'https://records.example/dependency' } },
+            { type: 'date', attrs: { timestamp: '1582152559' } },
+          ],
+        },
+      ],
+    };
+    onPostTool(fx.broker, {
+      tool_name: 'mcp__atlassian__getJiraIssue',
+      tool_response: { key: 'APP-1', fields: { updated: '2026-10-15T12:00:00Z', description } },
+    });
     const entry = currentManifest(fx.broker.store, 'jira-adf')![0]!;
     assert.match(entry.text!, /Owner @Sam says Blocked⚠️ :custom:/);
     assert.match(entry.text!, /https:\/\/records.example\/dependency/);
     assert.match(entry.text!, /date timestamp: 1582152559/);
     assert.equal(entry.truncated, true, 'card display and locale date are not invented from identifiers');
     assert.ok(!entry.text!.includes('account'));
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('unknown, missing-label and depth-limited ADF cannot silently imply complete captured content', () => {
@@ -418,7 +814,16 @@ test('unknown, missing-label and depth-limited ADF cannot silently imply complet
     { type: 'futureWidget', attrs: { text: 'Arbitrary unverified metadata' } },
     { type: 'media', attrs: { id: 'opaque-media-id', type: 'file', collection: 'external' } },
   ]) {
-    const issue = { key: 'APP-1', fields: { updated: '2026-10-15T12:00:00Z', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'left' }, omitted, { type: 'text', text: 'right' }] }] } } };
+    const issue = {
+      key: 'APP-1',
+      fields: {
+        updated: '2026-10-15T12:00:00Z',
+        description: {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'left' }, omitted, { type: 'text', text: 'right' }] }],
+        },
+      },
+    };
     const item = jiraItemsIn(issue, 'APP')[0]!;
     assert.equal(item.truncated, true);
     assert.ok(!item.text!.includes('leftright'));
@@ -433,7 +838,12 @@ test('unknown, missing-label and depth-limited ADF cannot silently imply complet
 
 test('non-ADF provider envelopes with type and attrs preserve their readable payload', () => {
   assert.match(readableText({ type: 'message', text: 'The rollout is approved.' }), /The rollout is approved\./);
-  const issue = { type: 'issue', attrs: { kind: 'ticket' }, key: 'APP-1', fields: { summary: 'Fix deployment', updated: '2026-10-15T12:00:00Z', description: 'The rollout is approved.' } };
+  const issue = {
+    type: 'issue',
+    attrs: { kind: 'ticket' },
+    key: 'APP-1',
+    fields: { summary: 'Fix deployment', updated: '2026-10-15T12:00:00Z', description: 'The rollout is approved.' },
+  };
   const item = jiraItemsIn(issue, 'APP')[0]!;
   assert.match(item.text!, /Fix deployment/);
   assert.match(item.text!, /The rollout is approved\./);
@@ -441,7 +851,17 @@ test('non-ADF provider envelopes with type and attrs preserve their readable pay
 });
 
 test('an explicitly unsupported ADF document version retains observed words as partial evidence', () => {
-  const issue = { key: 'APP-4', fields: { updated: '2026-10-15T12:00:00Z', description: { type: 'doc', version: 2, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Observed future-format text.' }] }] } } };
+  const issue = {
+    key: 'APP-4',
+    fields: {
+      updated: '2026-10-15T12:00:00Z',
+      description: {
+        type: 'doc',
+        version: 2,
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Observed future-format text.' }] }],
+      },
+    },
+  };
   const item = jiraItemsIn(issue, 'APP')[0]!;
   assert.match(item.text!, /Observed future-format text\./);
   assert.equal(item.truncated, true);
@@ -450,17 +870,43 @@ test('an explicitly unsupported ADF document version retains observed words as p
 test('an issue is recorded under the browse page its REST self link names, unless it gives its own address', () => {
   const [item] = jiraItemsIn({ issues: [adfIssue] }, 'PLAT');
   assert.equal(item!.url, 'https://acme.atlassian.net/browse/PLAT-101');
-  const server = jiraItemsIn({ key: 'PLAT-7', self: 'https://jira.acme.internal/jira/rest/api/2/issue/77', fields: { summary: 'x' } }, 'PLAT');
+  const server = jiraItemsIn(
+    { key: 'PLAT-7', self: 'https://jira.acme.internal/jira/rest/api/2/issue/77', fields: { summary: 'x' } },
+    'PLAT',
+  );
   assert.equal(server[0]!.url, 'https://jira.acme.internal/jira/browse/PLAT-7', 'a server under a context path keeps it');
-  assert.equal(jiraItemsIn({ key: 'PLAT-8', url: 'https://acme.atlassian.net/browse/PLAT-8?focus=1', self: 'https://acme.atlassian.net/rest/api/3/issue/8' }, 'PLAT')[0]!.url, 'https://acme.atlassian.net/browse/PLAT-8?focus=1');
+  assert.equal(
+    jiraItemsIn(
+      { key: 'PLAT-8', url: 'https://acme.atlassian.net/browse/PLAT-8?focus=1', self: 'https://acme.atlassian.net/rest/api/3/issue/8' },
+      'PLAT',
+    )[0]!.url,
+    'https://acme.atlassian.net/browse/PLAT-8?focus=1',
+  );
   assert.equal(jiraItemsIn({ key: 'PLAT-9', self: 'not a link' }, 'PLAT')[0]!.url, undefined);
-  assert.equal(jiraItemsIn({ key: 'PLAT-10', webUrl: 'https://me:secret@acme.atlassian.net/browse/PLAT-10' }, 'PLAT')[0]!.url, undefined, 'an address carrying credentials is not kept');
+  assert.equal(
+    jiraItemsIn({ key: 'PLAT-10', webUrl: 'https://me:secret@acme.atlassian.net/browse/PLAT-10' }, 'PLAT')[0]!.url,
+    undefined,
+    'an address carrying credentials is not kept',
+  );
 
   const fx = brokerFixture();
   try {
-    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    addSource(fx.broker.store, {
+      id: 'jira-plat',
+      kind: 'jira',
+      locator: 'PLAT',
+      purpose: 'tickets',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: fx.ctx.now(),
+    });
     onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: adfIssue });
-    assert.equal(currentManifest(fx.broker.store, 'jira-plat')!.find((e) => e.ref === 'PLAT-101')?.url, 'https://acme.atlassian.net/browse/PLAT-101');
+    assert.equal(
+      currentManifest(fx.broker.store, 'jira-plat')!.find((e) => e.ref === 'PLAT-101')?.url,
+      'https://acme.atlassian.net/browse/PLAT-101',
+    );
   } finally {
     fx.cleanup();
   }
