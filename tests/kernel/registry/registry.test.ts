@@ -424,9 +424,31 @@ test('a step above a skill\'s maxTier, or a workflow naming none of a skill\'s r
     assert.match(tier!.message, /step acts at project_write; skill framing may be applied at draft at most/);
     assert.match(tier!.remedy, /raise the skill's maxTier/);
     const gate = drifts.reasons.find((r) => r.code === 'missing_validator' && /requires the validator/.test(r.message));
-    assert.match(gate!.message, /skill framing requires the validator deliverable_complete, and no step in drifts names it/);
+    assert.match(gate!.message, /skill framing requires the validator deliverable_complete, and neither step a nor any step that consumes its output names it/);
   } finally {
     fx.cleanup();
     cleanup();
   }
+});
+
+test('a validator on a step that does not consume the skill\'s output does not satisfy it, and a dependency carries only id and range', () => {
+  const { root, cleanup } = tmp();
+  const fx = freshStore();
+  try {
+    writeSkill(join(root, 'b'), 'framing', '1.0.0', { manifest: skillManifest('framing', '1.0.0', { requiredValidators: ['deliverable_complete'] }) });
+    writeWorkflow(join(root, 'w'), 'sidestep', workflowManifest('sidestep', '1.0.0', [
+      step('early', { tier: 'draft', outputs: ['x'], validators: ['deliverable_complete'] }),
+      step('review', { needs: ['early'], skill: { id: 'framing', range: '^1.0.0' }, tier: 'draft', outputs: ['y'], validators: ['schema'] }),
+    ]));
+    const skills = createSkillRegistry({ builtinDir: join(root, 'b'), projectDir: null });
+    const workflows = createWorkflowRegistry({ builtinDir: join(root, 'w'), projectDir: null });
+    const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
+    const r = resolveWorkflow({ workflowId: 'sidestep', input: { target: 't' }, skills, workflows, lock, host: host({ maxTier: 'draft' }), sources: [], store: fx.store, at: T });
+    assert.notEqual(r.status, 'runnable');
+    assert.ok(r.reasons.some((x) => x.code === 'missing_validator' && x.stepId === 'review'), 'an earlier step checked other work');
+  } finally {
+    fx.cleanup();
+    cleanup();
+  }
+  assert.throws(() => validateSkillManifest(skillManifest('s', '1.0.0', { skillDependencies: [{ id: 'written-voice', range: '*', maxTier: 'observe' }] }), 's/construct.skill.json'), /"skillDependencies\[0\]\.maxTier" is not read; a dependency carries only id and range/);
 });

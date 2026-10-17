@@ -17,7 +17,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `decision-framing` | 0.3.3 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
 | `experience-design` | 1.0.3 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |
 | `governance-risk` | 1.0.4 | professional | Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. |
-| `intake` | 0.3.2 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
+| `intake` | 0.3.3 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
 | `investigative-research` | 0.3.5 | method | Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. |
 | `operations-reliability` | 1.0.3 | professional | Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. |
 | `product-management` | 1.0.4 | professional | Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. |
