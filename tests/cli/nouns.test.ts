@@ -251,7 +251,7 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const dir = join(box.cwd, '.construct', 'skills', 'house-style');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'SKILL.md'), '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style\n', 'utf8');
-    writeFileSync(join(dir, 'construct.skill.json'), JSON.stringify({ format: 'construct-skill', formatVersion: 1, id: 'house-style', title: 'House style', version: '0.1.0', category: 'method', owner: 'us', interactionClasses: ['manage'], capabilities: [], actionTiers: ['draft'] }), 'utf8');
+    writeFileSync(join(dir, 'construct.skill.json'), JSON.stringify({ format: 'construct-skill', formatVersion: 1, id: 'house-style', title: 'House style', version: '0.1.0', category: 'method', owner: 'us', capabilities: [], maxTier: 'draft' }), 'utf8');
     const locked = await capture(() => run(['skill', 'update'], ctx));
     assert.match(locked.out, /updated: skill:house-style/);
     const lock = JSON.parse(readFileSync(join(box.cwd, '.construct', 'registry.lock.json'), 'utf8'));

@@ -3,65 +3,21 @@
   "formatVersion": 1,
   "id": "security-privacy",
   "title": "Security and privacy",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "a security and privacy review naming exposures, the paths that reach them, and the checks that would stop them"
-  ],
-  "deliverableTypes": [
-    "review/security-privacy"
-  ],
-  "inputs": [
-    "the system, change, or data flow under review",
-    "the declared data classifications and retention rules",
-    "dependency and configuration sources the project declares"
-  ],
-  "outputSchemas": [
-    "security-privacy/review/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every exposure names the path that reaches it and the control that is present or absent, cited to code, config, or a declared source",
   "capabilities": [
     "read_project_files",
     "read_project_context",
     "read_source"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings",
+    "deliverable_complete"
   ],
   "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "an exposure of authoritative or personal data with no control is fatal and is raised to the person immediately, not batched into a report",
-    "regulatory obligations that may apply are handed to governance-risk as issue spotting; this pack does not judge compliance"
-  ],
-  "licensedReviewBoundaries": [
-    "whether a data flow is lawful under a specific regulation is a qualified person's judgment; this pack spots the question"
-  ],
-  "observedOn": [],
   "evals": [
     "evals/fixtures.json",
     "evals/behavior.json"

@@ -6,13 +6,17 @@
 
 A skill is a directory: `SKILL.md` (Agent Skills frontmatter and body),
 `construct.skill.json`, and optional `references/`, `assets/`, `scripts/`,
-`schemas/`, and `evals/`. The manifest declares id, title, semantic version,
-category, owner, interaction classes,
-outcomes and deliverable types, inputs and output schemas, required source
-types and minimum evidence, capabilities (never tools), action tiers,
-versioned skill and workflow dependencies, quality gates, escalation,
-licensed-review boundaries, observations (which may not claim success
-without naming a run), and eval files. Name and version must agree with the
+`schemas/`, and `evals/`. The manifest carries only what something
+enforces: id, title, semantic version, category, owner, the capabilities a
+host must provide (never tools), `maxTier` (the highest action tier a step
+may apply the skill at), `requiredValidators` (validators the deliverable
+must pass wherever the skill is bound), versioned skill dependencies, and
+eval files. The resolver refuses a step above `maxTier`, a workflow whose
+steps name none of a required validator, a missing capability, and a
+missing or incompatible dependency; the registry lock pins the version; and
+qualification reads the evals. Any other key is refused: what the method
+produces, its inputs, its evidence bar, and its limits and escalations are
+the `SKILL.md` body's to say. Name and version must agree with the
 frontmatter. When a skill applies is said once, in the `SKILL.md`
 description, which the host model reads; a manifest that still lists
 `activation` or `standDown` phrases is refused, because nothing reads them.

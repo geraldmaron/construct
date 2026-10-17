@@ -10,7 +10,7 @@ description: >-
   this a ticket. Not for a single clear ask.
 license: Apache-2.0
 metadata:
-  version: 0.3.1
+  version: 0.3.3
   source: geraldmaron/construct
 ---
 
@@ -55,7 +55,9 @@ conclusions wrong. Extract into labeled lists:
 
 Anything the plan leans on that the message does not settle is
 `[assumed]` with a safe (reversible) default. Expensive-to-undo guesses
-are blockers, not assumptions.
+are blockers, not assumptions. Every load-bearing claim the plan carries
+cites the message, document, or source it rests on, or is marked
+unverified.
 
 ## 3. The parking lot
 

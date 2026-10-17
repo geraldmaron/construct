@@ -3,48 +3,16 @@
   "formatVersion": 1,
   "id": "decision-framing",
   "title": "Decision framing",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a decision record with options, baseline, reversibility, objection, pre-mortem"
-  ],
-  "deliverableTypes": [
-    "record/decision"
-  ],
-  "inputs": [
-    "the alternatives in play and what each would cost",
-    "the do-nothing baseline"
-  ],
-  "outputSchemas": [
-    "record/decision/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context",
     "model_review"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "project_write",
+  "requiredValidators": [
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "the recommendation is presented as the person's decision to make, never applied",
-    "when stakes are unclear one question is asked rather than guessed"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }

@@ -3,46 +3,16 @@
   "formatVersion": 1,
   "id": "context-mapping",
   "title": "Context mapping",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a dated one-page context map"
-  ],
-  "deliverableTypes": [
-    "map/context"
-  ],
-  "inputs": [
-    "the system's own material: code, documents, ownership files, declared sources"
-  ],
-  "outputSchemas": [
-    "map/context/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_files",
     "read_project_context"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "an unknown that blocks safe action is raised as a question, never guessed"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }

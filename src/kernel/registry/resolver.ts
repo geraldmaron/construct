@@ -36,6 +36,7 @@ export const RESOLUTION_REASONS = [
   'ambiguous_executor',
   'lockfile_divergence',
   'tier_above_executor',
+  'tier_above_skill',
 ] as const;
 export type ResolutionReasonCode = (typeof RESOLUTION_REASONS)[number];
 
@@ -176,6 +177,25 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
   }
 
   const plan: BoundStep[] = [];
+  // A required validator counts only where it checks the skill's own work: on the step that binds it, or on a step whose inputs read that step's output (directly or through another such step). Ordering alone (needs) is not consumption.
+  const consumers = new Map<string, string[]>();
+  for (const s of m.steps) {
+    for (const ref of Object.values(s.inputs)) {
+      const from = /^steps\.([^.]+)\./.exec(ref)?.[1];
+      if (from) consumers.set(from, [...(consumers.get(from) ?? []), s.id]);
+    }
+  }
+  const checkedAtOrAfter = (stepId: string): Set<string> => {
+    const seen = new Set<string>();
+    const queue = [stepId];
+    while (queue.length > 0) {
+      const id = queue.shift()!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      queue.push(...(consumers.get(id) ?? []));
+    }
+    return new Set(m.steps.filter((s) => seen.has(s.id)).flatMap((s) => s.validators));
+  };
   for (const id of order) {
     const step = m.steps.find((s) => s.id === id)!;
     let bound: BoundStep['skill'] = null;
@@ -201,6 +221,15 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
         for (const cap of skill.manifest.capabilities) {
           if (!step.capabilities.includes(cap) && !provides(input.host, cap)) {
             reasons.push({ code: 'capability_unavailable', stepId: step.id, message: `skill ${skill.manifest.id} needs ${cap}, which this host does not provide`, remedy: `Connect something that provides ${cap}, or run in a host that does.` });
+          }
+        }
+        if (!tierAtLeast(skill.manifest.maxTier, step.tier)) {
+          reasons.push({ code: 'tier_above_skill', stepId: step.id, message: `step acts at ${step.tier}; skill ${skill.manifest.id} may be applied at ${skill.manifest.maxTier} at most`, remedy: `Lower the step's tier, or raise the skill's maxTier if its method is meant to act at ${step.tier}.` });
+        }
+        const checked = checkedAtOrAfter(step.id);
+        for (const v of skill.manifest.requiredValidators) {
+          if (!checked.has(v)) {
+            reasons.push({ code: 'missing_validator', stepId: step.id, message: `skill ${skill.manifest.id} requires the validator ${v}, and neither step ${step.id} nor any step that consumes its output names it`, remedy: `Add ${v} to step ${step.id}'s validators, or to a later step that uses its output.` });
           }
         }
       }

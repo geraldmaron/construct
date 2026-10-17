@@ -3,45 +3,15 @@
   "formatVersion": 1,
   "id": "written-voice",
   "title": "Written voice",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "prose in the house voice with the decision at the top"
-  ],
-  "deliverableTypes": [
-    "prose/document"
-  ],
-  "inputs": [
-    "the draft or drafts",
-    "who will read it and what they must decide"
-  ],
-  "outputSchemas": [
-    "prose/document/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context"
   ],
-  "actionTiers": [
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a claim of done or tested that was not observed is removed, not softened"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }
