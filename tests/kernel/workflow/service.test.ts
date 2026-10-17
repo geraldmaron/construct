@@ -183,6 +183,23 @@ test('an external write pauses for the smallest approval; approval resumes exact
   }
 });
 
+test('cancelling a run whose leased step lost its holder settles at once, since nothing is still in progress', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'review', input: { target: 't' }, trigger: 'manual' });
+    fx.service.claimNext({ runId: started.run.id, leaseMs: 60_000 });
+    // The holding session dies and its lease runs out; nobody claims the step again.
+    fx.tick(61_000);
+    const cancelled = fx.service.cancel({ runId: started.run.id, by: 'gerald', reason: 'abandoned' });
+    assert.equal(cancelled.state, 'cancelled', 'a dead lease is not waited for');
+    assert.ok(
+      fx.service.status(started.run.id)!.steps.every((s) => s.state === 'cancelled' || s.state === 'succeeded' || s.state === 'failed'),
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('a lost lease is reclaimed without repeating finished work; cancel and no-data follow policy', () => {
   const fx = fixture();
   try {
