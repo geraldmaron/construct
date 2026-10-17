@@ -7,7 +7,7 @@ import { contextIndexStatus } from '../kernel/context/retrieval.ts';
 import { existsSync, accessSync, constants, realpathSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
+import { detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
@@ -413,15 +413,6 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     ok: shipped.some((s) => s.name === OPERATIONAL_SKILL),
     detail: `${String(shipped.length)} skill(s) shipped${shipped.some((s) => s.name === OPERATIONAL_SKILL) ? '' : `; the ${OPERATIONAL_SKILL} skill is missing from this install`}`,
   });
-
-  const oldHome = detectLegacyHomeState(ctx.paths);
-  if (oldHome.length > 0) {
-    checks.push({
-      name: 'legacy-home-state',
-      ok: true,
-      detail: `${oldHome.map((t) => t.path).join(', ')}: earlier alpha data this version never reads; \`construct reset\` can name it for removal`,
-    });
-  }
 
   const failed = checks.filter((c) => !c.ok).length;
   if (args.json) {

@@ -8,7 +8,6 @@
 
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Paths } from '../paths.ts';
 import { PROJECT_CONFIG_FORMAT, PROJECT_CONFIG_VERSION } from './config.ts';
 import { projectDir, projectFilePath } from './layout.ts';
 
@@ -36,18 +35,6 @@ export function detectLegacyProjectFiles(root: string): LegacyTarget[] {
       path: projectFile,
       what: `a project config in format ${stamp.format ?? 'unknown'} ${stamp.version === null ? '' : String(stamp.version)}`.trim(),
     });
-  }
-  return found;
-}
-
-/**
- * Old per-user Construct databases. These are named so a person can remove
- * them; this version never opens them.
- */
-export function detectLegacyHomeState(paths: Paths): LegacyTarget[] {
-  const found: LegacyTarget[] = [];
-  for (const candidate of [join(paths.dataDir, 'construct.db'), join(paths.stateDir, 'construct.db')]) {
-    if (existsSync(candidate)) found.push({ path: candidate, what: 'a per-user Construct database from an earlier alpha' });
   }
   return found;
 }

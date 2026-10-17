@@ -2740,12 +2740,6 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           }
         }
         const superseded = blocked[blocked.length - 1]?.id ?? null;
-        store.db
-          .prepare(
-            `INSERT INTO run_bindings (run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, frozen_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          )
-          .run(run.id, m.id, m.version, workflow.digest, JSON.stringify(resolution.plan.map((p) => p.skill)), at);
         if (!resolves) {
           const stopped = transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary, preflight });
           return { run: stopped, created: true, resolution, preflight, differs: [], superseded };

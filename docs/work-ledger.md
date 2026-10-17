@@ -207,6 +207,5 @@ another project is refused; work moves between projects as new items. Relationsh
 are restored after identities, so later-created parents and blockers are valid.
 Invalid cycles or conflicting relationship identities roll back the restore;
 skipped live items keep their own dependencies and history.
-`construct work import-legacy tracker.jsonl --dry-run` previews a one-way
-import of a frozen tracker's JSONL snapshot, reporting the mapping without
-writing; without `--dry-run` it imports.
+Items imported from the retired tracker keep their old ids as aliases, so
+`construct work show <old-id>` still finds them; the import itself is gone.

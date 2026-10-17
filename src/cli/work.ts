@@ -17,8 +17,7 @@ import { join, resolve } from 'node:path';
 /**
  * cli/work.ts — native work ledger: file work with its parent, reason,
  * dependencies, and acceptance criteria; query, ready, claim, check reserved
- * paths, hand off and accept, complete, reopen, export, restore, and one-way
- * import of a frozen legacy tracker snapshot.
+ * paths, hand off and accept, complete, reopen, export, and restore.
  */
 
 import {
@@ -52,7 +51,6 @@ import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type
 import { canonicalInstant } from '../kernel/state/rows.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
 import { processAlive } from './broker-context.ts';
-import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
 import { withProject } from './context.ts';
@@ -403,14 +401,6 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     group,
     positionals: ['<file>'],
     flags: [],
-    readOnly: false,
-  },
-  {
-    path: ['work', 'import-legacy'],
-    gloss: 'one-way import of a frozen tracker JSONL snapshot',
-    group,
-    positionals: ['<file>'],
-    flags: [{ name: 'dry-run', gloss: 'report mapping without writing', takesValue: false }],
     readOnly: false,
   },
 ];
@@ -798,22 +788,6 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         const report = restoreWork(project.store, dump, at, project.files.config?.id ?? null);
         if (args.json) writeJson(report);
         else say(`restored ${String(report.imported)}, skipped ${String(report.skipped)}, conflicts ${String(report.conflicts.length)}`);
-        return 0;
-      }
-      case 'import-legacy': {
-        const report = importLegacySnapshot(project.store, {
-          jsonl: readFileSync(resolve(ctx.cwd, args.positionals[0]!), 'utf8'),
-          at,
-          dryRun: boolFlag(args, 'dry-run'),
-          nextId: ctx.nextId,
-        });
-        if (args.json) writeJson(report);
-        else {
-          say(
-            `legacy import: ${String(report.imported)} imported, ${String(report.skipped)} skipped, ${String(report.malformed.length)} malformed`,
-          );
-          for (const m of report.malformed.slice(0, 20)) say(`  malformed: ${esc(m)}`);
-        }
         return 0;
       }
       default:

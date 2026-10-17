@@ -8,8 +8,7 @@
  */
 
 import { existsSync, rmSync } from 'node:fs';
-import type { Paths } from '../paths.ts';
-import { detectLegacyHomeState, detectLegacyProjectFiles, type LegacyTarget } from './legacy.ts';
+import { detectLegacyProjectFiles, type LegacyTarget } from './legacy.ts';
 import { projectDbPath, projectLayout } from './layout.ts';
 
 export interface ResetPlan {
@@ -20,8 +19,6 @@ export interface ResetPlan {
 export interface PlanResetOptions {
   /** Also remove the committed project files, not only runtime state. */
   readonly includeProjectFiles?: boolean;
-  /** Also name old per-user databases, when the caller can resolve them. */
-  readonly paths?: Paths;
 }
 
 export function planReset(root: string, options: PlanResetOptions = {}): ResetPlan {
@@ -47,7 +44,6 @@ export function planReset(root: string, options: PlanResetOptions = {}): ResetPl
       if (existsSync(path) && !targets.some((t) => t.path === path)) targets.push({ path, what });
     }
   }
-  if (options.paths) for (const legacy of detectLegacyHomeState(options.paths)) targets.push(legacy);
   return { root, targets };
 }
 
