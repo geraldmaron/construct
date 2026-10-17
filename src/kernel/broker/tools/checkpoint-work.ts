@@ -16,7 +16,7 @@ export const checkpointWork = define<
   surface: 'both',
   readOnly: false,
   description:
-    'Save a durable partial result on your current step lease before gathering or repairs exhaust their budget. This neither completes the step nor establishes verification. Files must already exist and be permitted by this step.',
+    'Save a durable partial result on your current step lease before gathering or repairs exhaust their budget; it neither completes the step nor verifies it. Files must already exist and be permitted by the step.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -64,7 +64,10 @@ function startedResult(
 export const startOutcome = define<{ workflowId: string; input?: Record<string, unknown>; intake?: Record<string, unknown> }, unknown>({
   name: 'start_outcome',
   title: 'Start an outcome',
-  description: `Start a one-time workflow run, or save a standing trigger for kind maintain without starting a run. Standing triggers remain unprovisioned until a host installs a clock/event sender and executor; never promise future execution from the saved definition alone. Pass the intake classify_request returned, with the person’s answers applied; Construct checks it again here, so skipping classify_request skips no check, and if a required detail or a blocking question is still open nothing starts and you get the questions back. Without an intake, pass the workflow input yourself. If this work is already running you get that run back, with what you gave differently named. Returns the run and what it needs; then call claim_work to do the next step here. Never start work for a plain question. ${PERSON_ASKED_ONLY}`,
+  description: [
+    "Start a one-time workflow run from the intake classify_request returned, with the person's answers applied, or save a standing trigger for kind maintain, which stays unprovisioned until a host installs a clock and an executor, so never promise it will run. Construct checks the intake again: if a required detail or a blocking question is still open, nothing starts and you get the questions back, and if this work is already running you get that run back; otherwise call claim_work to do the next step here.",
+    PERSON_ASKED_ONLY,
+  ].join(' '),
   surface: 'interactive',
   readOnly: false,
   inputSchema: {

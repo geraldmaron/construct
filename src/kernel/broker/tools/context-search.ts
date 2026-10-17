@@ -8,7 +8,7 @@ export const contextSearch = define<SearchInput, unknown>({
   surface: 'interactive',
   readOnly: true,
   description:
-    'Rank admitted project context and source passages. Expand related concepts with the current host and pass expansions. Results carry citations, revisions, provenance and coverage; similarity grants no authority. Exact project_context lookups remain available.',
+    "Rank admitted project context and source passages, with citations, revisions, provenance and coverage; similarity grants no authority. Pass the current host's expansions of related concepts.",
   inputSchema: {
     type: 'object',
     properties: {

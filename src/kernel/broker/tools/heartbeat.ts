@@ -6,7 +6,7 @@ export const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
   name: 'heartbeat',
   title: 'Keep a lease alive',
   description:
-    'The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.',
+    "Keep a claimed step's lease during a long step that makes no other Construct call; any call from the session also extends it. Fails if the lease was already lost.",
   surface: 'both',
   readOnly: false,
   inputSchema: {

@@ -16,7 +16,10 @@ export const remember = define<
 >({
   name: 'remember',
   title: 'Remember one thing',
-  description: `Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff. Replacing an earlier record, ruling terms out, or marking a document outdated needs the person’s own confirmation; Construct asks them when the host can. ${PERSON_ASKED_ONLY}`,
+  description: [
+    "Record one decision, constraint, principle, note or outcome in the person's own words when they ask to remember it, creating exactly one record and nothing else. Replacing an earlier record, ruling terms out or marking a document outdated waits for the person's own confirmation, which Construct asks for when the host can.",
+    PERSON_ASKED_ONLY,
+  ].join(' '),
   surface: 'interactive',
   readOnly: false,
   inputSchema: {

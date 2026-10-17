@@ -290,9 +290,9 @@ test('the tool descriptions say what a refused start and a blocked claim give ba
   const start = TOOLS.find((t) => t.name === 'start_outcome')!;
   assert.doesNotMatch(start.description, /half-started/);
   assert.match(start.description, /nothing starts and you get the questions back/);
-  assert.match(start.description, /If this work is already running you get that run back/);
+  assert.match(start.description, /if this work is already running you get that run back/i);
   assert.match(
     TOOLS.find((t) => t.name === 'claim_work')!.description,
-    /A blocked run comes back with its reasons and what would unblock it\./,
+    /a blocked run comes back with its reasons and what would unblock it/i,
   );
 });

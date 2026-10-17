@@ -33,7 +33,7 @@ export const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: s
   name: 'project_context',
   title: 'Project context',
   description:
-    'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, resolved decisions, activity history, or source_history (recorded source revisions). Ask for one topic at a time; pass a query to narrow. Search covers full history before paging. Results name their revision, selection reason and nextCursor; pass that cursor with the same topic/query to continue. A changed snapshot asks you to restart.',
+    'Read one topic of what Construct knows (the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, sessions, resolved decisions, activity, or source_history), narrowed by query, with full history searched before paging. Results page with nextCursor: pass it back with the same topic and query, and restart when the snapshot changed.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
