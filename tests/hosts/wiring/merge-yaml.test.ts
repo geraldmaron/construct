@@ -125,6 +125,7 @@ test('forms the writer does not read are refused and the bytes stay', () => {
     'byte-order mark before the servers': '\uFEFFmcp_servers:\n  github:\n    command: github\n',
     'explicit key': '? mcp_servers\n: {}\n',
     'tab after the colon': 'mcp_servers:\t{}\n',
+    'indented top level': '  mcp_servers:\n    keep:\n      command: keep\n',
     'flow mapping document': '{mcp_servers: {github: {command: github}}}\n',
     'YAML-only escape in a value': 'mcp_servers:\n  construct:\n    command: "foo\\x20bar"\n',
     'YAML-only escape in a key': 'mcp_servers:\n  "con\\x73truct":\n    command: x\n',
