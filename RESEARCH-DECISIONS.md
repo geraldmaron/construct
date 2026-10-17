@@ -3716,3 +3716,63 @@ part of MCP and arrive before the first call.
 Verdict: accepted with controls (roots trusted only inside
 `projectWorktrees()`; asked once, before any call; fall back to the
 process directory).
+
+## 45. Managed delivery has one stored claim authority, including custody between steps (2026-10-17)
+
+This resolves §41(2)'s design prerequisite for `work-0a36e600`, with the
+claim-verb boundary also informing `work-4503dc02`. The full lifecycle
+inventory, alternatives, adversarial self-review and implementation plan
+are in [the claim-authority design](docs/internal/claim-authority/DESIGN.md).
+No implementation is included; no live eval or migration rehearsal was run.
+
+**Failure mode.** Execution lives in a step lease, while the requested
+artifact's custody lives in an independently renewable delivery work claim.
+The user reported on 2026-10-17 that two runs cancelled on 2026-10-15 left
+their delivery items open indefinitely. CLI cancellation bypasses broker
+delivery settlement; settlement also requires the calling session to own
+the item, and its release path reopens the item rather than closing it.
+An open item is not necessarily an indefinitely live path lock: path
+exclusion ends at the ledger claim's expiry. Separate heartbeat, takeover,
+handoff and settlement paths can nevertheless separate execution from
+exclusion. The expired-lease cancellation wait was separately fixed on
+main in `c1ac4356`, whose behavior is already present in this worktree.
+In this baseline the broker helper handles blocked and waiting-for-decision
+runs as well as success, failure and cancellation.
+
+**Alternative.** Derive the ledger reservation purely from the active step
+lease. This removes duplicate cleanup and is the strongest smaller change.
+It loses custody after a step settles and before the next claim, and has
+nowhere to preserve a directed handoff hold without retaining execution
+authority or introducing stored custody state. Lane provenance and fencing
+old stored delivery claims also invalidate the tentative no-format-change
+advantage in §41(2). A projection remains appropriate for public reads of
+the chosen authority.
+
+**Decision.** Collapse authority into one stored claim with one secret,
+expiry and generation, plus explicit executing, custody, offered and
+released phases. Keep delivery work IDs and history, but derive their
+claim fields and the step's lease fields from this authority. Reuse the
+existing path-overlap, alias, lane and handoff machinery. A handoff moves
+custody, never execution approvals; the recipient reclaims a gated step.
+Serialize executable steps for one managed artifact, while retaining
+independent non-artifact DAG steps.
+
+**Verdict: accepted with controls.** The strongest objection is the larger
+shared-state migration; a cleanup patch cannot eliminate divergence through
+generic work mutations or direct workflow calls. Require atomic path
+refusal and rollback, observed-death recovery, preserved expiry/retry
+budgets, explicit dropped-path handling, recipient re-gating, and all
+existing lease/handoff/concurrency tests unchanged in safety intent.
+Upgrade format 5 to 6 through the backed-up, stopped-holder migration;
+fence both old credential families, preserve history and in-flight work,
+and refuse contradictory or parallel artifact holders rather than choose
+one. Test on a private copy of the live database before rollout.
+
+`claim_work` becomes the canonical gated workflow acquisition on both
+surfaces; `claim_step` remains a compatibility alias until host callers and
+the separate §41(4) evaluation gate permit retirement. `work` action claim
+remains ordinary ledger custody and never activates a workflow step or
+creates a second managed-delivery claim. Broad tool-description changes
+remain outside this storage change. The review is disclosed self-review;
+native semantic verification was unavailable. The implementation item's
+acceptance remains outstanding.
