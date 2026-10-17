@@ -164,6 +164,107 @@ test('an answer that names project facts without check_answer is sent back once;
   }
 });
 
+test('a turn that edited project files in a session that never claimed work or started an outcome is sent back once', () => {
+  const fx = brokerFixture();
+  const dir = mkdtempSync(join(tmpdir(), 'construct-transcript-'));
+  try {
+    const root = fx.broker.root;
+    const prompt = { type: 'user', message: { content: 'implement ledger item work-1234' } };
+    let n = 0;
+    const use = (name: string, input: Record<string, unknown> = {}) => ({ type: 'tool_use', id: `t${String(++n)}`, name, input });
+    const turn = (...parts: unknown[]) => ({ type: 'assistant', message: { content: [...parts, { type: 'text', text: 'Done.' }] } });
+    const edit = (file: string) => use('Edit', { file_path: file });
+    const failedResult = (id: string) => ({
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: id, is_error: true }] },
+    });
+    const result = (id: string, body: unknown) => ({
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: id, content: [{ type: 'text', text: JSON.stringify(body) }] }] },
+    });
+
+    const verdict = onStop(fx.broker, {
+      transcript_path: transcript(dir, [prompt, turn(use('Read'), edit(join(root, 'a.ts')), edit(join(root, 'b.ts')))]),
+    });
+    assert.equal(verdict?.decision, 'block');
+    assert.match(verdict!.reason, /edited files \(2 edit call\(s\)\) and this session has not claimed the work or started an outcome/);
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(edit(join(root, 'a.ts')))]), stop_hook_active: true }),
+      null,
+      'never twice in a row',
+    );
+    const claim = use('mcp__construct__work', { action: 'claim', id: 'w-1' });
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, turn(claim), result(claim.id, { status: 'claimed' }), turn(edit(join(root, 'a.ts')))]),
+      }),
+      null,
+      'claimed this turn',
+    );
+    const empty = use('mcp__construct__claim_work');
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(empty),
+          result(empty.id, { work: null, waitingOn: 'decision' }),
+          turn(edit(join(root, 'a.ts'))),
+        ]),
+      })?.decision,
+      'block',
+      'a claim_work that granted no work is not a claim',
+    );
+    const broken = edit(join(root, 'a.ts'));
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(broken), failedResult(broken.id)]) }),
+      null,
+      'a failed edit changed nothing',
+    );
+    const refused = use('mcp__construct__work', { action: 'claim', id: 'w-1' });
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [prompt, turn(refused), failedResult(refused.id), turn(edit(join(root, 'a.ts')))]),
+      })?.decision,
+      'block',
+      'a refused claim is not a claim',
+    );
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(use('mcp__other__work'), use('mcp__construct__classify_request'), edit(join(root, 'a.ts'))),
+        ]),
+      })?.decision,
+      'block',
+      'another server’s work tool or a classification alone commits nothing',
+    );
+    const started = use('mcp__construct__start_outcome');
+    const next = { type: 'user', message: { content: 'keep going' } };
+    assert.equal(
+      onStop(fx.broker, {
+        transcript_path: transcript(dir, [
+          prompt,
+          turn(started),
+          result(started.id, { started: true, run: { id: 'run-1' } }),
+          next,
+          turn(edit(join(root, 'a.ts'))),
+        ]),
+      }),
+      null,
+      'started earlier in the session',
+    );
+    assert.equal(
+      onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(edit('/Users/someone/.zshrc'))]) }),
+      null,
+      'edits outside the project are not its to track',
+    );
+    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, turn(use('Read'), use('Grep'))]) }), null, 'no edits');
+  } finally {
+    fx.cleanup();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('session start says what waits and which sources only the host can read', async () => {
   const fx = brokerFixture();
   try {

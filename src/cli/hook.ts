@@ -161,15 +161,54 @@ function postToolUse(
   const { worktree } = held;
   const here = located.lane === null ? worktree.main : !worktree.main && realpathOr(located.lane.checkout) === worktree.checkout;
   const lane = worktree.main ? MAIN_LANE : here ? located.lane!.root : worktree.root;
-  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(held.path, 'check')], laneRoot: lane, now }).filter(
-    (o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId),
-  );
-  if (overlaps.length === 0) return '';
+  const all = findOverlaps(store, { paths: [normalizeLeasePath(held.path, 'check')], laneRoot: lane, now });
+  const overlaps = all.filter((o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId));
+  if (overlaps.length === 0) {
+    // An edit no claim of this session covers is said once per path, so work done
+    // outside the ledger is noticed without repeating on every edit.
+    if (all.some((o) => possiblyOwn(store, o.workId, sessionId))) return '';
+    if (!firstNudge(projectStateDir(located.root), sessionId, held.path, now)) return '';
+    return bounded(
+      'post-tool-use',
+      `Construct: no claim of yours covers ${held.path}. Before more edits, claim the work with the work tool (action claim, your agent name, and the paths you will change), or start it as an outcome with classify_request and start_outcome.`,
+    );
+  }
   const o = overlaps[0]!;
   const reserved = `Construct: ${o.path} is reserved by ${o.holder} for ${o.workId} until ${o.until}`;
   const act = 'Another agent holds it: stop editing it, and claim other work or ask for a handoff.';
   // Another worktree's path can be long; it comes last so the output budget trims it, not what to do.
   return bounded('post-tool-use', here ? `${reserved}, in this checkout. ${act}` : `${reserved}. ${act} Held ${whereHeld(o)}.`);
+}
+
+const NUDGE_FILE = 'hook-nudges.json';
+const NUDGE_KEEP = 500;
+
+/**
+ * True the first time this session edits this path without a claim; recorded in
+ * the state directory, keeping the most recent 500 (session, path) pairs. Best effort.
+ */
+export function firstNudge(stateDir: string, sessionId: string | null, path: string, at: string): boolean {
+  const file = join(stateDir, NUDGE_FILE);
+  const key = `${sessionId ?? 'unknown'}:${path}`;
+  let seen: Record<string, string> = {};
+  try {
+    seen = JSON.parse(readFileSync(file, 'utf8')) as Record<string, string>;
+  } catch {
+    seen = {};
+  }
+  if (seen[key]) return false;
+  seen[key] = at;
+  const kept = Object.entries(seen).slice(-NUDGE_KEEP);
+  // Written whole and renamed into place, so a concurrent hook never reads half a file.
+  // Two hooks racing can still drop one key; the cost is one repeated note, never a lost edit.
+  const tmp = `${file}.${String(process.pid)}.tmp`;
+  try {
+    writeFileSync(tmp, `${JSON.stringify(Object.fromEntries(kept))}\n`);
+    renameSync(tmp, file);
+  } catch {
+    // A note that cannot be recorded is still worth saying once.
+  }
+  return true;
 }
 
 /**

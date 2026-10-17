@@ -27,6 +27,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { appendActivity } from '../../kernel/state/activity.ts';
 import { listOpenDecisions } from '../../kernel/state/decisions.ts';
@@ -366,11 +367,122 @@ export interface StopInput {
 export type StopVerdict = { readonly decision: 'block'; readonly reason: string } | null;
 
 /** Send the host back once when it stated project facts it did not check. */
+const EDIT_TOOL = /^(Edit|Write|MultiEdit|NotebookEdit)$/;
+/** Construct's tools that put this session's work on the ledger or in a run. Classifying alone commits nothing. */
+const CLAIMING_TOOL = /^mcp__construct__(claim_work|start_outcome|work)$/;
+const CLAIMING_WORK_ACTIONS = new Set(['claim', 'accept', 'takeover']);
+
+interface ToolUse {
+  readonly id: string | null;
+  readonly name: string;
+  readonly input: Record<string, unknown>;
+}
+
+function transcriptEntries(path: string): Record<string, unknown>[] {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return [];
+  }
+  const out: Record<string, unknown>[] = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      out.push(JSON.parse(line) as Record<string, unknown>);
+    } catch {
+      // A line that is not JSON says nothing.
+    }
+  }
+  return out;
+}
+
+/** A tool result's text as JSON, when it is JSON; null otherwise. */
+function resultJson(content: unknown): unknown {
+  const text =
+    typeof content === 'string' ? content : Array.isArray(content) ? content.map((c) => (c as { text?: unknown }).text ?? '').join('') : '';
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function blocks(entry: Record<string, unknown>): Record<string, unknown>[] {
+  const c = (entry.message as { content?: unknown } | undefined)?.content;
+  return Array.isArray(c) ? (c as Record<string, unknown>[]) : [];
+}
+
+/**
+ * The number of edit calls in the last turn that touched this project, when
+ * the session has never successfully claimed work or started an outcome;
+ * null otherwise. Whole-session, so a task claimed in an earlier turn is never
+ * sent back again; successful only, so a refused claim does not count; inside
+ * the project only, so editing personal configuration is not Construct's to
+ * track.
+ */
+export function unclaimedEdits(transcriptPath: string, projectRoots: readonly string[]): number | null {
+  const entries = transcriptEntries(transcriptPath);
+  const failed = new Set<string>();
+  const results = new Map<string, unknown>();
+  for (const e of entries)
+    for (const b of blocks(e)) {
+      if (b.type !== 'tool_result' || typeof b.tool_use_id !== 'string') continue;
+      if (b.is_error === true) failed.add(b.tool_use_id);
+      results.set(b.tool_use_id, resultJson(b.content));
+    }
+  const uses: { use: ToolUse; index: number }[] = [];
+  let lastPrompt = -1;
+  entries.forEach((e, index) => {
+    if (e.type === 'user') {
+      const c = (e.message as { content?: unknown } | undefined)?.content;
+      if (typeof c === 'string' || (Array.isArray(c) && c.some((b) => (b as { type?: string }).type === 'text'))) lastPrompt = index;
+    }
+    if (e.type !== 'assistant') return;
+    for (const b of blocks(e))
+      if (b.type === 'tool_use' && typeof b.name === 'string')
+        uses.push({
+          use: { id: typeof b.id === 'string' ? b.id : null, name: b.name, input: (b.input ?? {}) as Record<string, unknown> },
+          index,
+        });
+  });
+  const claimed = uses.some(({ use }) => {
+    if (!CLAIMING_TOOL.test(use.name) || use.id === null || failed.has(use.id)) return false;
+    // Only a result that shows something granted counts: claim_work can answer with no work, and a claim can be refused.
+    const r = results.get(use.id) as Record<string, unknown> | null | undefined;
+    if (!r || typeof r !== 'object') return false;
+    if (use.name === 'mcp__construct__claim_work') return r.work !== null && typeof r.work === 'object';
+    if (use.name === 'mcp__construct__start_outcome')
+      return r.started === true || typeof (r.run as { id?: unknown } | undefined)?.id === 'string';
+    return CLAIMING_WORK_ACTIONS.has(String(use.input.action ?? '')) && r.status === 'claimed';
+  });
+  if (claimed) return null;
+  const inside = (file: unknown) =>
+    typeof file === 'string' && isAbsolute(file) && projectRoots.some((root) => file === root || file.startsWith(`${root}/`));
+  const edits = uses.filter(
+    ({ use, index }) =>
+      index > lastPrompt &&
+      EDIT_TOOL.test(use.name) &&
+      !(use.id !== null && failed.has(use.id)) &&
+      inside(use.input.file_path ?? use.input.notebook_path),
+  ).length;
+  return edits === 0 ? null : edits;
+}
+
 export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
   if ((ctx.policy?.answerCheck ?? 'nudge') === 'off') return null;
   if (input.stop_hook_active) return null;
   if (!input.transcript_path) return null;
   const turn = lastTurn(input.transcript_path);
+  const roots = [ctx.root, ...(ctx.worktrees?.().map((w) => w.checkout) ?? [])];
+  const unclaimed = unclaimedEdits(input.transcript_path, roots);
+  if (unclaimed) {
+    appendActivity(ctx.store, { at: ctx.now(), kind: 'hook.edits_unclaimed', actor: ctx.actor, payload: { edits: unclaimed } });
+    return {
+      decision: 'block',
+      reason: `This turn edited files (${String(unclaimed)} edit call(s)) and this session has not claimed the work or started an outcome. If this is work the person asked for, file and claim it with the work tool (action claim, with the paths), or run it through classify_request and start_outcome, and say so in one line. If the edits were trivial or not Construct's to track, say that in one line.`,
+    };
+  }
   if (turn.texts.length === 0) return null;
   const checked = turn.tools.some((t) => /check_answer$/.test(t));
   const gated = turn.tools.some((t) => /submit_work$/.test(t));

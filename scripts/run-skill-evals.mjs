@@ -8,7 +8,8 @@
  *
  *   node scripts/run-skill-evals.mjs triggers <skill...> [--runs=3] [--split=train|validation]
  *     Each query in evals/trigger-queries.json runs --runs times in a scratch
- *     project that holds the skill under .claude/skills. A run counts as
+ *     project that holds every shipped skill under .claude/skills, so a
+ *     near-miss meant for another skill has that skill to go to. A run counts as
  *     triggered when it calls the Skill tool naming this skill; it is stopped
  *     at its first Skill call, its answer, or its eighth tool call, since a
  *     model often looks around before it loads a skill. A run that times out,
@@ -35,7 +36,7 @@
  */
 
 import { execFileSync, spawn } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,7 +58,7 @@ function installedCopies(skill) {
   );
 }
 
-function scratchProject(skill, { withConstruct = false } = {}) {
+function scratchProject(skill, { withConstruct = false, allSkills = false } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'construct-skill-eval-'));
   writeFileSync(join(dir, 'README.md'), '# Scratch project\n\nA project used to evaluate one skill.\n');
   if (withConstruct) {
@@ -68,7 +69,14 @@ function scratchProject(skill, { withConstruct = false } = {}) {
       { cwd: dir, stdio: 'ignore' },
     );
   }
-  if (skill) cpSync(join(ROOT, 'skills', skill), join(dir, '.claude', 'skills', skill), { recursive: true });
+  const names = allSkills
+    ? readdirSync(join(ROOT, 'skills'), { withFileTypes: true })
+        .filter((e) => e.isDirectory() && existsSync(join(ROOT, 'skills', e.name, 'SKILL.md')))
+        .map((e) => e.name)
+    : skill
+      ? [skill]
+      : [];
+  for (const name of names) cpSync(join(ROOT, 'skills', name), join(dir, '.claude', 'skills', name), { recursive: true });
   return dir;
 }
 
@@ -140,7 +148,7 @@ async function triggers(skills, args) {
     const queries = JSON.parse(readFileSync(join(ROOT, 'skills', skill, 'evals', 'trigger-queries.json'), 'utf8')).filter(
       (q) => !split || q.split === split,
     );
-    const project = scratchProject(skill);
+    const project = scratchProject(skill, { allSkills: true });
     const results = [];
     try {
       for (const q of queries) {

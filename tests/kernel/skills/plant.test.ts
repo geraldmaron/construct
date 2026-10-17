@@ -207,20 +207,20 @@ test('doctor gives the operational skill’s next step: init to connect the host
   });
 });
 
-test('doctor says when an older personal copy of the operational skill loads in every repository, and how to remove it', async () => {
+test('doctor fails health for a stale personal copy of any shipped skill, in any host, and names the fix', async () => {
   await inProject(async (ctx, box) => {
     const inClaude = { ...ctx, env: { ...ctx.env, CLAUDECODE: '1' } };
     assert.equal((await capture(() => run(['init', '--client=claude-code'], ctx))).code, 0);
     const personal = join(box.home, '.claude', 'skills');
     install(personal, OPERATIONAL_SKILL, RELEASED_ALPHA_25);
     const doctor = await capture(() => run(['doctor'], inClaude));
-    assert.equal(doctor.code, 0, doctor.out);
+    assert.equal(doctor.code, 1, 'a stale copy that loads in every repository is a failure, not a note');
     assert.match(
       doctor.out,
-      /ok {3}personal-skill: an older personal copy at .*\.claude\/skills loads in every repository; `construct skill remove construct --client=claude --confirm` removes it/,
+      /FAIL personal-skills: 1 stale personal skill copy\(ies\), each loading in every repository: .*\.claude\/skills\/construct is an older release; `construct skill remove construct --client=claude --confirm`/,
     );
     const removed = await capture(() => run(['skill', 'remove', 'construct', '--client=claude', '--confirm'], inClaude));
     assert.equal(removed.code, 0, removed.err);
-    assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /personal-skill/);
+    assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /personal-skills/);
   });
 });
