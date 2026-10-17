@@ -137,8 +137,8 @@ test('typed interpretation chooses each execution path while preserving lightwei
       ['artifact', 'guided-outcome'],
       ['decision', 'decision-support'],
       ['implementation', 'managed-outcome'],
-      ['research', 'research-brief'],
-      ['review', 'architecture-decision-review'],
+      ['research', 'authoring'],
+      ['review', 'review'],
     ] as const) {
       const r = await call(f, 'classify_request', {
         kind: 'manage',

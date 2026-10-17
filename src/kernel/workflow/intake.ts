@@ -19,6 +19,7 @@
  * the instant and the project root.
  */
 
+import { workflowCandidates } from '../registry/workflow-domains.ts';
 import { calendarDate } from '../calendar.ts';
 import { INTERACTION_CLASSES, type RegisteredSkill, type RegisteredWorkflow } from '../registry/models.ts';
 import {
@@ -261,6 +262,7 @@ export interface HostQuestion {
 
 export interface WorkflowMatch {
   readonly workflowId: string;
+  readonly domain?: string;
   readonly title: string;
   readonly deliverableKind: string;
   readonly because: MatchReason;
@@ -475,6 +477,7 @@ const DELIVERABLE_REQUIRED =
  * be work (manage or maintain) and every source id must be declared.
  */
 export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'classify' | 'start'): ValidatedIntake {
+  catalog = { ...catalog, workflows: workflowCandidates(catalog.workflows) };
   const normalized: Coercion[] = [];
   const assumptions: Assumption[] = [];
   const flags: string[] = [];
@@ -739,7 +742,10 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
 
   // workflowId: a workflow that can carry this reading.
   if (workflowId !== null) {
-    const named = catalog.workflows.find((w) => w.manifest.id === workflowId);
+    const domain = isRecord(r.inputs) && typeof r.inputs.domain === 'string' ? r.inputs.domain : skill;
+    const named = catalog.workflows.find(
+      (w) => w.manifest.id === workflowId || (w.canonicalId === workflowId && (domain === null || w.domain === domain)),
+    );
     const ids = catalog.workflows.filter(matchable).map((w) => w.manifest.id);
     if (!named || !matchable(named)) fail('workflowId', `no workflow "${workflowId}" carries work here`, ids);
     if (work && !workflowCarries(named, kind, schedule)) {
@@ -913,8 +919,12 @@ function boundSkills(w: RegisteredWorkflow): string[] {
  * carrier. Nothing is ranked by the words and the list is not cut.
  */
 export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): WorkflowMatch[] {
+  catalog = { ...catalog, workflows: workflowCandidates(catalog.workflows) };
   if (!isWork(intake.kind)) return [];
-  const pool = catalog.workflows.filter((w) => workflowCarries(w, intake.kind, intake.schedule));
+  const domain = typeof intake.inputs.domain === 'string' ? intake.inputs.domain : null;
+  const pool = catalog.workflows.filter(
+    (w) => workflowCarries(w, intake.kind, intake.schedule) && (!w.domain || domain === null || w.domain === domain),
+  );
   const out = new Map<string, WorkflowMatch>();
   const binds = (w: RegisteredWorkflow): boolean => intake.skill !== null && boundSkills(w).includes(intake.skill);
   const skillFirst = (ws: readonly RegisteredWorkflow[]): RegisteredWorkflow[] => [...ws.filter(binds), ...ws.filter((w) => !binds(w))];
@@ -922,7 +932,8 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
     for (const w of ws) {
       if (out.has(w.manifest.id)) continue;
       out.set(w.manifest.id, {
-        workflowId: w.manifest.id,
+        workflowId: w.canonicalId ?? w.manifest.id,
+        ...(w.domain ? { domain: w.domain } : {}),
         title: w.manifest.title,
         deliverableKind: w.manifest.deliverable.kind,
         because: because(w),
@@ -934,7 +945,11 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
 
   if (intake.workflowId !== null)
     add(
-      pool.filter((w) => w.manifest.id === intake.workflowId),
+      skillFirst(pool.filter((w) => w.manifest.id === intake.workflowId || w.canonicalId === intake.workflowId)).sort(
+        (a, b) =>
+          Number(b.manifest.deliverable.kind === intake.deliverable?.kind) -
+          Number(a.manifest.deliverable.kind === intake.deliverable?.kind),
+      ),
       () => 'named',
     );
   const byPath = () => {
@@ -1011,7 +1026,7 @@ export function workflowInputFor(
         { allowed: declared, example: null },
       );
   }
-  const mapped: Record<string, unknown> = {};
+  const mapped: Record<string, unknown> = workflow.domain ? { domain: workflow.domain } : {};
   if (m.inputSchema.request === 'string') mapped.request = intake.words;
   if (m.inputSchema.question === 'string') mapped.question = intake.words;
   if (m.inputSchema.target === 'string' && intake.target !== null) mapped.target = intake.target;
@@ -1100,13 +1115,20 @@ export function questionsFor(
   catalog: IntakeCatalog,
   explicit: Readonly<Record<string, unknown>> = {},
 ): { readonly questions: readonly Question[]; readonly hostQuestions: readonly HostQuestion[] } {
+  catalog = { ...catalog, workflows: workflowCandidates(catalog.workflows) };
   const { intake } = validated;
   const neededBy = firstMatch?.workflowId ?? null;
   const questions: Question[] = [];
   if (intake.kind === 'maintain' && !(intake.schedule?.cron && intake.schedule.timezone) && !intake.schedule?.event) {
     questions.push({ slot: 'schedule', ask: SCHEDULE_ASK, blocking: true, neededBy, from: 'kernel' });
   }
-  const workflow = firstMatch ? (catalog.workflows.find((w) => w.manifest.id === firstMatch.workflowId) ?? null) : null;
+  const workflow = firstMatch
+    ? (catalog.workflows.find(
+        (w) =>
+          w.manifest.id === firstMatch.workflowId ||
+          ((w.canonicalId ?? w.manifest.id) === firstMatch.workflowId && w.domain === firstMatch.domain),
+      ) ?? null)
+    : null;
   if (workflow) {
     const conflict = destinationConflict(intake, explicit);
     if (conflict) {
@@ -1124,7 +1146,7 @@ export function questionsFor(
       });
     }
     for (const slot of workflowInputFor(conflict ? { ...intake, destination: null } : intake, workflow, explicit).missing)
-      questions.push(slotQuestion(slot, workflow));
+      questions.push({ ...slotQuestion(slot, workflow), neededBy });
   }
   const kinds = new Map(catalog.sources.map((s) => [s.id, s.kind]));
   for (const s of validated.resolved.sources) {

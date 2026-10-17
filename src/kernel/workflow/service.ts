@@ -1137,7 +1137,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       id: listDeliverables(store, run.id).find((d) => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'),
       runId: run.id,
       stepRunId: leased.id,
-      kind: deps.workflows.get(run.workflowId)?.manifest.deliverable.kind ?? 'artifact',
+      kind: workflowOf(run)?.manifest.deliverable.kind ?? 'artifact',
       body,
       at,
     });
@@ -1272,12 +1272,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
   /** Recomputed every time from the run's frozen steps and reading; run.preflight.judgment is only what was shown. */
   function judgmentOf(run: WorkflowRun): Judgment {
-    return judgmentFor(
-      deps.workflows.get(run.workflowId),
-      stepsOf(run),
-      (run.input ?? {}) as Record<string, unknown>,
-      askedOf(run).declared,
-    );
+    return judgmentFor(workflowOf(run), stepsOf(run), (run.input ?? {}) as Record<string, unknown>, askedOf(run).declared);
   }
 
   /** What raised a judgment, in plain words; the workflow's own flag when nothing else did. */
@@ -1359,10 +1354,19 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
+  function workflowOf(run: WorkflowRun): RegisteredWorkflow | null {
+    return deps.workflows.get(run.workflowId, (run.input as Record<string, unknown> | null)?.domain);
+  }
+
+  function sameWorkflow(run: WorkflowRun, id: string, domain: unknown): boolean {
+    const workflow = workflowOf(run);
+    return (workflow?.canonicalId ?? run.workflowId) === id && (!workflow?.domain || workflow.domain === domain);
+  }
+
   function stepsOf(run: WorkflowRun): readonly WorkflowStep[] {
     const frozen = run.bindings as { steps?: readonly WorkflowStep[] } | null;
     if (frozen && Array.isArray(frozen.steps) && frozen.steps.length > 0) return frozen.steps;
-    return deps.workflows.get(run.workflowId)?.manifest.steps ?? [];
+    return workflowOf(run)?.manifest.steps ?? [];
   }
 
   /**
@@ -1469,7 +1473,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function inputsFor(run: WorkflowRun, step: WorkflowStep): Record<string, unknown> {
     const runInput = (run.input ?? {}) as Record<string, unknown>;
     const stepRuns = listSteps(store, run.id);
-    const schema = deps.workflows.get(run.workflowId)?.manifest.inputSchema ?? {};
+    const schema = workflowOf(run)?.manifest.inputSchema ?? {};
     const period = askedOf(run).period ?? null;
     const out: Record<string, unknown> = {};
     for (const [key, ref] of Object.entries(step.inputs)) {
@@ -1726,8 +1730,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           reasons: [],
         });
     }
-    const currentWorkflow = deps.workflows.get(run.workflowId);
-    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
+    const currentWorkflow = workflowOf(run);
+    const legacy = currentWorkflow?.manifest.legacyDigests?.[run.workflowId];
+    const frozen = run.bindings as { steps?: unknown } | null;
+    const preservedAlias =
+      legacy?.digest === run.workflowDigest &&
+      legacy?.version === run.workflowVersion &&
+      Array.isArray(frozen?.steps) &&
+      frozen.steps.length > 0;
+    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest && !preservedAlias) {
       return stop({
         kind: 're_resolve',
         reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing`,
@@ -1827,7 +1838,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         `The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`,
       );
     const p = asked.period;
-    const schema = deps.workflows.get(run.workflowId)?.manifest.inputSchema;
+    const schema = workflowOf(run)?.manifest.inputSchema;
     const checksPeriod = !schema || Object.values(schema).includes('period');
     if (p && checksPeriod) {
       const covers =
@@ -1888,7 +1899,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
     const registered = bound ? deps.skills.get(bound.id) : null;
     const judgment = judgmentOf(run);
-    const workflowChallenge = deps.workflows.get(run.workflowId)?.manifest.deliverable.challenge ?? false;
+    const workflowChallenge = workflowOf(run)?.manifest.deliverable.challenge ?? false;
     const needsChallenge = judgmentRequired(workflowChallenge, judgment);
     // A key the step also returns is its own to restate; the rest the deliverable already carries, the period and
     // named sources with what the run's citations cover.
@@ -2041,7 +2052,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (activeContradictionCount(store) > 0) {
         throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
       }
-      const workflow = deps.workflows.get(run.workflowId);
+      const workflow = workflowOf(run);
       const judgment = judgmentOf(run);
       if (
         judgmentRequired(workflow?.manifest.deliverable.challenge ?? false, judgment) &&
@@ -2556,7 +2567,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     proposeSettlement,
 
     preflight(workflowId, input, opts = {}) {
-      const m = deps.workflows.get(workflowId)?.manifest;
+      const m = deps.workflows.get(workflowId, input.domain)?.manifest;
       const clock = { periodAt: opts.periodAt ?? deps.now(), timezone: opts.timezone };
       const normalized = m
         ? normalizeInput(m, input, { at: clock.periodAt, timezone: clock.timezone, sourceIds: deps.sources().map((s) => s.id) })
@@ -2570,7 +2581,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     },
 
     judge({ workflowId, input, declared }) {
-      const workflow = workflowId ? deps.workflows.get(workflowId) : null;
+      const workflow = workflowId ? deps.workflows.get(workflowId, input.domain) : null;
       return judgmentFor(workflow, workflow?.manifest.steps ?? [], input, declared);
     },
 
@@ -2578,12 +2589,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const at = deps.now();
       const executorId = input.executorId ?? deps.host.executorId;
       const executorKind = input.executorKind ?? (deps.host.sessionId ? 'interactive' : 'headless');
-      const workflow = deps.workflows.get(input.workflowId);
+      const workflow = deps.workflows.get(input.workflowId, input.input.domain);
       if (!workflow) {
         const resolution = resolutionFor(input.workflowId, input.input, executorId);
         throw new Error(resolution.reasons[0]?.message ?? `no workflow ${input.workflowId}`);
       }
-      const m = workflow.manifest;
+      const m = { ...workflow.manifest, id: workflow.canonicalId ?? workflow.manifest.id };
       if (m.interactionClass === 'remember' || m.interactionClass === 'answer') {
         throw new Error(`${m.id} is a ${m.interactionClass} workflow; it records or answers without a run`);
       }
@@ -2596,7 +2607,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         timezone: clock.timezone,
         sourceIds: deps.sources().map((s) => s.id),
       });
-      const given = normalized.input;
+      const given = workflow.domain ? { ...normalized.input, domain: workflow.domain } : normalized.input;
       const asked = frozenReading(input.asked, normalized, input.firing ?? null, {
         at: clock.periodAt!,
         timezone: clock.timezone,
@@ -2605,14 +2616,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const declared = asked?.declared ?? null;
       const keyExplicit = input.idempotencyKey;
       const workIdentity = idempotencyKeyFor(
-        workflow,
+        { ...workflow, manifest: m },
         given,
         input.trigger === 'manual' ? 'manual' : JSON.stringify([input.trigger, input.firing?.triggerId ?? null, at.slice(0, 16)]),
         normalized.identities,
       );
       const activeSingle = (): WorkflowRun | null =>
         !input.firing && m.concurrency === 'single'
-          ? (listActiveRuns(store).find((r) => r.workflowId === m.id && !askedOf(r).firing && r.state !== 'blocked') ?? null)
+          ? (listActiveRuns(store).find((r) => sameWorkflow(r, m.id, given.domain) && !askedOf(r).firing && r.state !== 'blocked') ?? null)
           : null;
       const singleFlag = (active: WorkflowRun) => `an active ${m.id} run (${active.id}) already exists; concurrency is single`;
       /** Whether a run gave this declared input the same value this start gives it; a period compares by its dates. */
@@ -2688,7 +2699,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         };
         const sameWork = (r: WorkflowRun): boolean => {
           if (r.workIdentity === workIdentity) return true;
-          if (r.workflowId !== m.id || r.triggerKind !== 'manual' || input.trigger !== 'manual') return false;
+          if (!sameWorkflow(r, m.id, given.domain) || r.triggerKind !== 'manual' || input.trigger !== 'manual') return false;
           return identifying.every((k) => leftOut(r, k) || sameValue(r, k));
         };
         const blocked = listActiveRuns(store).filter((r) => r.state === 'blocked' && sameWork(r));
@@ -2735,7 +2746,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         for (const b of blocked) transitionRun(store, { id: b.id, to: 'cancelled', at, reason: superseding });
         // Under single concurrency a run that resolves also retires the workflow's other blocked runs.
         if (resolves && !input.firing && m.concurrency === 'single') {
-          for (const other of listActiveRuns(store).filter((r) => r.workflowId === m.id && !askedOf(r).firing && r.state === 'blocked')) {
+          for (const other of listActiveRuns(store).filter(
+            (r) => sameWorkflow(r, m.id, given.domain) && !askedOf(r).firing && r.state === 'blocked',
+          )) {
             transitionRun(store, { id: other.id, to: 'cancelled', at, reason: superseding });
           }
         }
@@ -2816,7 +2829,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         const step = stepsOf(run).find((s) => s.id === leased.stepId);
         if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
-        const currentWorkflow = deps.workflows.get(run.workflowId);
+        const currentWorkflow = workflowOf(run);
         const priorSteps = listSteps(store, run.id);
         const priorEvidence = inheritedEvidence(priorSteps);
         // A project-write may intentionally edit an input file. Its old bytes remain a baseline,
@@ -3366,7 +3379,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return store.transaction(() => {
         const run = getRun(store, runId);
         if (!run) throw new Error(`no run ${runId}`);
-        const workflow = deps.workflows.get(run.workflowId);
+        const workflow = workflowOf(run);
         const immediate = workflow?.manifest.cancellation !== 'after_step';
         // A lease that ran out is not a step in progress: its holder is gone, so nothing is waited for.
         expireDeadLeases(store, at, runId);

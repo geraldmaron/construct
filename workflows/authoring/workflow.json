@@ -1,0 +1,498 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "authoring",
+  "title": "Author a deliverable",
+  "version": "2.0.0",
+  "purpose": "Apply the bound domain method, preserving its inputs, checks and evidence obligations.",
+  "interactionClass": "manage",
+  "inputSchema": {
+    "request": "string",
+    "target": "string",
+    "template": "string",
+    "domain": "string"
+  },
+  "requiredInputs": [
+    "request",
+    "target",
+    "domain"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material, sources, and work items; name every conflict between them",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "jira",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "request": "input.request",
+        "template": "input.template"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "material",
+        "conflicts",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "superseded_acknowledged",
+        "conflicts_declared",
+        "settled_not_contradicted",
+        "deliverable_complete",
+        "reference_coverage"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "draft",
+      "title": "Write the PRD to the target file, grounded in what was gathered",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "read_project_files",
+        "write_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "request": "input.request",
+        "target": "input.target",
+        "template": "input.template",
+        "material": "steps.gather.material",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "artifact",
+        "derivations"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "evidence_recorded",
+        "superseded_acknowledged",
+        "artifacts_exist",
+        "numbers_grounded",
+        "template_conformance",
+        "settled_not_contradicted",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "challenge",
+      "title": "Challenge the PRD: unsupported claims, silently resolved conflicts, invented owners or decisions",
+      "needs": [
+        "draft",
+        "gather"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 900000
+    },
+    {
+      "id": "record",
+      "title": "Record the result and hand it back",
+      "needs": [
+        "challenge",
+        "draft"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "verdict": "steps.challenge.verdict"
+      },
+      "outputs": [
+        "artifact",
+        "verdict"
+      ],
+      "validators": [
+        "schema",
+        "artifacts_exist"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "target",
+    "domain"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "document/prd",
+    "schema": "document/prd/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "domainStep": "draft",
+  "domains": {
+    "requirements-structuring": {
+      "skill": {
+        "id": "requirements-structuring",
+        "range": "^0.5.0"
+      },
+      "title": "Write a PRD",
+      "purpose": "Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back."
+    },
+    "decision-framing": {
+      "skill": {
+        "id": "decision-framing",
+        "range": "^0.3.0"
+      },
+      "title": "Write a proposal",
+      "purpose": "Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back.",
+      "inputSchema": {
+        "request": "string",
+        "target": "string",
+        "template": "string",
+        "audience": "string",
+        "decisionBy": "string",
+        "domain": "string"
+      },
+      "requiredInputs": [
+        "request",
+        "target",
+        "audience",
+        "domain"
+      ],
+      "deliverable": {
+        "kind": "document/proposal",
+        "schema": "document/proposal/v1",
+        "challenge": true
+      },
+      "steps": {
+        "draft": {
+          "title": "Write the proposal to the target file, grounded in what was gathered",
+          "inputs": {
+            "request": "input.request",
+            "target": "input.target",
+            "template": "input.template",
+            "material": "steps.gather.material",
+            "conflicts": "steps.gather.conflicts",
+            "unknowns": "steps.gather.unknowns",
+            "audience": "input.audience",
+            "decisionBy": "input.decisionBy"
+          },
+          "validators": [
+            "citations_present",
+            "evidence_refs_resolve",
+            "excerpts_match",
+            "evidence_recorded",
+            "superseded_acknowledged",
+            "artifacts_exist",
+            "numbers_grounded",
+            "template_conformance",
+            "deliverable_complete",
+            "settled_not_contradicted",
+            "decision_ask_present"
+          ]
+        },
+        "challenge": {
+          "title": "Challenge the proposal: unsupported claims, silently resolved conflicts, invented owners or decisions"
+        }
+      }
+    },
+    "system-architecture": {
+      "skill": {
+        "id": "system-architecture",
+        "range": "^1.0.0"
+      },
+      "title": "Write an RFC",
+      "purpose": "Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back.",
+      "deliverable": {
+        "kind": "document/rfc",
+        "schema": "document/rfc/v1",
+        "challenge": true
+      },
+      "steps": {
+        "draft": {
+          "title": "Write the RFC to the target file, grounded in what was gathered"
+        },
+        "challenge": {
+          "title": "Challenge the RFC: unsupported claims, silently resolved conflicts, invented owners or decisions"
+        }
+      }
+    },
+    "investigative-research": {
+      "skill": {
+        "id": "investigative-research",
+        "range": "^0.3.0"
+      },
+      "title": "Research a question",
+      "purpose": "Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back.",
+      "inputSchema": {
+        "question": "string",
+        "scope": "string",
+        "target": "string",
+        "period": "period",
+        "sources": "source_ids",
+        "domain": "string"
+      },
+      "requiredInputs": [
+        "question",
+        "domain"
+      ],
+      "dedupeKey": [
+        "question",
+        "period",
+        "sources",
+        "domain"
+      ],
+      "deliverable": {
+        "kind": "research/brief",
+        "schema": "research/brief/v1",
+        "challenge": true
+      },
+      "execution": {
+        "path": "research",
+        "checkpoints": [
+          "Save the first useful artifact during the first authorized write step.",
+          "Preserve partial work and unknowns before gathering or repairs exhaust their budget."
+        ],
+        "evidenceObligations": [
+          "Support factual conclusions with admitted project evidence.",
+          "Inspect the actual result against the frozen acceptance criteria.",
+          "Render and inspect visual artifacts when the requested result has a visual surface."
+        ],
+        "maxGatherCalls": 12,
+        "stopWhen": [
+          "Budget exhausted: preserve partial work and remaining actions.",
+          "Required permission or essential intent is unresolved."
+        ],
+        "assurance": "structural"
+      },
+      "steps": {
+        "gather": {
+          "title": "Find and read what bears on the question, inside the project and out; note where sources disagree",
+          "skill": {
+            "id": "investigative-research",
+            "range": "^0.3.0"
+          },
+          "capabilities": [
+            "read_project_context",
+            "read_project_files",
+            "read_source"
+          ],
+          "sources": [
+            {
+              "kind": "directory",
+              "freshness": "any",
+              "required": false
+            },
+            {
+              "kind": "jira",
+              "freshness": "any",
+              "required": false
+            },
+            {
+              "kind": "docs",
+              "freshness": "any",
+              "required": false
+            }
+          ],
+          "inputs": {
+            "question": "input.question",
+            "scope": "input.scope",
+            "target": "input.target",
+            "period": "input.period",
+            "sources": "input.sources"
+          },
+          "outputs": [
+            "summary",
+            "findings",
+            "conflicts",
+            "unknowns"
+          ],
+          "validators": [
+            "citations_present",
+            "evidence_refs_resolve",
+            "excerpts_match",
+            "within_period",
+            "named_sources_read",
+            "conflicts_declared",
+            "deliverable_complete",
+            "reference_coverage"
+          ],
+          "timeoutMs": 1800000
+        },
+        "draft": {
+          "title": "Save the requested draft, then answer what holds, how sure, what it rests on and what remains unknown",
+          "inputs": {
+            "question": "input.question",
+            "target": "input.target",
+            "findings": "steps.gather.findings",
+            "conflicts": "steps.gather.conflicts",
+            "unknowns": "steps.gather.unknowns"
+          },
+          "outputs": [
+            "summary",
+            "findings",
+            "confidence",
+            "unknowns",
+            "derivations",
+            "artifact"
+          ],
+          "validators": [
+            "citations_present",
+            "evidence_refs_resolve",
+            "excerpts_match",
+            "within_period",
+            "sources_diverse",
+            "numbers_grounded",
+            "superseded_acknowledged",
+            "no_uncited_material_findings",
+            "settled_not_contradicted",
+            "deliverable_complete"
+          ]
+        },
+        "challenge": {
+          "title": "Challenge the answer: single-source claims, stale or superseded sources, figures without a trail, conclusions the evidence does not reach",
+          "needs": [
+            "draft"
+          ],
+          "inputs": {
+            "summary": "steps.draft.summary",
+            "findings": "steps.draft.findings"
+          },
+          "validators": [
+            "citations_present",
+            "evidence_refs_resolve",
+            "within_period",
+            "no_uncited_material_findings",
+            "deliverable_complete"
+          ]
+        },
+        "record": {
+          "title": "Record the answer and hand it back",
+          "inputs": {
+            "summary": "steps.draft.summary",
+            "verdict": "steps.challenge.verdict",
+            "artifact": "steps.draft.artifact"
+          },
+          "outputs": [
+            "summary",
+            "verdict"
+          ],
+          "validators": [
+            "schema"
+          ]
+        }
+      }
+    }
+  },
+  "aliases": {
+    "prd-authoring": "requirements-structuring",
+    "proposal-authoring": "decision-framing",
+    "rfc-authoring": "system-architecture",
+    "research-brief": "investigative-research"
+  },
+  "legacyDigests": {
+    "prd-authoring": {
+      "version": "1.1.3",
+      "digest": "sha256:c49b325d848c77c971b46db136b673fb17a77b8ef467ca8149d1fddde630c06b"
+    },
+    "proposal-authoring": {
+      "version": "1.1.3",
+      "digest": "sha256:736081837fae6d68f42f6b7e067f932a36646b42da1a8daecfa9410d2ebafaad"
+    },
+    "rfc-authoring": {
+      "version": "1.1.3",
+      "digest": "sha256:b537816a9d75522e4e908b80270f5e3c0726d5092c322209970753f358d2cd26"
+    },
+    "research-brief": {
+      "version": "1.3.2",
+      "digest": "sha256:f0f90df204580549a186e23207d6e7ac7cb9fb2b11e0410bbf5e594f97a80c8f"
+    }
+  }
+}

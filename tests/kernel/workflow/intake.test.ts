@@ -1,3 +1,4 @@
+import { workflowCandidates } from '../../../src/kernel/registry/workflow-domains.ts';
 /**
  * tests/kernel/workflow/intake.test.ts — the host's typed reading of a
  * request is checked, worked out, and matched by its declared fields alone:
@@ -39,8 +40,11 @@ const AT = '2026-10-08T12:00:00.000Z';
 const ROOT = '/work/acme';
 const WORKFLOW_REGISTRY = createWorkflowRegistry({ projectDir: null });
 const SKILL_REGISTRY = createSkillRegistry({ projectDir: null });
-const WORKFLOWS = WORKFLOW_REGISTRY.list();
+const WORKFLOWS = workflowCandidates(WORKFLOW_REGISTRY.list());
 const SKILLS = SKILL_REGISTRY.list();
+// Keep the pre-merge choice assertions: canonical matches must still identify the same domain.
+const legacyId = (m: { workflowId: string; domain?: string } | undefined) =>
+  m ? (WORKFLOWS.find((w) => w.canonicalId === m.workflowId && w.domain === m.domain)?.manifest.id ?? m.workflowId) : '';
 const SOURCES = [
   { id: 'jira', kind: 'jira', locator: 'PAY' },
   { id: 'eng-wiki', kind: 'docs', locator: 'confluence:space:ENG' },
@@ -538,7 +542,7 @@ test('a deliverable kind resolves by the same words, a bare family stays a famil
 
   const prd = kindOf('prd');
   assert.deepEqual(prd.intake.deliverable, { kind: 'document/prd', describe: null });
-  assert.equal(matchWorkflows(prd.intake, CATALOG)[0]?.workflowId, 'prd-authoring');
+  assert.equal(legacyId(matchWorkflows(prd.intake, CATALOG)[0]), 'prd-authoring');
   assert.deepEqual(
     prd.normalized.map((n) => [n.field, n.from, n.to]),
     [['deliverable.kind', 'prd', 'document/prd']],
@@ -724,7 +728,7 @@ test('a named system resolves to the one declared source it names; several give 
         { value: 'eng-notes', label: 'eng-notes, a docs source' },
       ],
       blocking: true,
-      neededBy: 'architecture-decision-review',
+      neededBy: 'review',
       from: 'kernel',
     },
   ]);
@@ -819,14 +823,14 @@ test('every shipped work workflow is the first match for its own declared delive
     const kind = w.manifest.deliverable.kind;
     if (!kind.includes('/')) continue;
     const matches = matchWorkflows(reading({ kind: w.manifest.interactionClass, deliverable: { kind } }), CATALOG);
-    assert.equal(matches[0]?.workflowId, w.manifest.id, `${kind} gives ${matches.map((m) => m.workflowId).join(', ')}`);
+    assert.equal(legacyId(matches[0]), w.manifest.id, `${kind} gives ${matches.map((m) => legacyId(m)).join(', ')}`);
     assert.equal(matches[0]?.because, 'deliverable kind');
     assert.deepEqual(matches[0]?.skills, [...new Set(w.manifest.steps.flatMap((s) => (s.skill ? [s.skill.id] : [])))]);
   }
   for (const w of MATCHABLE.filter((x) => !x.manifest.deliverable.kind.includes('/'))) {
     const kind = w.manifest.deliverable.kind;
     const matches = matchWorkflows(reading({ kind: w.manifest.interactionClass, deliverable: { kind } }), CATALOG);
-    const at = matches.findIndex((m) => m.workflowId === w.manifest.id);
+    const at = matches.findIndex((m) => legacyId(m) === w.manifest.id);
     assert.ok(at >= 0, `${w.manifest.id} is among the matches for ${kind}`);
     assert.equal(matches[at]?.because, 'deliverable kind');
     assert.ok(
@@ -848,7 +852,7 @@ test('a family lists every kind under it in registry order, then the bare family
     CATALOG,
   );
   assert.deepEqual(
-    review.map((m) => m.workflowId),
+    review.map((m) => legacyId(m)),
     [...under('review'), ...bare('review')],
   );
   assert.ok(under('review').length >= 10, 'every review/* workflow');
@@ -859,21 +863,21 @@ test('a family lists every kind under it in registry order, then the bare family
     CATALOG,
   );
   assert.deepEqual(
-    document.map((m) => m.workflowId),
+    document.map((m) => legacyId(m)),
     under('document'),
   );
   assert.equal(document.length, 4, 'the four authoring workflows');
   assert.ok(
-    ['prd-authoring', 'proposal-authoring', 'rfc-authoring', 'revise-deliverable'].every((id) => document.some((m) => m.workflowId === id)),
+    ['prd-authoring', 'proposal-authoring', 'rfc-authoring', 'revise-deliverable'].every((id) => document.some((m) => legacyId(m) === id)),
   );
 
   const architecture = matchWorkflows(
     reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review/architecture' } }),
     CATALOG,
   );
-  assert.equal(architecture[0]?.workflowId, 'architecture-decision-review');
+  assert.equal(legacyId(architecture[0]), 'architecture-decision-review');
   assert.deepEqual(
-    architecture.slice(1).map((m) => m.workflowId),
+    architecture.slice(1).map((m) => legacyId(m)),
     [...under('review').filter((id) => id !== 'architecture-decision-review'), ...bare('review')],
   );
   assert.ok(architecture.slice(1).every((m) => m.because === 'deliverable family'));
@@ -882,9 +886,9 @@ test('a family lists every kind under it in registry order, then the bare family
     reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review' }, skill: 'security-privacy' }),
     CATALOG,
   );
-  assert.equal(security[0]?.workflowId, 'security-privacy-review', 'a workflow binding the chosen skill leads its group');
+  assert.equal(legacyId(security[0]), 'security-privacy-review', 'a workflow binding the chosen skill leads its group');
   assert.deepEqual(
-    security.slice(1).map((m) => m.workflowId),
+    security.slice(1).map((m) => legacyId(m)),
     [...under('review').filter((id) => id !== 'security-privacy-review'), ...bare('review')],
   );
 
@@ -915,7 +919,7 @@ test('other gives the general carrier first, then the workflows binding the chos
       .map((w) => w.manifest.id);
   const flagship = matchWorkflows(v(FLAGSHIP).intake, CATALOG);
   assert.deepEqual(
-    flagship.map((m) => [m.workflowId, m.because]),
+    flagship.map((m) => [legacyId(m), m.because]),
     [
       [GENERAL_CARRIER, 'other: general carrier'],
       ...bound('system-architecture', MATCHABLE).map((id) => [id, 'binds chosen skill']),
@@ -928,7 +932,7 @@ test('other gives the general carrier first, then the workflows binding the chos
     CATALOG,
   );
   assert.deepEqual(
-    plain.map((m) => m.workflowId),
+    plain.map((m) => legacyId(m)),
     [GENERAL_CARRIER, 'managed-outcome'],
   );
 });
@@ -937,17 +941,17 @@ test('maintain matches only workflows a schedule or an event can start, and othe
   const cron = matchWorkflows(v(STANDING).intake, CATALOG);
   assert.ok(cron.length > 0);
   assert.ok(
-    cron.every((m) => manifest(m.workflowId).triggers.includes('schedule')),
-    cron.map((m) => m.workflowId).join(', '),
+    cron.every((m) => manifest(legacyId(m)).triggers.includes('schedule')),
+    cron.map((m) => legacyId(m)).join(', '),
   );
-  assert.equal(cron[0]?.workflowId, 'architecture-decision-review');
+  assert.equal(legacyId(cron[0]), 'architecture-decision-review');
 
   const event = matchWorkflows(
     reading({ kind: 'maintain', deliverable: { kind: 'review' }, schedule: { event: 'source.refreshed' } }),
     CATALOG,
   );
   assert.ok(event.length > 0);
-  assert.ok(event.every((m) => manifest(m.workflowId).triggers.includes('event')));
+  assert.ok(event.every((m) => manifest(legacyId(m)).triggers.includes('event')));
 
   const weekly = {
     kind: 'maintain',
@@ -959,12 +963,12 @@ test('maintain matches only workflows a schedule or an event can start, and othe
   const carried = matchWorkflows(reading(weekly), CATALOG);
   assert.equal(carried.at(-1)?.workflowId, GENERAL_CARRIER);
   assert.equal(carried.at(-1)?.because, 'other: general carrier');
-  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill' && manifest(m.workflowId).triggers.includes('schedule')));
+  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill' && manifest(legacyId(m)).triggers.includes('schedule')));
   assert.ok(carried.length > 1);
 
   const manualOnly = catalogOf({ workflows: replaced(withManifest(GENERAL_CARRIER, { triggers: ['manual'] })) });
   const unscheduled = matchWorkflows(reading(weekly, manualOnly), manualOnly);
-  assert.ok(!unscheduled.some((m) => m.workflowId === GENERAL_CARRIER), 'the carrier is matched only when it can be scheduled');
+  assert.ok(!unscheduled.some((m) => legacyId(m) === GENERAL_CARRIER), 'the carrier is matched only when it can be scheduled');
   assert.ok(unscheduled.every((m) => m.because === 'binds chosen skill'));
 });
 
@@ -979,13 +983,13 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
     CATALOG,
   );
   assert.deepEqual(
-    named.slice(0, 2).map((m) => [m.workflowId, m.because]),
+    named.slice(0, 2).map((m) => [legacyId(m), m.because]),
     [
       ['implementation-review', 'named'],
       ['architecture-decision-review', 'deliverable kind'],
     ],
   );
-  assert.equal(named.filter((m) => m.workflowId === 'implementation-review').length, 1, 'a workflow is listed once');
+  assert.equal(named.filter((m) => legacyId(m) === 'implementation-review').length, 1, 'a workflow is listed once');
 
   const eventOnly = catalogOf({ workflows: replaced(withManifest('publish-deliverable', { triggers: ['event'] })) });
   const fallback = matchWorkflows(
@@ -993,7 +997,7 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
     eventOnly,
   );
   assert.deepEqual(
-    fallback.map((m) => [m.workflowId, m.because]),
+    fallback.map((m) => [legacyId(m), m.because]),
     [[GENERAL_CARRIER, 'other: general carrier']],
   );
 
@@ -1002,7 +1006,7 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
   const kinds = [...new Set(WORKFLOWS.map((w) => w.manifest.deliverable.kind)), 'other', 'review', 'document'];
   for (const kind of kinds) {
     for (const k of ['manage', 'maintain'] as const) {
-      const ids = matchWorkflows(reading({ kind: k, deliverable: { kind, describe: 'something' } }), CATALOG).map((m) => m.workflowId);
+      const ids = matchWorkflows(reading({ kind: k, deliverable: { kind, describe: 'something' } }), CATALOG).map((m) => legacyId(m));
       assert.ok(!ids.includes('remember'), `${k} ${kind} never matches remember`);
     }
   }
@@ -1034,6 +1038,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
   assert.deepEqual(
     research.input,
     {
+      domain: 'investigative-research',
       question: r.intake.words,
       target: 'docs/architecture.md',
       scope: 'payments',
@@ -1112,14 +1117,14 @@ test('the kernel asks only what it can see is missing or contradicts itself; the
     ],
   });
   const prd = matchWorkflows(untargeted.intake, CATALOG)[0]!;
-  assert.equal(prd.workflowId, 'prd-authoring');
+  assert.equal(legacyId(prd), 'prd-authoring');
   const asked = questionsFor(untargeted, prd, CATALOG);
   assert.deepEqual(asked.questions, [
     {
       slot: 'target',
       ask: 'Which document, file, or system should this work on?',
       blocking: true,
-      neededBy: 'prd-authoring',
+      neededBy: 'authoring',
       from: 'kernel',
     },
   ]);

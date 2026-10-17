@@ -120,7 +120,7 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
 
   return {
     define(input) {
-      const workflow = deps.workflows.get(input.workflowId);
+      const workflow = deps.workflows.get(input.workflowId, (input.input as Record<string, unknown> | undefined)?.domain);
       if (!workflow) throw new Error(`no workflow ${input.workflowId}`);
       if (!workflow.manifest.triggers.includes(input.kind))
         throw new Error(`${input.workflowId} does not accept ${input.kind} triggers (it accepts ${workflow.manifest.triggers.join(', ')})`);
@@ -252,7 +252,7 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
           markTriggerFired(store, triggerId, at, due);
           return { firing: { ...already.firing, outcome, runId, reason }, outcome, runId, reason, nextDueAt: due };
         };
-        const current = deps.workflows.get(trigger.workflowId);
+        const current = deps.workflows.get(trigger.workflowId, (trigger.input as Record<string, unknown> | null)?.domain);
         const exceeds = current?.manifest.steps.find((step) => !tierAtLeast(trigger.maxTier, step.tier));
         if (exceeds)
           return finish(
