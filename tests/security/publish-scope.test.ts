@@ -30,7 +30,7 @@ const call = async (fx: Fx, name: string, args: Record<string, unknown> = {}): P
 };
 const claim = async (fx: Fx, runId: string) => (await call(fx, 'claim_work', { runId })).work;
 const submit = (fx: Fx, w: any, output: Record<string, unknown>, evidence: { ref: string; excerpt?: string }[]) =>
-  call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+  call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 const approvalFor = async (fx: Fx, runId: string) =>
   (await call(fx, 'inbox')).find((d: { decisionKind?: string; run: string | null }) => d.decisionKind === 'approval' && d.run === runId);
 

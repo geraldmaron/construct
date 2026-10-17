@@ -486,7 +486,6 @@ test('an outcome cannot finish in state alone when the person requested a local 
       const w = (await call(fx, 'claim_work', { runId })).work;
       return call(fx, 'submit_work', {
         stepRunId: w.stepRunId,
-        owner: w.owner,
         token: w.token,
         output,
         evidence: [{ ref: 'docs/design.md' }],

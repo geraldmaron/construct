@@ -68,7 +68,6 @@ test('instruction-shaped text in a reported item never comes back on a surface, 
       if ('verification' in output) output.verification = (await observedVerification(fx, w)) as typeof output.verification;
       const r = await call(a, 'submit_work', {
         stepRunId: w.stepRunId,
-        owner: w.owner,
         token: w.token,
         output,
         evidence: output === outputs[0] ? [] : evidence,

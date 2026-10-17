@@ -33,7 +33,7 @@ async function call(
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, unknown>;
 }
 interface Work {
-  work: { stepRunId: string; owner: string; token: number; step: { id: string } } | null;
+  work: { stepRunId: string; token: number; step: { id: string } } | null;
   waitingOn: { kind: string; decision?: { id: string; question: string; options?: string[] } } | null;
 }
 async function claim(fx: ReturnType<typeof brokerFixture>, runId: string): Promise<Work> {
@@ -45,7 +45,7 @@ async function submit(
   output: Record<string, unknown>,
   evidence: { ref: string }[] = [],
 ): Promise<Record<string, unknown>> {
-  return call(fx, 'submit_work', { stepRunId: w.work!.stepRunId, owner: w.work!.owner, token: w.work!.token, output, evidence });
+  return call(fx, 'submit_work', { stepRunId: w.work!.stepRunId, token: w.work!.token, output, evidence });
 }
 
 test('Scenario A: a basic question creates no run, decision, staff member, or record', async () => {
@@ -213,7 +213,6 @@ test('Scenario D: a standing review fires from an external clock; stale sources 
     assert.equal(fresh.work!.step.id, 'freshness');
     const noData = await call(fx, 'submit_work', {
       stepRunId: fresh.work!.stepRunId,
-      owner: fresh.work!.owner,
       token: fresh.work!.token,
       output: {},
       noData: true,
