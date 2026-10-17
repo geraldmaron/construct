@@ -22,6 +22,7 @@ export interface TimerSetup {
   readonly target: TimerTarget;
   readonly control: SchedulerControl;
   readonly systemTimezone: string;
+  readonly launcher: string;
 }
 
 /** Where this machine's timers live, from the command's own env; null on a platform with no per-user scheduler. */
@@ -34,6 +35,7 @@ export function timerSetup(ctx: CliContext): TimerSetup | null {
     target: { platform: kind, dir },
     control: ctx.timers?.control ?? platformScheduler(resolveAccountScheduleDir(platform), process.getuid?.() ?? -1),
     systemTimezone: ctx.timers?.systemTimezone ?? systemTimezone(),
+    launcher: ctx.timers?.launcher ?? LAUNCHER,
   };
 }
 
@@ -48,7 +50,7 @@ export function timerFacts(ctx: CliContext, setup: TimerSetup, projectId: string
   return {
     projectId,
     node: process.execPath,
-    launcher: LAUNCHER,
+    launcher: setup.launcher,
     path: timerPathFor(process.execPath, findOnPath(executor, ctx.env)),
     logDir: join(ctx.paths.stateDir, 'timers'),
     systemTimezone: setup.systemTimezone,
@@ -59,7 +61,10 @@ export function timerFacts(ctx: CliContext, setup: TimerSetup, projectId: string
 export interface TimerRow extends InstalledTimer {
   /** True for a unit that belongs to the project the command runs in. */
   readonly here: boolean;
-  readonly loaded: boolean | null;
+  /** Whether the scheduler will fire it (loaded on launchd, active and enabled on systemd); null when it cannot be asked. */
+  readonly firing: boolean | null;
+  /** False for another project's unit: its trigger lives in that project's store, which this command does not open. */
+  readonly triggerChecked: boolean;
   /** Why the unit would not fire as intended; null when nothing is wrong. */
   readonly problem: string | null;
 }
@@ -92,11 +97,18 @@ export function timerRows(ctx: CliContext, here: { readonly id: string | null; r
         else if (!trigger.enabled) problem = `trigger ${t.triggerId} is disabled, so every firing is recorded and skipped`;
       }
     }
-    return { ...t, here: isHere, loaded: setup.control.loaded(setup.target, t.label), problem };
+    let firing: boolean | null = null;
+    try {
+      firing = setup.control.firing(setup.target, t.label);
+    } catch (error) {
+      problem ??= (error as Error).message;
+    }
+    if (!problem && firing === false) problem = 'its file is installed but the scheduler will not fire it';
+    return { ...t, here: isHere, firing, triggerChecked: isHere && here.store !== null, problem };
   });
 }
 
 export function describeTimer(t: TimerRow): string {
-  const state = t.loaded === null ? '' : t.loaded ? 'loaded' : 'not loaded';
+  const state = [t.firing === null ? '' : t.firing ? 'firing' : 'not firing', t.triggerChecked ? '' : 'trigger state unchecked from here'].filter(Boolean).join(', ');
   return `${t.label} (trigger ${t.triggerId}${t.executor ? `, executor ${t.executor}` : ''}${state ? `, ${state}` : ''})${t.problem ? `: ${t.problem}; \`construct workflow remove-timer ${t.label}\` removes it` : ''}`;
 }

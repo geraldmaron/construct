@@ -26,6 +26,8 @@ export interface TimerSeam {
   readonly platform: NodeJS.Platform;
   readonly control: SchedulerControl;
   readonly systemTimezone: string;
+  /** The launcher a unit starts; this install's own when unset. */
+  readonly launcher?: string;
 }
 
 export interface CliContext {

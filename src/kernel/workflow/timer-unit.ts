@@ -170,7 +170,7 @@ const xml = (value: string) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;'
 export function launchdUnit(input: TimerUnitInput): TimerUnitFile[] {
   const label = timerLabel(input.facts.projectId, input.triggerId);
   const calendar = launchdCalendar(input.expression, input.timezone, input.facts.systemTimezone);
-  const str = (s: string) => `<string>${xml(s)}</string>`;
+  const str = (s: string) => `<string>${xml(refuseControl(s))}</string>`;
   const log = `${input.facts.logDir}/${label}.log`;
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -202,20 +202,54 @@ export function launchdUnit(input: TimerUnitInput): TimerUnitFile[] {
   return [{ name: `${label}.plist`, content: lines.join('\n') }];
 }
 
+function refuseControl(value: string): string {
+  // A control character would end the directive or smuggle another one in.
+  if (/[\u0000-\u001f\u007f]/.test(value)) throw new Error(`a platform timer cannot carry ${JSON.stringify(value)}: it holds a control character`);
+  return value;
+}
+
+/**
+ * A path directive (WorkingDirectory): taken literally except for specifiers,
+ * so only % is doubled. It must be absolute, since a leading - or ~ means
+ * something else to systemd, and it may not end in a backslash (systemd
+ * joins the next line onto it) or in whitespace (systemd strips it).
+ */
+export function systemdPath(value: string): string {
+  if (!value.startsWith('/')) throw new Error(`a platform timer needs an absolute directory, not ${JSON.stringify(value)}`);
+  if (/[\\\s]$/.test(value)) throw new Error(`systemd cannot hold the directory ${JSON.stringify(value)} exactly: it ends in a backslash or whitespace`);
+  return refuseControl(value).replace(/%/g, '%%');
+}
+
+/**
+ * A quoted word (Environment, ExecStart): backslash and double quote are
+ * C-escaped and % is doubled against specifier expansion. A command word may
+ * not hold $: systemd substitutes variables in arguments but looks the
+ * executable up literally, so no single escape is right for both, and such
+ * paths are refused rather than guessed at.
+ */
+export function systemdQuoted(value: string, command: boolean): string {
+  if (command && value.includes('$')) throw new Error(`systemd cannot run ${JSON.stringify(value)} exactly: it holds a $`);
+  return `"${refuseControl(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/%/g, '%%')}"`;
+}
+
+function systemdUnquote(word: string): string {
+  const inner = word.startsWith('"') && word.endsWith('"') ? word.slice(1, -1) : word;
+  return inner.replace(/%%/g, '%').replace(/\\(["\\])/g, '$1');
+}
+
 /** A systemd user service and timer: OnCalendar with Persistent=true, so a slot missed while off runs once on return. */
 export function systemdUnit(input: TimerUnitInput): TimerUnitFile[] {
   const label = timerLabel(input.facts.projectId, input.triggerId);
   const calendar = systemdCalendar(input.expression, input.timezone);
-  const quote = (s: string) => (/^[A-Za-z0-9_./:=@%+,-]+$/.test(s) ? s : `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/%/g, '%%')}"`);
   const service = [
     '[Unit]',
     `Description=Construct trigger ${input.triggerId} (${input.expression} ${input.timezone})`,
     '',
     '[Service]',
     'Type=oneshot',
-    `WorkingDirectory=${quote(input.projectRoot)}`,
-    ...unitEnv(input.facts).map(([k, v]) => `Environment=${quote(`${k}=${v}`)}`),
-    `ExecStart=${fireArgs(input).map(quote).join(' ')}`,
+    `WorkingDirectory=${systemdPath(input.projectRoot)}`,
+    ...unitEnv(input.facts).map(([k, v]) => `Environment=${systemdQuoted(`${k}=${v}`, false)}`),
+    `ExecStart=${fireArgs(input).map((a) => systemdQuoted(a, true)).join(' ')}`,
     '',
   ];
   const timer = [
@@ -254,7 +288,6 @@ export function readTimerUnit(platform: TimerPlatform, name: string, content: st
   const m = /^construct\.([A-Za-z0-9][A-Za-z0-9_-]*)\.([A-Za-z0-9][A-Za-z0-9_-]*)\.(plist|service)$/.exec(name);
   if (!m || (platform === 'launchd') !== (m[3] === 'plist')) return null;
   const unxml = (s: string) => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-  const unquote = (w: string) => (w.startsWith('"') ? w.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\').replace(/%%/g, '%') : w);
   let root: string | null = null;
   let executor: string | null = null;
   let program: string[] = [];
@@ -266,10 +299,10 @@ export function readTimerUnit(platform: TimerPlatform, name: string, content: st
     program = [...args.matchAll(/<string>([^<]*)<\/string>/g)].slice(0, 2).map((a) => unxml(a[1]!));
   } else {
     const w = /^WorkingDirectory=(.*)$/m.exec(content)?.[1] ?? null;
-    root = w === null ? null : unquote(w);
+    root = w === null ? null : w.replace(/%%/g, '%');
     executor = /--execute=([a-z][a-z0-9-]*)/.exec(content)?.[1] ?? null;
     const exec = /^ExecStart=(.*)$/m.exec(content)?.[1] ?? '';
-    program = [...exec.matchAll(/"(?:[^"\\]|\\.)*"|\S+/g)].slice(0, 2).map((a) => unquote(a[0]));
+    program = [...exec.matchAll(/"(?:[^"\\]|\\.)*"|\S+/g)].slice(0, 2).map((a) => systemdUnquote(a[0]));
   }
   return { label: `construct.${m[1]!}.${m[2]!}`, projectId: m[1]!, triggerId: m[2]!, projectRoot: root, executor, program };
 }
