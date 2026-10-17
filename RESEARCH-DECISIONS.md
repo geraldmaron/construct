@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 42 are
+Nothing in §§1–32 describes the current product. Sections 33 to 43 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3655,3 +3655,64 @@ uncommitted work and the kernel never runs git.
 Verdict: accepted with controls (digest-pinned comparison everywhere a
 receipt is checked; checkouts only from the repository's own worktree list;
 fail closed when the bytes are gone).
+
+## 43. A session's lane is where its host says it works, within the project's checkouts (2026-10-17)
+
+**Question.** Section 42 binds a session's resolver to its lane, but the
+lane came only from the server's process directory (or, with `--project`,
+the directory it was started in). Claude's desktop app starts a session's
+MCP servers in the project's main checkout even when the session runs in a
+linked worktree, so bootstrap reported `lane: null` and every bare path
+resolved against the main checkout. Observed here: a desktop session whose
+`claude` process ran in `.claude/worktrees/<name>` had its Construct server
+running in the main checkout, with only the main checkout in its
+environment (`CLAUDE_PROJECT_DIR`).
+
+**What each host says.** Tested by an MCP server that asks `roots/list`,
+from a scratch linked worktree:
+- Claude Code (CLI 2.1.250, and the desktop app's bundled 2.1.295 started
+  with `--project-config-root <main checkout>` as the app starts it):
+  declares `roots`, answers with the session's directory, the worktree,
+  while the server's own directory is the main checkout in the desktop case.
+- Codex CLI 0.163.0: declares no `roots` (answers an empty list) and starts
+  the server in the session's directory, so the process directory already
+  carries the lane.
+- Cursor, VS Code, OpenCode and Bob were not observed. Cursor's agent
+  needed a login, and OpenCode did not start the probe server in the time
+  allowed. Each is covered by the same two paths: roots when the host
+  declares them, the process directory (or `--project` with the directory
+  the host starts the server in) otherwise.
+
+**Decision.**
+1. After the handshake, before any call runs, a server whose host declared
+   `roots` asks for them once. The first tool call waits for the answer, at
+   most five seconds. A host that does not answer keeps the lane the server
+   started with.
+2. A root counts only when it is a `file:` URI inside one of the project's
+   checkouts as `projectWorktrees()` reads them from the repository: the
+   main checkout means no lane, a linked worktree means that lane. A clone,
+   an unrelated directory, a worktree whose project file names another
+   project, or roots naming two different checkouts settle nothing.
+3. A lane the host names replaces the one from the process directory. The
+   server rebuilds its broker context on that lane, so bootstrap, the
+   resolver, claims, delegation and the session row all name it, and no
+   tool has run under the old one.
+4. The lane is settled once per connection. `notifications/roots/list_changed`
+   is not followed; a session that changes directory keeps its lane until
+   its server restarts.
+
+**Challenge.** The strongest failure: a host or a model that controls the
+roots could put the session in another checkout of the same project and
+cite that checkout's bytes as its own. Controls: roots come from the host's
+MCP client, not from tool input; only the project's own checkouts are
+accepted, which the session could already name as a claim's `worktree`;
+and section 42's receipts pin the bytes, so citing another checkout's file
+records exactly what was read there. The best alternative was reading the
+session's directory from hooks (Claude Code's hook input carries `cwd`).
+Rejected: hooks are Claude Code's alone, run after the server starts, and
+would need a side channel keyed by the host's session id, while roots are
+part of MCP and arrive before the first call.
+
+Verdict: accepted with controls (roots trusted only inside
+`projectWorktrees()`; asked once, before any call; fall back to the
+process directory).

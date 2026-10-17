@@ -128,6 +128,22 @@ export function recordClient(
     .run(input.name?.slice(0, 120) ?? null, input.version?.slice(0, 60) ?? null, input.at, input.id);
 }
 
+/** The session works in another checkout of the project than the one it was registered in. */
+export function moveSession(
+  store: StateStore,
+  input: {
+    readonly id: string;
+    readonly laneRoot: string | null;
+    readonly branch: string | null;
+    readonly head: string | null;
+    readonly at: string;
+  },
+): void {
+  store.db
+    .prepare(`UPDATE sessions SET lane_root = ?, branch = ?, head = ?, last_seen_at = ? WHERE id = ? AND ended_at IS NULL`)
+    .run(input.laneRoot, input.branch, input.head, input.at, input.id);
+}
+
 /** The session called Construct at `at`. */
 export function touchSession(store: StateStore, input: { readonly id: string; readonly at: string }): void {
   store.db.prepare(`UPDATE sessions SET last_seen_at = ? WHERE id = ? AND ended_at IS NULL`).run(input.at, input.id);

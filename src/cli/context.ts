@@ -448,6 +448,27 @@ export function worktreeHolding(root: string, path: string): { readonly worktree
   return best;
 }
 
+/**
+ * The lane of a session its host says works in `dirs`, trusted only as far as
+ * the project's own checkouts reach: null for the main checkout, the worktree
+ * for a linked one. Undefined when no directory is in one of the project's
+ * checkouts, or when they name different checkouts, so the host said nothing
+ * Construct can use.
+ */
+export function laneAt(root: string, dirs: readonly string[]): Lane | null | undefined {
+  const found = new Map<string, Lane | null>();
+  for (const dir of dirs) {
+    const held = worktreeHolding(root, dir);
+    if (held === null) continue;
+    const { worktree } = held;
+    found.set(
+      worktree.checkout,
+      worktree.main ? null : { root: worktree.root, checkout: worktree.checkout, branch: worktree.branch, head: worktree.head },
+    );
+  }
+  return found.size === 1 ? [...found.values()][0] : undefined;
+}
+
 /** The nearest directory at or above `start`, up to `floor`, holding a project store. */
 function findStoreRoot(start: string, floor: string): string | null {
   let dir = resolve(start);
