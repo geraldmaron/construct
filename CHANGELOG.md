@@ -2,13 +2,62 @@
 
 ## Unreleased
 
+Hermes Agent is a supported host, nothing matches a person's words, and
+review and authoring each run as one workflow keyed by domain.
+
+### Breaking
+
+- Nine review workflows are now `review` and four authoring workflows
+  (PRD, proposal, RFC, research brief) are now `authoring`, both 2.0.0 and
+  keyed by `domain`. Every former id still starts the matching domain
+  through an alias, and saved runs keep their frozen contracts. The unused
+  `remember` workflow is gone.
+- A managed `classify_request` reading must carry `stakes` with `reversible`
+  and `affects`. A reading without it fails with a typed error naming the
+  field.
+- Checks that used to pass on a matching word now read typed fields:
+  `setAside` names the settled statement an answer discusses, `superseded`
+  takes `{ref, replacedBy}`, and a decision ask takes
+  `decision: {ask, decider, by}`. Claim support decides only by typed
+  calculation. `check_answer` accepts `setAside` and `superseded`.
+- `submit_work` and `heartbeat` no longer declare an `owner` input, and the
+  `claim_work` and `claim_step` packets no longer return `owner`. A host
+  that still sends `owner` gets a typed input error; drop the field.
+- Trigger phrase lists, the lexical router and the lexical rigor floor are
+  gone. A skill manifest declares only what something enforces (`maxTier`,
+  `requiredValidators`), and the resolver enforces both.
+- Construct ships no plugin. `construct init` plants the operational skill;
+  the method skills reach personal hosts through the tool that installs
+  them.
+
 ### Changes
 
-- `submit_work` and `heartbeat` no longer declare an `owner` input, and the
-  `claim_work` and `claim_step` packets no longer return `owner`. The lease
-  holder was always the calling session and the input was ignored. A host
-  that still sends `owner` gets a typed input error naming the allowed
-  inputs; drop the field and retry.
+- Hermes Agent is a supported host, wired through `$HERMES_HOME/config.yaml`
+  without touching another project's binding or the real home. Its YAML
+  writer refuses any file it cannot fully read.
+- `construct workflow install-timer` installs a platform timer (launchd or
+  systemd) that fires a standing trigger on an explicit executor. A timer
+  never fires into a stale slot and never reports a removal it did not
+  confirm.
+- A run that fails or is cancelled ends its delivery reservation, and no
+  host can claim a run's reservation through the `work` tool. Cancelling a
+  run no longer waits on a step whose holder is gone, from MCP or from
+  `construct run cancel`.
+- A receipt is the bytes it observed, and a session's lane is the checkout
+  its host names in MCP roots, so a worktree session cites its own files.
+- The native semantic reviewer is pinned to Codex CLI 0.163.0 (profile
+  `codex-app-server-held-text-v2`). New message deliveries and notifications
+  refuse the review; `account/updated` passes only on subscription auth; the
+  only admitted warning is Codex's own fail-closed code-mode notice.
+- `doctor` fails only on a stale personal copy of the operational skill, and
+  names the wiring that actually reaches Construct.
+
+### Upgrade
+
+Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
+`construct skill update`, then reconnect. State remains format 5; no
+migration or credentials are required. Hosts or scripts that start a former
+review or authoring workflow id keep working through its alias.
 
 ## 3.0.0-alpha.31 — 2026-10-16 (experimental)
 
