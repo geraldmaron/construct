@@ -3,43 +3,37 @@
 Baton between Claude Code and Codex. Read at session start; update at session end.
 Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't log.
 
-**Control holder:** none (the clean-state audit session ended 2026-10-17, after the merge into main).
-**Mode:** B (Claude implemented, Codex cross-reviewed every slice).
+**Control holder:** none (the reconciliation session ended 2026-10-17).
+**Mode:** B (Claude implemented, Codex cross-reviewed).
 
 ## What was done
-- Branch `claude/laughing-borg-fd48a4` (worktree `.claude/worktrees/laughing-borg-fd48a4`), built on
-  `feat/hermes-host`: the Tier 1 platform timer and the clean-state audit. RESEARCH-DECISIONS §40 records
-  what was cut, what was kept and why. Ledger: outcome `work-bdb9137a` and its children.
-- Timer review fixes, Biome formatter/linter in the gate, CONTRIBUTING.md, the Beads tracker and its hooks
-  removed (hooks now in `.githooks`), raw evidence out of `docs/internal`, the 2.x import paths removed,
-  skills/evals on the Agent Skills shape with dev-only eval code out of the package, unclaimed-edit notes
-  at PostToolUse and Stop, doctor failing stale personal skills, committed portable `.mcp.json` and hooks,
-  and narrower prose validators.
+- Everything from 2026-10-17 is reconciled onto local `main`. That covers the residency amendment and
+  Tier 1 timer, Hermes Agent as a host, the trigger-word removal, the smaller skill manifest, the
+  clean-state audit (§40), its deferred decisions (§41), worktree evidence identity (§42) and desktop
+  lane detection (§43).
+- The worktree-evidence and lane commits started from the old `origin/main`. They were ported as
+  9c92a5bb and 82cf9e74: Biome formatting was normalized first, so the three-way merge had no conflicts.
 
 ## Current state
-- Merged into local `main` by fast-forward on 2026-10-17 (main checkout now on `main`); `origin/main` is
-  behind and nothing is pushed. Full gate green on `main` in the main checkout.
-- `bash scripts/install-git-hooks.sh` ran: the main checkout and every worktree carrying `.githooks` use it;
-  checkouts on older branches still resolve the untracked `.beads/hooks`, so that folder stays until they rebase.
-- Construct reaches the main checkout through the committed `.mcp.json` (approved in the gitignored
-  `.claude/settings.local.json`); the user-scope entry is removed. `construct doctor` there reports the
-  installation healthy. Backups: `~/.claude/backups/20261017-post-merge/`.
-- Personal skill copies on this Mac were refreshed from this branch (backups in
-  `~/.claude/backups/20261017-skill-refresh/`).
+- Local `main` is 32 commits ahead of `origin/main` (with this HANDOFF commit); nothing is pushed.
+- Full gate green on `main`: lint, typecheck, npm test 1239 pass / 0 fail, smoke, conformance 126 / 0.
+- Local branches left: `main`, plus four `claude/*` branches whose content is in `main`. Each is still
+  checked out by an idle linked session's worktree under `.claude/worktrees/`.
+- Untracked and left alone: `.beads/` (the retired tracker's data; nothing reads it any more) and the
+  `docs/internal/*` evidence folders that were untracked before this work started.
 
 ## Next step
-1. Push `main` (or open a PR from it) when the release side effects are wanted.
-2. Checkouts without the committed `.mcp.json` (construct-hermes-host, construct-tier1-residency, and the
-   intelligent-northcutt and quizzical-cannon worktrees) get no Construct in new sessions until they merge `main`.
-3. Branches waiting: `claude/quizzical-cannon-bb8975` (worktree evidence identity) and
-   `claude/elated-lamport-b176e0` (§41 decisions, owner input removed; carries `work-ed80bdad`).
+1. Push `main`, or open a PR from it, when the release side effects are wanted.
+2. Archive the four idle sessions (timer, worktree evidence, lane detection, workflow/MCP decisions).
+   That removes their worktrees; then delete their `claude/*` branches.
 
 ## Open questions
-- Plugin distribution for the skills needs a skills-only package (§40).
-- Worktree evidence identity: `work-57908b15`.
-- Workflow merge, single claim authority, service/tools split and the tool-surface rewrite: §40, each its own change.
-- ai-workflow-config still ships copies of seven Construct method skills; its next deploy overwrites the
-  refreshed personal copies until it drops them.
+- Open ledger items: work-0a9a9c24 (timer defects, likely fixed by a3d87da0 but its live launchd
+  check is unrecorded), work-bdb9137a (the audit outcome), work-4503dc02, work-51bcd5b9,
+  work-db112a00, work-0a36e600, work-c3476f42, work-ed80bdad and work-225d1807 (stakes, gated on
+  a live eval record).
+- `.beads/` can be deleted once nobody needs the old tracker history.
+- ai-workflow-config still ships copies of seven Construct method skills.
 
 ## Files owned / in-flight
 - None.
