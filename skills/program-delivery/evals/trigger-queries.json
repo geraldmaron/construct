@@ -1,0 +1,102 @@
+[
+  {
+    "query": "The plan says June but the vendor starts in July. Review which commitments cannot both hold.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Add a ticket for the typo.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Can we hit this date with two teams sharing one migration specialist?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Decide which customer problem we should solve first.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Three teams report green while dependencies slipped; give me an honest status review.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Compare company strategy commitments with the whole portfolio of work and staffing.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Trace the critical path in plans/release.md and identify the constrained resource.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Design the new service boundary and data ownership model.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We keep missing the same milestone. Check allocations, dependencies, and risk ownership.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review the migration code for correctness and rollback behavior.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Review the launch schedule before leadership relies on it; one prerequisite has no owner.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite the status email in plain language; preserve all dates and status judgments.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "What would have to be true to ship by the promised date? Use our staffing and calendar records.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Map the unfamiliar vendor integration before I inherit it.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The plan calls velocity capacity. Reassess it using availability, skills, and operating load.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare counsel's questions about a contractual launch penalty.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Two workstreams need the same engineer in the same week. Prepare the conflict for its decision owner.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What is a critical path? Just define it with a generic example.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Write a status update from the actual plan evidence, including what didn't happen.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Implement this one fully specified bug fix with no surrounding plan.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

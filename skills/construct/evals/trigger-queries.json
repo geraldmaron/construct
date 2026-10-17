@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Could you produce a local architecture brief for this Construct-bound project from our declared sources?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What does a decision record mean in general?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Remember that we decided to postpone the billing split for one release.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "I'm writing this project's release brief by hand; no action needed from you.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Every Monday compare this project's roadmap to active work and keep the review current.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Does this function return a promise? Just explain the syntax.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Hand the unfinished migration review to the next agent with its evidence and next step.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Thanks, the project review was useful.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Can you check the release plan against the principles we keep here?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What is the difference between an assumption and a constraint?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Record this constraint for this project: no customer data in logs.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "I'll update the roadmap myself after lunch; please don't record anything.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "I need a summary of what changed in this project's deployment approach last quarter.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Is a weekly review the same idea as a retrospective? Just a conceptual question.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Please keep the project's ownership map refreshed each month from the declared sources.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "I moved the project note myself and don't need you to keep or change it.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "We need something the steering group can read on Friday about this project's gaps; prepare it here.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What does bounded work mean as a phrase?",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Pick up the paused brief in this project and finish the remaining evidence checks.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Morning. I'm only reading the project docs today, nothing for you to do.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

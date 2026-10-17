@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "design-conformance",
   "title": "Design-principle conformance review",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "purpose": "Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -177,6 +177,5 @@
   },
   "proposes": [
     "lessons"
-  ],
-  "evals": []
+  ]
 }

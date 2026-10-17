@@ -138,7 +138,6 @@ export const SKILL_MANIFEST_KEYS = [
   'maxTier',
   'requiredValidators',
   'skillDependencies',
-  'evals',
 ] as const;
 
 export function validateSkillManifest(raw: unknown, path: string): SkillManifest {
@@ -171,7 +170,6 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
     maxTier: oneOf(str(r, 'maxTier', path), ACTION_TIERS, path, 'maxTier'),
     requiredValidators: strList(r, 'requiredValidators', path, { optional: true }),
     skillDependencies: deps(r, 'skillDependencies', path),
-    evals: strList(r, 'evals', path, { optional: true }),
   };
 }
 
@@ -370,6 +368,5 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     proposes: strList(r, 'proposes', path, { optional: true }).map((p) =>
       oneOf(p, ['constitution', 'sources', 'skills', 'workflows', 'lessons'] as const, path, 'proposes'),
     ),
-    evals: strList(r, 'evals', path, { optional: true }),
   };
 }

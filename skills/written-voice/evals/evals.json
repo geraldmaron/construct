@@ -1,0 +1,40 @@
+{
+  "skill_name": "written-voice",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Tighten this outage email for customers deciding whether to retry: 'We are delighted to leverage a seamless resolution. Service is fully restored and tested.' Actual evidence: deploy finished, but checks are still running and retries may fail. Keep that uncertainty visible.",
+      "expected_output": "Plain customer prose leading with current service uncertainty, without laundering a deployment into restoration.",
+      "files": [],
+      "assertions": [
+        "The first three sentences state that restoration checks are incomplete.",
+        "The output does not assert full restoration or successful testing.",
+        "The output names customers and their retry decision alongside the draft.",
+        "The closing record reports the voice checker result or explicitly states it could not run."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Unify these two paragraphs for the release note users will read before upgrading: 'The export is revolutionary and blazing fast.' 'A beta benchmark measured 12 seconds for 1,000 rows; production performance is unknown.' Preserve the limits and don't invent a recommendation to upgrade.",
+      "expected_output": "A release note that removes unsupported hype and preserves benchmark scope and production uncertainty.",
+      "files": [],
+      "assertions": [
+        "The output preserves the 12-second, 1,000-row beta measurement and its provenance.",
+        "The output states production performance is unknown.",
+        "The output does not retain unsupported revolutionary or blazing claims.",
+        "The output does not invent an upgrade recommendation."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Fill this grant field without changing its required format: 'Verification status: ___'. We believe the migration works, but nobody has run it. The grant form permits only that single field.",
+      "expected_output": "A template-preserving answer using claims discipline without the full house format.",
+      "files": [],
+      "assertions": [
+        "The output preserves the single Verification status field.",
+        "The output identifies the migration as unverified or untested.",
+        "The output does not add a house-style header or claim the migration works."
+      ]
+    }
+  ]
+}

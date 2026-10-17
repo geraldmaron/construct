@@ -8,7 +8,7 @@
  *   label --labeler=claude|codex [--model]       one corpus case per call, text only, written under .tmp-evals/labels/
  *   run --host --model --condition --split [--runs=3] [--server=<dir> --label=baseline:<name>] [--parallel=N] [--effort] [--allow-cursor-state] [--bin] [--cases=a,b]
  *   e2e --host --model [--server] [--bin] [--allow-cursor-state]   the scripted flagship request, run to the end, with checkpoints
- *   record --scope=smoke|baseline|full [--batches=a,b]             aggregate test-split cells into skills/evals/intake-live.json
+ *   record --scope=smoke|baseline|full [--batches=a,b]             aggregate test-split cells into evals/intake/intake-live.json
  *   check [--cut]                                exit 1 when the record is absent, stale, missing a gated cell, or failing; --cut also needs full scope
  *
  * Hosts: claude-code, codex, cursor. Development calls run on subscriptions
@@ -66,7 +66,7 @@ import {
   splitOf,
   validateIntakeEvalFile,
   validateLiveRecord,
-} from '../src/kernel/skills/live-evals.ts';
+} from './live-evals.ts';
 import {
   EVAL_HOSTS,
   HOST_BINARY,
@@ -87,8 +87,8 @@ import {
 } from './host-cli.mjs';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const CORPUS = join(ROOT, 'skills', 'evals', 'intake.json');
-export const RECORD = join(ROOT, 'skills', 'evals', 'intake-live.json');
+export const CORPUS = join(ROOT, 'evals', 'intake', 'intake.json');
+export const RECORD = join(ROOT, 'evals', 'intake', 'intake-live.json');
 export const FIXTURE_PROJECT = join(ROOT, 'tests', 'fixtures', 'intake-project');
 export const FIXTURE_SETUP = join(ROOT, 'tests', 'fixtures', 'intake-live', 'setup.json');
 export const E2E_ITEMS = join(ROOT, 'tests', 'fixtures', 'intake-live', 'e2e-items.json');
@@ -299,7 +299,7 @@ function deliverableVocabulary(workflows) {
 
 /** The corpus, validated against the tool's own reading check. */
 export function loadCorpus(check = readingCheck()) {
-  if (!existsSync(CORPUS)) throw new Error('skills/evals/intake.json does not exist yet; there is no corpus to run.');
+  if (!existsSync(CORPUS)) throw new Error('evals/intake/intake.json does not exist yet; there is no corpus to run.');
   const { skills, workflows } = builtins();
   const ctx = {
     validateReading: check.validateReading,
@@ -309,7 +309,7 @@ export function loadCorpus(check = readingCheck()) {
     skillIds: new Set(skills.list().map((s) => s.manifest.id)),
     sourceIds: new Set(setup().sources.map((s) => s.id)),
   };
-  return validateIntakeEvalFile(JSON.parse(readFileSync(CORPUS, 'utf8')), 'skills/evals/intake.json', ctx);
+  return validateIntakeEvalFile(JSON.parse(readFileSync(CORPUS, 'utf8')), 'evals/intake/intake.json', ctx);
 }
 
 /** The corpus digest a record names: the bytes of intake.json. */
@@ -1440,7 +1440,7 @@ async function cmdRecord(f) {
     server: serverFacts(),
     recordedAt: new Date().toISOString().slice(0, 10),
   });
-  validateLiveRecord(record, 'skills/evals/intake-live.json');
+  validateLiveRecord(record, 'evals/intake/intake-live.json');
   writeFileSync(RECORD, `${JSON.stringify(record, null, 1)}\n`);
   say(
     `recorded ${String(record.cells.length)} cell(s) at ${scope} scope; verdict ${record.verdicts ? (record.verdicts.pass ? 'passes' : 'fails') : 'not computed for baselines'}`,
@@ -1465,14 +1465,14 @@ export function checkRecord({
     return {
       ok: false,
       problems: [
-        'No live intake record exists yet: skills/evals/intake-live.json is absent. It is made at release by `npm run evals:live -- record` after the live runs in docs/release-verification.md.',
+        'No live intake record exists yet: evals/intake/intake-live.json is absent. It is made at release by `npm run evals:live -- record` after the live runs in docs/release-verification.md.',
       ],
     };
   }
   const problems = [];
   let record;
   try {
-    record = validateLiveRecord(JSON.parse(readFileSync(recordPath, 'utf8')), 'skills/evals/intake-live.json');
+    record = validateLiveRecord(JSON.parse(readFileSync(recordPath, 'utf8')), 'evals/intake/intake-live.json');
   } catch (error) {
     return { ok: false, problems: [error instanceof Error ? error.message : String(error)] };
   }
@@ -1483,7 +1483,7 @@ export function checkRecord({
     return { ok: false, problems: [error instanceof Error ? error.message : String(error)] };
   }
   if (record.corpusDigest !== currentCorpusDigest())
-    problems.push('the corpus changed since the record was made (skills/evals/intake.json)');
+    problems.push('the corpus changed since the record was made (evals/intake/intake.json)');
   if (record.descriptionsDigest !== currentDescriptionsDigest())
     problems.push(
       'the model-facing text or runtime/invocation bytes changed since the record was made (instructions, schemas, skills, workflows, source, host adapters, scripts or dependency lock)',

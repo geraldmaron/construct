@@ -1,0 +1,102 @@
+[
+  {
+    "query": "I just inherited this service. Map its parts and dependencies before I change anything.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "I know this module and its callers; rename one local variable.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "What reads the export job's output? I don't know the downstream systems yet.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "We know all the boundaries already. Choose where the new service seam should go.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We took over a vendor integration; establish its boundaries and who owns each part.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Find out whether the vendor's uptime claim is true from incident records.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Before I touch this unfamiliar repository, show me what a change could break.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "We agreed on a CSV importer; write buildable acceptance criteria.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our old map is six months stale. Refresh the relationships the retention work relies on.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Which of these known product opportunities should we prioritize?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "I'm onboarding to the payments program and need a one-page guide to owners, feeds, and unknowns.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review the finished architecture decision for its strongest failure mode.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The team left and I have only configs and old run logs; help me navigate safely.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "The current ownership map is accurate; shorten its prose without changing facts.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Two documents disagree about ownership of the archive; map what is observed versus inferred.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Compare our strategy commitments to current staffing and work allocations.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Where do I even start with this acquired service? I need to know what not to touch.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Explain what a dependency graph is; no project mapping needed.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare a handoff map of the unfamiliar data pipeline with evidence for each link.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Fix formatting in this isolated config whose relationships are all known.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

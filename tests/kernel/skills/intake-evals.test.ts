@@ -50,11 +50,11 @@ import {
   type ObserveCatalog,
   type RunObservation,
   type TapFrame,
-} from '../../../src/kernel/skills/live-evals.ts';
+} from '../../../scripts/live-evals.ts';
 import { INTAKE_KINDS } from '../../../src/kernel/workflow/intake.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const RECORD = join(ROOT, 'skills', 'evals', 'intake-live.json');
+const RECORD = join(ROOT, 'evals', 'intake', 'intake-live.json');
 
 const ctx: IntakeEvalContext = {
   validateReading(raw) {
@@ -1123,7 +1123,7 @@ test('a committed live record validates and its verdicts recompute from its outc
 }, async () => {
   const { loadCorpus } = await import('../../../scripts/evals-live.mjs');
   const file = loadCorpus() as { cases: IntakeCase[]; sourceAliases: Record<string, string[]> };
-  const record = validateLiveRecord(JSON.parse(readFileSync(RECORD, 'utf8')), 'skills/evals/intake-live.json');
+  const record = validateLiveRecord(JSON.parse(readFileSync(RECORD, 'utf8')), 'evals/intake/intake-live.json');
   const again = recomputeLiveRecord(record, file.cases, file.sourceAliases);
   record.cells.forEach((c, i) => {
     assert.deepEqual(again.cells[i]!.summary, c.summary, `${c.host} ${c.model} ${c.condition}`);

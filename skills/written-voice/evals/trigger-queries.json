@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Make this customer outage email sound less like a robot wrote it; keep the uncertainty visible.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What should our strategy decide about the enterprise market?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Tighten the proposal: it's three pages saying one thing and the decision is buried.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review whether this final proposal will fail before we commit.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite this launch announcement in plain language for admins deciding whether to upgrade.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Write a commit message for this small formatting change.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The README reads like marketing. Bring it into a direct voice without adding claims.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Fix the grammar in this one code comment.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Unify these status updates from different authors for the steering group.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Give me a quick chat answer: what is a queue?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Is the tone of this customer notice calm enough? Preserve the failure and what remains unknown.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Extract requirements from these contradictory meeting notes before drafting prose.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Move the decision to the top of this memo and strip unsupported hype.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Check whether the public claim in the announcement is true from primary records.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Draft the handoff note engineers will use tomorrow, with one clear takeaway.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Design the checkout flow so keyboard users can finish it.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "This report claims we're done but only deployment was observed. Rewrite it without laundering that claim.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Fill the mandated legal form exactly as required; only claims discipline may apply.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Keep the meaning of this board brief but make it easier to read and act on.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "I need a private note to myself with no reader action; no voice pass needed.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

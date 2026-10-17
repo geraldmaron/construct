@@ -31,7 +31,7 @@ import {
   type IntakeCase,
   type RunObservation,
   type TapFrame,
-} from '../../src/kernel/skills/live-evals.ts';
+} from '../../scripts/live-evals.ts';
 import {
   codexEvaluationIsolationArgs,
   codexProvider,
@@ -1316,7 +1316,7 @@ test('with no record yet, check says so plainly and exits 1', () => {
   const r = checkRecord({ recordPath: join(tmpdir(), 'no-such-record.json') }) as { ok: boolean; problems: string[] };
   assert.equal(r.ok, false);
   assert.match(r.problems[0]!, /^No live intake record exists yet/);
-  if (!existsSync(join(ROOT, 'skills', 'evals', 'intake-live.json'))) {
+  if (!existsSync(join(ROOT, 'evals', 'intake', 'intake-live.json'))) {
     const cli = spawnSync(process.execPath, [join(ROOT, 'scripts', 'evals-live.mjs'), 'check'], {
       cwd: ROOT,
       encoding: 'utf8',

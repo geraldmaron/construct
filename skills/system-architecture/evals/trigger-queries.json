@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Two services write the same order table. Review the boundaries and data ownership before we split them.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rename a class in the payments module.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Should this service own its own database? Frame the design and its alternatives.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review this retry-loop diff for correctness and unit-test coverage.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We're splitting a monolith; where should the seams go and what coupling remains?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Who owns this unfamiliar integration organisationally? Map the current relationships.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Every request crosses four synchronous hops. Review slow, wrong, and missing dependency behavior.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Explain how a message broker works in general.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Write an ADR for moving the source of truth to the new order service.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Trace authorization bypass paths and secret leakage in the admin endpoint.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Review the platform adoption proposal for reversibility and measured scale claims.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Which product feature should we fund next?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The diagram shows isolation but code imports cross the boundary. Assess the design discrepancy.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite the architecture decision record in plain language only.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "How should these components communicate without sharing authoritative writes?",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Check our alerts, responder coverage, and tested restore runbook.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Before we commit this design, identify what becomes hard to undo and when.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare counsel's questions about whether this data movement is lawful.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The design promises unlimited scaling but no load results exist. Review the claimed properties.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Verify the vendor's published performance claim against original benchmark records.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

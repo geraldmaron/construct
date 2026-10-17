@@ -667,7 +667,9 @@ test('a skill manifest carries only fields something enforces, and any other key
   for (const key of ['outcomes', 'escalation', 'qualityGates', 'actionTiers', 'deliverableTypes', 'observedOn', 'whatever']) {
     assert.throws(
       () => validateSkillManifest(skillManifest('s', '1.0.0', { [key]: [] }), 's/construct.skill.json'),
-      new RegExp(`"${key}" is not a skill manifest field; the fields are format, .*evals, and anything else belongs in SKILL.md`),
+      new RegExp(
+        `"${key}" is not a skill manifest field; the fields are format, .*skillDependencies, and anything else belongs in SKILL.md`,
+      ),
       key,
     );
   }

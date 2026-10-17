@@ -1,0 +1,38 @@
+{
+  "skill_name": "system-architecture",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A proposal moves order data from the monolith into a new service with a shared database during transition. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output identifies data ownership during the transition.; The output addresses the transition’s reversibility.; The output identifies coupling introduced by the shared database.",
+      "files": [],
+      "assertions": [
+        "The output identifies data ownership during the transition.",
+        "The output addresses the transition’s reversibility.",
+        "The output identifies coupling introduced by the shared database."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A diagram shows a boundary but the code imports across it in four places. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output records the disagreement between the diagram and cross-boundary code imports.; The output does not assert that the stated boundary holds.; The output cites the supplied diagram and import evidence or explicitly marks missing source locations.",
+      "files": [],
+      "assertions": [
+        "The output records the disagreement between the diagram and cross-boundary code imports.",
+        "The output does not assert that the stated boundary holds.",
+        "The output cites the supplied diagram and import evidence or explicitly marks missing source locations."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The proposal states the new design is 'infinitely scalable' with no load figures. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output labels the scale property unmeasured.; The output does not endorse infinite scalability.; The output identifies the missing load measurement needed to assess the property.",
+      "files": [],
+      "assertions": [
+        "The output labels the scale property unmeasured.",
+        "The output does not endorse infinite scalability.",
+        "The output identifies the missing load measurement needed to assess the property."
+      ]
+    }
+  ]
+}

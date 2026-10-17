@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Here's the messy thread: rebuild onboarding, actually just the invite step, keep SSO, and leave pricing alone. Turn it into a brief.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rename the draft title to Weekly Update. That's the whole ask.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Combine the thing from Tuesday with the support notes, minus the mobile part we canceled.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "We have a clear settled brief; write measurable acceptance criteria.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Five messages ask for different exports. Extract what we actually need before we start.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "I'm thinking aloud about possible products, not asking for a plan yet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Make a ticket from these rambling meeting notes, keeping the decisions and loose ends visible.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Verify the timeline claims in this already structured incident report.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "I mentioned a migration first but the real ask is a rollback proposal; sort out the attached corrections.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose between the two expensive vendor options using the completed evidence packet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Can you pull one plan out of this brain dump without dropping the side requests?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Make this memo less verbose without changing the scope or decisions.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We keep contradicting ourselves in this thread. Read through the last correction and state the ask.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Map this unfamiliar service's dependencies and ownership before a change.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The sales request mixes a deadline, three ideas, and an aside about invoices. Separate what we'll do now.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Explain what an intake form is.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Turn my scattered notes into an actionable handoff; the last paragraph changes the scope.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review a finished release plan for contradictory dates and allocations.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Take these forwarded requests and distinguish the outcome, constraints, decided bits, and blockers.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Implement this one clearly specified config toggle.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

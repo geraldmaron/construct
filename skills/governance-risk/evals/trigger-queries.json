@@ -1,0 +1,102 @@
+[
+  {
+    "query": "We're about to sign a cross-border analytics deal. Prepare the exposure questions for counsel.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Refactor the billing module for readability.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The board wants a risk register for our move into a regulated industry.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Trace whether the upload endpoint checks authorization on every path.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Compare this contract clause with our operating policy and flag obligations a lawyer must settle.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Where in our policy is the expense limit? Just locate the paragraph.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "What could bite us in the financial reporting process after changing the money flow?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Give a binding legal opinion that this transfer is lawful.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Prepare a reviewer packet on whether the new retention practice raises regulatory exposure.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose the customer problem for next quarter's product work.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We started selling in another country; locate the governing texts and identify open applicability questions.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review our error-rate alerts and rollback runbook.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our internal policy conflicts with the regulation it cites. Write an issue-spotting memo.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Explain how HMAC works, without any system review.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The audit team asks what controls and evidence exist for this revenue process; prepare the gaps.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Shorten this compliance memo without altering its conclusions or sections.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "This accessibility requirement may be contractual. Gather the clause and questions for the qualified reviewer.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Verify the competitor's market-share number from original records.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Before procurement signs, research which indemnity and data-transfer questions need counsel's decision.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review which database boundary reduces cross-service coupling; no regulatory question is involved.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

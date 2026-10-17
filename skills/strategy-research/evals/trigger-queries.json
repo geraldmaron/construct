@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Compare our strategy with the roadmap and actual work; leadership says aligned but three teams duplicate the same effort.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Write the sprint plan for next week.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We say upmarket but every hire is assigned to SMB. Review the commitments against staffing evidence.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review this one release schedule for dates before dependencies.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Four initiatives are funded but only two have work. Identify the gaps and their decision owners.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Shape the scope and outcome measure for a single export feature.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Compare what the offsite decided to what teams are doing this quarter.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "The funded work only needs a weekly status update; no strategy comparison.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The portfolio assumes full availability while on-call consumes half the team. Review capacity ranges and conflicts.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Implement the approved roadmap item.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Are we working on the right things relative to the approved strategy? Normalize initiatives, work, and owners.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Explain what a guiding policy is in a strategy kernel.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Two strategy documents share slogans but may require different outcomes. Check the actual commitments.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite the strategy document to remove marketing language only.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Review strategy execution from the roadmap, tracker, and people sources without treating story points as capacity.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Choose the architecture for the order platform.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "We have work with no initiative and initiatives with no measures; prepare a strategy-execution review.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare legal questions about the strategy's cross-border expansion.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Before planning funding, reconcile the strategic priorities with real allocations and operational load.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Decide which of two costly vendor contracts to sign using our completed comparison.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "query": "We went live with no error alerts. Review what happens when this service fails overnight.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Decide whether the export supports CSV or JSON first.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our queue backs up whenever traffic spikes; inspect capacity, alerts, and recovery readiness.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review the retry code for correctness and missing unit tests.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Is this worker safe to run unattended? The runbook has never been exercised.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Trace a customer data exposure and contain unauthorized access.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We got paged four times for one symptom; review alert routing and responder load.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose the service boundary for a monolith split.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Write a blameless postmortem from these incident records and identify owned follow-up actions.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite this runbook's prose without changing the steps or evaluating readiness.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Before on-call inherits the export service, check objectives, signals, rollback, and runbooks.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What is an SLO? Just explain the term.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The restore plan exists on paper. Tell us what readiness is still unproven.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Prioritize the feature backlog for next quarter.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The alert fired but the rotation was empty; review the response failure.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "The launch plan has two teams double-booked; check the delivery dates and staffing.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "What saturates first and who knows when it happens? Review our operating plan.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Make the restart button accessible to keyboard users.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "We claim four nines with no availability measurement. Prepare a readiness review.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Verify a vendor's public outage count for our due-diligence report, without reviewing our service operations.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

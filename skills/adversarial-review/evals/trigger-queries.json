@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Poke holes in docs/vendor-decision.md before we sign the annual deal.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review this code diff for off-by-one errors and missing unit tests.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We've finished the migration plan. Tell me the most likely way it loses data.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Build the retry mechanism described in the approved plan.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Everyone agrees with the final proposal; argue the strongest case against it.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "This half-draft is still changing hourly; help me brainstorm its direction.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Before the board funds this strategy, find the assumption doing all the work.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Pick a reversible icon color for the internal demo.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The launch claim says zero data loss. Challenge the evidence before we publish.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Verify the vendor's revenue figure from primary filings; we have no recommendation yet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Be a hostile expert for this finished service-boundary decision.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Compare buy versus build and help the CTO choose; no option has been developed yet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We're unusually excited about the new platform. Give the final plan a skeptical last look before commitment.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Turn our settled intent into testable acceptance criteria.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Our architecture choice is final pending review. What alternative did we dismiss too easily?",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite the final board memo in plain language while preserving its decision.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "This signed-off spec is about to enter a six-month build. Find what could make that commitment fail.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Sign off that the contract is lawful so procurement can execute it.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "I've written a final acquisition recommendation. Who pays if its central assumption is wrong?",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Show me who owns the unfamiliar export pipeline before I change it.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

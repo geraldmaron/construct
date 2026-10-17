@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "delivery-plan-review",
   "title": "Delivery plan review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "purpose": "Review a plan or status for claims that cannot all hold, the critical path, capacity as a range with assumptions, risks with owners, and decisions needed; deterministic conflict checks run first, every finding is cited, and conflicts are raised to their owners.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -183,6 +183,5 @@
   },
   "proposes": [
     "lessons"
-  ],
-  "evals": []
+  ]
 }

@@ -1,0 +1,38 @@
+{
+  "skill_name": "program-delivery",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A plan commits two teams to overlapping deadlines that both depend on one unstaffed migration. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output identifies the unstaffed migration on the critical path.; The output identifies the overlapping dependency or staffing conflict.; The output names the decision owner if supplied or explicitly records ownership as missing.",
+      "files": [],
+      "assertions": [
+        "The output identifies the unstaffed migration on the critical path.",
+        "The output identifies the overlapping dependency or staffing conflict.",
+        "The output names the decision owner if supplied or explicitly records ownership as missing."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A status update reports green while three dependencies slipped last week. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output identifies all three slipped dependencies as a status conflict.; The output does not endorse the plan as on track.; The output distinguishes observed slippage from any revised forecast.",
+      "files": [],
+      "assertions": [
+        "The output identifies all three slipped dependencies as a status conflict.",
+        "The output does not endorse the plan as on track.",
+        "The output distinguishes observed slippage from any revised forecast."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Capacity is computed as last sprint's velocity times the number of sprints. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output rejects using sprint velocity as capacity.; The output states capacity as a range or says a range cannot yet be derived.; The output lists assumptions or missing inputs for a capacity range.",
+      "files": [],
+      "assertions": [
+        "The output rejects using sprint velocity as capacity.",
+        "The output states capacity as a range or says a range cannot yet be derived.",
+        "The output lists assumptions or missing inputs for a capacity range."
+      ]
+    }
+  ]
+}

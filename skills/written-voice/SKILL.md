@@ -9,7 +9,7 @@ description: >-
   Not for what the document decides, only how it says it.
 license: Apache-2.0
 metadata:
-  version: 0.5.2
+  version: 0.5.3
   source: geraldmaron/construct
 ---
 

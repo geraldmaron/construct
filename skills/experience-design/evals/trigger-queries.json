@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Review our signup flow before release; customers can't find the verification step.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Pick a font weight for the logo.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Is this checkout usable with keyboard only? Focus disappears on the payment field.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Implement the approved dialog's React state hook; the interaction is already settled.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Support keeps explaining where the save button is; inspect the edit flow.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite the checkout email to sound calmer without changing meaning.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Walk the empty, slow, and failed states in the upload screen.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review the backend retry loop; it has no interface.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Does this settings page follow our declared component patterns and accessibility target?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Conduct customer interviews to discover why accounts churn.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "People abandon the form after an invalid postcode. Review what they see and can do next.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Certify this product's legal accessibility compliance for the contract.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The prototype is approved for build but its red-only errors worry me.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Which product problem should we fund next quarter?",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "A new user needs six screens to cancel an order; find where the task breaks down.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Map who owns the design-system repository and downstream packages before onboarding.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Before we ship the search page, check labels, focus, contrast, and error recovery.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What does aria-label do in HTML? Just explain the attribute.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Everyone calls this screen intuitive but only the designer has tried it; review the task assumptions.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Verify our published conversion statistic against the analytics export.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

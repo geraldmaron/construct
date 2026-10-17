@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Everyone likes the export idea but nobody can say whose problem it solves. Review the proposal.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Which charting library renders fastest?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Which of these twelve customer asks actually matter this quarter? Check evidence and outcomes.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "The feature is approved; turn its settled behavior into buildable acceptance criteria.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Sanity check this PRD before engineering starts; success just says customers are happier.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose where the order service's database boundary should go.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Shape an opportunity assessment for account recovery, with a measurable customer outcome.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Fix the approved import implementation to match the requirements.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our spec names features but no user segment. Help us frame the product problem.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What does our product's export command do? Just explain it.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The roadmap order came from one stakeholder's preference. Review the priority reasons.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review whether a customer-email transfer raises legal exposure.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Before we commit this feature proposal, identify value, usability, feasibility, and viability gaps.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Compare the corporate strategy to staffing and work across all initiatives.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "We have lots of requests but no account of what changes for customers. Review the scope.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite the proposal's tone without changing the product decision.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Can the sources we collect actually observe the proposed success measures?",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review the committed schedule for capacity conflicts.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The team is specifying a solution while still unsure whether it's worth building; surface that decision.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Check keyboard focus and invalid states in the checkout prototype.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

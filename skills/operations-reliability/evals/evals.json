@@ -1,0 +1,38 @@
+{
+  "skill_name": "operations-reliability",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A service launches with no alert on error rate and a runbook that says 'restart it'. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output states that operational readiness has not been established.; The output identifies the missing error-rate alert.; The output labels the restart runbook untested.",
+      "files": [],
+      "assertions": [
+        "The output states that operational readiness has not been established.",
+        "The output identifies the missing error-rate alert.",
+        "The output labels the restart runbook untested."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "An incident timeline shows the alert fired but nobody was paged because the rotation was empty. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output identifies the empty on-call rotation as a contributing factor.; The output does not blame an individual responder.; The output distinguishes alert firing from successful paging.",
+      "files": [],
+      "assertions": [
+        "The output identifies the empty on-call rotation as a contributing factor.",
+        "The output does not blame an individual responder.",
+        "The output distinguishes alert firing from successful paging."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The team asserts 99.99% availability with no measurement in place. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output labels the 99.99% availability figure unmeasured.; The output does not present the figure as an observed SLO result.; The output identifies a measurement source or missing measurement needed to substantiate the claim.",
+      "files": [],
+      "assertions": [
+        "The output labels the 99.99% availability figure unmeasured.",
+        "The output does not present the figure as an observed SLO result.",
+        "The output identifies a measurement source or missing measurement needed to substantiate the claim."
+      ]
+    }
+  ]
+}

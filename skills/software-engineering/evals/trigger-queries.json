@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Look at this retry-loop PR before merge: two tests pass but do they cover the failure cases?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rename a variable in one file.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Review the nullable-column migration and long-running backfill for rollback and operating risk.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Design service boundaries for the monolith split; no implementation exists yet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "It works on my machine; check our implementation evidence before we ship.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Trace secrets and authorization threats in the new admin data flow.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The author says tests passed but CI skipped the test job. Review correctness honestly.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What does Array.map return in JavaScript?",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Is this implementation plan scoped and reversible enough for the payment client change?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Prioritize the customer problems for next quarter.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Review the dependency upgrade against its changelog and our actual validation results.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite the code comment for grammar only.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "This legacy code has no tests; shape a safe implementation approach before changing behavior.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review on-call coverage and alert routing for the existing service.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "We need a pre-merge review that states evidence, remaining risks, and smallest fixes.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Map ownership of the unfamiliar service before any change is proposed.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Tests are green but the cancellation path feels wrong. Inspect the code and what the checks prove.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Write buildable acceptance criteria for the settled feature intent.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Review whether this implementation obeys the confirmed constraints and has a way back.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare contractual exposure questions for the dependency license agreement.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

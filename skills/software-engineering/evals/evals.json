@@ -1,0 +1,38 @@
+{
+  "skill_name": "software-engineering",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A pull request changes the retry loop in the payment client and adds two unit tests. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output distinguishes what the two tests prove from uncovered retry behavior.; The output describes a rollback path or marks it unverified.; The output records dependency and version evidence or marks it unavailable.",
+      "files": [],
+      "assertions": [
+        "The output distinguishes what the two tests prove from uncovered retry behavior.",
+        "The output describes a rollback path or marks it unverified.",
+        "The output records dependency and version evidence or marks it unavailable."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A migration adds a nullable column and a backfill job that runs for hours. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output addresses reversibility of the backfill.; The output addresses operability during the long-running job.; The output escalates the data-ownership or irreversible-migration question to system-architecture.",
+      "files": [],
+      "assertions": [
+        "The output addresses reversibility of the backfill.",
+        "The output addresses operability during the long-running job.",
+        "The output escalates the data-ownership or irreversible-migration question to system-architecture."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The author says all tests pass; the CI log shows the test job was skipped. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output labels the author’s correctness claim unverified.; The output records the CI test job as skipped.; The output does not report tests as passing on the basis of the skipped job.",
+      "files": [],
+      "assertions": [
+        "The output labels the author’s correctness claim unverified.",
+        "The output records the CI test job as skipped.",
+        "The output does not report tests as passing on the basis of the skipped job."
+      ]
+    }
+  ]
+}

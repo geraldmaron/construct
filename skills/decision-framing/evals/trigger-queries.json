@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Help the CTO decide whether to buy or build the event platform; reversing will be expensive.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "We already chose the vendor; list the implementation tasks.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We've argued for weeks about a three-year vendor renewal. Frame the options and recommend one.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Pick either icon for a throwaway demo; we can switch in a minute.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Is delaying launch to replace the storage engine worth it? The VP must choose this week.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Gather the missing price and performance facts before we can compare options.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Lay out the trade-offs of migrating versus staying for the board's funding decision.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Challenge the finished recommendation before we sign it.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We have cost evidence now; settle the costly choice between outsourcing and hiring.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Trace authentication and authorization in the new endpoint.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our COO needs a recommendation on a long-term support contract, including doing nothing.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Only one supported database meets the mandatory residency rule; document why the others fail.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Two viable paths, both costly to undo. Help the named sponsor make the call.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite this decision memo for tone without changing its recommendation.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "What would have to change for retaining the incumbent to beat a rewrite? Prepare a decision record.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What does reversibility mean? Just define it.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The director owns this choice: consolidate databases or keep them separate for another year.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Our agreed feature needs observable acceptance criteria.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The team can't stop circling. Use our verified evidence to recommend one of the warehouse options.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "No one has authority to decide this yet; summarize the discussion rather than making a decision record.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "skill_name": "product-management",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A PRD proposes a bulk export; it names no user segment and its success measure is 'customers are happier'. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output identifies the missing user segment and asks who the export is for.; The output labels the happiness measure unobservable from the supplied sources.; The output marks unsupported user or value claims as assumptions.",
+      "files": [],
+      "assertions": [
+        "The output identifies the missing user segment and asks who the export is for.",
+        "The output labels the happiness measure unobservable from the supplied sources.",
+        "The output marks unsupported user or value claims as assumptions."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A roadmap ranks ten items by a stakeholder's preference with no data attached. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output identifies missing evidence behind the priorities.; The output does not endorse the ranking as correct.; The output labels stakeholder preference as an assumption or unsupported priority reason.",
+      "files": [],
+      "assertions": [
+        "The output identifies missing evidence behind the priorities.",
+        "The output does not endorse the ranking as correct.",
+        "The output labels stakeholder preference as an assumption or unsupported priority reason."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The document cites a customer study that the declared sources do not contain. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output labels the customer-study claim unverified.; The output does not assert findings from the unavailable study.; The output identifies the missing study as an evidence gap.",
+      "files": [],
+      "assertions": [
+        "The output labels the customer-study claim unverified.",
+        "The output does not assert findings from the unavailable study.",
+        "The output identifies the missing study as an evidence gap."
+      ]
+    }
+  ]
+}

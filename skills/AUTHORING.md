@@ -66,9 +66,9 @@ obligations.
 ```
 skills/<name>/
   SKILL.md                 # method rules; prefer under 350 lines / ~10k chars
-  construct.skill.json     # Construct manifest: id, version, capabilities, maxTier, requiredValidators, dependencies, evals
-  evals/behavior.json      # optional checks of the skill's own text
-  evals/fixtures.json      # optional model-judged fixtures
+  construct.skill.json     # Construct manifest: id, version, capabilities, maxTier, requiredValidators, dependencies
+  evals/evals.json         # output cases: prompt, expected_output, files, assertions (Agent Skills shape)
+  evals/trigger-queries.json  # 20 should/shouldn't-trigger queries on a fixed 12/8 train/validation split
   references/*.md          # long templates, record shapes, genre examples
   scripts/                 # optional executable helpers
   assets/                  # optional static resources
@@ -122,9 +122,10 @@ that originated in this repo is rewritten into the skill in plain language.
 - Naked-folder test: the skill directory (or at least `SKILL.md` plus any
   referenced files the run needs), outside the repo, on a session with no
   construct context, produces the deliverable.
-- Description tried on a real host: prompts that should apply it do, and
-  a prompt it should stand down on does. A native evaluation records this;
-  no word-matching test stands in for it.
+- Description tried on a real host: `node scripts/run-skill-evals.mjs
+  triggers <name>` runs the trigger queries through Claude Code; queries that
+  should apply it do, and near-misses do not. No word-matching test stands in
+  for it.
 - The version is bumped in both `construct.skill.json` and the `SKILL.md`
   frontmatter (`metadata.version`), which must agree, and
   `npm run registry:index` and `npm run docs:generate` have been run, so `registry/index.json` and

@@ -10,7 +10,7 @@ description: >-
   not for who owns what organisationally.
 license: Apache-2.0
 metadata:
-  version: 1.0.3
+  version: 1.0.4
   source: geraldmaron/construct
 ---
 # System architecture

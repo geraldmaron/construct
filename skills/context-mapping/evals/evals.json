@@ -1,0 +1,39 @@
+{
+  "skill_name": "context-mapping",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I inherited a vendor integration. Here is all I can share: the API spec says ingest feeds ledger; a run log confirms that transfer. The README says Finance owns ledger; the support roster says Platform owns it. Before touching retries, map what we know and what to check. Neither ownership source is declared authoritative.",
+      "expected_output": "A dated, typed map with evidence tags, an explicit ownership conflict, and classified unknowns.",
+      "files": [],
+      "assertions": [
+        "The output dates the map.",
+        "The output records both ownership assertions as conflicting rather than choosing one silently.",
+        "Each relationship uses owns, depends-on, feeds, blocks, or supersedes.",
+        "The output distinguishes observed run evidence from document assertions and classifies unknowns."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "I'm resuming the export service after six months. The old map says reports depends on archive, but I only remember building that link and no longer have archive access. We need to change retention; tell the next engineer where it is safe to act.",
+      "expected_output": "An honest refresh that keeps the load-bearing dependency unknown until observed and identifies the access limitation.",
+      "files": [],
+      "assertions": [
+        "The output labels personal recollection as was-told rather than read or ran.",
+        "The dependency retention work relies on is upgraded with evidence or kept as an unknown.",
+        "The output classifies the access gap as unknowable-from-here and names the missing access.",
+        "The output records refresh or drift information without silently replacing the old claim."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I know this module and all its callers. Change only the label in the local demo from Start to Begin; nothing consumes the label. Do I need a system map first?",
+      "expected_output": "A one-line stand-down for a small change with no uncertain relationships.",
+      "files": [],
+      "assertions": [
+        "The output says the mapping method is not needed.",
+        "The output ties that decision to the absence of uncertain relationship assumptions."
+      ]
+    }
+  ]
+}

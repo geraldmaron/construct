@@ -48,7 +48,6 @@ export interface SkillManifest {
   /** Validators the deliverable must pass wherever the skill is bound; the resolver blocks a workflow whose steps name none of them. */
   readonly requiredValidators: readonly string[];
   readonly skillDependencies: readonly VersionedDependency[];
-  readonly evals: readonly string[];
 }
 
 export interface WorkflowStep {
@@ -96,7 +95,6 @@ export interface WorkflowManifest {
   readonly cancellation: 'immediate' | 'after_step';
   readonly deliverable: { readonly kind: string; readonly schema: string; readonly challenge: boolean };
   readonly proposes: readonly ('constitution' | 'sources' | 'skills' | 'workflows' | 'lessons')[];
-  readonly evals: readonly string[];
 }
 
 export interface CapabilityDeclaration {

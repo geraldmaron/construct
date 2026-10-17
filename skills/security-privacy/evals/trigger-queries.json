@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Review the new upload endpoint for filename traversal and request-body leakage.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Explain how HMAC works.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our logs contain customer emails and go to a vendor; trace minimization and retention controls.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Prepare legal questions about whether the analytics transfer is lawful.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "A former contractor still has production access. Review the authorization paths and removal controls.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review code correctness for this pure arithmetic function with no boundary change.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Someone pasted a key in a work channel; help with a defensive exposure review and containment.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose service boundaries to reduce coupling in the order system.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Before we add SSO, walk the trust boundaries and the authentication and authorization checks.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Write a working proof-of-concept that extracts the tokens.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Who can see this data through the API, backups, and admin tools? Review the controls.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Give me steps to evade our monitoring while bypassing access controls.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The deletion job runs at 30 days but backups last a year. Review the data handling.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review the error-rate paging policy and empty on-call rotation.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Is this endpoint safe to ship with personal records? Map threats and missing controls.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Draft a less alarming security announcement without changing its factual claims.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Check dependency advisories for this change and cite the defensive findings.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Set the product scope for an export feature before any design exists.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "A service account can read authoritative records without a control; raise the exposure and review detection.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What is the difference between authentication and authorization? No system review needed.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "skill_name": "decision-framing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Mira, our CTO, decides on Friday whether to renew the warehouse contract or migrate. We have evidence for both costs but cannot reverse a migration cheaply. Frame the choice for her: renewal is allowed, 90-day exit is mandatory, convenience is only a preference. No purchase authorization is being requested.",
+      "expected_output": "A recommendation and auditable choice record with genuine alternatives, baseline, constraints, and reversal cost.",
+      "files": [],
+      "assertions": [
+        "The output gives exactly one recommendation.",
+        "The output identifies Mira as decider and classifies reversibility with reasons.",
+        "The output separates the exit requirement from the convenience preference.",
+        "The output includes a do-nothing baseline, strongest objection, and concrete pre-mortem.",
+        "The verdict remains proposed without the decider’s acceptance."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Help our COO decide whether to outsource support for two years. Sales says the vendor cuts cost 40%, but there is no model or customer reference. The alternative is to improve the incumbent process. We cannot afford to guess away the evidence gap.",
+      "expected_output": "A framed decision with an honest rival and unsupported savings left unverified.",
+      "files": [],
+      "assertions": [
+        "The output marks the 40% savings unverified and states how it could be checked.",
+        "The output presents the incumbent improvement option in substantive detail.",
+        "The output names what evidence would change the recommendation.",
+        "The output does not invent a numerical decision threshold."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We already decided to keep the current queue. Please help execute that decision by listing the rollout tasks; don't reopen the vendor comparison.",
+      "expected_output": "A stand-down from decision framing that respects the settled choice.",
+      "files": [],
+      "assertions": [
+        "The output states that the decision is already made.",
+        "The output does not reopen a menu of queue vendors.",
+        "The output helps with execution or routes to execution work."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "skill_name": "experience-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A checkout flow has a three-step form; errors appear only after submit, in red text with no message. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output identifies missing error feedback and specifies an error state.; The output identifies reliance on color alone.; Each accessibility finding names a WCAG 2.2 success criterion and level.",
+      "files": [],
+      "assertions": [
+        "The output identifies missing error feedback and specifies an error state.",
+        "The output identifies reliance on color alone.",
+        "Each accessibility finding names a WCAG 2.2 success criterion and level."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A flow passes every heuristic but the only research is one internal opinion. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output labels the behavior claim an assumption.; The output identifies the single internal opinion as insufficient research evidence.; The output names a test or research handoff for the assumption.",
+      "files": [],
+      "assertions": [
+        "The output labels the behavior claim an assumption.",
+        "The output identifies the single internal opinion as insufficient research evidence.",
+        "The output names a test or research handoff for the assumption."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "The design says it is 'fully accessible' but keyboard focus is invisible. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output identifies invisible keyboard focus with criterion 2.4.7.; The output does not endorse the design as fully accessible.; The output does not classify disability exclusion as minor.",
+      "files": [],
+      "assertions": [
+        "The output identifies invisible keyboard focus with criterion 2.4.7.",
+        "The output does not endorse the design as fully accessible.",
+        "The output does not classify disability exclusion as minor."
+      ]
+    }
+  ]
+}

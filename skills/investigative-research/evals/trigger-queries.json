@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Verify this 40% savings claim before we publish the report.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Give me five quick speculative ideas for a new product name; certainty isn't needed.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Two incident records give different start times. Reconstruct what actually happened.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "What is the current version listed on this official release page? One citation is enough.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "A vendor's numbers look plausible but I need the primary records behind them.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose between these two vendors now that their verified facts are in the packet.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Find out who said what and when; the timeline in these transcripts doesn't add up.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Locate contractual obligations and prepare questions for counsel.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Check whether three articles really corroborate the claim or copy one press release.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rewrite the research report in plain language without checking new facts.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Our before and after failure counts have different denominators. What does the evidence establish?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Draft a fictional incident timeline for a tabletop exercise.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "This due-diligence packet has missing dates and conflicting figures; resolve what can be known.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Which accepted feature requirements are critical path for the build?",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The team says no incidents occurred because the log is empty. Check that inference before the board meeting.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Review whether our endpoint leaks personal data into logs.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Compare the supplied export with the current official record and preserve any discrepancy.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Poke holes in this finished strategy before funding it, including its rejected alternative.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Can we safely repeat this factual claim in the launch announcement? Investigate its provenance.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Explain the difference between a primary source and an aggregator.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

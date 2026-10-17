@@ -1,0 +1,102 @@
+[
+  {
+    "query": "We agreed to build resumable imports; write the behavior and acceptance criteria so a new engineer can implement it.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Decide whether this feature is worth building before we promise it.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "This ticket just says make it faster. Turn our settled performance intent into testable requirements.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Rename the local config key as specified; the behavior is unchanged.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "What does finished mean for the agreed account recovery change? Spec it out.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Implement the already complete and agreed acceptance criteria.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Convert the approved scope into outcomes, constraints, non-goals, and observable acceptance.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "We have five contradictory messages and no clear ask; extract the request first.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "The sponsor chose manual retry, but the notes mix that decision with assumptions. Write a one-page brief.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Choose the database architecture that will support these agreed requirements.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "Make these criteria checkable: works well and handles errors gracefully are all we have.",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Review the checkout screen's keyboard accessibility.",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "We know what customers need, but engineering keeps asking about edge cases. Write the buildable spec.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Check the roadmap priorities for unsupported product-value claims.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The change request adds another export format; document exactly what is and isn't included.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Rewrite the spec in a calmer tone without changing its requirements.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "Prepare requirements for the agreed retention change without inventing implementation choices.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "What does acceptance criterion mean? Just explain the term.",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "The intent is settled but nobody wrote it down; turn the conversation into a handoff-ready PRD.",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Verify whether the benchmark cited in the requirements was actually measured.",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

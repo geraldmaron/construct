@@ -10,7 +10,7 @@ description: >-
   for a one-line change whose neighbours do not matter.
 license: Apache-2.0
 metadata:
-  version: 0.4.3
+  version: 0.4.4
   source: geraldmaron/construct
 ---
 

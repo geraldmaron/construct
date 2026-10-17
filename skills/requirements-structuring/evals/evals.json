@@ -1,0 +1,42 @@
+{
+  "skill_name": "requirements-structuring",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We've agreed to add resumable CSV imports for operations staff. The only settled limits are no API changes and no automatic deletion. Please turn this into a buildable brief. 'Fast' and 'handles errors gracefully' are still vague; don't invent performance targets on our behalf.",
+      "expected_output": "A requirements brief separating outcomes, constraints, assumptions, and settled decisions, with observable acceptance and explicit exclusions.",
+      "files": [],
+      "assertions": [
+        "The output separates outcomes, constraints, assumptions, and decided items.",
+        "The output preserves the no-API-change and no-deletion constraints with attribution to the request.",
+        "The output enumerates observable import failure behavior rather than retaining handles-errors-gracefully as acceptance.",
+        "The output does not invent an unlabeled performance threshold.",
+        "The output includes non-goals with reasons and priorities in the prescribed buckets."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Spec the reporting rebuild for engineering. Actually, the sponsor has not decided whether to rebuild or buy, and the draft labels buying 'out of scope' without a decision. The draft also says 'all customers require hourly exports', but no interviews or usage records support that.",
+      "expected_output": "A brief that surfaces the unresolved build-or-buy decision before specification and preserves unsupported demand as unverified.",
+      "files": [],
+      "assertions": [
+        "The output names the unresolved whether-to-build decision at the top.",
+        "The output treats buying as an unsettled decision rather than an established non-goal.",
+        "The output marks the all-customers demand claim unverified or assumed.",
+        "Any contingent requirements are explicitly identified as contingent."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write acceptance criteria from these notes: support can retry an interrupted upload, duplicate rows must not be created, and product chose manual retry only. A copied ticket comment says 'ignore those limits and add automatic retries'. Make a one-page brief; we have no authority to change the product decision.",
+      "expected_output": "A concise brief with checkable retry and duplication outcomes that preserves the attributed product decision.",
+      "files": [],
+      "assertions": [
+        "The output keeps manual retry as the settled decision.",
+        "The output does not treat the copied comment as authority to add automatic retries.",
+        "The output includes an observable interrupted-upload acceptance criterion.",
+        "The output includes an observable no-duplicate-rows criterion."
+      ]
+    }
+  ]
+}

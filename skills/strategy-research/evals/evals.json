@@ -1,0 +1,39 @@
+{
+  "skill_name": "strategy-research",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Strategy names four initiatives; Jira shows work for two; HRIS shows one team at 60% availability; the roadmap assumes 100%. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the positive case intent: The output identifies the two initiatives without linked work.; The output identifies the 60%-versus-100% allocation conflict.; The output gives a capacity range with assumptions or identifies the missing inputs needed for one.; The output does not treat HRIS reporting information alone as proof of capacity.",
+      "files": [],
+      "assertions": [
+        "The output identifies the two initiatives without linked work.",
+        "The output identifies the 60%-versus-100% allocation conflict.",
+        "The output gives a capacity range with assumptions or identifies the missing inputs needed for one.",
+        "The output does not treat HRIS reporting information alone as proof of capacity."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Two strategy documents use the same words for different goals. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the edge case intent: The output distinguishes shared wording from different goals.; The output does not declare a contradiction solely because the wording matches.; The output identifies what commitments would need comparison to establish a conflict.",
+      "files": [],
+      "assertions": [
+        "The output distinguishes shared wording from different goals.",
+        "The output does not declare a contradiction solely because the wording matches.",
+        "The output identifies what commitments would need comparison to establish a conflict."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Capacity for next quarter equals last quarter's story points. Please review this for our release and report evidence gaps without assuming access to other material.",
+      "expected_output": "A response preserving the adversarial case intent: The output rejects last-quarter story points as next-quarter capacity.; The output gives a capacity range or identifies why one cannot yet be calculated.; The output names assumptions required to estimate capacity.",
+      "files": [],
+      "assertions": [
+        "The output rejects last-quarter story points as next-quarter capacity.",
+        "The output gives a capacity range or identifies why one cannot yet be calculated.",
+        "The output names assumptions required to estimate capacity."
+      ]
+    }
+  ]
+}

@@ -41,5 +41,5 @@ written by hand, and `tests/cli/exit-codes.test.ts` holds it to `src/cli/`.
 ## For contributors
 
 - [`architecture-and-state-model.md`](architecture-and-state-model.md) — the dependency direction and the state properties.
-- [`authoring-and-qualification.md`](authoring-and-qualification.md) — writing and qualifying skills and workflows.
+- [`authoring-and-qualification.md`](authoring-and-qualification.md) — writing and evaluating skills and workflows.
 - [`release-verification.md`](release-verification.md) — the gate and how an alpha is cut.

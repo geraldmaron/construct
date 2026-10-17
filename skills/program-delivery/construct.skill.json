@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "program-delivery",
   "title": "Program delivery",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "capabilities": [
@@ -18,9 +18,5 @@
     "deliverable_complete",
     "no_velocity_as_capacity"
   ],
-  "skillDependencies": [],
-  "evals": [
-    "evals/fixtures.json",
-    "evals/behavior.json"
-  ]
+  "skillDependencies": []
 }
