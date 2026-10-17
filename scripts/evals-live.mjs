@@ -1092,11 +1092,13 @@ async function cmdPreflight(f) {
     },
   });
   const text = canary.facts.finalText ?? '';
-  checks.push([
-    'contamination canary',
-    /\bNONE\b/.test(text) && !/CLAUDE\.md|AGENTS\.md/i.test(text),
-    escapeForTerminal(text.slice(0, 200).replace(/\s+/g, ' ')),
-  ]);
+  const clean = /\bNONE\b/.test(text) && !/CLAUDE\.md|AGENTS\.md/i.test(text);
+  // Codex reads $CODEX_HOME/AGENTS.md whatever --ignore-user-config says; only a CODEX_HOME of the eval's own keeps it out.
+  const remedy =
+    !clean && host === 'codex' && /AGENTS\.md/i.test(text)
+      ? ' (the run read $CODEX_HOME/AGENTS.md: give the eval its own CODEX_HOME, signed in once with `CODEX_HOME=<dir> codex login`)'
+      : '';
+  checks.push(['contamination canary', clean, escapeForTerminal(text.slice(0, 200).replace(/\s+/g, ' ')) + remedy]);
   if (host === 'cursor') {
     const listed = text
       .split('\n')
