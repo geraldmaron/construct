@@ -176,14 +176,14 @@ export function pinSemanticReviewer(host: string, env: NodeJS.ProcessEnv, root: 
       encoding: 'utf8',
     }).trim();
     // This finite profile is version-specific; upgrades need fresh qualification.
-    if (version !== 'codex-cli 0.145.0') return null;
+    if (version !== 'codex-cli 0.163.0') return null;
     return {
       host: 'codex',
       isolation: 'held_text',
       binary,
       digest: createHash('sha256').update(bytes).digest('hex'),
       version,
-      profile: 'codex-app-server-held-text-v1',
+      profile: 'codex-app-server-held-text-v2',
     };
   } catch {
     return null;
@@ -380,7 +380,7 @@ export async function executeSemanticReview(input: {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000)
     throw new Error('semantic review timeout must be between 1 and 300000 milliseconds');
   const pin = prepared.bundle.contract.reviewer;
-  if (!pin || pin.host !== input.host || !['codex-held-text-v1', 'codex-app-server-held-text-v1'].includes(pin.profile))
+  if (!pin || pin.host !== input.host || !['codex-held-text-v1', 'codex-app-server-held-text-v2'].includes(pin.profile))
     throw new Error('no native reviewer identity was frozen at session startup; the draft remains unverified');
   if (pin.profile === 'codex-held-text-v1') assertReviewInputCapacity(prepared.bundle, { unit: 'unicode_scalars', maximum: 1048576 });
   if (typeof pin.binary !== 'string')
@@ -424,7 +424,7 @@ export async function executeSemanticReview(input: {
   const mcpNames = inventory.map((v) => v.name as string).sort();
   const root = input.root,
     argv =
-      pin.profile === 'codex-app-server-held-text-v1'
+      pin.profile === 'codex-app-server-held-text-v2'
         ? semanticAppServerArgs(provider, mcpNames)
         : semanticReviewArgs(root, input.model, provider, mcpNames),
     id = randomUUID();
@@ -482,7 +482,7 @@ export async function executeSemanticReview(input: {
   {
     let exitStatus: number | null;
     let observed: ReturnType<ReturnType<typeof semanticEventStream>['finish']>;
-    if (pin.profile === 'codex-app-server-held-text-v1') {
+    if (pin.profile === 'codex-app-server-held-text-v2') {
       const outputSchema = {
         type: 'object',
         additionalProperties: false,

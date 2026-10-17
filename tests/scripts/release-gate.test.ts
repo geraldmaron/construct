@@ -58,7 +58,7 @@ function fixture() {
         id: c.id,
         sessionId: c.id,
         host: 'codex',
-        hostVersion: 'codex-cli 0.145.0',
+        hostVersion: 'codex-cli 0.163.0',
         model: 'gpt-6-astra',
         completed: true,
         exitStatus: 0,
@@ -162,11 +162,11 @@ test('the app-server profile requires exact staged prompt identity and ordered p
   const make = () => {
     const f = fixture();
     for (const r of f.records) {
-      r.prepared.bundle.contract.reviewer.profile = 'codex-app-server-held-text-v1';
+      r.prepared.bundle.contract.reviewer.profile = 'codex-app-server-held-text-v2';
       r.prepared.bundle.contractDigest = reviewDigest(r.prepared.bundle.contract);
       r.prepared.digest = reviewDigest(r.prepared.bundle);
       r.event.bundleDigest = r.prepared.digest;
-      r.event.profile = 'codex-app-server-held-text-v1';
+      r.event.profile = 'codex-app-server-held-text-v2';
       const prompt = semanticReviewPrompt(r.prepared.bundle);
       r.event.observations.splice(1, 0, {
         type: 'native.evidence_staged',
@@ -180,6 +180,16 @@ test('the app-server profile requires exact staged prompt identity and ordered p
     return f;
   };
   assert.equal(make().check().ok, true);
+  for (const [field, value] of [
+    ['hostVersion', 'codex-cli 0.145.0'],
+    ['profile', 'codex-app-server-held-text-v1'],
+  ]) {
+    const old = make();
+    if (field === 'hostVersion') old.records[0].event.invocation.hostVersion = value;
+    else old.records[0].event.profile = value;
+    old.freeze();
+    assert.match(old.check().problems.join(), /native invocation incomplete or unsupported/, field);
+  }
   for (const field of ['sessionId', 'characters', 'digest']) {
     const f = make();
     (f.records[0].event.observations[1] as any)[field] = 'wrong';
