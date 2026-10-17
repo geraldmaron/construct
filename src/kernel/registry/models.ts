@@ -33,13 +33,6 @@ export interface VersionedDependency {
   readonly range: string;
 }
 
-export interface QualityGate {
-  /** A validator id from the capability registry (deterministic), or a review the workflow must run. */
-  readonly validator: string;
-  readonly appliesTo: string;
-  readonly required: boolean;
-}
-
 export interface SkillManifest {
   readonly format: typeof SKILL_MANIFEST_FORMAT;
   readonly formatVersion: typeof SKILL_MANIFEST_VERSION;
@@ -48,21 +41,13 @@ export interface SkillManifest {
   readonly version: string;
   readonly category: 'method' | 'operational' | 'professional';
   readonly owner: string;
-  readonly interactionClasses: readonly InteractionClass[];
-  readonly outcomes: readonly string[];
-  readonly deliverableTypes: readonly string[];
-  readonly inputs: readonly string[];
-  readonly outputSchemas: readonly string[];
-  readonly requiredSourceTypes: readonly string[];
-  readonly minimumEvidence: string;
+  /** What the host must provide wherever the skill is bound; the resolver blocks a step that cannot. */
   readonly capabilities: readonly CapabilityName[];
-  readonly actionTiers: readonly ActionTier[];
+  /** The highest action tier a step may apply this skill at; the resolver blocks a step above it. */
+  readonly maxTier: ActionTier;
+  /** Validators the deliverable must pass wherever the skill is bound; the resolver blocks a workflow whose steps name none of them. */
+  readonly requiredValidators: readonly string[];
   readonly skillDependencies: readonly VersionedDependency[];
-  readonly workflowDependencies: readonly VersionedDependency[];
-  readonly qualityGates: readonly QualityGate[];
-  readonly escalation: readonly string[];
-  readonly licensedReviewBoundaries: readonly string[];
-  readonly observedOn: readonly { readonly host: string; readonly model: string; readonly note: string }[];
   readonly evals: readonly string[];
 }
 

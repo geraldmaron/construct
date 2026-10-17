@@ -57,9 +57,8 @@ test('manifests are closed schemas: tool names, bad tiers, bad ranges, and disag
   assert.throws(() => validateSkillManifest(skillManifest('intake', 'latest'), 'm.json'), /semantic version/);
   assert.throws(() => validateSkillManifest(skillManifest('Intake', '1.0.0'), 'm.json'), /kebab-case/);
   assert.throws(() => validateSkillManifest(skillManifest('intake', '1.0.0', { capabilities: ['bash'] }), 'm.json'), /names a tool/);
-  assert.throws(() => validateSkillManifest(skillManifest('intake', '1.0.0', { actionTiers: ['bypass'] }), 'm.json'), /actionTiers/);
+  assert.throws(() => validateSkillManifest(skillManifest('intake', '1.0.0', { maxTier: 'bypass' }), 'm.json'), /maxTier/);
   assert.throws(() => validateSkillManifest(skillManifest('intake', '1.0.0', { skillDependencies: [{ id: 'x', range: 'newest' }] }), 'm.json'), /version range/);
-  assert.throws(() => validateSkillManifest(skillManifest('intake', '1.0.0', { observedOn: [{ host: 'claude', model: 'x', note: 'works great' }] }), 'm.json'), /claims success without naming/);
   assert.throws(() => validateSkillManifest({ ...skillManifest('intake', '1.0.0'), format: 'other' }, 'm.json'), /must carry format/);
   assert.throws(() => checkFrontmatterAgreement({ name: 'intake', version: '1.0.1', description: 'd' }, ok, 'm.json'), /disagree/);
   assert.throws(() => checkFrontmatterAgreement({ name: 'other', version: '1.0.0', description: 'd' }, ok, 'm.json'), /disagree/);
@@ -388,5 +387,46 @@ test('a manifest that still lists trigger phrases is refused, so nothing grows a
   for (const key of ['activation', 'standDown']) {
     assert.throws(() => validateSkillManifest(skillManifest('s', '1.0.0', { [key]: ['when asked'] }), 's/construct.skill.json'), new RegExp(`"${key}" is not read; the host model reads the SKILL.md description`));
     assert.throws(() => validateWorkflowManifest(workflowManifest('w', '1.0.0', [step('a')], { [key]: ['when asked'] }), 'w/workflow.json'), new RegExp(`"${key}" is not read; a workflow is matched by the deliverable it declares`));
+  }
+});
+
+test('a skill manifest carries only fields something enforces, and any other key is refused with the list', () => {
+  for (const key of ['outcomes', 'escalation', 'qualityGates', 'actionTiers', 'deliverableTypes', 'observedOn', 'whatever']) {
+    assert.throws(() => validateSkillManifest(skillManifest('s', '1.0.0', { [key]: [] }), 's/construct.skill.json'), new RegExp(`"${key}" is not a skill manifest field; the fields are format, .*evals, and anything else belongs in SKILL.md`), key);
+  }
+  const ok = validateSkillManifest(skillManifest('s', '1.0.0', { requiredValidators: ['citations_present'] }), 's/construct.skill.json');
+  assert.equal(ok.maxTier, 'draft');
+  assert.deepEqual(ok.requiredValidators, ['citations_present']);
+});
+
+test('a step above a skill\'s maxTier, or a workflow naming none of a skill\'s required validators, does not resolve', () => {
+  const { root, cleanup } = tmp();
+  const fx = freshStore();
+  try {
+    writeSkill(join(root, 'b'), 'framing', '1.0.0', { manifest: skillManifest('framing', '1.0.0', { maxTier: 'draft', requiredValidators: ['deliverable_complete'] }) });
+    writeWorkflow(join(root, 'w'), 'fits', workflowManifest('fits', '1.0.0', [
+      step('a', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'draft', outputs: ['x'], validators: ['citations_present'] }),
+      step('b', { needs: ['a'], tier: 'draft', outputs: ['y'], validators: ['deliverable_complete'] }),
+    ]));
+    writeWorkflow(join(root, 'w'), 'drifts', workflowManifest('drifts', '1.0.0', [
+      step('a', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'project_write', outputs: ['x'], validators: ['citations_present'] }),
+    ]));
+    const skills = createSkillRegistry({ builtinDir: join(root, 'b'), projectDir: null });
+    const workflows = createWorkflowRegistry({ builtinDir: join(root, 'w'), projectDir: null });
+    const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
+    const base: ResolveInput = { workflowId: 'fits', input: { target: 't' }, skills, workflows, lock, host: host({ maxTier: 'project_write' }), sources: [], store: fx.store, at: T };
+    const fits = resolveWorkflow(base);
+    assert.equal(fits.reasons.some((r) => r.code === 'tier_above_skill' || (r.code === 'missing_validator' && /requires the validator/.test(r.message))), false, 'a later step naming the validator satisfies it');
+    const drifts = resolveWorkflow({ ...base, workflowId: 'drifts' });
+    assert.notEqual(drifts.status, 'runnable');
+    const tier = drifts.reasons.find((r) => r.code === 'tier_above_skill');
+    assert.equal(tier?.stepId, 'a');
+    assert.match(tier!.message, /step acts at project_write; skill framing may be applied at draft at most/);
+    assert.match(tier!.remedy, /raise the skill's maxTier/);
+    const gate = drifts.reasons.find((r) => r.code === 'missing_validator' && /requires the validator/.test(r.message));
+    assert.match(gate!.message, /skill framing requires the validator deliverable_complete, and no step in drifts names it/);
+  } finally {
+    fx.cleanup();
+    cleanup();
   }
 });

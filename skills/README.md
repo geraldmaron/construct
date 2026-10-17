@@ -3,8 +3,9 @@
 Portable skills for AI agents in the Agent Skills format: a `SKILL.md` per
 skill, optionally with `references/`, `scripts/`, and `assets/` for long
 templates, helpers, and examples. Beside it, `construct.skill.json` is
-Construct's manifest (id, version, category, deliverable types, capabilities
-and gates), and `evals/` holds checks of the skill's own text. When a skill
+Construct's manifest (id, version, category, capabilities, the highest
+tier it may act at, the validators its deliverable must pass, and
+dependencies: only what the resolver enforces), and `evals/` holds checks of the skill's own text. When a skill
 applies is said once, in the `SKILL.md` description, and the host model
 judges it. A host that reads only `SKILL.md` ignores both.
 

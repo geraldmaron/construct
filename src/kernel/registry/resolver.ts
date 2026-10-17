@@ -36,6 +36,7 @@ export const RESOLUTION_REASONS = [
   'ambiguous_executor',
   'lockfile_divergence',
   'tier_above_executor',
+  'tier_above_skill',
 ] as const;
 export type ResolutionReasonCode = (typeof RESOLUTION_REASONS)[number];
 
@@ -176,6 +177,7 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
   }
 
   const plan: BoundStep[] = [];
+  const namedValidators = new Set(m.steps.flatMap((s) => s.validators));
   for (const id of order) {
     const step = m.steps.find((s) => s.id === id)!;
     let bound: BoundStep['skill'] = null;
@@ -201,6 +203,14 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
         for (const cap of skill.manifest.capabilities) {
           if (!step.capabilities.includes(cap) && !provides(input.host, cap)) {
             reasons.push({ code: 'capability_unavailable', stepId: step.id, message: `skill ${skill.manifest.id} needs ${cap}, which this host does not provide`, remedy: `Connect something that provides ${cap}, or run in a host that does.` });
+          }
+        }
+        if (!tierAtLeast(skill.manifest.maxTier, step.tier)) {
+          reasons.push({ code: 'tier_above_skill', stepId: step.id, message: `step acts at ${step.tier}; skill ${skill.manifest.id} may be applied at ${skill.manifest.maxTier} at most`, remedy: `Lower the step's tier, or raise the skill's maxTier if its method is meant to act at ${step.tier}.` });
+        }
+        for (const v of skill.manifest.requiredValidators) {
+          if (!namedValidators.has(v)) {
+            reasons.push({ code: 'missing_validator', stepId: step.id, message: `skill ${skill.manifest.id} requires the validator ${v}, and no step in ${m.id} names it`, remedy: `Add ${v} to the validators of the step that produces the deliverable.` });
           }
         }
       }

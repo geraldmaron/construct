@@ -3,104 +3,104 @@
   "formatVersion": 1,
   "skills": {
     "adversarial-review": {
-      "version": "0.3.2",
-      "digest": "sha256:d449d0b7d97458a877e5f0aadeca8879dceca06c07ee837aea4753d7f8998e83",
+      "version": "0.3.3",
+      "digest": "sha256:e7fe8ff49868252017e26401db978506b25e557fcdbd49029ab52a08a57ac4bb",
       "category": "method",
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "3.1.1",
-      "digest": "sha256:4fcce24bb029fef4f2470d3b4d3968aa5c96e7eb16bc88e827c00332edfdb4e6",
+      "version": "3.1.2",
+      "digest": "sha256:e71225181e6281a6a625935a8a675b91322d6201ea6a26a297c63927102d9cb6",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
-      "version": "0.4.2",
-      "digest": "sha256:d0582862cfd338badfe6e7d2efc7e3358cdb4b557e418d1886355786cdd78a3d",
+      "version": "0.4.3",
+      "digest": "sha256:99967bad93b255af8085c7567103d635263d19d1cf5c2a196e288e379214366c",
       "category": "method",
       "title": "Context mapping"
     },
     "decision-framing": {
-      "version": "0.3.2",
-      "digest": "sha256:241ea6fcb0a7474b87a2ba79b35424618bcbed86ab6d1264cb4f855859b15340",
+      "version": "0.3.3",
+      "digest": "sha256:7357a262adc6299faec5db8ce0ae98fdc4be278c44e2cd1ee396a8903242e33c",
       "category": "method",
       "title": "Decision framing"
     },
     "experience-design": {
-      "version": "1.0.2",
-      "digest": "sha256:406bfce217f8213d48c65f475978322eab94f881524f6258a13f7d71dbf74148",
+      "version": "1.0.3",
+      "digest": "sha256:b01875b317710747cd732eed0a9145eb9f3d55b7d68750251d382e20f2831b14",
       "category": "professional",
       "title": "Experience design"
     },
     "governance-risk": {
-      "version": "1.0.3",
-      "digest": "sha256:14e97b0562cbacc1c272608d4344dc825f6df4aa5d2d963ca558a7bdf2aa8c15",
+      "version": "1.0.4",
+      "digest": "sha256:a31fe61bc1d7f061671219891403c2138be806c859437d3975ac2dbfbaea5fbe",
       "category": "professional",
       "title": "Governance and risk"
     },
     "intake": {
-      "version": "0.3.1",
-      "digest": "sha256:ced24fda63b34b79f49f824338848de8dc3b2e054a4a6f931e7a5be3d993f3f7",
+      "version": "0.3.2",
+      "digest": "sha256:de77a6c96155e25890de7355cdbe87978a612b4d2c16b22de337177cea0e5a07",
       "category": "method",
       "title": "Intake"
     },
     "investigative-research": {
-      "version": "0.3.4",
-      "digest": "sha256:003c59a19efc69c69eae78eecdc7258f4ace9ba2283b6774e80fe36ddad7a6d9",
+      "version": "0.3.5",
+      "digest": "sha256:1161cc0400ffa0f6ddf6ce1859c3d943b2a99245f6f4eee2777c59d5362a3e63",
       "category": "method",
       "title": "Investigative research"
     },
     "operations-reliability": {
-      "version": "1.0.2",
-      "digest": "sha256:fc5d8c2af1a456952d0744d13b8dff222a9898438769f8f6244791e96ef68b6a",
+      "version": "1.0.3",
+      "digest": "sha256:c66d47d950f014399a24f8ac2e956dbbaf7b211fa3daae5449285c7b73a7bf39",
       "category": "professional",
       "title": "Operations and reliability"
     },
     "product-management": {
-      "version": "1.0.3",
-      "digest": "sha256:0e782acfbc6d7c11300bcbe97ebf5eff4b70af1a46fb2a61731a3e9f495070be",
+      "version": "1.0.4",
+      "digest": "sha256:ed6af2b57dec373cf923a139111356a7b475b3cb7b98736bf35d220fb81ae666",
       "category": "professional",
       "title": "Product management"
     },
     "program-delivery": {
-      "version": "1.0.2",
-      "digest": "sha256:dc05980edbc4cd1c68a4a35ced2af24ca3b7ad0c6109c0c7d972cbb2b479cbe5",
+      "version": "1.0.3",
+      "digest": "sha256:1e5d701952bb7f02f6648d4f773146c78df4104eb85fe749c60abfdfad81dbd7",
       "category": "professional",
       "title": "Program delivery"
     },
     "requirements-structuring": {
-      "version": "0.5.2",
-      "digest": "sha256:c1bfb85b5ca9af57fe5a4fb45866c96453ca3dffc53d666cd798947c2fa1b857",
+      "version": "0.5.3",
+      "digest": "sha256:2d9a52c7065afbc891765b68b12eaef2ee8980d1e8cfa24b74ccbda5a4196bcf",
       "category": "method",
       "title": "Requirements structuring"
     },
     "security-privacy": {
-      "version": "1.0.2",
-      "digest": "sha256:15235125083b67a02a84083cd4e0b20063520e0244a3ac8fa7e7f64f6a95f67c",
+      "version": "1.0.3",
+      "digest": "sha256:8e200cb9ac1c98125e4c5376ddcb387f8227a0fbdc52661c4caf098ae5afdc79",
       "category": "professional",
       "title": "Security and privacy"
     },
     "software-engineering": {
-      "version": "1.0.2",
-      "digest": "sha256:8e4a5d7502e27f0bb8d295c8a6e83bcf06876225c671970e5460604370ff52a8",
+      "version": "1.0.3",
+      "digest": "sha256:cc617c57d0743834bac3ba509e34647645174ba1c2671f0d50191add57fa6a55",
       "category": "professional",
       "title": "Software engineering"
     },
     "strategy-research": {
-      "version": "1.0.2",
-      "digest": "sha256:aff998a78f9d01a83aab408db9fcaba33e4a712a7da5d881634e2fc04fea5acd",
+      "version": "1.0.3",
+      "digest": "sha256:e1ea466ea6b26bdb6849a39cac69ddf29a98bc223ee679d180b4a2b0642786dc",
       "category": "professional",
       "title": "Strategy and research"
     },
     "system-architecture": {
-      "version": "1.0.2",
-      "digest": "sha256:0b1cb4ddf77895ab6688f96408315b09201bd9543af825cbf01f57d33fe1c544",
+      "version": "1.0.3",
+      "digest": "sha256:b7580ba26473aff6c3d25a17a42e073429f95d68cd0e31a2651632e064f94808",
       "category": "professional",
       "title": "System architecture"
     },
     "written-voice": {
-      "version": "0.5.1",
-      "digest": "sha256:bf92eb35b9025b9cb14aca0949396479d201ef796b1a9f8ef8ac943b6af0bdd4",
+      "version": "0.5.2",
+      "digest": "sha256:3bfe16fba71426313bbddf522aefd96f204e11596054cff2a20b9520f768ecaa",
       "category": "method",
       "title": "Written voice"
     }
@@ -185,8 +185,8 @@
       "interactionClass": "manage"
     },
     "project-bootstrap": {
-      "version": "1.0.2",
-      "digest": "sha256:8472ea19599847a5abc1216825cd4330e599ccea39f44447687c931b00b50de4",
+      "version": "1.0.3",
+      "digest": "sha256:3673dfd4f2cfdfd2ba375b45eb4b53c80b4fe9df0a427a87b0f114048cf51af7",
       "title": "Project bootstrap and constitution review",
       "interactionClass": "manage"
     },

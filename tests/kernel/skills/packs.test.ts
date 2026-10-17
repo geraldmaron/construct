@@ -37,8 +37,7 @@ test('nine professional packs ship, each complete', () => {
     const fixtures = JSON.parse(text(id, 'evals/fixtures.json')) as { cases: { kind: string; input: string; expect: Record<string, unknown> }[] };
     const kinds = new Set(fixtures.cases.map((c) => c.kind));
     for (const k of ['positive', 'negative', 'edge', 'adversarial']) assert.ok(kinds.has(k), `${id} fixtures cover ${k}`);
-    assert.ok(pack.manifest.licensedReviewBoundaries.length + pack.manifest.escalation.length > 0, `${id} states limits`);
-    assert.ok(pack.manifest.qualityGates.length > 0, `${id} names a quality gate`);
+    assert.ok(pack.manifest.requiredValidators.length > 0, `${id} requires at least one validator wherever it is bound`);
     const consumer = workflows.list().find((w) => w.manifest.steps.some((s) => s.skill?.id === id));
     assert.ok(consumer, `${id} is consumed by a workflow`);
   }
@@ -47,8 +46,8 @@ test('nine professional packs ship, each complete', () => {
 
 test('the governance pack never owns a licensed judgment and every pack refuses to invent doctrine', () => {
   const g = skills.get('governance-risk')!;
-  assert.ok(!g.manifest.actionTiers.includes('licensed_judgment'));
-  assert.ok(g.manifest.licensedReviewBoundaries.length >= 3);
+  assert.notEqual(g.manifest.maxTier, 'licensed_judgment', 'no step may apply it at licensed_judgment');
+  assert.match(skills.body('governance-risk')!, /tax treatment, and audit opinions are licensed/, 'the body names the licensed judgments it prepares and never gives');
   assert.match(skills.body('governance-risk')!, /research and issue-spotting, not legal, tax, or financial\s+advice/i);
   for (const id of PACKS) assert.match(skills.body(id)!, /never\s+invent|do not\s+invent|not\s+invented/i, `${id} forbids invented doctrine`);
 });

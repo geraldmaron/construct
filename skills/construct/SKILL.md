@@ -12,7 +12,7 @@ description: >-
   is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.1.1
+  version: 3.1.2
   source: geraldmaron/construct
 ---
 

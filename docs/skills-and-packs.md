@@ -3,11 +3,12 @@
 [Documentation index](README.md) · [Project README](../README.md)
 
 A skill is a portable `SKILL.md` (Agent Skills format) beside a Construct
-manifest, `construct.skill.json`, that declares what the portable file
-cannot: interaction classes, outcomes and deliverable types, required inputs and sources, capability requirements
-(never tool names), action tiers, versioned dependencies, quality gates,
-escalation, licensed-review boundaries, observations, and evals. The
-manifest and the frontmatter must agree on name and version.
+manifest, `construct.skill.json`, that declares only what Construct
+enforces when it binds the skill into a workflow step: capability
+requirements (never tool names), the highest action tier it may be applied
+at, the validators its deliverable must pass, versioned dependencies, and
+evals. Everything else about the method lives in `SKILL.md`. The manifest
+and the frontmatter must agree on name and version.
 
 ## What ships
 

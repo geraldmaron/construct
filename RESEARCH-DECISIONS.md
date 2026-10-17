@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 38 are
+Nothing in §§1–32 describes the current product. Sections 33 to 39 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3345,3 +3345,49 @@ Rejected because it keeps the same fragile vocabulary on exactly the path
 where nothing checks it. Verdict: **accepted with controls**. The remaining
 gap, a required `stakes` field on managed readings, changes model-facing
 schema and waits for the live record (work filed).
+
+## 39. A skill manifest declares only what something enforces (2026-10-17)
+
+Gerald, 2026-10-17: `construct.skill.json` lists many explicit terms and
+statements and feels fragile; make the necessary changes.
+
+**What was true.** Of the manifest's 23 fields, the resolver read four (id,
+version, skill dependencies, capabilities), the lock pinned the version,
+and qualification read the eval list. Twelve fields were validated and then
+never read. Some were declarations: action tiers, quality gates, deliverable
+types, output schemas, interaction classes, required source types and
+workflow dependencies. Others were prose: outcomes, inputs, minimum
+evidence, escalation and licensed-review boundaries. Observations were empty
+in every skill. The declarations had already drifted:
+- five shipped bindings ran a skill at `project_write` while it declared
+  `observe` and `draft` only;
+- `project-bootstrap` bound a skill whose required validator no step named;
+- skill deliverable types used a different vocabulary from workflow
+  deliverable kinds, so no check could be written against them.
+
+**Decision.** The manifest keeps id, title, version, category, owner,
+capabilities, skill dependencies and evals, plus two declarations the
+resolver now enforces:
+- `maxTier`, a ceiling that replaces the tier list: a step above it does
+  not resolve.
+- `requiredValidators`, a flat list that replaces gates whose `appliesTo`
+  and `required` never varied: a workflow whose steps name none of them
+  does not resolve.
+
+Every other key is refused with the allowed list, so dead fields cannot
+return. The prose fields were checked skill by skill against the
+`SKILL.md` bodies, which already state each rule (escalations, licensed
+boundaries, evidence bars), and were deleted. The four drifted skills now
+declare `project_write`, matching the reviewed workflows that bind them,
+and `project-bootstrap` names the missing validator on its review step.
+
+**Challenge.** Strongest failure mode: raising the four ceilings to fit the
+workflows legalizes drift instead of catching it. The bindings were
+reviewed workflow designs: each writes a project document, and writing a
+document is what `project_write` means. The ceiling still stops any new
+step from applying them outward or destructively. A project-authored skill
+using a removed field stops loading until its author deletes the field;
+the refusal names the field and the allowed ones. Best alternative: keep
+the fields and add readers for each. Rejected because deliverable types
+have no consistent target and the prose fields restate the body. Verdict:
+**accepted with controls**.
