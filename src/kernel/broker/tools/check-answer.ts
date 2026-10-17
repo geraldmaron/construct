@@ -34,7 +34,7 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
   description:
-    'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are listed with what replaces them, settled terms are not stated as current, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
+    'Before stating facts about this project in a plain answer, pass the answer and what it rests on; Construct returns what is unsupported: citations that name nothing real, quotes that do not match, figures not from what was cited, superseded or settled material stated as current, and sources updated after the period the answer covers. It starts nothing and records only that a check happened and how it went.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
