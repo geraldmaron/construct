@@ -82,7 +82,8 @@ export function mcpEntry(command, env) {
  * - claude: the real HOME, where its login lives; auto memory off; tool
  *   search off only in the no-tool-search condition.
  * - codex: HOME is the run's own, so the person's ~/.agents skills stay out;
- *   CODEX_HOME stays at the real ~/.codex for the login.
+ *   CODEX_HOME is the caller's, else the real ~/.codex for the login. Codex
+ *   reads $CODEX_HOME/AGENTS.md, so a clean run needs a CODEX_HOME of its own.
  * - cursor: the real HOME; under any other HOME cursor-agent is not logged in.
  */
 export function hostEnv(host, { runHome = null, condition = 'default', env = process.env } = {}) {
