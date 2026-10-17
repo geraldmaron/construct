@@ -26,16 +26,13 @@ import { PERSON_ASKED_ONLY } from './shared.ts';
 
 /** When to call classify_request and what to send, with the built-in deliverable kinds by family. */
 export const CLASSIFY_DESCRIPTION = [
-  'Call this when the person wants something produced, reviewed, kept up on a schedule, or handed to another agent, however they phrase it, questions included ("can you put together…").',
-  'A plain question needs no call; the remember and work tools are called directly.',
-  'Report your own reading: Construct does not read intent from the words.',
-  'It checks the reading, works out periods and source ids, names the workflows whose declared deliverable fits, returns only the questions that block, and records nothing.',
+  'Report your reading of a request the person wants produced, reviewed, kept up on a schedule, or handed to another agent, however they phrase it, questions included ("can you put together…"); Construct checks it, works out periods and source ids, matches workflows and returns only the questions that block, recording nothing.',
+  'A plain question needs no call, and remember and work are called directly; Construct does not read intent from the words, so report your own reading.',
   'kind: answer, remember, manage (produce or review something), maintain (keep it up on a schedule or an event), or coordinate (work alongside other agents).',
-  'Report intent with outcome, path and acceptance. Use a declared kind; other plus intent.path selects a portable path. Only implementation needs project test commands.',
+  'intent carries outcome, path and acceptance; use a declared deliverable kind, or other plus intent.path for a portable path; only implementation needs project test commands; prefer period.relative or quarter over computing dates.',
   'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; decision/brief; outcome/ portable, managed; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
-  'Prefer period.relative or quarter over computing dates.',
   'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"research/brief"},"sources":[{"name":"<their connected source>","role":"read"}]}.',
-  'Evidence gaps do not block an investigation: open items use blocking=false with handling=investigate or carry_unknown; never invent an assumption. Only required scope, permission or destination decisions block. Start with the returned intake.',
+  'Evidence gaps do not block: open items use blocking=false with handling=investigate or carry_unknown, never an invented assumption; only required scope, permission or destination decisions block.',
   PERSON_ASKED_ONLY,
 ].join(' ');
 

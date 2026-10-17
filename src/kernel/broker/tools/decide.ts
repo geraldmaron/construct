@@ -11,7 +11,10 @@ import { followUp } from './sources.ts';
 export const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
   title: 'Relay the person’s decision',
-  description: `Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, making the project a side project, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how. ${PERSON_ASKED_ONLY}`,
+  description: [
+    'Record the answer the person gave to an open decision, in their words or as one of its options; an approval covers exactly the action asked about and expires. Answers only the person can give (an external or destructive action, accepting a deliverable, making the project a side project, or a replacement, ruled-out term or outdated document) are put to them directly when the host can, and otherwise stay open with how to answer.',
+    PERSON_ASKED_ONLY,
+  ].join(' '),
   surface: 'interactive',
   readOnly: false,
   destructive: true,

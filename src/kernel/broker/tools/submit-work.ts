@@ -17,7 +17,7 @@ export const submitWork = define<SubmitInput, unknown>({
   name: 'submit_work',
   title: 'Submit a step’s result',
   description:
-    'Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.',
+    "Hand back what a claimed step produced, with the evidence you read; the step's validators check it, and a failure comes back with what to fix and a retry when its policy allows. Say noData when the step found nothing.",
   surface: 'both',
   readOnly: false,
   inputSchema: {

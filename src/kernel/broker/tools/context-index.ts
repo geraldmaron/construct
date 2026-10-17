@@ -14,7 +14,7 @@ export const contextIndex = define<Record<string, unknown>, unknown>({
   surface: 'interactive',
   readOnly: false,
   description:
-    'Inspect or rebuild the derived local index. Explicitly enable or disable supplied embeddings; configure resets prior vectors. Record vectors for returned embeddingRef and exact passage fingerprints. This tool invokes no model, download or service.',
+    'Inspect or rebuild the derived local index, enable or disable supplied embeddings (configure resets prior vectors), and record vectors for a returned embeddingRef and exact passage fingerprints. It invokes no model, download or service.',
   inputSchema: {
     type: 'object',
     properties: {

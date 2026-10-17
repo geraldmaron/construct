@@ -7,7 +7,7 @@ export const inbox = define<{ runId?: string; owner?: string }, unknown>({
   name: 'inbox',
   title: 'Decisions waiting on the person',
   description:
-    "The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned items included).",
+    "The approvals, questions and proposed statements that belong to the person, in plain words, with the options each accepts and who decides it; pass owner to see one person's. Surface them conversationally and never decide them yourself.",
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
