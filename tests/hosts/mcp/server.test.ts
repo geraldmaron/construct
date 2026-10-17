@@ -403,7 +403,7 @@ test('a refused lazy bind keeps discovery stable and retries after compatible re
   repaired = true;
   try {
     const recovered = await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
-    assert.notEqual((recovered?.result as { isError?: boolean }).isError, true);
+    assert.notEqual((recovered!.result as { isError?: boolean }).isError, true);
     assert.equal(attempts, 2);
     const stable = await handle({ jsonrpc: '2.0', id: 4, method: 'tools/list' });
     assert.deepEqual(stable?.result, list.result);
