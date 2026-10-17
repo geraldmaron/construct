@@ -4,8 +4,9 @@
  *
  * At session start the hook names the other sessions and what they hold;
  * after an edit it names the claimant holding the edited file in the checkout
- * the file is in, which may be another git worktree than the session's. It
- * says nothing about the session's own claims, other tools,
+ * the file is in, which may be another git worktree than the session's, or,
+ * once per path, that no claim of the session covers the file. It says
+ * nothing about the session's own claims, other tools,
  * files outside the repository, or a directory with no project, and its
  * output fits 400 bytes. Installing merges two hooks into the checkout's
  * machine-local settings, keeps the hooks already there, and keeps the file
@@ -99,6 +100,13 @@ test('the hook names peers at session start and a held file after an edit, and n
       'outside the repository',
     );
     assert.equal(hookResponse('post-tool-use', at({ tool_name: 'Edit', tool_input: 'nonsense' }), ctx), '');
+    const unclaimed = at({ tool_name: 'Edit', tool_input: { file_path: join(box.cwd, 'src', 'free.ts') } });
+    assert.match(
+      hookResponse('post-tool-use', unclaimed, ctx),
+      /no claim of yours covers src\/free\.ts\. Before more edits, claim the work with the work tool/,
+      'an edit no claim covers is noticed',
+    );
+    assert.equal(hookResponse('post-tool-use', unclaimed, ctx), '', 'once per path, not on every edit');
     assert.match(
       hookResponse(
         'post-tool-use',
@@ -209,10 +217,16 @@ test('an edit in another worktree of the project is judged against the claims he
       /reserved by ses_peer\/builder for w-lane until [^,]+, in this checkout\./,
       'a session in that worktree is told it is its own checkout',
     );
-    assert.equal(
-      edit(main, join(main, 'src', 'lex.ts')),
-      '',
+    const mainEdit = edit(main, join(main, 'src', 'lex.ts'));
+    assert.doesNotMatch(
+      mainEdit,
+      /reserved by/,
       'the same path in the main checkout is another copy of the file: a merge risk, not a collision',
+    );
+    assert.match(
+      mainEdit,
+      /no claim of yours covers src\/lex\.ts/,
+      'the main checkout session holds no claim on it, so it is told once to claim first',
     );
   } finally {
     fx.cleanup();

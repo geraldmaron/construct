@@ -158,6 +158,16 @@ export function resolveClaudeConfigDir(env: PathsEnv = process.env, home: string
 }
 
 /**
+ * Claude Code's user-scope configuration file, which holds MCP servers added
+ * with `claude mcp add -s user`: `.claude.json` in CLAUDE_CONFIG_DIR when set,
+ * else in home. Read here for the same reason as every home-rooted path.
+ */
+export function resolveClaudeUserConfigFile(env: PathsEnv, home: string = xdgBase(env.HOME, homedir())): string {
+  const configured = env.CLAUDE_CONFIG_DIR;
+  return configured && configured.trim() ? join(configured, '.claude.json') : join(home, '.claude.json');
+}
+
+/**
  * Hermes Agent's data directory: HERMES_HOME when set, else `.hermes` under
  * home. Hermes reads its MCP servers only from `config.yaml` here, never from
  * a project file (Hermes Agent website/docs/user-guide/features/mcp.md and

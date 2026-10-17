@@ -4,7 +4,7 @@ import { contextIndexStatus } from '../kernel/context/retrieval.ts';
  * looked at and what it found. A missing or broken project is never healthy.
  */
 
-import { existsSync, accessSync, constants, realpathSync } from 'node:fs';
+import { existsSync, accessSync, constants, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
@@ -21,7 +21,13 @@ import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } fr
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { lockStatus } from '../kernel/registry/lockfile.ts';
-import { resolveHostConfigDirs, resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import {
+  resolveClaudeUserConfigFile,
+  resolveHostConfigDirs,
+  resolveHostSkillsDir,
+  SKILLS_HOST_NAMES,
+  type SkillsHostName,
+} from '../kernel/paths.ts';
 import { inspectWiring, launchOf } from '../hosts/wiring/wire.ts';
 import { HOOK_SETTINGS_PATH, inspectHooks } from '../hosts/wiring/hooks.ts';
 import { inspectStartup } from '../hosts/wiring/startup.ts';
@@ -49,6 +55,51 @@ interface Check {
 }
 
 const NODE_FLOOR = [22, 18] as const;
+
+/** The Claude Code user-scope config file when it carries a construct MCP entry; null otherwise. */
+function userScopeConstruct(ctx: CliContext): string | null {
+  const file = resolveClaudeUserConfigFile(ctx.env);
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8')) as { mcpServers?: Record<string, unknown> };
+    return parsed.mcpServers && Object.hasOwn(parsed.mcpServers, 'construct') ? file : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Personal copies of the skills this release ships, in every host's personal
+ * skills directory. A copy there loads in every repository the host opens and
+ * outranks a project's own copy, so a stale one quietly replaces what this
+ * release says: health fails until it is updated or removed.
+ */
+function personalSkillChecks(ctx: CliContext): Check[] {
+  const stale: string[] = [];
+  const seen = new Set<string>();
+  const shipped = listShippedSkills();
+  for (const host of SKILLS_HOST_NAMES) {
+    const dir = resolveHostSkillsDir(host, ctx.env);
+    if (seen.has(dir) || !existsSync(dir)) continue;
+    seen.add(dir);
+    for (const skill of shipped) {
+      const { state } = skillState(skill, dir);
+      if (state !== 'outdated' && state !== 'diverged') continue;
+      const fix =
+        skill.name === OPERATIONAL_SKILL
+          ? `\`construct skill remove ${skill.name} --client=${host} --confirm\` (the project copy is the one to use)`
+          : `\`construct skill install ${skill.name} --client=${host} --force\``;
+      stale.push(`${join(dir, skill.name)} is ${state === 'outdated' ? 'an older release' : 'not this release'}; ${fix}`);
+    }
+  }
+  if (stale.length === 0) return [];
+  return [
+    {
+      name: 'personal-skills',
+      ok: false,
+      detail: `${String(stale.length)} stale personal skill copy(ies), each loading in every repository: ${stale.join('; ')}`,
+    },
+  ];
+}
 
 /**
  * The platform timers on this machine that fire Construct triggers. One that
@@ -358,10 +409,13 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       // A project no host is wired to is one no agent session can reach, so it is not healthy.
       const found = presentHosts(ctx.env, resolveHostConfigDirs(ctx.env));
       const where = found.length > 0 ? `found ${found.map((f) => f.client).join(', ')}` : 'no agent host found on this machine';
+      const userScope = userScopeConstruct(ctx);
       checks.push({
         name: 'host-wiring',
         ok: false,
-        detail: `no host wired, so no agent session can reach Construct; ${where}; \`construct init --client=<host>\` wires one`,
+        detail: userScope
+          ? `no host is wired in this project; Claude Code reaches Construct only through a user-scope entry in ${userScope} that binds whatever directory a session starts in, in every repository; \`construct init --client=claude-code\` wires this project and \`claude mcp remove construct -s user\` removes the unbound entry`
+          : `no host wired, so no agent session can reach Construct; ${where}; \`construct init --client=<host>\` wires one`,
       });
     } else {
       checks.push({
@@ -384,29 +438,19 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   }
   if (ambient) {
     const inside = normalizeClient(ambient.host);
+    const unbound = inside === 'claude-code' ? userScopeConstruct(ctx) : null;
     const unwired =
       root !== null && inside !== 'unknown' && !wiredClients.includes(inside)
-        ? `; ${inside} is not wired in this project, so a session here cannot reach Construct; \`construct init --client=${inside}\` wires it`
+        ? unbound
+          ? `; ${inside} is not wired in this project and reaches Construct only through the unbound user-scope entry in ${unbound}; \`construct init --client=${inside}\` wires it`
+          : `; ${inside} is not wired in this project, so a session here cannot reach Construct; \`construct init --client=${inside}\` wires it`
         : '';
     checks.push({ name: 'host', ok: true, detail: `inside ${ambient.host} (${ambient.marker})${unwired}` });
-    if ((SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
-      // A personal copy loads in every repository the host opens, whichever Construct each one runs.
-      const dir = resolveHostSkillsDir(ambient.host as SkillsHostName, ctx.env);
-      const skill = readShippedSkill(OPERATIONAL_SKILL);
-      const state = skill ? skillState(skill, dir).state : 'absent';
-      if (state === 'outdated' || state === 'diverged') {
-        const copy = state === 'outdated' ? `an older personal copy at ${dir}` : `a personal copy at ${dir} that differs from this release`;
-        checks.push({
-          name: 'personal-skill',
-          ok: true,
-          detail: `${copy} loads in every repository; \`construct skill remove ${OPERATIONAL_SKILL} --client=${ambient.host} --confirm\` removes it`,
-        });
-      }
-    }
   } else {
     checks.push({ name: 'host', ok: true, detail: 'no agent host detected in this shell; that is fine for setup and inspection' });
   }
 
+  checks.push(...personalSkillChecks(ctx));
   const shipped = listShippedSkills();
   checks.push({
     name: 'package',
