@@ -1,8 +1,10 @@
 import { askedOf } from './asked.ts';
 /**
- * kernel/workflow/triggers.ts — standing outcomes: define a trigger, let an
- * external clock fire it, keep the ledger, and write the recipe the clock
- * needs. Construct owns what happens on a firing; it never owns time.
+ * kernel/workflow/triggers.ts — standing outcomes: define a trigger, let a
+ * clock fire it, keep the ledger, and write the recipe the clock needs.
+ * Construct owns what happens on a firing; the platform owns time. The one
+ * clock Construct writes is a per-user launchd or systemd timer, and only the
+ * explicit `workflow install-timer` command writes it (timer-unit.ts).
  *
  * A trigger's input is checked when it is defined. A period in it is kept
  * relative and worked out at each firing's due time in the trigger's own
@@ -16,6 +18,7 @@ import { listActiveRuns } from '../state/runs.ts';
 import {
   createTrigger,
   getTrigger,
+  listFirings,
   listTriggers,
   markTriggerFired,
   recordFiring,
@@ -30,6 +33,7 @@ import { inputProblems, type SourceAvailability } from '../registry/resolver.ts'
 import { listSources } from '../state/sources.ts';
 import { isValidTimezone, nextCronAfter, parseCron } from './cron.ts';
 import type { WorkflowService } from './service.ts';
+import { timerUnit, type TimerFacts, type TimerPlatform, type TimerUnitFile } from './timer-unit.ts';
 
 export interface TriggerServiceDeps {
   readonly store: StateStore;
@@ -63,6 +67,8 @@ export interface FireResult {
   readonly nextDueAt: string | null;
 }
 
+export type TriggerClock = 'cron' | 'github-actions' | TimerPlatform;
+
 export interface TriggerService {
   define(input: DefineTriggerInput): Trigger;
   list(): Trigger[];
@@ -71,7 +77,10 @@ export interface TriggerService {
   /** Triggers whose next due instant is at or before `at`. */
   due(at: string): Trigger[];
   fire(input: FireInput): FireResult;
-  recipe(id: string, clock: 'cron' | 'github-actions', executor?: string): string;
+  /** The text a clock needs to fire a trigger; a platform timer's text is exactly what `timer` installs. */
+  recipe(id: string, clock: TriggerClock, executor?: string, facts?: TimerFacts): string;
+  /** The files of the platform timer that fires a schedule trigger. Refuses without an executor. */
+  timer(id: string, platform: TimerPlatform, executor: string | undefined, facts: TimerFacts): TimerUnitFile[];
   nextDue(id: string, after: string): string | null;
 }
 
@@ -83,6 +92,20 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
   function nextDue(trigger: Trigger, after: string): string | null {
     if (trigger.kind !== 'schedule' || !trigger.scheduleExpression || !trigger.timezone) return null;
     return nextCronAfter(trigger.scheduleExpression, trigger.timezone, after);
+  }
+
+  /**
+   * The key a clock-less firing of a schedule trigger takes: the slot that was
+   * due, never the wall clock. A platform timer that fires late, or coalesces
+   * the slots missed while the machine slept into one start, names the slot it
+   * covers; a repeat after that slot was handled names it again and is
+   * deduplicated. Null for a trigger that has no slot to name.
+   */
+  function slotKey(trigger: Trigger, slotDue: boolean): string | null {
+    if (trigger.kind !== 'schedule') return null;
+    const prefix = `${trigger.id}@`;
+    if (slotDue) return `${prefix}${trigger.nextDueAt!}`;
+    return listFirings(store, trigger.id, 50).find((f) => f.idempotencyKey.startsWith(prefix))?.idempotencyKey ?? null;
   }
 
   return {
@@ -133,11 +156,12 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
       const at = deps.now();
       const trigger = getTrigger(store, triggerId);
       if (!trigger) throw new Error(`no trigger ${triggerId}`);
-      const key = firingKey ?? `${triggerId}:${at.slice(0, 16)}`;
+      const slotDue = trigger.nextDueAt !== null && trigger.nextDueAt <= at;
+      const key = firingKey ?? slotKey(trigger, slotDue) ?? `${triggerId}:${at.slice(0, 16)}`;
       const due = nextDue(trigger, at);
       const input = { ...((trigger.input ?? {}) as Record<string, unknown>), ...(eventPayload ?? {}) };
       // A firing covers the window of the tick that was due, even when the clock arrives late.
-      const dueAt = trigger.nextDueAt !== null && trigger.nextDueAt <= at ? trigger.nextDueAt : at;
+      const dueAt = slotDue ? trigger.nextDueAt! : at;
       const clock = { periodAt: dueAt, timezone: trigger.timezone ?? 'UTC' };
       if (dryRun) {
         const { preflight } = deps.workflowService.preflight(trigger.workflowId, input, clock);
@@ -177,9 +201,21 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         return finish(active && trigger.overlap === 'replace' ? 'replaced' : 'started', started.run.id, started.preflight.summary);
       });
     },
-    recipe(id, clock, executor) {
+    timer(id, platform, executor, facts) {
       const t = getTrigger(store, id);
       if (!t) throw new Error(`no trigger ${id}`);
+      if (!executor) throw new Error('a platform timer needs an explicit executor: without one a firing only records a tick and no model work happens. Inspect construct workflow executors, then pass --executor=<id>');
+      if (t.kind !== 'schedule' || !t.scheduleExpression || !t.timezone) throw new Error(`trigger ${id} is an ${t.kind} trigger; a platform timer fires only a schedule`);
+      return timerUnit(platform, { triggerId: t.id, expression: t.scheduleExpression, timezone: t.timezone, executor, projectRoot: deps.projectRoot, facts });
+    },
+    recipe(id, clock, executor, facts) {
+      const t = getTrigger(store, id);
+      if (!t) throw new Error(`no trigger ${id}`);
+      if (clock === 'launchd' || clock === 'systemd') {
+        if (!facts) throw new Error(`a ${clock} recipe needs this machine's facts`);
+        if (!executor) return '# Unprovisioned: no unattended executor selected. A timer would only create a run.\n# Inspect construct workflow executors, then request this recipe with --executor=<id>.\n';
+        return this.timer(id, clock, executor, facts).map((f) => `# ${f.name}\n${f.content}`).join('\n');
+      }
       if (!executor) return '# Unprovisioned: no unattended executor selected. A clock only creates a run.\n# Inspect construct workflow executors, then request this recipe with --executor=<id>.\n';
       if (!/^[a-z][a-z0-9-]*$/.test(executor)) throw new Error('executor must be an adapter id, not a shell command');
       const quote = (value: string) => "'" + value.replace(/'/g, "'\\''") + "'";
@@ -188,9 +224,10 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         if (t.kind !== 'schedule') return '# An event trigger needs an event sender, not a cron expression.\n';
         return [
           `# Construct keeps the run ledger; provision Node, npm, authenticated ${executor}, and this persistent project first.`,
-          '# Requires a cron implementation supporting CRON_TZ. Construct installs no clock.',
+          '# Requires a cron implementation supporting CRON_TZ. You install this line; `construct workflow install-timer` installs a launchd or systemd timer instead.',
+          '# The line passes no firing key: each firing names the schedule slot that was due, so a late or repeated tick covers that slot once.',
           `CRON_TZ=${t.timezone}`,
-          `${t.scheduleExpression} ${command} --key "$(date -u +\\%Y-\\%m-\\%dT\\%H:\\%M)"`, '',
+          `${t.scheduleExpression} ${command}`, '',
         ].join('\n');
       }
       // A fresh checkout has no ignored trigger database. CI must target the

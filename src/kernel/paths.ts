@@ -5,7 +5,7 @@
  * fixture builder constructs a Paths rooted in a tmpdir, and nothing else can escape it.
  */
 
-import { homedir } from 'node:os';
+import { homedir, userInfo } from 'node:os';
 import { join } from 'node:path';
 
 export interface Paths {
@@ -78,10 +78,14 @@ export function resolveSkillsDir(
  * systemd reads its user units under `$XDG_CONFIG_HOME/systemd/user`, so the
  * variable is honored; launchd names an absolute path under home and has no
  * equivalent.
+ *
+ * The environment is a required argument, never defaulted to this process's:
+ * a caller states which home it means, so a test cannot reach the real one by
+ * forgetting to pass its own.
  */
 export function resolveScheduleDir(
   platform: NodeJS.Platform,
-  env: PathsEnv = process.env,
+  env: PathsEnv,
   home: string = xdgBase(env.HOME, homedir()),
 ): string | null {
   if (platform === 'darwin') return join(home, 'Library', 'LaunchAgents');
@@ -89,6 +93,19 @@ export function resolveScheduleDir(
     return join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'systemd', 'user');
   }
   return null;
+}
+
+/**
+ * The directory the platform scheduler itself reads for this OS account,
+ * from the account database rather than HOME or XDG variables. launchd and a
+ * default systemd user manager read their units here whatever the shell
+ * exported. A unit is loaded only when it was written to this directory: a
+ * redirected HOME (a test, a scratch install) resolves resolveScheduleDir
+ * elsewhere, and loading a unit from there would hand a scratch project to
+ * the person's real scheduler.
+ */
+export function resolveAccountScheduleDir(platform: NodeJS.Platform): string | null {
+  return resolveScheduleDir(platform, {}, userInfo().homedir);
 }
 
 /**
