@@ -80,7 +80,7 @@ const MATCHABLE = WORKFLOWS.filter((w) => w.manifest.interactionClass === 'manag
 
 const EXAMPLE = {
   words: { words: '<the person’s request, verbatim>' },
-  kind: { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } },
+  kind: { kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'other', describe: '<what they want back>' } },
   deliverable: { deliverable: { kind: 'other', describe: '<what they want back>' } },
   period: { period: { semantics: 'evidence_window', relative: 'last_quarter', phrase: 'last quarter' } },
   sources: { sources: [{ name: 'Jira', role: 'read' }] },
@@ -94,6 +94,7 @@ const EXAMPLE = {
 const REVIEW = {
   words: 'Review the architecture of the payments service',
   kind: 'manage',
+  stakes: { reversible: true, affects: [] },
   deliverable: { kind: 'review/architecture' },
   target: 'docs/architecture.md',
 };
@@ -101,6 +102,7 @@ const FLAGSHIP = {
   words:
     'Create an architecture diagram of our system from Jira/Confluence, Datadog, Slack, GitHub and Notion, only covering 2026-07-01 to 2026-09-30',
   kind: 'manage',
+  stakes: { reversible: true, affects: [] },
   deliverable: { kind: 'other', describe: 'architecture diagram' },
   skill: 'system-architecture',
   period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' },
@@ -163,7 +165,7 @@ test('a reading that would gate a write is refused with the field, the allowed v
     },
     {
       name: 'deliverable missing on manage',
-      raw: { words: 'Review the architecture', kind: 'manage' },
+      raw: { words: 'Review the architecture', kind: 'manage', stakes: { reversible: true, affects: [] } },
       field: 'deliverable',
       allowed: null,
       example: EXAMPLE.deliverable,
@@ -808,7 +810,8 @@ test('a cron in a timezone gives its next three firings, across a clock change',
 // ---------------------------------------------------------------- matchWorkflows
 
 function reading(raw: Record<string, unknown>, catalog: IntakeCatalog = CATALOG): Intake {
-  return validateIntake({ words: 'Do the work', ...raw }, catalog, 'classify').intake;
+  const stakes = raw.kind === 'manage' && !('stakes' in raw) ? { stakes: { reversible: true, affects: [] } } : {};
+  return validateIntake({ words: 'Do the work', ...stakes, ...raw }, catalog, 'classify').intake;
 }
 
 test('every shipped work workflow is the first match for its own declared deliverable kind', () => {
@@ -840,7 +843,10 @@ test('a family lists every kind under it in registry order, then the bare family
     );
   const bare = (family: string) => MATCHABLE.filter((w) => w.manifest.deliverable.kind === family).map((w) => w.manifest.id);
 
-  const review = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'review' } }), CATALOG);
+  const review = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review' } }),
+    CATALOG,
+  );
   assert.deepEqual(
     review.map((m) => m.workflowId),
     [...under('review'), ...bare('review')],
@@ -848,7 +854,10 @@ test('a family lists every kind under it in registry order, then the bare family
   assert.ok(under('review').length >= 10, 'every review/* workflow');
   assert.ok(review.every((m) => m.because === (m.deliverableKind === 'review' ? 'deliverable kind' : 'deliverable family')));
 
-  const document = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'document' } }), CATALOG);
+  const document = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'document' } }),
+    CATALOG,
+  );
   assert.deepEqual(
     document.map((m) => m.workflowId),
     under('document'),
@@ -858,7 +867,10 @@ test('a family lists every kind under it in registry order, then the bare family
     ['prd-authoring', 'proposal-authoring', 'rfc-authoring', 'revise-deliverable'].every((id) => document.some((m) => m.workflowId === id)),
   );
 
-  const architecture = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'review/architecture' } }), CATALOG);
+  const architecture = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review/architecture' } }),
+    CATALOG,
+  );
   assert.equal(architecture[0]?.workflowId, 'architecture-decision-review');
   assert.deepEqual(
     architecture.slice(1).map((m) => m.workflowId),
@@ -866,14 +878,25 @@ test('a family lists every kind under it in registry order, then the bare family
   );
   assert.ok(architecture.slice(1).every((m) => m.because === 'deliverable family'));
 
-  const security = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'review' }, skill: 'security-privacy' }), CATALOG);
+  const security = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review' }, skill: 'security-privacy' }),
+    CATALOG,
+  );
   assert.equal(security[0]?.workflowId, 'security-privacy-review', 'a workflow binding the chosen skill leads its group');
   assert.deepEqual(
     security.slice(1).map((m) => m.workflowId),
     [...under('review').filter((id) => id !== 'security-privacy-review'), ...bare('review')],
   );
 
-  const prd = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'document/prd' }, skill: 'security-privacy' }), CATALOG);
+  const prd = matchWorkflows(
+    reading({
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'document/prd' },
+      skill: 'security-privacy',
+    }),
+    CATALOG,
+  );
   assert.ok(
     prd.every((m) => m.deliverableKind.startsWith('document/')),
     'skill-bound workflows outside the kind are added only for other',
@@ -900,7 +923,10 @@ test('other gives the general carrier first, then the workflows binding the chos
     ],
   );
   assert.ok(flagship.length > 1);
-  const plain = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'other', describe: 'a diagram' } }), CATALOG);
+  const plain = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'other', describe: 'a diagram' } }),
+    CATALOG,
+  );
   assert.deepEqual(
     plain.map((m) => m.workflowId),
     [GENERAL_CARRIER, 'managed-outcome'],
@@ -944,7 +970,12 @@ test('maintain matches only workflows a schedule or an event can start, and othe
 
 test('a named workflow comes first; a manage reading nothing fits falls back to the carrier; nothing else ever matches the remember workflow', () => {
   const named = matchWorkflows(
-    reading({ kind: 'manage', deliverable: { kind: 'review/architecture' }, workflowId: 'implementation-review' }),
+    reading({
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'review/architecture' },
+      workflowId: 'implementation-review',
+    }),
     CATALOG,
   );
   assert.deepEqual(
@@ -957,7 +988,10 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
   assert.equal(named.filter((m) => m.workflowId === 'implementation-review').length, 1, 'a workflow is listed once');
 
   const eventOnly = catalogOf({ workflows: replaced(withManifest('publish-deliverable', { triggers: ['event'] })) });
-  const fallback = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'publication' } }, eventOnly), eventOnly);
+  const fallback = matchWorkflows(
+    reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'publication' } }, eventOnly),
+    eventOnly,
+  );
   assert.deepEqual(
     fallback.map((m) => [m.workflowId, m.because]),
     [[GENERAL_CARRIER, 'other: general carrier']],
@@ -980,6 +1014,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
   const r = v({
     words: 'Draw our architecture for last quarter from Jira and GitHub',
     kind: 'manage',
+    stakes: { reversible: true, affects: [] },
     deliverable: { kind: 'other', describe: 'architecture diagram' },
     target: 'docs/architecture.md',
     period: { semantics: 'evidence_window', relative: 'last_quarter' },

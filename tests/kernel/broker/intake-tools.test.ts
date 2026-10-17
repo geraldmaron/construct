@@ -41,6 +41,7 @@ const NAMED = [{ name: 'Jira' }, { name: 'Datadog' }, { name: 'Slack' }, { name:
 const FLAGSHIP = {
   words: WORDS,
   kind: 'manage',
+  stakes: { reversible: true, affects: [] },
   deliverable: { kind: 'other', describe: 'architecture diagram' },
   skill: 'system-architecture',
   period: WINDOW,
@@ -112,7 +113,7 @@ test('a reading the model can fix comes back as wrong input naming the field, it
     assert.deepEqual(kindless.allowed, [...INTAKE_KINDS]);
     assert.deepEqual(
       kindless.example,
-      { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } },
+      { kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'other', describe: '<what they want back>' } },
       'an example of the one field, not a whole reading',
     );
     const wrong = await refusal(fx, 'classify_request', { words: 'x', kind: 'work' });
@@ -122,7 +123,10 @@ test('a reading the model can fix comes back as wrong input naming the field, it
     assert.equal(words.field, 'text');
     assert.match(words.message, /"words"/);
     assert.deepEqual(words.example, CORE_EXAMPLE);
-    assert.equal((await refusal(fx, 'classify_request', { words: 'x', kind: 'manage' })).field, 'deliverable');
+    assert.equal(
+      (await refusal(fx, 'classify_request', { words: 'x', kind: 'manage', stakes: { reversible: true, affects: [] } })).field,
+      'deliverable',
+    );
     assert.equal(listActivity(fx.broker.store).length, 0);
   } finally {
     fx.cleanup();
@@ -171,7 +175,7 @@ test('the flagship starts from its intake with its window frozen; every step wor
     assert.deepEqual(asked.intake, read.intake, 'the run keeps the reading as Construct checked it');
     assert.deepEqual([asked.period?.from, asked.period?.to, asked.period?.semantics], ['2026-07-01', '2026-09-30', 'evidence_window']);
     assert.deepEqual(asked.judgedBy, { by: 'host', host: 'claude-code', client: null });
-    assert.deepEqual(asked.declared, { stakes: null, chosenSkill: 'system-architecture', words: WORDS });
+    assert.deepEqual(asked.declared, { stakes: { reversible: true, affects: [] }, chosenSkill: 'system-architecture', words: WORDS });
     assert.equal(asked.sources?.named.filter((n) => !n.registered).length, 5);
 
     const plan = (await call(fx, 'claim_work', { runId: run.id })).work;
@@ -254,7 +258,12 @@ test('once the named systems are declared, the reading resolves them and the run
 test('start_outcome starts nothing while a required detail or a blocking question is open, and refuses a reading or a workflow it cannot start', async () => {
   const fx = brokerFixture();
   try {
-    const prd = { words: 'Write a PRD for public webhooks', kind: 'manage', deliverable: { kind: 'document/prd' } };
+    const prd = {
+      words: 'Write a PRD for public webhooks',
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'document/prd' },
+    };
     const missing = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: prd });
     assert.equal(missing.started, false);
     assert.equal(missing.recorded, false);
@@ -301,6 +310,7 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     const publish = {
       words: 'Publish the summary to the engineering wiki',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'publication' },
       destination: { kind: 'external', ref: 'https://wiki.example.com/eng' },
     };
@@ -361,6 +371,7 @@ test('a different window is different work, the same window is the same run, and
     const base = {
       words: 'Draw the payments architecture',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: 'architecture diagram' },
       target: 'docs/architecture.md',
     };
@@ -395,12 +406,21 @@ test('a different window is different work, the same window is the same run, and
   }
 });
 
-test('stakes the host reports only raise rigor, and the run keeps them', async () => {
+test('managed work must carry the stakes, which only raise rigor, and the run keeps them', async () => {
   const fx = brokerFixture();
   try {
     const reading = { words: 'Rename the invoice helper', kind: 'manage', deliverable: { kind: 'other', describe: 'renamed helper' } };
-    const calm = await call(fx, 'classify_request', reading);
+    const missing = await refusal(fx, 'classify_request', reading);
+    assert.equal(missing.field, 'stakes', 'rigor never depends on the host volunteering its reading');
+    const calm = await call(fx, 'classify_request', { ...reading, stakes: { reversible: true, affects: [] } });
     assert.equal(calm.judgment.challenge, false);
+    const unsure = await call(fx, 'classify_request', { ...reading, stakes: { reversible: null, affects: [] } });
+    assert.equal(unsure.judgment.challenge, false);
+    assert.ok(
+      unsure.judgment.signals.some(
+        (s: { kind: string; raises: boolean; detail: string }) => s.kind === 'host_stakes' && !s.raises && /could not tell/.test(s.detail),
+      ),
+    );
     const hard = await call(fx, 'classify_request', { ...reading, stakes: { reversible: false, affects: ['production'] } });
     assert.equal(hard.judgment.challenge, true);
     assert.match(hard.next, / This work must be challenged before it is accepted\.$/);
@@ -477,6 +497,7 @@ test('an outcome cannot finish in state alone when the person requested a local 
       intake: {
         words: 'Write a local design brief.',
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'other', describe: 'design brief' },
         destination: { kind: 'project_file', ref: 'brief.md' },
       },
@@ -516,6 +537,7 @@ for (const handling of ['investigate', 'carry_unknown']) {
       const reading = await call(fx, 'classify_request', {
         words: 'Investigate the conflicting measurements and report what remains unknown.',
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'research/brief' },
         open: [gap],
       });
@@ -539,7 +561,12 @@ for (const handling of ['investigate', 'carry_unknown']) {
 test('explicit evidence handling cannot simultaneously claim an assumed answer or person blocker', async () => {
   const fx = brokerFixture();
   try {
-    const base = { words: 'Research current measurements.', kind: 'manage', deliverable: { kind: 'research/brief' } };
+    const base = {
+      words: 'Research current measurements.',
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'research/brief' },
+    };
     for (const extra of [
       { blocking: true },
       { blocking: false, assumption: 'The missing field means cases.' },
@@ -562,7 +589,13 @@ test('carrying an unknown cannot supply a required destination or waive an actua
     const gap = { question: 'What do the unavailable records establish?', blocking: false, handling: 'carry_unknown' };
     const missing = await call(fx, 'start_outcome', {
       workflowId: 'prd-authoring',
-      intake: { words: 'Write a PRD.', kind: 'manage', deliverable: { kind: 'document/prd' }, open: [gap] },
+      intake: {
+        words: 'Write a PRD.',
+        kind: 'manage',
+        stakes: { reversible: true, affects: [] },
+        deliverable: { kind: 'document/prd' },
+        open: [gap],
+      },
     });
     assert.equal(missing.started, false);
     assert.ok(missing.questions.some((q: any) => q.slot === 'target'));
@@ -571,6 +604,7 @@ test('carrying an unknown cannot supply a required destination or waive an actua
       intake: {
         words: 'Research the confidential records after the owner permits access.',
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'research/brief' },
         open: [gap, { about: 'scope', question: 'Has the owner permitted this access?', blocking: true }],
       },
@@ -595,6 +629,7 @@ test('generic research and renamed requests expose registry alternatives before 
       const result = await call(fx, 'classify_request', {
         words,
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'other', describe: 'a decision brief' },
       });
       assert.equal(result.matches[0].workflowId, GENERAL_CARRIER);
@@ -613,6 +648,7 @@ test('generic research and renamed requests expose registry alternatives before 
     const reclassified = await call(fx, 'classify_request', {
       words: 'Review the renamed flarn data.',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'research/brief' },
     });
     assert.equal(reclassified.matches[0].workflowId, 'research-brief');
@@ -646,6 +682,7 @@ test('alternative verification metadata follows actual registry steps including 
     const result = await call(fx, 'classify_request', {
       words: 'Review measurements.',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: 'measurement review' },
     });
     const alternative = result.carrierAlternatives.find((w: any) => w.workflowId === clone.manifest.id);

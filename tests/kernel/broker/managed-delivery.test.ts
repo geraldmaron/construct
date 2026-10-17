@@ -24,6 +24,7 @@ async function start(ctx: BrokerContext, words = 'Write a local design brief.') 
     intake: {
       words,
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: 'design brief' },
       destination: { kind: 'project_file', ref: 'brief.md' },
     },
@@ -522,6 +523,7 @@ for (const path of [
         workflowId: 'managed-outcome',
         intake: {
           kind: 'manage',
+          stakes: { reversible: true, affects: [] },
           words: 'Write the requested design brief.',
           deliverable: { kind: 'other', describe: 'brief' },
           destination: { kind: 'project_file', ref: path },
@@ -562,6 +564,7 @@ for (const path of ['briefs/Release#v2 Notes.md', 'briefs/Release Notes.md:12'])
         workflowId: 'managed-outcome',
         intake: {
           kind: 'manage',
+          stakes: { reversible: true, affects: [] },
           words: 'Write the literal requested file.',
           deliverable: { kind: 'other', describe: 'brief' },
           destination: { kind: 'project_file', ref: path },
@@ -597,6 +600,7 @@ test('managed destinations refuse symlink aliases before reserving any work', as
           workflowId: 'managed-outcome',
           intake: {
             kind: 'manage',
+            stakes: { reversible: true, affects: [] },
             words: `Write ${ref}.`,
             deliverable: { kind: 'other', describe: 'brief' },
             destination: { kind: 'project_file', ref },
@@ -618,6 +622,7 @@ test('spaced-filename directory reservation is explicit and preserves collision 
       workflowId: 'managed-outcome',
       intake: {
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         words: 'Write a release brief.',
         deliverable: { kind: 'other', describe: 'brief' },
         destination: { kind: 'project_file', ref: 'briefs/Release Notes.md' },
@@ -642,6 +647,7 @@ test('spaced-filename directory reservation is explicit and preserves collision 
         workflowId: 'managed-outcome',
         intake: {
           kind: 'manage',
+          stakes: { reversible: true, affects: [] },
           words: 'Write elsewhere.',
           deliverable: { kind: 'other', describe: 'brief' },
           destination: { kind: 'project_file', ref: '../Outside Notes.md' },
@@ -661,7 +667,13 @@ test('conservative scope never recovers a different artifact from an ended holde
     const request = (ctx: BrokerContext, ref: string, words: string) =>
       call(ctx, 'start_outcome', {
         workflowId: 'managed-outcome',
-        intake: { kind: 'manage', words, deliverable: { kind: 'other', describe: 'brief' }, destination: { kind: 'project_file', ref } },
+        intake: {
+          kind: 'manage',
+          stakes: { reversible: true, affects: [] },
+          words,
+          deliverable: { kind: 'other', describe: 'brief' },
+          destination: { kind: 'project_file', ref },
+        },
       });
     const prior = await request(fx.broker, 'briefs/Release Notes.md', 'Write the release brief.');
     const held = await claim(fx.broker, prior.run.id);
@@ -694,6 +706,7 @@ for (const kind of ['symbolic', 'hard'] as const)
         workflowId: 'managed-outcome',
         intake: {
           kind: 'manage',
+          stakes: { reversible: true, affects: [] },
           words: 'Write a local release note.',
           deliverable: { kind: 'other', describe: 'brief' },
           destination: { kind: 'project_file', ref: 'briefs/Release Notes.md' },

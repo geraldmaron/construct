@@ -403,15 +403,13 @@ test('actual adapter-shaped negative problems retain rejection while unrelated f
   }
 });
 
-test('cancellation with an expired lease directs recovery instead of impossible acknowledgment', () => {
+test('cancellation with an expired lease stops at once instead of asking for an impossible acknowledgment', () => {
   const f = fixture();
   try {
     const first = f.submit();
     f.tick(31 * 60_000);
     f.service.cancel({ runId: f.run.id, by: 'fixture', reason: 'Stop expired review attempt' });
-    assert.equal(f.progress().state, 'cancelling');
     assert.equal(f.progress().canInvoke, false);
-    assert.match(f.progress().next, /Call claim_work/);
     assert.doesNotMatch(f.progress().next, /submit its held output once/);
     assert.equal(f.service.claimNext({ runId: f.run.id }).packet, null);
     assert.equal(f.service.status(f.run.id)!.run.state, 'cancelled');
