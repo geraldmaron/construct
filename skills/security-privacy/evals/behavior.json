@@ -3,16 +3,6 @@
   "formatVersion": 1,
   "cases": [
     {
-      "id": "stand-down",
-      "kind": "stand_down",
-      "text": "which color or font looks nicer with no task in view"
-    },
-    {
-      "id": "activate",
-      "kind": "activate",
-      "text": "our logs contain customer emails and go to a third party"
-    },
-    {
       "id": "unknown-not-invented",
       "kind": "forbids_invention"
     },

@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "implementation-review",
   "title": "Implementation review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "purpose": "Review a change, migration, or dependency proposal for correctness evidence, scope, reversibility, dependencies, and operability, cited against the project's confirmed principles; findings are recorded and anything that belongs to another pack or to the person is handed over.",
-  "activation": [
-    "review this implementation, change, or pull request",
-    "is this migration safe",
-    "should we take this dependency"
-  ],
-  "standDown": [
-    "style-only review",
-    "no implementation in view"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string",

@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "design-conformance",
   "title": "Design-principle conformance review",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "purpose": "Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented.",
-  "activation": [
-    "review this against our design principles",
-    "does this conform to the constitution",
-    "check this feature against our constraints"
-  ],
-  "standDown": [
-    "there is no confirmed principle or constraint to review against; ask for one instead",
-    "the ask is a general code review"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string",

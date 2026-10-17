@@ -3,16 +3,6 @@
   "formatVersion": 1,
   "cases": [
     {
-      "id": "stand-down-question",
-      "kind": "stand_down",
-      "text": "What does this function do"
-    },
-    {
-      "id": "activate-remember",
-      "kind": "activate",
-      "text": "Remember that we will not add schema migration until stable"
-    },
-    {
       "id": "unknown-not-invented",
       "kind": "forbids_invention"
     },

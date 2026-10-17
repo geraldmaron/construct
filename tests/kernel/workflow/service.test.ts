@@ -237,10 +237,15 @@ test('project policy never: the project_write step asks instead of writing', () 
   }
 });
 
-test('architectural work is challenged without magic words; a helper rename is not', () => {
+test('work the host says touches shared data is challenged whatever its words; words alone raise nothing', () => {
   const fx = fixture();
   try {
-    const arch = fx.service.start({ workflowId: 'ship', input: { request: 'Introduce a shared database for billing and identity' }, trigger: 'manual' });
+    const request = { request: 'Introduce a shared database for billing and identity' };
+    const unread = fx.service.judge({ workflowId: 'ship', input: request });
+    assert.equal(unread.challenge, false, 'the words are never read for rigor');
+    assert.ok(unread.signals.some((s) => s.kind === 'host_stakes' && !s.raises), 'the missing stakes are said');
+    const declared = { stakes: { reversible: true, affects: ['shared_data' as const] }, chosenSkill: null, words: null };
+    const arch = fx.service.start({ workflowId: 'ship', input: request, trigger: 'manual', asked: { declared } });
     assert.equal(arch.preflight.judgment.challenge, true);
     const claimed = fx.service.claimNext({ runId: arch.run.id });
     assert.match(claimed.packet!.instructions.join(' '), /adversarial review/);
@@ -254,14 +259,14 @@ test('architectural work is challenged without magic words; a helper rename is n
     const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     assert.equal(accepted.trustState, 'accepted');
 
-    const unusual = fx.service.start({ workflowId: 'ship', input: { request: 'Put identity and billing on the same postgres' }, trigger: 'manual' });
-    assert.equal(unusual.preflight.judgment.challenge, true, 'unusual shared-store phrasing still requires challenge');
+    const unusual = fx.service.start({ workflowId: 'ship', input: { request: 'Put identity and billing on the same postgres' }, trigger: 'manual', asked: { declared: { stakes: { reversible: false, affects: [] }, chosenSkill: null, words: null } } });
+    assert.equal(unusual.preflight.judgment.challenge, true, 'work the host says is hard to undo requires challenge');
     const u1 = fx.service.claimNext({ runId: unusual.run.id });
     const uDone = fx.service.submit({ leased: u1.packet!.leased, output: { summary: 'split stores', findings: [] } });
     assert.throws(
       () => fx.service.promote({ deliverableId: uDone.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /recorded challenge/,
-      'unusual phrasing cannot bypass promote to accepted',
+      'declared stakes cannot be bypassed at promote to accepted',
     );
 
     const trivial = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });

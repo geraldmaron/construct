@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "security-privacy-review",
   "title": "Security and privacy review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "purpose": "Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk.",
-  "activation": [
-    "review this for security",
-    "threat model it",
-    "privacy review"
-  ],
-  "standDown": [
-    "write an exploit",
-    "no boundary or data change"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string",

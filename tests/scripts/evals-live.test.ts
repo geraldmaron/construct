@@ -21,7 +21,7 @@ import { KNOWN_CLIENTS } from '../../src/hosts/wiring/clients.ts';
 import {
   OBSERVATION_DEFAULTS, PREREGISTRATION, gatingAxes, intakeVerdict, measureIntake, observeRun, pairToolCalls, shouldStop,
   type CellSummary, type IntakeCase, type RunObservation, type TapFrame,
-} from '../../src/kernel/skills/routing.ts';
+} from '../../src/kernel/skills/live-evals.ts';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
 import { codexEvaluationIsolationArgs, codexProvider, codexProviderArgs, endedWithQuestion, hostArgs, hostEnv, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand, toml } from '../../scripts/host-cli.mjs';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/

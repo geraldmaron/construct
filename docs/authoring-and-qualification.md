@@ -7,13 +7,15 @@
 A skill is a directory: `SKILL.md` (Agent Skills frontmatter and body),
 `construct.skill.json`, and optional `references/`, `assets/`, `scripts/`,
 `schemas/`, and `evals/`. The manifest declares id, title, semantic version,
-category, owner, activation and stand-down phrases, interaction classes,
+category, owner, interaction classes,
 outcomes and deliverable types, inputs and output schemas, required source
 types and minimum evidence, capabilities (never tools), action tiers,
 versioned skill and workflow dependencies, quality gates, escalation,
 licensed-review boundaries, observations (which may not claim success
 without naming a run), and eval files. Name and version must agree with the
-frontmatter.
+frontmatter. When a skill applies is said once, in the `SKILL.md`
+description, which the host model reads; a manifest that still lists
+`activation` or `standDown` phrases is refused, because nothing reads them.
 
 `npm run lint` also checks each shipped skill's `SKILL.md` against the
 Agent Skills format (`scripts/lint-skill-spec.mjs`: only the format's six
@@ -32,28 +34,18 @@ built-in id.
 
 ## Evals
 
-`evals/activation.json` lists requests in ordinary language with the
-expected outcome, activate or stand down. The activating cases do double
-duty: they are fixtures, and the router retrieves over them when the skill
-evals run. Write them the way people talk, not the way the manifest does.
+`evals/behavior.json` (format `construct-skill-behavior`) checks the skill's
+own text: `forbids_invention` (the body forbids inventing unknown facts) and
+`authority_boundary` (an injected override is recognized as one, and the
+body itself attempts none).
 
-`evals/behavior.json` (format `construct-skill-behavior`) checks behavior:
-`stand_down` requests the router must not rank the skill likely for,
-`activate` requests it must not rank unlikely for, `forbids_invention` (the
-body forbids inventing unknown facts), and `authority_boundary` (an injected
-override is recognized as one, and the body itself attempts none).
-
-The lexical router does not decide which skill loads or interpret intent:
-the host model reports its own reading to `classify_request`, which returns
-the workflows whose declared deliverable fits and the use-when text of the
-skills they bind, unranked. The router orders skills by how well words match
-a description, its activation phrases, and its labeled cases; that ordering
-is lexical, is labeled so, and may only raise rigor. Its regression floors
-run on a frozen copy of the catalog
-(`tests/fixtures/router-catalog.json`) and held-out requests
-(`tests/fixtures/router-cases.json`), so they test the router's code and
-never fail a description edit. A routing case is never copied into a
-skill's own eval file, or the measurement stops being held out.
+Nothing in Construct matches a request's words to a skill. The host model
+reports its own reading to `classify_request`, which returns the workflows
+whose declared deliverable fits and the use-when text of the skills they
+bind, unranked, and the host model judges which skill applies. Whether it
+judges well is shown only by running it: a native evaluation drives the
+host with held-out cases and records whether the skill was applied or stood
+down, and an independent review checks the result.
 
 Whether hosts read requests well is measured through real hosts, not by
 word overlap. The held-out corpus, `skills/evals/intake.json`, holds
@@ -87,7 +79,7 @@ is used for, and review dates; a build that did not re-open a source says so.
 ## A workflow
 
 A workflow is a directory with `workflow.json`: id, title, semantic version,
-purpose, activation and stand-down, interaction class, input schema and
+purpose, interaction class, input schema and
 required inputs, steps (id, title, needs, skill and range, capabilities,
 sources with freshness, tier, inputs mapped from `input.<key>` or
 `steps.<id>.<output>`, outputs, validators, load-bearing, challenge, retry,

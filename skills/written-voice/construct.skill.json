@@ -3,26 +3,9 @@
   "formatVersion": 1,
   "id": "written-voice",
   "title": "Written voice",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "make this sound less like a robot wrote it",
-    "rewrite the outage email so customers do not panic",
-    "this reads like marketing, make it plain",
-    "tighten this up, it is three pages saying one thing",
-    "draft the announcement in our voice",
-    "is the tone of this right",
-    "someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo",
-    "write the announcement customers will read, draft the proposal with the decision at the top",
-    "unify documents written by different people into one voice",
-    "a draft reads buried, hedged, or salesy; surface the decision",
-    "this reads like AI wrote it, strip the tells before it goes out"
-  ],
-  "standDown": [
-    "not a deliverable: a chat reply, a code comment, a commit message, a quick answer",
-    "an external template dictates the format: a legal filing, a grant form, a journal structure"
-  ],
   "interactionClasses": [
     "manage"
   ],
@@ -60,8 +43,5 @@
     "a claim of done or tested that was not observed is removed, not softened"
   ],
   "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json"
-  ]
+  "observedOn": []
 }

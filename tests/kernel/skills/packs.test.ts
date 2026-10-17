@@ -27,7 +27,7 @@ test('nine professional packs ship, each complete', () => {
     }
     assert.match(body, /[Ss]tand down/, `${id} says when to stand down`);
     assert.doesNotMatch(body, /\bpersona\b|you are a (senior|world-class|expert)|act as a/i, `${id} is not a persona prompt`);
-    for (const file of ['references/sources.md', 'references/obligations.md', 'evals/activation.json', 'evals/fixtures.json']) {
+    for (const file of ['references/sources.md', 'references/obligations.md', 'evals/fixtures.json']) {
       assert.ok(pack.files.includes(file), `${id} ships ${file}`);
     }
     assert.ok(pack.files.some((f) => f.startsWith('assets/') && f.endsWith('.md')), `${id} ships a template`);

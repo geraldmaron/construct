@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "architecture-decision-review",
   "title": "Architecture decision review",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "purpose": "Review a system design or decision for boundaries, coupling, data ownership, failure modes, reversibility, and measured properties against the project's confirmed invariants, then record the findings and raise decisions that belong to the person.",
-  "activation": [
-    "review the architecture",
-    "write the decision record",
-    "what does this make hard to undo"
-  ],
-  "standDown": [
-    "a diff or implementation detail",
-    "no design in view"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string",

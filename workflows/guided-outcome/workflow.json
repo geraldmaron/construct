@@ -4,16 +4,8 @@
   "evals": [],
   "id": "guided-outcome",
   "title": "Produce a grounded outcome",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Interpret, produce and check an outcome through the current host, with bounded gathering, checkpoints and explicit assurance. Chat delivery needs no file writer or code test runner.",
-  "activation": [
-    "produce a useful result with evidence"
-  ],
-  "standDown": [
-    "a plain question",
-    "something to remember",
-    "a standing outcome"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "request": "string",

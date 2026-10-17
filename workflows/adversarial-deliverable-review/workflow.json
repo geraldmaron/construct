@@ -4,17 +4,8 @@
   "evals": [],
   "id": "adversarial-deliverable-review",
   "title": "Adversarial deliverable review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Challenge a finished deliverable independently of the run that produced it: the six mandatory challenges, findings by severity with the smallest fix stated, and exactly one verdict; the verdict is recorded on the deliverable and acceptance stays with the person.",
-  "activation": [
-    "challenge this deliverable",
-    "break this before we commit",
-    "adversarial review of the result"
-  ],
-  "standDown": [
-    "the deliverable is still a draft in motion",
-    "the ask is to improve rather than to challenge"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "deliverableId": "string",

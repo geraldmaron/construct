@@ -3,30 +3,9 @@
   "formatVersion": 1,
   "id": "adversarial-review",
   "title": "Adversarial review",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "poke holes in this before we commit",
-    "tell me why this will fail",
-    "argue the other side",
-    "be the skeptic about this proposal",
-    "what is wrong with this plan",
-    "we are too excited about this idea",
-    "find the weak point",
-    "a finished artifact is about to be committed to and being wrong is expensive",
-    "architecture, data model, security boundary, vendor, dependency, build-vs-buy, migration, hard-to-reverse change",
-    "a spec about to be built, a public factual claim, a decision record about to be executed, a strategy about to be funded",
-    "challenge this, try to break the case, find what is wrong with the thinking, strongest case against",
-    "challenge this decision or architecture before we commit to it",
-    "review the plan for the failure modes we have not considered"
-  ],
-  "standDown": [
-    "the artifact is still moving, a half-finished draft, tidy up",
-    "low-stakes reversible work, easy to change later, cheap pick",
-    "code review of a diff for style and naming",
-    "fix a typo"
-  ],
   "interactionClasses": [
     "manage"
   ],
@@ -74,7 +53,6 @@
   "licensedReviewBoundaries": [],
   "observedOn": [],
   "evals": [
-    "evals/activation.json",
     "evals/behavior.json"
   ]
 }

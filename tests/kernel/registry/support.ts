@@ -14,7 +14,7 @@ export function tmp(): { root: string; cleanup(): void } {
 export function skillManifest(id: string, version: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     format: 'construct-skill', formatVersion: 1, id, title: id, version, category: 'method', owner: 'test',
-    activation: ['when asked'], standDown: ['otherwise'], interactionClasses: ['manage'],
+    interactionClasses: ['manage'],
     capabilities: ['read_project_context'], actionTiers: ['observe', 'draft'], ...extra,
   };
 }
@@ -35,7 +35,7 @@ export function writeSkill(root: string, id: string, version: string, opts: { ma
 export function workflowManifest(id: string, version: string, steps: unknown[], extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     format: 'construct-workflow', formatVersion: 1, id, title: id, version, purpose: 'test',
-    activation: ['when asked'], standDown: ['otherwise'], interactionClass: 'manage',
+    interactionClass: 'manage',
     inputSchema: { target: 'string' }, requiredInputs: ['target'], steps,
     triggers: ['manual'], deliverable: { kind: 'review', schema: 'review/v1' }, ...extra,
   };

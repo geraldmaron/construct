@@ -3,16 +3,6 @@
   "formatVersion": 1,
   "cases": [
     {
-      "id": "stand-down",
-      "kind": "stand_down",
-      "text": "remember that we decided to keep one postgres"
-    },
-    {
-      "id": "activate",
-      "kind": "activate",
-      "text": "tests pass but I have a bad feeling about this code"
-    },
-    {
       "id": "unknown-not-invented",
       "kind": "forbids_invention"
     },

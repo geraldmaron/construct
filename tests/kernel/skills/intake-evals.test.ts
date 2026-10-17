@@ -26,7 +26,7 @@ import {
   OBSERVATION_DEFAULTS, PREREGISTRATION, caseId, caseSet, compactObservation, expandObservation, gatingAxes, intakeVerdict, isEngagementWrite, isQuestionResult, measureIntake, observeRun, pairToolCalls,
   recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord, wilson,
   type CellAxes, type CellSummary, type IntakeCase, type IntakeEvalContext, type IntakeEvalFile, type ObserveCatalog, type RunObservation, type TapFrame,
-} from '../../../src/kernel/skills/routing.ts';
+} from '../../../src/kernel/skills/live-evals.ts';
 import { INTAKE_KINDS } from '../../../src/kernel/workflow/intake.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));

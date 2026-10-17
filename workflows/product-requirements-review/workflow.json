@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "product-requirements-review",
   "title": "Product requirements review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "purpose": "Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person.",
-  "activation": [
-    "review this PRD",
-    "should we build this",
-    "what problem does this solve and how would we know"
-  ],
-  "standDown": [
-    "how to build it",
-    "the decision is made"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string",

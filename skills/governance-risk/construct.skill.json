@@ -3,29 +3,9 @@
   "formatVersion": 1,
   "id": "governance-risk",
   "title": "Governance and risk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "we started selling to a new country or industry",
-    "a customer's lawyer sent us a letter",
-    "we are about to sign this deal, what could bite us",
-    "the board wants a risk register",
-    "are we allowed to do this",
-    "do we need a policy for this",
-    "what obligations come with this contract",
-    "what compliance, legal, or financial exposure does this create, spot the issues",
-    "which regulation, contract, or policy governs this and what does it say",
-    "prepare the packet for counsel, for the auditor, for finance review",
-    "what controls and evidence would an auditor expect here"
-  ],
-  "standDown": [
-    "give legal, tax, or financial advice, sign off, certify, decide whether it is lawful",
-    "a technical review with no regulatory, contractual, or financial dimension",
-    "a question a plain policy lookup answers",
-    "review the code for correctness or style",
-    "where is the policy document"
-  ],
   "interactionClasses": [
     "manage",
     "maintain"
@@ -86,7 +66,6 @@
   ],
   "observedOn": [],
   "evals": [
-    "evals/activation.json",
     "evals/fixtures.json",
     "evals/behavior.json"
   ]

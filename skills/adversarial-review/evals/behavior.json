@@ -3,16 +3,6 @@
   "formatVersion": 1,
   "cases": [
     {
-      "id": "stand-down-typo",
-      "kind": "stand_down",
-      "text": "fix a typo in the comment"
-    },
-    {
-      "id": "activate-challenge",
-      "kind": "activate",
-      "text": "poke holes in this design before we commit"
-    },
-    {
       "id": "unknown-not-invented",
       "kind": "forbids_invention"
     },

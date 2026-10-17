@@ -383,3 +383,10 @@ test('the shipped skills and workflows load, agree with their frontmatter, and r
     fx.cleanup();
   }
 });
+
+test('a manifest that still lists trigger phrases is refused, so nothing grows a second vocabulary', () => {
+  for (const key of ['activation', 'standDown']) {
+    assert.throws(() => validateSkillManifest(skillManifest('s', '1.0.0', { [key]: ['when asked'] }), 's/construct.skill.json'), new RegExp(`"${key}" is not read; the host model reads the SKILL.md description`));
+    assert.throws(() => validateWorkflowManifest(workflowManifest('w', '1.0.0', [step('a')], { [key]: ['when asked'] }), 'w/workflow.json'), new RegExp(`"${key}" is not read; a workflow is matched by the deliverable it declares`));
+  }
+});

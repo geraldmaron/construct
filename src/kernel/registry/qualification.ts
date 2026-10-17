@@ -34,10 +34,6 @@ export function skillAttemptsAuthorityOverride(text: string | null | undefined):
   return !!text && OVERRIDE.test(text);
 }
 
-function hasActivationEvals(skill: RegisteredSkill): boolean {
-  return skill.manifest.evals.some((e) => e.includes('activation')) || skill.files.some((f) => f.endsWith('evals/activation.json'));
-}
-
 function hasBehaviorEvals(skill: RegisteredSkill): boolean {
   return (
     skill.manifest.evals.some((e) => /behavior|fixtures/.test(e)) ||
@@ -66,9 +62,6 @@ export function qualifySkill(skill: RegisteredSkill, lockRow: LockRow | undefine
   if (lockRow.state === 'outdated' || lockRow.state === 'blocked') {
     return { ...base, state: 'degraded', why: lockRow.why };
   }
-  if (!hasActivationEvals(skill)) {
-    return { ...base, state: 'experimental', why: 'no activation evaluation cases are declared' };
-  }
   // Only the host observation adapter supplies these records; source or skill text cannot.
   const observed = context?.records.find(({ record: r }) => r.formatVersion === 1 && r.skill.id === base.id && r.skill.version === base.version && r.skill.digest === base.digest && r.suite.host === context.host && r.suite.model === context.model);
   if (observed && context) {
@@ -87,7 +80,7 @@ export function qualifySkill(skill: RegisteredSkill, lockRow: LockRow | undefine
     return { ...base, state: 'qualified', why: 'an observed passing evaluation covers this exact version and host within its stated scope; it is not a universal correctness or permission claim', evidence: { evaluationRef: `evaluation:${observed.id}`, host: r.suite.host, model: r.suite.model, scope: r.suite.scope, expiresAt: r.expiresAt, suiteDigest: r.suiteDigest } };
   }
   if (!hasBehaviorEvals(skill)) {
-    return { ...base, state: 'experimental', why: 'activation cases only; no behavior evaluation cases are declared' };
+    return { ...base, state: 'experimental', why: 'no behavior evaluation cases are declared' };
   }
   return { ...base, state: 'experimental', why: context && !context.model ? 'current model is unspecified; executed evidence is scoped to a model and cannot qualify an unspecified one' : 'lock and evaluation cases are present; no passing execution record is bound to this digest, host and model' };
 }

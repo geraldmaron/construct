@@ -97,7 +97,7 @@ function catalog() {
   const skills = createSkillRegistry({ projectDir: null });
   const workflows = createWorkflowRegistry({ projectDir: null });
   const parts = [HEADER('the shipped skills/ and workflows/ bundles'), '# Skill and workflow catalog', '', 'What this version ships, with versions. Digests are in `registry/index.json`; a project pins what it resolved in `.construct/registry.lock.json`.', '', '## Skills', '',
-    table(['Skill', 'Version', 'Category', 'Engages when', 'Stands down when'], skills.list().map((s) => [`\`${s.manifest.id}\``, s.manifest.version, s.manifest.category, s.manifest.activation[0], s.manifest.standDown[0]])), '', '## Workflows', '',
+    table(['Skill', 'Version', 'Category', 'When it applies'], skills.list().map((s) => [`\`${s.manifest.id}\``, s.manifest.version, s.manifest.category, s.description.split(/(?<=\.)\s/)[0]])), '', '## Workflows', '',
     table(['Workflow', 'Version', 'Class', 'Triggers', 'Steps', 'Purpose'], workflows.list().map((w) => [`\`${w.manifest.id}\``, w.manifest.version, w.manifest.interactionClass, w.manifest.triggers.join(', '), w.manifest.steps.map((s) => s.id).join(' → '), w.manifest.purpose])), '',
     '## Capabilities a step may require', '', table(['Capability', 'Tier', 'Kind', 'Meaning'], BUILTIN_CAPABILITIES.map((c) => [`\`${c.name}\``, c.tier, c.kind, c.description])), '', '## Validators a step may name', '', BUILTIN_VALIDATORS.map((v) => `- \`${v}\``).join('\n'), ''];
   return parts.join('\n');

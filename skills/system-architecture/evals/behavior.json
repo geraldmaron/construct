@@ -3,16 +3,6 @@
   "formatVersion": 1,
   "cases": [
     {
-      "id": "stand-down",
-      "kind": "stand_down",
-      "text": "review a diff or an implementation detail"
-    },
-    {
-      "id": "activate",
-      "kind": "activate",
-      "text": "two teams keep writing to the same table"
-    },
-    {
       "id": "unknown-not-invented",
       "kind": "forbids_invention"
     },

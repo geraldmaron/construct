@@ -4,8 +4,7 @@
 
 A skill is a portable `SKILL.md` (Agent Skills format) beside a Construct
 manifest, `construct.skill.json`, that declares what the portable file
-cannot: activation and stand-down conditions, interaction classes, outcomes
-and deliverable types, required inputs and sources, capability requirements
+cannot: interaction classes, outcomes and deliverable types, required inputs and sources, capability requirements
 (never tool names), action tiers, versioned dependencies, quality gates,
 escalation, licensed-review boundaries, observations, and evals. The
 manifest and the frontmatter must agree on name and version.
@@ -43,9 +42,9 @@ requests metadata only); a
 judgment step that binds no skill is told to load the method the reading
 chose. A claim supplies the current step's bound method, not the whole library.
 
-The `skills` tool lists the project's skills with their activation and
-stand-down conditions, shows one with its digest, files, and qualification
-(its full text only with `includeBody`), and with `status` reports each
+The `skills` tool lists the project's skills with their descriptions,
+shows one with its digest, files, and qualification (its full text only
+with `includeBody`), and with `status` reports each
 bundle's lock state.
 
 ## On disk in a host

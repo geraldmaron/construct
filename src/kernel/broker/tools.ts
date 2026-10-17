@@ -680,7 +680,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     return { action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status', id: str(raw, 'id', { optional: true }), includeBody: bool(raw, 'includeBody', false), model: str(raw, 'model', { optional: true }) };
   },
   run(ctx, { action, id, includeBody, model }) {
-    if (action === 'list') return ctx.skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, version: s.manifest.version, category: s.manifest.category, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown }));
+    if (action === 'list') return ctx.skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, version: s.manifest.version, category: s.manifest.category, description: s.description }));
     if (action === 'status') return lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).map((r) => ({ kind: r.kind, id: r.id, state: r.state, why: r.why }));
     if (!id) throw new ToolInputError('"id" is required for show', { field: 'id' });
     const s = ctx.skills.get(id);
@@ -849,7 +849,7 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         intake: p.intake,
         method: p.method,
         methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
-        methodCatalogDetail: 'Compact index; skills list/show provides full activation, stand-down and method resources.',
+        methodCatalogDetail: 'Compact index; skills list/show provides each skill\'s description and method resources.',
         instructions: p.instructions,
         judgment: p.judgment,
       },

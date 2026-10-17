@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "prd-authoring",
   "title": "Write a PRD",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "purpose": "Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back.",
-  "activation": [
-    "write a PRD",
-    "spec out this feature from the tickets and research",
-    "draft the product requirements"
-  ],
-  "standDown": [
-    "review this PRD",
-    "should we build this"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "request": "string",

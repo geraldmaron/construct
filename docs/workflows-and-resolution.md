@@ -47,9 +47,9 @@ challenged. The workflow's structure sets the floor: a workflow that
 declares its deliverable must be challenged, a step whose action tier is
 `external_write` or higher, or an open contradiction against a governing
 decision or requirement. The stakes the host declares (hard to undo, or
-what the work touches), the chosen method, and the request's words only
-raise it, and a raise from the words is labeled "(lexical)". A private
-helper rename raises none of these. Any raise means challenged: `claim_work`
+what the work touches) only raise it; the request's words are never read
+for rigor, and when the host reports no stakes the judgment says so instead
+of guessing. A private helper rename raises none of these. Any raise means challenged: `claim_work`
 says so and why, and acceptance is refused until a challenge is recorded.
 With nothing raised, a side project gets light rigor and every other
 project, including one whose scale is not answered, gets standard. The

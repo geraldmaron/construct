@@ -3,25 +3,9 @@
   "formatVersion": 1,
   "id": "intake",
   "title": "Intake",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "the thing from Tuesday plus what he said minus the pricing part",
-    "here are my notes, pull out what they actually asked for",
-    "five messages saying different things, what do they want",
-    "turn this rambling memo into something the team can act on",
-    "make all of this into a ticket",
-    "sort out what is being asked in this thread",
-    "a request carrying several concerns, corrections, or implied outcomes at once",
-    "a brain dump, a forwarded thread, meeting notes, asks outnumbering the sentences that state them",
-    "turn this into a plan without asking me to restate it",
-    "extract the plan, the corrections, the contradictions, what we actually do"
-  ],
-  "standDown": [
-    "a clear single-outcome request: add a button, rename the function, just do it",
-    "thinking out loud with no ask yet, roadmap musing"
-  ],
   "interactionClasses": [
     "manage",
     "maintain"
@@ -60,8 +44,5 @@
     "only a genuinely blocking question is asked; everything else proceeds on labeled assumptions"
   ],
   "licensedReviewBoundaries": [],
-  "observedOn": [],
-  "evals": [
-    "evals/activation.json"
-  ]
+  "observedOn": []
 }

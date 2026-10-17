@@ -3,17 +3,8 @@
   "formatVersion": 1,
   "id": "rfc-authoring",
   "title": "Write an RFC",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "purpose": "Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back.",
-  "activation": [
-    "draft an RFC",
-    "write the design doc",
-    "write up the technical approach"
-  ],
-  "standDown": [
-    "review this architecture",
-    "the design is decided, implement it"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "request": "string",
