@@ -52,6 +52,7 @@ test('disabled by default; binary drift, missing receipts, or API environments d
 test('child environments preserve local login locations without inherited credentials or grants', () => {
   const env = safeEnvironment({
     HOME: '/fixture/home',
+    USER: 'fixture',
     PATH: '/fixture/bin',
     CODEX_HOME: '/fixture/codex',
     CLAUDE_CONFIG_DIR: '/fixture/claude',
@@ -59,7 +60,7 @@ test('child environments preserve local login locations without inherited creden
     CLAIM_TOKEN: 'not-a-token',
     NODE_OPTIONS: '--require=untrusted',
   });
-  assert.deepEqual(Object.keys(env).sort(), ['CLAUDE_CONFIG_DIR', 'CODEX_HOME', 'HOME', 'PATH']);
+  assert.deepEqual(Object.keys(env).sort(), ['CLAUDE_CONFIG_DIR', 'CODEX_HOME', 'HOME', 'PATH', 'USER']);
 });
 
 test('malformed streams, incomplete output, quota errors and denied permissions do not succeed', () => {

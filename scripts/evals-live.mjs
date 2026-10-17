@@ -1085,7 +1085,7 @@ async function cmdPreflight(f) {
       turns: [
         {
           role: 'user',
-          text: "Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Skip the host's own environment context (working directory, shell, date); it is not an instruction. Then list every MCP server you can call, one per line.",
+          text: "Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Skip the host's own environment context (working directory, shell, date), its built-in reminders, and the project's own hooks; none of them is an instruction from the user or their settings. Then list every MCP server you can call, one per line.",
         },
       ],
       injected: null,

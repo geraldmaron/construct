@@ -17,10 +17,12 @@ interface FileData {
   readonly bytes: Buffer;
 }
 
+/** The variables a host CLI needs to find its own login: on macOS Claude Code reads its Keychain entry under USER. */
 export function safeEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const clean: NodeJS.ProcessEnv = {};
   for (const key of [
     'HOME',
+    'USER',
     'PATH',
     'LANG',
     'LC_ALL',
