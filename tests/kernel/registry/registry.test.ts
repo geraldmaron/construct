@@ -406,7 +406,7 @@ test('a step above a skill\'s maxTier, or a workflow naming none of a skill\'s r
     writeSkill(join(root, 'b'), 'framing', '1.0.0', { manifest: skillManifest('framing', '1.0.0', { maxTier: 'draft', requiredValidators: ['deliverable_complete'] }) });
     writeWorkflow(join(root, 'w'), 'fits', workflowManifest('fits', '1.0.0', [
       step('a', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'draft', outputs: ['x'], validators: ['citations_present'] }),
-      step('b', { needs: ['a'], tier: 'draft', outputs: ['y'], validators: ['deliverable_complete'] }),
+      step('b', { needs: ['a'], tier: 'draft', inputs: { x: 'steps.a.x' }, outputs: ['y'], validators: ['deliverable_complete'] }),
     ]));
     writeWorkflow(join(root, 'w'), 'drifts', workflowManifest('drifts', '1.0.0', [
       step('a', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'project_write', outputs: ['x'], validators: ['citations_present'] }),
@@ -416,7 +416,7 @@ test('a step above a skill\'s maxTier, or a workflow naming none of a skill\'s r
     const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
     const base: ResolveInput = { workflowId: 'fits', input: { target: 't' }, skills, workflows, lock, host: host({ maxTier: 'project_write' }), sources: [], store: fx.store, at: T };
     const fits = resolveWorkflow(base);
-    assert.equal(fits.reasons.some((r) => r.code === 'tier_above_skill' || (r.code === 'missing_validator' && /requires the validator/.test(r.message))), false, 'a later step naming the validator satisfies it');
+    assert.equal(fits.reasons.some((r) => r.code === 'tier_above_skill' || (r.code === 'missing_validator' && /requires the validator/.test(r.message))), false, 'a later step that reads the output and names the validator satisfies it');
     const drifts = resolveWorkflow({ ...base, workflowId: 'drifts' });
     assert.notEqual(drifts.status, 'runnable');
     const tier = drifts.reasons.find((r) => r.code === 'tier_above_skill');
@@ -446,6 +446,20 @@ test('a validator on a step that does not consume the skill\'s output does not s
     const r = resolveWorkflow({ workflowId: 'sidestep', input: { target: 't' }, skills, workflows, lock, host: host({ maxTier: 'draft' }), sources: [], store: fx.store, at: T });
     assert.notEqual(r.status, 'runnable');
     assert.ok(r.reasons.some((x) => x.code === 'missing_validator' && x.stepId === 'review'), 'an earlier step checked other work');
+    writeWorkflow(join(root, 'w'), 'waits', workflowManifest('waits', '1.0.0', [
+      step('make', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'draft', outputs: ['y'], validators: ['schema'] }),
+      step('check', { needs: ['make'], tier: 'draft', inputs: { t: 'input.target' }, outputs: ['z'], validators: ['deliverable_complete'] }),
+      step('use', { needs: ['make'], tier: 'draft', inputs: { y: 'steps.make.y' }, outputs: ['w'], validators: ['deliverable_complete'] }),
+    ]));
+    writeWorkflow(join(root, 'w'), 'orders', workflowManifest('orders', '1.0.0', [
+      step('make', { skill: { id: 'framing', range: '^1.0.0' }, tier: 'draft', outputs: ['y'], validators: ['schema'] }),
+      step('check', { needs: ['make'], tier: 'draft', inputs: { t: 'input.target' }, outputs: ['z'], validators: ['deliverable_complete'] }),
+    ]));
+    const more = createWorkflowRegistry({ builtinDir: join(root, 'w'), projectDir: null });
+    const lock2 = updateLock(emptyLock(), skills.list(), more.list()).lock;
+    const at = (id: string) => resolveWorkflow({ workflowId: id, input: { target: 't' }, skills, workflows: more, lock: lock2, host: host({ maxTier: 'draft' }), sources: [], store: fx.store, at: T });
+    assert.equal(at('waits').reasons.some((x) => x.code === 'missing_validator'), false, 'a step that reads the output checks it');
+    assert.ok(at('orders').reasons.some((x) => x.code === 'missing_validator' && x.stepId === 'make'), 'a step that only waits does not check the output');
   } finally {
     fx.cleanup();
     cleanup();

@@ -3372,9 +3372,10 @@ resolver now enforces:
   not resolve.
 - `requiredValidators`, a flat list that replaces gates whose `appliesTo`
   and `required` never varied. Each must be named on the step that binds
-  the skill, or on a step that consumes that step's output; a check on
-  unrelated earlier work does not count, and the workflow does not resolve
-  without one.
+  the skill, or on a step whose inputs read that step's output, directly or
+  through another such step. A check on unrelated earlier work, or on a
+  step that only waits on it, does not count, and the workflow does not
+  resolve without one.
 
 Every other key is refused with the allowed list, so dead fields cannot
 return. The prose fields were checked skill by skill against the
@@ -3404,5 +3405,7 @@ each is fixed with a test:
 - Dependency entries accepted unknown nested keys.
 - Intake's evidence rule existed only in the deleted field. Its body now
   states it.
+- On re-check, a step that only waited on the skill's step through `needs`
+  still counted. Consumption is now read from step inputs.
 
 Verdict: **accepted with controls**.
