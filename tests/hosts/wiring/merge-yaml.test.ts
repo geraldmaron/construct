@@ -122,12 +122,19 @@ test('forms the writer does not read are refused and the bytes stay', () => {
     'two documents': 'a: 1\n---\nmcp_servers:\n',
     'duplicate key': 'mcp_servers:\n  a:\n    command: x\nmcp_servers:\n',
     'anchor': 'mcp_servers:\n  construct:\n    args: *shared\n',
+    'byte-order mark before the servers': '\uFEFFmcp_servers:\n  github:\n    command: github\n',
+    'explicit key': '? mcp_servers\n: {}\n',
+    'tab after the colon': 'mcp_servers:\t{}\n',
+    'flow mapping document': '{mcp_servers: {github: {command: github}}}\n',
+    'YAML-only escape in a value': 'mcp_servers:\n  construct:\n    command: "foo\\x20bar"\n',
+    'YAML-only escape in a key': 'mcp_servers:\n  "con\\x73truct":\n    command: x\n',
   };
   for (const [name, text] of Object.entries(cases)) {
     inScratch((file) => {
       write(file, text);
       const r = mergeYamlServerBlock(file, 'construct', ENTRY);
       assert.equal(r.ok, false, name);
+      assert.doesNotThrow(() => readYamlServerBlock(file, 'construct'), name);
       assert.equal(readFileSync(file, 'utf8'), text, name);
     });
   }

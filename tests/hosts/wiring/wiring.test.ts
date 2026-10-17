@@ -214,3 +214,33 @@ test('hermes is wired in its user-level config under HERMES_HOME, names its proj
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('an entry that names another project in any spelling, or names none, is never rebound', () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-wiring-'));
+  try {
+    const project = join(root, 'project');
+    mkdirSync(project);
+    const env = { HOME: join(root, 'home'), HERMES_HOME: join(root, 'profile') };
+    const file = join(root, 'profile', 'config.yaml');
+    mkdirSync(join(root, 'profile'));
+    const entries: Record<string, string> = {
+      'separate --project argument': 'args: [serve, --client=hermes, --project, /other]',
+      'cwd only': 'args: [serve, --client=hermes]\n    cwd: /other',
+      'repeated --project, the last elsewhere': `args: [serve, --client=hermes, --project=${project}, --project=/other]`,
+      'this project by flag, another by cwd': `args: [serve, --client=hermes, --project=${project}]\n    cwd: /other`,
+      'no project at all': 'args: [serve, --client=hermes]',
+    };
+    for (const [name, body] of Object.entries(entries)) {
+      const text = `mcp_servers:\n  construct:\n    command: construct\n    ${body}\n`;
+      writeFileSync(file, text);
+      const r = installWiring('hermes', project, env);
+      assert.equal(r.status, 'broken', name);
+      assert.match(r.detail, /one Hermes Agent profile serves one Construct project/, name);
+      assert.equal(readFileSync(file, 'utf8'), text, `${name}: the file is untouched`);
+      assert.equal(inspectWiring('hermes', project, env).status, 'absent', name);
+      assert.equal(launchOf('hermes', project, env), null, name);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
