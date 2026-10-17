@@ -26,7 +26,7 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
 ## Next step
 1. Two one-time sign-ins by Gerald unblock every live eval: `claude` then `/login` in a terminal
    (the CLI is not signed in outside the desktop app), and
-   `CODEX_HOME=~/.local/share/construct-evals/codex-home codex login`.
+   `mkdir -p ~/.local/share/construct-evals/codex-home` then `CODEX_HOME=~/.local/share/construct-evals/codex-home codex login`.
 2. Then run the smoke record with `CODEX_HOME` set to that home: preflight both hosts, the
    candidate cells, and a baseline from `v3.0.0-alpha.31`; then `record --scope=smoke`.
 3. With the record: close work-225d1807, work-51bcd5b9, work-c3476f42; do the tool-description
