@@ -4,10 +4,10 @@
  "recordedAt": "2026-10-17",
  "scope": "smoke",
  "corpusDigest": "sha256:26d9715d44a26450aa83e51521e32dfa0c0f9b841c612512b170faad5b485a82",
- "descriptionsDigest": "sha256:4ddb128f84b7acad26b2a0cd2424c8da7f89e30a2f47f33e4eb06d480d605cfe",
+ "descriptionsDigest": "sha256:0c14e961cb718cc5229df2dbb0a3f3f47438a82ff9b1904a68e52eb9da973047",
  "server": {
-  "version": "3.0.0-alpha.31",
-  "commit": "b5698489c839+changes"
+  "version": "3.0.0-alpha.32",
+  "commit": "568d4e7b150d+changes"
  },
  "preregistration": {
   "runsPerCase": 3,
