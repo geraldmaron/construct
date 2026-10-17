@@ -915,7 +915,9 @@ test('a live record validates, its compact outcomes expand, and its summaries an
   const raw = sampleRecord();
   const record = validateLiveRecord(JSON.parse(JSON.stringify(raw)), 'intake-live.json');
   const again = recomputeLiveRecord(record, corpus());
-  record.cells.forEach((c, i) => assert.deepEqual(again.cells[i]!.summary, c.summary));
+  record.cells.forEach((c, i) => {
+    assert.deepEqual(again.cells[i]!.summary, c.summary);
+  });
   assert.deepEqual(again.verdicts, record.verdicts);
   assert.equal(record.verdicts!.pass, true);
   assert.deepEqual(expandObservation({ e: true }, 'x'), obs({ e: true }));

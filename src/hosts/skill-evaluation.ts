@@ -158,7 +158,7 @@ export async function evaluateSkill(input: {
       observed.evidence.some((ref: unknown) => typeof ref !== 'string')
     )
       problems.push(`${expected.id}: evaluation evidence references are required`);
-    else observed.evidence.forEach((ref: string) => refs.add(ref));
+    else for (const ref of observed.evidence as string[]) refs.add(ref);
   }
   if (verifierEvidence.some((entry) => contentReceipt(entry.ref, input.resolve).digest !== entry.digest))
     problems.push('verifier code changed during evaluation');

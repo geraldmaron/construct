@@ -180,7 +180,9 @@ export const FORBIDDEN_FILE_KEY_WORDS = [
  */
 export function refuseForbiddenKeys(value: unknown, path: string, trail = ''): void {
   if (Array.isArray(value)) {
-    value.forEach((item, i) => refuseForbiddenKeys(item, path, `${trail}[${String(i)}]`));
+    value.forEach((item, i) => {
+      refuseForbiddenKeys(item, path, `${trail}[${String(i)}]`);
+    });
     return;
   }
   if (!isRecord(value)) return;

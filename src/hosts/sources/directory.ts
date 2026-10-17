@@ -159,7 +159,7 @@ function walk(root: string, dir: string, out: Walked[], visited: Set<string>, sk
 export const readDirectorySource: SourceReader = async ({ locator }): Promise<ReadOutcome> => {
   if (locator === null) return { outcome: 'unreachable', reason: 'the source names no directory' };
   let root: string;
-  let st;
+  let st: ReturnType<typeof statSync>;
   try {
     // Containment compares real paths, so the walk starts from the root's own (macOS spells /var as /private/var).
     root = realpathSync(resolve(locator));

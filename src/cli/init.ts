@@ -549,7 +549,9 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       if (h.startup) say(`    startup: ${h.startup.status} (${esc(h.startup.detail)})`);
       if (h.next.length > 0) {
         say(`Next, in ${w.label}:`);
-        h.next.forEach((step, i) => say(`  ${String(i + 1)}. ${step}`));
+        h.next.forEach((step, i) => {
+          say(`  ${String(i + 1)}. ${step}`);
+        });
       } else if (h.mcp && h.mcp.status !== 'installed') {
         say(
           `Next: fix ${shownPath(w, h.mcp.path)} as above, then run \`construct init --client=${h.client}\` again; until then ${w.label} cannot reach Construct.`,

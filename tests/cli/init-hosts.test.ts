@@ -83,7 +83,9 @@ test('the one host installed here is wired, its skill planted in the project, an
     );
     assert.match(init.out, /skill: planted at .*\.claude\/skills\/construct \(installed\)/);
     assert.match(init.out, /Next, in Claude Code:/);
-    firstRun('claude-code').forEach((step, i) => assert.ok(init.out.includes(`  ${String(i + 1)}. ${step}\n`), step));
+    firstRun('claude-code').forEach((step, i) => {
+      assert.ok(init.out.includes(`  ${String(i + 1)}. ${step}\n`), step);
+    });
     assert.match(
       init.out,
       / 4\. Ask for what you want in your own words\. It will ask the 3 setup question\(s\) when they change the work\./,

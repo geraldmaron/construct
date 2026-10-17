@@ -120,26 +120,43 @@ function acceptanceCapability(stateDir: string, identity: string): string {
   if (!dir.isDirectory() || (dir.mode & 0o077) !== 0) throw new Error('handoff recovery directory must be private to this user');
   const path = join(directory, createHash('sha256').update(identity).digest('hex'));
   const temporary = join(directory, `.pending-${randomUUID()}`);
-  try {
-    const fd = openSync(temporary, 'wx', 0o600);
-    try {
-      writeFileSync(fd, randomBytes(32).toString('hex'));
-      fsyncSync(fd);
-    } finally {
-      closeSync(fd);
-    }
-    try {
-      linkSync(temporary, path);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    }
-  } finally {
+  const removeTemporary = () => {
     try {
       unlinkSync(temporary);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
+  };
+  try {
+    const fd = openSync(temporary, 'wx', 0o600);
+    let writeFailure: unknown = null;
+    try {
+      writeFileSync(fd, randomBytes(32).toString('hex'));
+      fsyncSync(fd);
+    } catch (error) {
+      writeFailure = error;
+    }
+    try {
+      closeSync(fd);
+    } catch (error) {
+      if (writeFailure === null) throw error;
+    }
+    if (writeFailure !== null) throw writeFailure;
+    try {
+      linkSync(temporary, path);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    }
+  } catch (error) {
+    // The first failure is the one reported; a cleanup failure after it must not replace it.
+    try {
+      removeTemporary();
+    } catch {
+      // Reported below by the original error.
+    }
+    throw error;
   }
+  removeTemporary();
   if (process.platform !== 'win32') {
     const published = openSync(directory, 'r');
     try {
@@ -624,7 +641,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         const token = args.flags.token as string | undefined;
         if (!token) throw new UsageError('work handoff needs --token, the one your claim returned');
         const flag = (name: string): string | undefined => args.flags[name] as string | undefined;
-        let w;
+        let w: ReturnType<typeof handoffWork> | undefined;
         try {
           w = handoffWork(project.store, {
             id: args.positionals[0]!,

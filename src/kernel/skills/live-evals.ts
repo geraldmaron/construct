@@ -330,7 +330,9 @@ export const PREREGISTRATION = deepFreeze({
   questionResults:
     'a question result is start_outcome started:false, start_outcome without the started flag whose preflight reasons include missing_step_input (a baseline server blocking on a missing input), or a pending remember; it is never a write and the run continues; on a work case it counts as the work taken on, on any other case it counts for nothing',
   coordinationReads: { tool: 'work', actions: ['list', 'ready', 'offers', 'show', 'check'] },
+  // biome-ignore lint/suspicious/noThenProperty: a frozen preregistration whose digest is published; renaming the key changes it.
   truncated: { reruns: 1, then: { work: 'missed', nonWork: 'engaged' } },
+  // biome-ignore lint/suspicious/noThenProperty: same frozen preregistration.
   invalid: { reruns: 1, then: 'incomplete' },
   incomplete:
     'a case with any run still invalid after its rerun is incomplete and never scored on its other runs; an axis with an incomplete candidate case does not pass',

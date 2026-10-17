@@ -12,7 +12,7 @@
  * names that would be. The kernel never asks git itself.
  */
 
-import { lstatSync, realpathSync, readdirSync, statSync } from 'node:fs';
+import { lstatSync, realpathSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { symlinkBetween } from '../project/files.ts';
 import { listLiveLeases, MAIN_LANE, normalizeLeasePath, pathsOverlap } from './leases.ts';
@@ -90,7 +90,7 @@ export function assertUnaliasedPath(root: string, raw: string): void {
   // must not conceal links to files outside their lexical reservation.
   if (path === '/' || !path.endsWith('/')) return;
   const visit = (directory: string): void => {
-    let entries;
+    let entries: Dirent[];
     try {
       entries = readdirSync(directory, { withFileTypes: true });
     } catch (error) {

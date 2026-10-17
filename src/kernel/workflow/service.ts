@@ -1381,7 +1381,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (resolution.status === 'runnable' || resolution.status === 'outdated') {
       const roots = new Set(readySteps(resolution.workflow!.manifest.steps, new Set()).map((s) => s.id));
       if (listSteps(store, run.id).length === 0) {
-        resolution.plan.forEach((bound, i) =>
+        for (const [i, bound] of resolution.plan.entries()) {
           addStep(store, {
             id: deps.nextId('step'),
             runId: run.id,
@@ -1392,8 +1392,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             input: { skill: bound.skill, needsApproval: bound.needsApproval },
             ready: roots.has(bound.step.id),
             at,
-          }),
-        );
+          });
+        }
       }
       return { run: transitionRun(store, { id: run.id, to: 'ready', at, reason, preflight }), resolution, preflight };
     }
