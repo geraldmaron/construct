@@ -38,9 +38,10 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir, homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { clientWiring, projectSkillsDirFor } from '../src/hosts/wiring/clients.ts';
+import { clientWiring, configPathFor, projectSkillsDirFor } from '../src/hosts/wiring/clients.ts';
 import { launchOf } from '../src/hosts/wiring/wire.ts';
 import { readTomlServerTable } from '../src/hosts/wiring/merge-toml.ts';
+import { mergeYamlServerBlock, readYamlServerBlock } from '../src/hosts/wiring/merge-yaml.ts';
 import { EVAL_HOSTS, codexProviderFromConfig, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment } from './host-cli.mjs';
 import { cursorSnapshot, restoreCursor } from './evals-live.mjs';
 import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
@@ -55,6 +56,9 @@ const OUT = outArg ? outArg.slice('--out='.length) : join(ROOT, '.tmp-conformanc
 const modelArg = process.argv.find((a) => a.startsWith('--model='));
 const MODEL = modelArg ? modelArg.slice('--model='.length) : null;
 const hostArg = process.argv.find((a) => a.startsWith('--host='));
+// A Hermes profile (HERMES_HOME) the person set up for scripted calls; its config.yaml is put back byte for byte.
+const hermesHomeArg = process.argv.find((a) => a.startsWith('--hermes-home='));
+const HERMES_LIVE_HOME = hermesHomeArg ? hermesHomeArg.slice('--hermes-home='.length) : null;
 const HOST_FILTER = hostArg ? hostArg.slice('--host='.length) : null;
 
 const ALL_HOSTS = [
@@ -64,6 +68,7 @@ const ALL_HOSTS = [
   { id: 'opencode', binary: 'opencode', liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
   { id: 'codex', binary: 'codex', liveArgs: (prompt) => ['exec', prompt] },
   { id: 'bob', binary: 'bob', liveArgs: null },
+  { id: 'hermes', binary: 'hermes', liveArgs: (prompt) => ['-z', prompt] },
 ];
 const HOSTS = HOST_FILTER ? ALL_HOSTS.filter((h) => h.id === HOST_FILTER) : ALL_HOSTS;
 if (HOST_FILTER && HOSTS.length === 0) {
@@ -173,12 +178,16 @@ const DOCUMENTED_CONFIG = {
   opencode: { path: 'opencode.json', key: 'mcp', type: 'local' },
   codex: { path: '.codex/config.toml', key: 'mcp_servers' },
   bob: { path: '.bob/mcp.json', key: 'mcpServers' },
+  // User-level, under HOME: Hermes has no project MCP file.
+  hermes: { path: '.hermes/config.yaml', key: 'mcp_servers', home: true },
 };
 
-function checkDocumentedConfig(host, project) {
+function checkDocumentedConfig(host, project, env) {
   const contract = DOCUMENTED_CONFIG[host.id];
-  const file = join(project, contract.path);
-  const entry = host.id === 'codex' ? readTomlServerTable(file, 'construct') : JSON.parse(readFileSync(file, 'utf8'))[contract.key]?.construct;
+  const file = join(contract.home ? env.HOME : project, contract.path);
+  const entry = host.id === 'codex' ? readTomlServerTable(file, 'construct')
+    : host.id === 'hermes' ? readYamlServerBlock(file, 'construct')
+      : JSON.parse(readFileSync(file, 'utf8'))[contract.key]?.construct;
   const problems = [];
   if (!entry) problems.push('documented configuration location has no construct entry');
   else {
@@ -190,6 +199,8 @@ function checkDocumentedConfig(host, project) {
     if (host.id === 'cursor' && !entry.args?.includes('--project=${workspaceFolder}')) problems.push('workspace interpolation does not bind the project');
     if (host.id === 'vscode' && entry.cwd !== '${workspaceFolder}') problems.push('workspace cwd is missing');
     if (host.id === 'codex' && !(entry.tool_timeout_sec > 60)) problems.push('host timeout must exceed the person prompt wait');
+    if (host.id === 'hermes' && ![project, realpathSync(project)].some((p) => entry.args?.includes(`--project=${p}`))) problems.push('the user-level entry does not name the project it serves');
+    if (host.id === 'hermes' && entry.trust !== 'untrusted') problems.push('the entry does not ask before write tools (trust: untrusted)');
   }
   record(host.id, 'documented configuration simulation', problems.length ? 'failed' : 'passed', problems.length ? problems.join('; ') : `${contract.path}: documented transport shape, enabled state and project binding; host UI not executed`);
 }
@@ -277,24 +288,28 @@ function checkHostTextParity() {
  */
 async function checkPortableWiring(host, project, env, bin) {
   const w = clientWiring(host.id);
-  const launch = launchOf(host.id, project);
+  const launch = launchOf(host.id, project, env);
   if (!w || !launch) {
     record(host.id, 'portable wiring', 'failed', `no construct entry to start in ${w?.relativePath ?? 'the host file'}`);
     return;
   }
-  const text = readFileSync(join(project, w.relativePath), 'utf8');
+  const file = configPathFor(w, project, env);
+  const text = readFileSync(file, 'utf8');
   const parts = [launch.command, ...launch.args];
+  // A user-level entry is never committed and must name the project it serves; everything else stays machine-free.
+  const user = w.scope === 'user';
   const pinned = parts.filter((p) => isAbsolute(p) || /\bv?\d+\.\d+\.\d+\b/.test(p));
-  const leaked = [project, realpathSync(project), ROOT.replace(/\/$/, ''), process.execPath].filter((p) => text.includes(p));
+  const leaked = [...(user ? [] : [project, realpathSync(project)]), ROOT.replace(/\/$/, ''), process.execPath].filter((p) => text.includes(p));
   if (pinned.length > 0 || leaked.length > 0) {
     record(host.id, 'portable wiring', 'failed', `${w.relativePath} carries a machine path: ${[...pinned, ...leaked].join(', ')}`);
     return;
   }
   const substitute = (a) => a.replaceAll('${workspaceFolder}', project);
-  const entry = w.format === 'toml' ? readTomlServerTable(join(project, w.relativePath), 'construct') : JSON.parse(text)[w.serversKey].construct;
-  // Cursor documents explicit workspace interpolation; prove it binds even
-  // when the parent process starts elsewhere. VS Code supplies the declared cwd.
-  const cwd = typeof entry.cwd === 'string' ? substitute(entry.cwd) : host.id === 'cursor' ? env.HOME : project;
+  const entry = w.format === 'toml' ? readTomlServerTable(file, 'construct') : w.format === 'yaml' ? readYamlServerBlock(file, 'construct') : JSON.parse(text)[w.serversKey].construct;
+  // Cursor documents explicit workspace interpolation, and a user-level entry
+  // names its project; prove each binds even when the parent process starts
+  // elsewhere. VS Code supplies the declared cwd.
+  const cwd = user || host.id === 'cursor' ? env.HOME : typeof entry.cwd === 'string' ? substitute(entry.cwd) : project;
   const s = session(cwd, { ...env, PATH: scratchBin(bin) }, host.id, { command: launch.command, args: launch.args.map(substitute) });
   try {
     const initMsg = await s.rpc('initialize', {});
@@ -355,7 +370,7 @@ async function checkHost(host) {
     record(host.id, 'installation and binding', init.code === 0 ? 'passed' : 'failed', init.code === 0 ? `init bound ${project}` : init.err.trim());
     const wiredHost = rec?.hosts?.find((h) => h.client === host.id);
     record(host.id, 'host wiring', wiredHost?.mcp?.status === 'installed' ? 'passed' : 'failed', wiredHost?.mcp ? `${wiredHost.mcp.path} ${wiredHost.mcp.status}` : 'no wiring recorded');
-    checkDocumentedConfig(host, project);
+    checkDocumentedConfig(host, project, env);
     await checkPortableWiring(host, project, env, join(scratch, 'bin'));
     await checkProtocolProfiles(host, project, env);
     if (host.id === 'claude-code') checkLocalHooks(project, wiredHost, env);
@@ -479,6 +494,7 @@ async function checkHost(host) {
       else if (!host.liveArgs) record(host.id, 'live host call', 'untested', `${host.id} has no scripted prompt entry point`);
       else if ((host.needsModel || (EVAL_HOSTS.includes(host.id) && host.id !== 'claude-code')) && !MODEL) record(host.id, 'live host call', 'untested', `${host.id} live needs --model=<model>`);
       else if (host.id === 'cursor' && !process.argv.includes('--allow-cursor-state')) record(host.id, 'live host call', 'untested', 'a Cursor live call runs in the person\'s own ~/.cursor; pass --allow-cursor-state once they have opted in');
+      else if (host.id === 'hermes' && !HERMES_LIVE_HOME) record(host.id, 'live host call', 'untested', 'Hermes reads its login and its MCP servers from one HERMES_HOME; pass --hermes-home=<a profile set up for scripted calls>');
       else {
         const prompt = 'Call the construct MCP tool named bootstrap and reply with the value of its "next" field only.';
         let r;
@@ -505,6 +521,19 @@ async function checkHost(host) {
             if (cursorBefore) restoreCursor(cursorBefore, join(OUT, '..', 'cursor-live'));
           }
           reply = parseHostStream(host.id, r.stdout ?? '').finalText ?? '';
+        } else if (host.id === 'hermes') {
+          // The profile keeps its login; its construct entry points at this run's project and is put back afterwards.
+          const config = join(HERMES_LIVE_HOME, 'config.yaml');
+          const before = existsSync(config) ? readFileSync(config) : null;
+          try {
+            const wrote = mergeYamlServerBlock(config, 'construct', { command: process.execPath, args: [LAUNCHER, 'serve', '--client=hermes', `--project=${project}`], cwd: project, trust: 'untrusted', enabled: true });
+            if (!wrote.ok) throw new Error(`could not write ${config}: ${wrote.reason}`);
+            r = spawnSync(binary, host.liveArgs(prompt, MODEL), { cwd: project, env: { ...process.env, HERMES_HOME: HERMES_LIVE_HOME }, encoding: 'utf8', timeout: 180000 });
+          } finally {
+            if (before === null) rmSync(config, { force: true });
+            else writeFileSync(config, before);
+          }
+          reply = r.stdout ?? '';
         } else {
           r = spawnSync(binary, host.liveArgs(prompt, MODEL), { cwd: project, env: { ...process.env, HOME: home }, encoding: 'utf8', timeout: 180000 });
           reply = r.stdout ?? '';

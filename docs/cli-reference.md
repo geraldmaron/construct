@@ -20,7 +20,7 @@ set this project up: files, one database, a drafted profile, and the agent host 
 | `--scale` | yes | what this project is to you: side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one |
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
-| `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |
+| `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob \| hermes (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |
 | `--no-wire` | no | do not write the hosts’ MCP configuration, hooks or startup rules |
 | `--skills-dir` | yes | also plant a personal copy of the operational skill in this directory |
 | `--dry-run` | no | say what would happen and write nothing |
@@ -216,7 +216,7 @@ plant a shipped skill into a host’s skills directory, byte for byte
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode \| hermes |
 | `--force` | no | overwrite a copy that someone changed; an earlier release is replaced without it |
 
 Reads only: no.
@@ -228,7 +228,7 @@ compare installed skills with the shipped ones
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode \| hermes |
 
 Reads only: yes.
 
@@ -250,7 +250,7 @@ remove an installed skill (needs --confirm)
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode \| hermes |
 | `--confirm` | no | actually remove it |
 
 Reads only: no.
@@ -733,7 +733,7 @@ speak MCP over stdio for the host that launched it, bound to this project
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
-| `--client` | yes | which host is on the other end: claude-code \| cursor \| vscode \| opencode \| codex \| bob \| unknown |
+| `--client` | yes | which host is on the other end: claude-code \| cursor \| vscode \| opencode \| codex \| bob \| hermes \| unknown |
 | `--project` | yes | the project root to bind (default: found from the working directory) |
 | `--headless` | no | serve the runner surface instead of the person’s session |
 | `--executor` | yes | the runner’s id, with --headless |

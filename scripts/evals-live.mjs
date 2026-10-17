@@ -2,7 +2,7 @@
 /**
  * evals-live.mjs — live intake runs: real hosts, one request at a time,
  * against a fresh project wired to the Construct under test, scored by the
- * rule fixed in PREREGISTRATION (src/kernel/skills/routing.ts).
+ * rule fixed in PREREGISTRATION (src/kernel/skills/live-evals.ts).
  *
  *   preflight --host=<h> [--bin] [--model]       binary, version, subscription auth, no API environment, contamination canary
  *   label --labeler=claude|codex [--model]       one corpus case per call, text only, written under .tmp-evals/labels/
@@ -41,7 +41,7 @@ import { PERIOD_SEMANTICS } from '../src/kernel/registry/slots.ts';
 import {
   BARE_MODEL_ALIAS, LIVE_CONDITIONS, OBSERVATION_DEFAULTS, PREREGISTRATION, caseSet, compactObservation, gatingAxes, intakeVerdict, measureIntake, observeRun, pairToolCalls,
   recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord,
-} from '../src/kernel/skills/routing.ts';
+} from '../src/kernel/skills/live-evals.ts';
 import {
   EVAL_HOSTS, HOST_BINARY, PROJECT_SKILLS_DIR, codexEvaluationIsolationArgs, codexProviderArgs, codexProviderFromConfig, constructEnv, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand,
 } from './host-cli.mjs';
@@ -60,6 +60,7 @@ export const UNMEASURED_REASONS = {
   vscode: '`code chat` opens a window and offers no headless event stream to drive or read.',
   opencode: 'OpenCode is reachable here only through a pay-per-use API key, and development calls run on subscriptions.',
   bob: 'Bob is not installed on the machine that records.',
+  hermes: 'No eval cell drives Hermes yet; a scripted call needs a HERMES_HOME profile with its own subscription login.',
   cursor: 'Cursor cells run only with the person\'s --allow-cursor-state opt-in, on their own Cursor quota.',
   codex: 'No codex cell was recorded; a smoke or full record needs its gated cells.',
   'claude-code': 'No Claude Code cell was recorded; a smoke or full record needs its gated cells.',
@@ -70,7 +71,7 @@ export const UNMEASURED_REASONS = {
  * the person's quota, and the others cannot be driven headlessly on
  * subscriptions here. Claude Code and Codex are always measured.
  */
-export const MAY_GO_UNMEASURED = new Set(['cursor', 'vscode', 'opencode', 'bob']);
+export const MAY_GO_UNMEASURED = new Set(['cursor', 'vscode', 'opencode', 'bob', 'hermes']);
 
 /**
  * The cells a record of each scope must hold, by requested model; only a

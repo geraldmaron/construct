@@ -11,19 +11,26 @@
  *
  * Each host's project skills directory is the one its skills documentation
  * names: Claude Code reads .claude/skills, Codex .agents/skills, Bob
- * .bob/skills, and Cursor, OpenCode, and VS Code read both .agents/skills and
- * .claude/skills.
+ * .bob/skills, Hermes .agents/skills once the person trusts the project, and
+ * Cursor, OpenCode, and VS Code read both .agents/skills and .claude/skills.
+ *
+ * Hermes is the one host with no project configuration file: it reads MCP
+ * servers only from its user-level config.yaml. Its entry therefore names the
+ * project it serves, is never committed, and binds one Construct project per
+ * Hermes profile (HERMES_HOME).
  */
 
 import { realpathSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveHermesHome, type PathsEnv } from '../../kernel/paths.ts';
 import { launchParts, type McpServersKey } from './merge-mcp.ts';
 import type { TomlValue } from './merge-toml.ts';
+import type { YamlValue } from './merge-yaml.ts';
 
 export const MCP_SERVER_NAME = 'construct';
 
-export const WIRABLE_CLIENTS = ['claude-code', 'cursor', 'vscode', 'opencode', 'codex', 'bob'] as const;
+export const WIRABLE_CLIENTS = ['claude-code', 'cursor', 'vscode', 'opencode', 'codex', 'bob', 'hermes'] as const;
 export type WirableClient = (typeof WIRABLE_CLIENTS)[number];
 
 /** Hosts a session can be in: every wirable host, or one Construct cannot name. */
@@ -64,8 +71,10 @@ interface WiringFacts {
   readonly id: WirableClient;
   /** The host's name as a person knows it. */
   readonly label: string;
-  /** The file the host reads, relative to the project root. */
+  /** The file the host reads, relative to the project root, or as a person names it when it is not in the project. */
   readonly relativePath: string;
+  /** Where the file lives: in the project, or in the person's own configuration, where it is never committed. */
+  readonly scope: 'project' | 'user';
   readonly documentation: string;
   /** Commands whose presence on PATH says the host is installed here. */
   readonly binaries: readonly string[];
@@ -84,8 +93,30 @@ interface WiringFacts {
 }
 
 export type ClientWiring =
-  | (WiringFacts & { readonly format: 'json'; readonly serversKey: McpServersKey; entry(launch: Launch): Record<string, unknown> })
-  | (WiringFacts & { readonly format: 'toml'; readonly serversKey: 'mcp_servers'; entry(launch: Launch): Record<string, TomlValue> });
+  | (WiringFacts & { readonly format: 'json'; readonly serversKey: McpServersKey; entry(launch: Launch, projectRoot: string): Record<string, unknown> })
+  | (WiringFacts & { readonly format: 'toml'; readonly serversKey: 'mcp_servers'; entry(launch: Launch, projectRoot: string): Record<string, TomlValue> })
+  | (WiringFacts & { readonly format: 'yaml'; readonly serversKey: 'mcp_servers'; entry(launch: Launch, projectRoot: string): Record<string, YamlValue> });
+
+/**
+ * The absolute path of the file a host reads for this project. `env` is
+ * required: a user-level file lives under home, and a caller that forgot to
+ * pass its own environment would reach the real one.
+ */
+export function configPathFor(w: ClientWiring, projectRoot: string, env: PathsEnv): string {
+  if (w.id === 'hermes') return join(resolveHermesHome(env), 'config.yaml');
+  return join(projectRoot, w.relativePath);
+}
+
+/** How to name a host's file to a person: its project path, or the actual file when it lives outside the project and can be moved (HERMES_HOME). */
+export function shownPath(w: ClientWiring, path: string): string {
+  return w.scope === 'user' ? path : w.relativePath;
+}
+
+/** The project a user-level entry serves, read from its `--project=` argument, or null when it names none. */
+export function projectOfEntry(entry: Record<string, unknown>): string | null {
+  const arg = launchParts(entry).find((p) => p.startsWith('--project='));
+  return arg ? arg.slice('--project='.length) : null;
+}
 
 function boundTo(client: WirableClient): (entry: Record<string, unknown>) => boolean {
   return (entry) => {
@@ -114,6 +145,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
       'Allow Construct\'s tools when Claude Code asks, or add mcp__construct to permissions.allow in your own settings.',
     ],
     relativePath: '.mcp.json',
+    scope: 'project',
     format: 'json',
     serversKey: 'mcpServers',
     documentation: 'https://code.claude.com/docs/en/mcp (project-scoped .mcp.json)',
@@ -131,6 +163,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
       'Check that construct is on in Cursor\'s MCP settings.',
     ],
     relativePath: join('.cursor', 'mcp.json'),
+    scope: 'project',
     format: 'json',
     serversKey: 'mcpServers',
     documentation: 'https://cursor.com/docs/context/mcp (project .cursor/mcp.json; ${workspaceFolder} names the project)',
@@ -148,6 +181,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
       'In Copilot Chat agent mode, start construct from the tools list if it has not started.',
     ],
     relativePath: join('.vscode', 'mcp.json'),
+    scope: 'project',
     format: 'json',
     serversKey: 'servers',
     documentation: 'https://code.visualstudio.com/docs/copilot/chat/mcp-servers (workspace .vscode/mcp.json; cwd ${workspaceFolder})',
@@ -162,6 +196,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     readsClaudeSkills: true,
     firstRun: ['Start opencode in this folder.'],
     relativePath: 'opencode.json',
+    scope: 'project',
     format: 'json',
     serversKey: 'mcp',
     documentation: 'https://opencode.ai/docs/mcp-servers (project opencode.json, local servers)',
@@ -179,6 +214,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
       'Approve construct\'s tool calls when Codex asks.',
     ],
     relativePath: join('.codex', 'config.toml'),
+    scope: 'project',
     format: 'toml',
     serversKey: 'mcp_servers',
     documentation: 'https://learn.chatgpt.com/docs/extend/mcp (project .codex/config.toml, read in trusted projects only; tool_timeout_sec defaults to 60)',
@@ -197,11 +233,38 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
       'Approve construct\'s tools when Bob asks.',
     ],
     relativePath: join('.bob', 'mcp.json'),
+    scope: 'project',
     format: 'json',
     serversKey: 'mcpServers',
     documentation: 'https://bob.ibm.com/docs/ide/configuration/mcp/mcp-in-bob (project .bob/mcp.json)',
     entry: (launch) => ({ command: launch.command, args: serveLine(launch, 'bob'), disabled: false }),
     bound: boundTo('bob'),
+  },
+  {
+    id: 'hermes',
+    label: 'Hermes Agent',
+    binaries: ['hermes'],
+    projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: false,
+    firstRun: [
+      'Run `hermes skills trust` in this folder so Hermes loads the project skills in .agents/skills.',
+      'Start hermes in this folder, or from the gateway; the entry names this project, so the working directory does not matter.',
+      'Approve construct\'s write tools when Hermes asks; the entry marks the server untrusted, so every tool that changes something asks first.',
+      'One Hermes profile serves one Construct project. For a second project, run Hermes with its own HERMES_HOME.',
+    ],
+    relativePath: join('~', '.hermes', 'config.yaml'),
+    scope: 'user',
+    format: 'yaml',
+    serversKey: 'mcp_servers',
+    documentation: 'https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp (user-level ~/.hermes/config.yaml under mcp_servers; HERMES_HOME moves it; trust: untrusted asks before any tool without readOnlyHint)',
+    entry: (launch, projectRoot) => ({
+      command: launch.command,
+      args: serveLine(launch, 'hermes', `--project=${projectRoot}`),
+      cwd: projectRoot,
+      trust: 'untrusted',
+      enabled: true,
+    }),
+    bound: boundTo('hermes'),
   },
 ]);
 
@@ -225,7 +288,7 @@ export function projectSkillsDirFor(client: WirableClient, wired: readonly Wirab
 export function normalizeClient(raw: string | undefined): ClientId {
   if (!raw) return 'unknown';
   const key = raw.trim().toLowerCase();
-  const aliases: Record<string, ClientId> = { claude: 'claude-code', 'claude-code': 'claude-code', cursor: 'cursor', vscode: 'vscode', 'vs-code': 'vscode', opencode: 'opencode', codex: 'codex', bob: 'bob' };
+  const aliases: Record<string, ClientId> = { claude: 'claude-code', 'claude-code': 'claude-code', cursor: 'cursor', vscode: 'vscode', 'vs-code': 'vscode', opencode: 'opencode', codex: 'codex', bob: 'bob', hermes: 'hermes', 'hermes-agent': 'hermes' };
   return aliases[key] ?? 'unknown';
 }
 

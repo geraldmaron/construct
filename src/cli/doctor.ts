@@ -64,7 +64,7 @@ function hostLaunchCheck(client: WirableClient, root: string, env: NodeJS.Proces
   const name = `host-launch:${client}`;
   const shellNote = DESKTOP_HOSTS.has(client) ? ' (this checks this shell\'s PATH; a host started from the Dock may see another)' : '';
   const repair = `\`construct init --client=${client}\` rewrites it`;
-  const launch = launchOf(client, root);
+  const launch = launchOf(client, root, env);
   if (!launch) return { name, ok: false, detail: `the ${client} entry names no command; ${repair}` };
   const install = (path: string) => (sameFile(path, LAUNCHER) ? ', the same install as this doctor' : `, a different install than this doctor (${LAUNCHER}); versions may differ`);
   if (launch.command === 'construct') {
@@ -241,7 +241,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   const ambient = detectAmbientHost(ctx.env);
   let wiredClients: WirableClient[] = [];
   if (root !== null) {
-    const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
+    const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root, ctx.env)).filter((w) => w.status !== 'absent');
     wiredClients = wired.map((w) => w.client);
     if (wired.some((w) => w.client === 'claude-code')) {
       // A session reads the machine-local settings of the checkout it works in; a worktree has its own, which init never writes.

@@ -13,6 +13,9 @@ import { join } from 'node:path';
 import { CLIENT_WIRINGS, launchFor, LAUNCHER } from '../../../src/hosts/wiring/clients.ts';
 import { installWiring, inspectWiring, launchOf } from '../../../src/hosts/wiring/wire.ts';
 
+/** A home inside the scratch root, so a host whose file lives under home never reaches the real one. */
+const homeOf = (root: string) => ({ HOME: join(root, '.home') });
+
 function scratch(fn: (root: string) => void): void {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'construct-launch-')));
   try {
@@ -40,11 +43,12 @@ test('launchFor starts the project dependency through npx, and construct from PA
 test('re-installing every host leaves its file’s bytes and modification time unchanged', () => {
   scratch((root) => {
     for (const w of CLIENT_WIRINGS) {
-      assert.equal(installWiring(w.id, root).status, 'installed');
-      const path = join(root, w.relativePath);
+      const first = installWiring(w.id, root, homeOf(root));
+      assert.equal(first.status, 'installed', `${w.id}: ${first.detail}`);
+      const path = first.path;
       const bytes = readFileSync(path);
       const mtime = statSync(path).mtimeMs;
-      const again = installWiring(w.id, root);
+      const again = installWiring(w.id, root, homeOf(root));
       assert.equal(again.status, 'installed', `${w.id}: ${again.detail}`);
       assert.ok(readFileSync(path).equals(bytes), `${w.id} bytes unchanged`);
       assert.equal(statSync(path).mtimeMs, mtime, `${w.id} not rewritten`);
@@ -65,22 +69,22 @@ test('an entry pinned to another machine’s Node and launcher is broken, names 
       },
     };
     writeFileSync(join(root, '.mcp.json'), JSON.stringify(pinned, null, 2), 'utf8');
-    const broken = inspectWiring('claude-code', root);
+    const broken = inspectWiring('claude-code', root, homeOf(root));
     assert.equal(broken.status, 'broken');
     assert.match(broken.detail, /starts \/nonexistent\/.*node, which no longer exists \(another machine's path or an old Node\); `construct init --client=claude-code` rewrites it/);
-    const fixed = installWiring('claude-code', root);
+    const fixed = installWiring('claude-code', root, homeOf(root));
     assert.equal(fixed.status, 'installed', fixed.detail);
-    assert.deepEqual(launchOf('claude-code', root), { command: 'construct', args: ['serve', '--client=claude-code'] });
+    assert.deepEqual(launchOf('claude-code', root, homeOf(root)), { command: 'construct', args: ['serve', '--client=claude-code'] });
     const file = JSON.parse(readFileSync(join(root, '.mcp.json'), 'utf8')) as { mcpServers: Record<string, unknown> };
     assert.deepEqual(file.mcpServers.other, { command: 'x' }, 'the other server is kept');
 
     // Only the launcher gone, with a Node that exists: still broken, naming the launcher.
     writeFileSync(join(root, '.mcp.json'), JSON.stringify({ mcpServers: { construct: { command: process.execPath, args: ['/nonexistent/bin/construct.mjs', 'serve', '--client=claude-code'] } } }), 'utf8');
-    assert.match(inspectWiring('claude-code', root).detail, /starts \/nonexistent\/bin\/construct\.mjs, which no longer exists/);
+    assert.match(inspectWiring('claude-code', root, homeOf(root)).detail, /starts \/nonexistent\/bin\/construct\.mjs, which no longer exists/);
 
     // Paths that exist here still work here, and the detail says they work nowhere else.
     writeFileSync(join(root, '.mcp.json'), JSON.stringify({ mcpServers: { construct: { command: process.execPath, args: [LAUNCHER, 'serve', '--client=claude-code'] } } }), 'utf8');
-    const local = inspectWiring('claude-code', root);
+    const local = inspectWiring('claude-code', root, homeOf(root));
     assert.equal(local.status, 'installed');
     assert.match(local.detail, /a path on this machine only; `construct init --client=claude-code` writes one that works on any machine/);
   });

@@ -31,7 +31,7 @@ import { inspectWiring, installWiring, type WiringState } from '../hosts/wiring/
 import { HOOK_SETTINGS_PATH, inspectHooks, installHooks, type HookWiringState } from '../hosts/wiring/hooks.ts';
 import { inspectStartup, installStartup, type StartupState } from '../hosts/wiring/startup.ts';
 import { projectStateDir } from '../kernel/project/layout.ts';
-import { clientWiring, launchFor, normalizeClient, parseClients, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
+import { clientWiring, launchFor, normalizeClient, parseClients, projectSkillsDirFor, shownPath, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { presentHosts, type PresentHost } from '../hosts/presence.ts';
 import { resolveHostConfigDirs } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
@@ -179,7 +179,7 @@ async function hostsFor(args: ParsedArgs, ctx: CliContext, root: string, mayAsk:
   const inside = normalizeClient(ambient?.host);
   if (ambient && inside !== 'unknown') return { hosts: [{ client: inside, how: `detected ${ambient.host} (${ambient.marker})` }], found: [], none: '', wouldAsk: false };
   if (boolFlag(args, 'no-wire')) return { hosts: [], found: [], none: '', wouldAsk: false };
-  const already = WIRABLE_CLIENTS.filter((c) => inspectWiring(c, root).status !== 'absent');
+  const already = WIRABLE_CLIENTS.filter((c) => inspectWiring(c, root, ctx.env).status !== 'absent');
   if (already.length > 0) return { hosts: already.map((client) => ({ client, how: 'already wired in this project' })), found: [], none: '', wouldAsk: false };
   const found = presentHosts(ctx.env, resolveHostConfigDirs(ctx.env));
   if (found.length === 1) return { hosts: [{ client: found[0]!.client, how: `the only agent host found on this machine: ${found[0]!.evidence}` }], found, none: '', wouldAsk: false };
@@ -229,8 +229,8 @@ function nextSteps(client: WirableClient, setupQuestions: number): string[] {
 }
 
 /** The hosts wired in this project's files now, other than these. */
-function wiredBesides(root: string, chosen: readonly WirableClient[]): WirableClient[] {
-  return WIRABLE_CLIENTS.filter((c) => !chosen.includes(c) && inspectWiring(c, root).status !== 'absent');
+function wiredBesides(root: string, chosen: readonly WirableClient[], env: NodeJS.ProcessEnv): WirableClient[] {
+  return WIRABLE_CLIENTS.filter((c) => !chosen.includes(c) && inspectWiring(c, root, env).status !== 'absent');
 }
 
 const NO_WIRE_NEXT = 'Next: run `construct init --client=<host>` without --no-wire for the host you use here; until then no agent session can reach Construct.';
@@ -274,7 +274,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
   const pick = await hostsFor(args, ctx, root, !dryRun && !args.json);
   const chosen = pick.hosts.map((h) => h.client);
   // One copy of the skill serves every host that can read it, counting hosts already wired here.
-  const cover = [...chosen, ...wiredBesides(root, chosen)];
+  const cover = [...chosen, ...wiredBesides(root, chosen, ctx.env)];
   const skillDirOf = (client: WirableClient): string => join(root, projectSkillsDirFor(client, cover));
   const material = gatherProjectMaterial(root);
   const draft = draftFromMaterial(material);
@@ -289,11 +289,11 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     const hosts: HostRecord[] = pick.hosts.map(({ client, how }) => {
       const w = clientWiring(client)!;
       const dir = skillDirOf(client);
-      const current = inspectWiring(client, root);
+      const current = inspectWiring(client, root, ctx.env);
       return {
         client,
         how,
-        mcp: noWire ? null : { path: current.path, status: current.status, detail: `would write ${w.relativePath} to start \`${launchText(root)} serve\``, launch: launchText(root) },
+        mcp: noWire ? null : { path: current.path, status: current.status, detail: `would write ${shownPath(w, current.path)} to start \`${launchText(root)} serve\``, launch: launchText(root) },
         skill: shipped ? { dir, outcome: 'planned', why: `would plant; now ${skillState(shipped, dir).state}` } : null,
         hooks: client === 'claude-code' && !noWire ? plannedHooks(inspectHooks(root, { checkout, stateDir: projectStateDir(root) })) : null,
         startup: noWire ? null : inspectStartup(client, root),
@@ -372,7 +372,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       ? `; \`construct skill install ${OPERATIONAL_SKILL} --force --dir=${shellWord(dir)}\` replaces it, and any edits in it are lost`
       : '');
     const hosts: HostRecord[] = pick.hosts.map(({ client, how }) => {
-      const mcp = noWire ? null : installWiring(client, root);
+      const mcp = noWire ? null : installWiring(client, root, ctx.env);
       // Hooks make reporting reads and checking answers automatic where the host supports them.
       const hooks = client === 'claude-code' && !noWire ? installHooks(root, { checkout, stateDir: result.layout.stateDir, env: ctx.env, at }) : null;
       const dir = skillDirOf(client);
@@ -439,13 +439,13 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     for (const h of hosts) {
       const w = clientWiring(h.client)!;
       if (!h.mcp) {
-        const now = inspectWiring(h.client, root);
+        const now = inspectWiring(h.client, root, ctx.env);
         say(now.status === 'installed'
           ? `  host: ${h.client} wired earlier (${esc(now.detail)}); no MCP configuration written (--no-wire)`
           : `  host: ${h.client} not connected: no MCP configuration written (--no-wire)`);
       } else if (h.mcp.status === 'installed') {
         const replaced = /; (replaced duplicate .*)$/.exec(h.mcp.detail)?.[1];
-        say(`  host: ${h.client} wired (${w.relativePath} starts \`${h.mcp.launch} serve\`; ${esc(h.how)}${replaced ? `; ${esc(replaced)}` : ''})`);
+        say(`  host: ${h.client} wired (${shownPath(w, h.mcp.path)} starts \`${h.mcp.launch} serve\`; ${esc(h.how)}${replaced ? `; ${esc(replaced)}` : ''})`);
       } else {
         say(`  host: ${h.client} not connected: ${esc(h.mcp.detail)}`);
       }
@@ -456,14 +456,14 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
         say(`Next, in ${w.label}:`);
         h.next.forEach((step, i) => say(`  ${String(i + 1)}. ${step}`));
       } else if (h.mcp && h.mcp.status !== 'installed') {
-        say(`Next: fix ${w.relativePath} as above, then run \`construct init --client=${h.client}\` again; until then ${w.label} cannot reach Construct.`);
+        say(`Next: fix ${shownPath(w, h.mcp.path)} as above, then run \`construct init --client=${h.client}\` again; until then ${w.label} cannot reach Construct.`);
       }
     }
     if (noWire) {
       // An earlier init may have wired hosts this run did not set up; a session there still reaches Construct.
-      const earlier = WIRABLE_CLIENTS.filter((c) => !chosen.includes(c) && inspectWiring(c, root).status === 'installed');
+      const earlier = WIRABLE_CLIENTS.filter((c) => !chosen.includes(c) && inspectWiring(c, root, ctx.env).status === 'installed');
       if (earlier.length > 0) say(`  host: ${earlier.join(', ')} wired earlier; no MCP configuration written (--no-wire)`);
-      else if (!hosts.some((h) => inspectWiring(h.client, root).status === 'installed')) {
+      else if (!hosts.some((h) => inspectWiring(h.client, root, ctx.env).status === 'installed')) {
         if (hosts.length === 0) say('  host: not connected: no MCP configuration written (--no-wire)');
         say(NO_WIRE_NEXT);
       }
