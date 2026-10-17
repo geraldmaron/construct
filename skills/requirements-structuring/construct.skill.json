@@ -3,49 +3,16 @@
   "formatVersion": 1,
   "id": "requirements-structuring",
   "title": "Requirements structuring",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a requirements artifact a stranger could verify against"
-  ],
-  "deliverableTypes": [
-    "spec/requirements",
-    "brief/one-page",
-    "addendum/change-request"
-  ],
-  "inputs": [
-    "the settled intent and its constraints",
-    "decisions already made"
-  ],
-  "outputSchemas": [
-    "spec/requirements/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context",
     "model_review"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "project_write",
+  "requiredValidators": [
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "whether to build is surfaced as a decision to frame, never specified around"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }

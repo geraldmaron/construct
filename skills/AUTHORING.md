@@ -66,7 +66,7 @@ obligations.
 ```
 skills/<name>/
   SKILL.md                 # method rules; prefer under 350 lines / ~10k chars
-  construct.skill.json     # Construct manifest: id, version, capabilities, gates, evals
+  construct.skill.json     # Construct manifest: id, version, capabilities, maxTier, requiredValidators, dependencies, evals
   evals/behavior.json      # optional checks of the skill's own text
   evals/fixtures.json      # optional model-judged fixtures
   references/*.md          # long templates, record shapes, genre examples

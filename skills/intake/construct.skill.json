@@ -3,46 +3,15 @@
   "formatVersion": 1,
   "id": "intake",
   "title": "Intake",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "an execution plan with primary outcome, constraints, decisions made, parking lot"
-  ],
-  "deliverableTypes": [
-    "plan/execution"
-  ],
-  "inputs": [
-    "the request as it arrived, unedited"
-  ],
-  "outputSchemas": [
-    "plan/execution/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_project_context"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "only a genuinely blocking question is asked; everything else proceeds on labeled assumptions"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }

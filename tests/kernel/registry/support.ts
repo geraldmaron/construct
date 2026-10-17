@@ -14,8 +14,7 @@ export function tmp(): { root: string; cleanup(): void } {
 export function skillManifest(id: string, version: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     format: 'construct-skill', formatVersion: 1, id, title: id, version, category: 'method', owner: 'test',
-    interactionClasses: ['manage'],
-    capabilities: ['read_project_context'], actionTiers: ['observe', 'draft'], ...extra,
+    capabilities: ['read_project_context'], maxTier: 'draft', ...extra,
   };
 }
 
