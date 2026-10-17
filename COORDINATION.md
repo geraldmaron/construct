@@ -1,16 +1,28 @@
 # COORDINATION.md — Claude Code ↔ Codex CLI
 
 Single source of truth for how the two coding agents cooperate in **this** repo.
-`CLAUDE.md` pulls this in (`@COORDINATION.md`); `AGENTS.md` points here. Keep the
-model in this one file so the two agent files never drift.
+`AGENTS.md` (which `CLAUDE.md` imports) tells every agent to read this file at
+session start. Keep the model in this one file so the agent files never drift.
 
 ## The bridge
-- Claude Code calls Codex through the `codex` MCP server (`codex mcp-server`).
-- Codex calls Claude Code through the `claude` MCP server (`claude mcp serve`).
-- The mechanism is configured globally (Claude user config + `~/.codex/config.toml`),
-  which is what makes the bridge work on any clone. This repo also keeps a local
-  `.mcp.json` declaring the `codex` bridge for Claude Code; it is gitignored because it
-  holds machine-specific absolute paths, so it does not travel with commits.
+- Claude Code calls Codex through OpenAI's Codex plugin for Claude Code
+  (`codex@openai-codex`, from the `openai/codex-plugin-cc` marketplace). It drives the
+  local Codex app server with the machine's Codex login and `~/.codex/config.toml`.
+  Use `/codex:review` or `/codex:adversarial-review` for cross-review and
+  `/codex:rescue` (or the `codex:codex-rescue` subagent) to delegate a scoped task;
+  `/codex:status`, `/codex:result`, and `/codex:cancel` manage background jobs.
+  Codex no longer ships an MCP server, so there is no `codex` MCP entry.
+- Codex calls Claude Code through the `claude` MCP server (`claude mcp serve`),
+  registered as `[mcp_servers.claude]` in `~/.codex/config.toml`. Interactive Codex
+  asks before each call. Headless `codex exec` runs with approval `never` and declines
+  them, so grant it for that run only:
+  `-c 'mcp_servers.claude.default_tools_approval_mode="approve"'`.
+- Both halves are configured per user (the Claude Code plugin is installed at user
+  scope; the Codex entry lives in `~/.codex/config.toml`), so the bridge works on any
+  clone. Nothing in this repo configures it.
+- Leave the plugin's stop-time review gate off (`/codex:setup --enable-review-gate`).
+  It runs a Codex review on every Claude stop and can drain usage limits; run a review
+  on purpose instead.
 
 ## Roles — lead and delegate
 Whoever the human starts the session with is the **lead** for that session. The lead
@@ -30,7 +42,9 @@ implementation and the opposite model acting as an independent reviewer.
 
 ## Rules that prevent the known failure modes
 1. **Depth = 1.** A delegate must NOT call back across the bridge — no agent-calls-agent
-   loops. (Matches Codex `[agents] max_depth = 1`.)
+   loops. (Matches Codex `[agents] max_depth = 1`.) That setting caps Codex's own
+   subagents only: a Codex job started from `/codex:*` still sees the `claude` MCP server,
+   so the lead's brief must tell it not to call Claude.
 2. **One writer per file.** The lead assigns a surface area; the delegate stays inside it.
    Never let both agents edit the same file at the same time.
 3. **Sequential by default.** Only one agent edits the working tree at a time; control
@@ -48,7 +62,7 @@ implementation and the opposite model acting as an independent reviewer.
 
 Delegate calls inherit the delegating CLI's **configured default model** — do not hardcode
 an expensive model per call (no `-m`/`--model` flag or `-c model=` override in the bridge
-registrations, `.mcp.json`, or the invocation itself). Cost stays controlled in one place:
+registrations, and no `--model`/`--effort` on a `/codex:*` invocation). Cost stays controlled in one place:
 Codex's default lives in `~/.codex/config.toml` (`model`), Claude's in its own settings.
 Pick by task: a cheaper/faster model for routine or mechanical delegate work, a stronger
 model only for deep review or genuinely hard implementation. If you must override for a
@@ -64,4 +78,5 @@ content rather than logging history.
 
 ## Repo quick-reference
 - Stack: TypeScript Node package (npm), src/ + tests/ (node --test)
-- Install: `npm install` · Build: `npm run build` · Test: `npm test` · Typecheck: `npm run typecheck` · Lint: `npm run lint`
+- Install: `npm install` · Gate: `npm run lint && npm run typecheck && npm test && npm run smoke` · Format: `npm run format`
+- No build step for development; `npm run build` exists only for packaging (`prepack`). See `CONTRIBUTING.md`.
