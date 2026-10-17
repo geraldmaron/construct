@@ -60,7 +60,11 @@ test('every documented construct command runs in a scratch project and exits as 
   const byFile = new Map<string, Example[]>();
   for (const e of all) byFile.set(e.file, [...(byFile.get(e.file) ?? []), e]);
   for (const [file, list] of byFile) {
-    const box = sandbox();
+    const sandboxed = sandbox();
+    // Documented timer commands run against a recorder under the sandbox HOME;
+    // the real scheduler would refuse that HOME, and must never see it.
+    const quiet = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null };
+    const box = { ...sandboxed, ctx: { ...sandboxed.ctx, timers: { platform: 'darwin' as const, control: quiet, systemTimezone: 'Europe/Berlin' } } };
     try {
       mkdirSync(join(box.cwd, 'docs'), { recursive: true });
       writeFileSync(join(box.cwd, 'docs', 'design.md'), '# Design\n\n- Keep the kernel host-agnostic\n', 'utf8');

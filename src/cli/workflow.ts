@@ -1,7 +1,8 @@
 /**
  * cli/workflow.ts — the workflows a project can run: list, show, resolve, run
  * (or preview), validate the bundles, and the standing triggers that fire
- * them from an external clock.
+ * them from a clock: a cron line or CI job the person installs, or the
+ * per-user platform timer `install-timer` installs and `remove-timer` removes.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -18,6 +19,11 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { runExecutionProblems } from '../kernel/workflow/verification.ts';
 import { projectResolver } from '../kernel/source/resolver.ts';
 import { differsFlag } from '../kernel/workflow/service.ts';
+import { transitionRun } from '../kernel/state/runs.ts';
+import { timerLabel, type TimerFacts } from '../kernel/workflow/timer-unit.ts';
+import { installTimer, uninstallTimer } from '../hosts/timer.ts';
+import { describeTimer, timerFacts, timerRows, timerSetup, type TimerSetup } from './timers.ts';
+import { join } from 'node:path';
 
 const group = 'Workflows';
 
@@ -49,7 +55,10 @@ export const WORKFLOW_SPECS: readonly CommandSpec[] = [
   { path: ['workflow', 'enable'], gloss: 'enable a standing trigger', group, positionals: ['<trigger-id>'], flags: [], readOnly: false },
   { path: ['workflow', 'disable'], gloss: 'disable a standing trigger; nothing fires until enabled', group, positionals: ['<trigger-id>'], flags: [], readOnly: false },
   { path: ['workflow', 'fire'], gloss: 'fire a trigger now, as an external clock would', group, positionals: ['<trigger-id>'], flags: [{ name: 'key', gloss: 'the clock’s key for this tick (same key, same run)', takesValue: true }, { name: 'dry-run', gloss: 'preflight only', takesValue: false }, { name: 'execute', gloss: 'explicit unattended host adapter (codex); otherwise only record the tick', takesValue: true }, { name: 'timeout-ms', gloss: 'bounded executor timeout (default 900000)', takesValue: true }], readOnly: false },
-  { path: ['workflow', 'recipe'], gloss: 'print the cron line or CI job that fires a trigger', group, positionals: ['<trigger-id>'], flags: [{ name: 'clock', gloss: 'cron or github-actions (default cron)', takesValue: true }, { name: 'executor', gloss: 'explicit host adapter for the recipe; without one it remains unprovisioned', takesValue: true }], readOnly: true },
+  { path: ['workflow', 'recipe'], gloss: 'print the cron line, CI job, or platform timer that fires a trigger', group, positionals: ['<trigger-id>'], flags: [{ name: 'clock', gloss: 'cron, github-actions, launchd, or systemd (default cron)', takesValue: true }, { name: 'executor', gloss: 'explicit host adapter for the recipe; without one it remains unprovisioned', takesValue: true }], readOnly: true },
+  { path: ['workflow', 'install-timer'], gloss: 'install the per-user launchd or systemd timer that fires a schedule trigger; reinstalling replaces it', group, positionals: ['<trigger-id>'], flags: [{ name: 'executor', gloss: 'the unattended host adapter each firing hands the run to (required; workflow executors lists them)', takesValue: true }], readOnly: false },
+  { path: ['workflow', 'remove-timer'], gloss: 'unload and remove the platform timer for a trigger, or for a unit label doctor named', group, positionals: ['<trigger-id-or-label>'], flags: [], readOnly: false },
+  { path: ['workflow', 'timers'], gloss: 'the platform timers on this machine that fire Construct triggers, and any that would fire into nothing', group, positionals: [], flags: [], readOnly: true },
 ];
 
 function inputsFrom(args: ParsedArgs): Record<string, unknown> {
@@ -66,11 +75,38 @@ function inputsFrom(args: ParsedArgs): Record<string, unknown> {
   return out;
 }
 
+function requireTimerSetup(ctx: CliContext): TimerSetup {
+  const setup = timerSetup(ctx);
+  if (!setup) throw new OperationError('this platform has no per-user scheduler Construct writes to', 'Use `construct workflow recipe <trigger-id> --clock=cron` and install the line yourself.');
+  return setup;
+}
+
+function removeByLabel(ctx: CliContext, label: string, json: boolean | undefined): number {
+  const setup = requireTimerSetup(ctx);
+  if (!/^construct\.[A-Za-z0-9][A-Za-z0-9_-]*\.[A-Za-z0-9][A-Za-z0-9_-]*$/.test(label)) throw new UsageError(`${label} is not a Construct timer label`);
+  const { removed } = uninstallTimer(setup.target, label, setup.control);
+  if (json) writeJson({ label, removed });
+  else say(removed.length ? `removed ${esc(label)}: ${removed.map(esc).join(', ')}` : `no timer ${esc(label)} is installed`);
+  return 0;
+}
+
 export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   if (sub === 'executors') { writeJson(executorSupport()); return 0; }
+  if (sub === 'remove-timer' && args.positionals[0]?.startsWith('construct.')) return removeByLabel(ctx, args.positionals[0], args.json);
   const execute = sub === 'fire' ? stringFlag(args, 'execute') : undefined;
-  const prepared = execute && !boolFlag(args, 'dry-run') ? await prepareExecutor(execute, ctx.env) : null;
   if (execute && execute !== 'codex') throw new UsageError('no unattended adapter for this executor; workflow executors shows support');
+  // An executor that cannot run here does not stop the firing: the tick is
+  // recorded and its run is blocked with the reason, so a timer that fires
+  // after a host login expired leaves a run that says so instead of nothing.
+  let prepared: Awaited<ReturnType<typeof prepareExecutor>> | null = null;
+  let unprovisioned: string | null = null;
+  if (execute && !boolFlag(args, 'dry-run')) {
+    try {
+      prepared = await prepareExecutor(execute, ctx.env);
+    } catch (error) {
+      unprovisioned = (error as Error).message;
+    }
+  }
   const executorId = execute ? `runner:${execute}:${randomUUID()}` : undefined;
   const { project, broker } = openBroker(ctx, sub === 'fire' ? { headless: true, executor: executorId, client: execute } : {});
   try {
@@ -151,7 +187,7 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         if (args.json) writeJson(t);
         else {
           say(`defined trigger ${esc(t.id)} for ${esc(t.workflowId)}${t.nextDueAt ? `; next due ${t.nextDueAt}` : ''}`);
-          say(`Next: \`construct workflow recipe ${esc(t.id)}\` prints the cron line or CI job that fires it. Construct keeps the ledger; the clock only ticks.`);
+          say(`Next: \`construct workflow install-timer ${esc(t.id)} --executor=<id>\` installs a per-user timer that fires it, or \`construct workflow recipe ${esc(t.id)}\` prints a cron line or CI job. Construct keeps the ledger; the clock only ticks.`);
         }
         return 0;
       }
@@ -170,7 +206,14 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         return 0;
       }
       case 'fire': {
-        const result = broker.triggers.fire({ triggerId: args.positionals[0]!, firingKey: stringFlag(args, 'key'), dryRun: boolFlag(args, 'dry-run') });
+        let result = broker.triggers.fire({ triggerId: args.positionals[0]!, firingKey: stringFlag(args, 'key'), dryRun: boolFlag(args, 'dry-run') });
+        if (unprovisioned && result.runId && ['started', 'replaced', 'deduplicated'].includes(result.outcome)) {
+          const run = broker.workflow.status(result.runId)!.run;
+          if (!['succeeded', 'failed', 'cancelled', 'waiting_for_decision', 'blocked'].includes(run.state)) {
+            transitionRun(project.store, { id: run.id, to: 'blocked', at: ctx.now(), reason: unprovisioned, actor: executorId });
+          }
+          result = { ...result, reason: unprovisioned };
+        }
         let execution: unknown = null;
         if (prepared && result.runId && ['started', 'replaced', 'deduplicated'].includes(result.outcome)) {
           const prior = broker.workflow.status(result.runId)!;
@@ -193,10 +236,51 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         else say(`${response.outcome}${response.runId ? ` run ${response.runId} (${state})` : ''}: ${esc(response.reason)}. ${response.next}`);
         return result.outcome === 'blocked' || verificationProblems.length > 0 || (execute && !complete) ? 1 : 0;
       }
+      case 'install-timer': {
+        const setup = requireTimerSetup(ctx);
+        const executor = stringFlag(args, 'executor');
+        if (!executor) throw new UsageError('install-timer needs --executor=<id>: without one a firing only records a tick and no model work happens; `construct workflow executors` lists them');
+        if (!executorSupport().some((e) => e.host === executor && e.supported)) throw new UsageError(`no unattended adapter for ${executor}; \`construct workflow executors\` shows support`);
+        const projectId = project.files.config?.id;
+        if (!projectId) throw new OperationError('this project has no identity to name a timer by', 'Run `construct init` first.');
+        const id = args.positionals[0]!;
+        setup.control.admit(setup.target);
+        const files = broker.triggers.timer(id, setup.target.platform, executor, timerFacts(ctx, setup, projectId, executor));
+        const label = timerLabel(projectId, id);
+        const installed = installTimer(setup.target, label, files, setup.control, join(ctx.paths.stateDir, 'timers'));
+        const trigger = broker.triggers.get(id)!;
+        if (args.json) writeJson({ label, platform: setup.target.platform, files: installed.files, replaced: installed.replaced, nextDueAt: trigger.nextDueAt });
+        else {
+          say(`${installed.replaced ? 'replaced' : 'installed'} ${esc(label)} (${setup.target.platform}): ${installed.files.map(esc).join(', ')}`);
+          say(`It fires \`construct workflow fire ${esc(id)} --execute=${esc(executor)}\` at ${esc(trigger.scheduleExpression ?? '')} ${esc(trigger.timezone ?? '')}${trigger.nextDueAt ? `; next due ${trigger.nextDueAt}` : ''}, then exits. A missed slot fires once on wake.`);
+          say(`Next: \`construct workflow timers\` lists it; \`construct workflow remove-timer ${esc(id)}\` removes it.`);
+        }
+        return 0;
+      }
+      case 'remove-timer': {
+        const projectId = project.files.config?.id;
+        if (!projectId) throw new OperationError('this project has no identity to name a timer by', 'Give the unit label `construct workflow timers` shows.');
+        return removeByLabel(ctx, timerLabel(projectId, args.positionals[0]!), args.json);
+      }
+      case 'timers': {
+        const rows = timerRows(ctx, { id: project.files.config?.id ?? null, root: project.root, store: project.store });
+        if (args.json) writeJson(rows);
+        else if (rows.length === 0) say('no platform timers fire Construct triggers on this machine; `construct workflow install-timer <trigger-id> --executor=<id>` installs one');
+        else for (const t of rows) say(`${t.here ? 'here' : 'other'}  ${esc(describeTimer(t))}`);
+        return rows.some((t) => t.here && t.problem) ? 1 : 0;
+      }
       case 'recipe': {
         const clock = stringFlag(args, 'clock') ?? 'cron';
-        if (clock !== 'cron' && clock !== 'github-actions') throw new UsageError('--clock must be cron or github-actions');
-        process.stdout.write(broker.triggers.recipe(args.positionals[0]!, clock, stringFlag(args, 'executor')));
+        if (clock !== 'cron' && clock !== 'github-actions' && clock !== 'launchd' && clock !== 'systemd') throw new UsageError('--clock must be cron, github-actions, launchd, or systemd');
+        const executor = stringFlag(args, 'executor');
+        let facts: TimerFacts | undefined;
+        if (clock === 'launchd' || clock === 'systemd') {
+          const setup = requireTimerSetup(ctx);
+          const projectId = project.files.config?.id;
+          if (!projectId) throw new OperationError('this project has no identity to name a timer by', 'Run `construct init` first.');
+          facts = timerFacts(ctx, setup, projectId, executor ?? 'codex');
+        }
+        process.stdout.write(broker.triggers.recipe(args.positionals[0]!, clock, executor, facts));
         return 0;
       }
       default:
