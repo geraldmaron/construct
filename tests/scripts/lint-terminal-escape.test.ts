@@ -16,7 +16,6 @@ import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
-// @ts-expect-error — the script is plain .mjs, deliberately outside src/
 import { violationsIn } from '../../scripts/lint-terminal-escape.mjs';
 
 type Violation = { relPath: string; line: number; field: string };
@@ -46,7 +45,7 @@ function write(relPath: string, content: string): void {
 // ---------------------------------------------------------------------------
 
 test('violationsIn flags a known field bare-interpolated into a stdout write', () => {
-  const text = "process.stdout.write(`the model said: ${finding.claim}\\n`);\n";
+  const text = 'process.stdout.write(`the model said: ${finding.claim}\\n`);\n';
   const violations: Violation[] = violationsIn('src/cli/index.ts', text);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].field, 'claim');
@@ -54,14 +53,14 @@ test('violationsIn flags a known field bare-interpolated into a stdout write', (
 });
 
 test('violationsIn flags a known field bare-interpolated into a stderr write', () => {
-  const text = "process.stderr.write(`justification unclear: ${finding.body}\\n`);\n";
+  const text = 'process.stderr.write(`justification unclear: ${finding.body}\\n`);\n';
   const violations: Violation[] = violationsIn('src/cli/index.ts', text);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].field, 'body');
 });
 
 test('violationsIn does not flag a field wrapped in escapeForTerminal', () => {
-  const text = "process.stdout.write(`the model said: ${escapeForTerminal(finding.claim)}\\n`);\n";
+  const text = 'process.stdout.write(`the model said: ${escapeForTerminal(finding.claim)}\\n`);\n';
   assert.deepEqual(violationsIn('src/cli/index.ts', text), []);
 });
 
@@ -94,8 +93,7 @@ test('violationsIn does not flag a field name it has never heard of', () => {
 test('violationsIn ignores a field access used only as a ternary condition', () => {
   // sourceRead.remediation reads this way in the real tree: the condition
   // decides which template literal runs, and only the branch is content.
-  const text =
-    "process.stdout.write(sourceRead.remediation ? `  ${escapeForTerminal(sourceRead.remediation)}\\n` : '');\n";
+  const text = "process.stdout.write(sourceRead.remediation ? `  ${escapeForTerminal(sourceRead.remediation)}\\n` : '');\n";
   assert.deepEqual(violationsIn('src/cli/index.ts', text), []);
 });
 
@@ -107,21 +105,16 @@ test('violationsIn still flags a bare branch behind a ternary condition on the s
 });
 
 test('violationsIn handles nested parens inside escapeForTerminal without losing the boundary', () => {
-  const text =
-    'process.stderr.write(`failed: ${escapeForTerminal((error as Error).message)} — ${finding.claim}\\n`);\n';
+  const text = 'process.stderr.write(`failed: ${escapeForTerminal((error as Error).message)} — ${finding.claim}\\n`);\n';
   const violations: Violation[] = violationsIn('src/cli/index.ts', text);
   assert.equal(violations.length, 1, 'the escaped cast must not swallow the later bare field');
   assert.equal(violations[0].field, 'claim');
 });
 
 test('violationsIn reads a multi-line call built from concatenated template literals', () => {
-  const text = [
-    'process.stdout.write(',
-    '  `a: ${escapeForTerminal(finding.claim)}\\n` +',
-    '    `b: ${finding.body}\\n`,',
-    ');',
-    '',
-  ].join('\n');
+  const text = ['process.stdout.write(', '  `a: ${escapeForTerminal(finding.claim)}\\n` +', '    `b: ${finding.body}\\n`,', ');', ''].join(
+    '\n',
+  );
   const violations: Violation[] = violationsIn('src/cli/index.ts', text);
   assert.equal(violations.length, 1);
   assert.equal(violations[0].field, 'body');
@@ -153,9 +146,7 @@ test('the fixture is what makes the lint fail, not the repo', async () => {
 test('a bare known field interpolated into a stdout write fails the lint', async () => {
   write(
     FIXTURE,
-    "export function report(finding: { claim: string }): void {\n" +
-      '  process.stdout.write(`finding: ${finding.claim}\\n`);\n' +
-      '}\n',
+    'export function report(finding: { claim: string }): void {\n' + '  process.stdout.write(`finding: ${finding.claim}\\n`);\n' + '}\n',
   );
   try {
     const { code, stderr } = await runLint();
@@ -170,7 +161,7 @@ test('a bare known field interpolated into a stdout write fails the lint', async
 test('a bare known field interpolated into a stderr write fails the lint', async () => {
   write(
     FIXTURE,
-    "export function reportFailure(finding: { concern: string }): void {\n" +
+    'export function reportFailure(finding: { concern: string }): void {\n' +
       '  process.stderr.write(`concern: ${finding.concern}\\n`);\n' +
       '}\n',
   );
@@ -202,12 +193,7 @@ test('the same field wrapped in escapeForTerminal keeps the lint clean', async (
 test('a new file with a bare field fails the lint before it is tracked by git', async () => {
   // Mirrors the untracked-file gap lint-glossary-parity.test.ts backstops:
   // plain `git ls-files` alone would leave this invisible until `git add`.
-  write(
-    FIXTURE,
-    'export function report(finding: { body: string }): void {\n' +
-      '  process.stdout.write(finding.body);\n' +
-      '}\n',
-  );
+  write(FIXTURE, 'export function report(finding: { body: string }): void {\n' + '  process.stdout.write(finding.body);\n' + '}\n');
   try {
     assert.equal(existsSync(REPO + FIXTURE), true);
     const { code, stderr } = await runLint();
@@ -220,12 +206,10 @@ test('a new file with a bare field fails the lint before it is tracked by git', 
 
 test('a bare field outside src/cli/ is not checked — the gate is scoped there on purpose', async () => {
   const outside = 'src/kernel/__terminal-escape-lint-fixture__.ts';
-  write(outside, 'export function report(finding: { claim: string }): void {\n' +
-    '  process.stdout.write(`${finding.claim}`);\n' +
-    '}\n');
+  write(outside, 'export function report(finding: { claim: string }): void {\n' + '  process.stdout.write(`${finding.claim}`);\n' + '}\n');
   try {
     const { code } = await runLint();
-    assert.equal(code, 0, 'src/kernel is outside this lint\'s declared scope');
+    assert.equal(code, 0, "src/kernel is outside this lint's declared scope");
   } finally {
     rmSync(REPO + outside, { force: true });
   }

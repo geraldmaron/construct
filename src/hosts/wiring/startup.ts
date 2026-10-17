@@ -32,7 +32,8 @@ export function inspectStartup(client: WirableClient, root: string): StartupStat
     for (const relative of ['.cursor', '.cursor/rules', CURSOR_STARTUP_PATH]) {
       const stat = lstatSync(join(root, relative));
       if (stat.isSymbolicLink()) return { path, status: 'broken', detail: `${relative} is a symbolic link; left untouched` };
-      if (relative === CURSOR_STARTUP_PATH ? !stat.isFile() : !stat.isDirectory()) return { path, status: 'broken', detail: `${relative} has the wrong file type; left untouched` };
+      if (relative === CURSOR_STARTUP_PATH ? !stat.isFile() : !stat.isDirectory())
+        return { path, status: 'broken', detail: `${relative} has the wrong file type; left untouched` };
     }
     return readFileSync(path, 'utf8') === CURSOR_STARTUP
       ? { path, status: 'installed', detail: 'always-applied startup guidance installed; host compliance is not enforced' }
@@ -52,7 +53,9 @@ export function installStartup(client: WirableClient, root: string): StartupStat
     writeFileSync(state.path, CURSOR_STARTUP, { flag: 'wx' });
   } catch {
     const current = inspectStartup(client, root)!;
-    return current.status === 'absent' ? { ...current, status: 'broken', detail: 'startup rule could not be created; existing files left untouched' } : current;
+    return current.status === 'absent'
+      ? { ...current, status: 'broken', detail: 'startup rule could not be created; existing files left untouched' }
+      : current;
   }
   return inspectStartup(client, root);
 }

@@ -93,24 +93,30 @@ export function higherSensitivity(a: string | null | undefined, b: string | null
 }
 
 /** Words that, in the same sentence, mean a settled-against term is being discussed rather than asserted. */
-const ACKNOWLEDGED = /supersed|no longer|reopen|re-open|conflict|contradict|instead of|rather than|rejected|replaced|previously|was decided against|not use|n't use|\bnot\b|\bnever\b/i;
+const ACKNOWLEDGED =
+  /supersed|no longer|reopen|re-open|conflict|contradict|instead of|rather than|rejected|replaced|previously|was decided against|not use|n't use|\bnot\b|\bnever\b/i;
 
 const YEAR = /^(?:19|20)\d\d$/;
 const NUMBER = /(?<![\w.\-/:#])[$€£]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|[kKmMbB]\b|ms\b|h\b|x\b))?(?![\w\-:])/g;
 
 /** A figure as it would be matched: no currency sign, no thousands separators, no inner space. */
 export function normalizeFigure(raw: string): string {
-  return raw.replace(/[$€£,]/g, '').replace(/\s+/g, '').toLowerCase();
+  return raw
+    .replace(/[$€£,]/g, '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
 }
 
 function strings(v: unknown, out: string[] = []): string[] {
   if (typeof v === 'string') out.push(v);
   else if (Array.isArray(v)) for (const x of v) strings(x, out);
-  else if (v !== null && typeof v === 'object') for (const [k, x] of Object.entries(v)) if (k !== 'evidence' && k !== 'derivations') strings(x, out);
+  else if (v !== null && typeof v === 'object')
+    for (const [k, x] of Object.entries(v)) if (k !== 'evidence' && k !== 'derivations') strings(x, out);
   return out;
 }
 
-const MONTH = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const MONTH =
+  '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
 const CLOCK = /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi;
 const DATES = [
   new RegExp(`\\b${MONTH}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b(?![.,]?\\d|\\s?(?:%|[kmb]\\b))`, 'gi'),
@@ -290,7 +296,20 @@ function realPath(path: string): string {
   }
 }
 
-const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
+const MONTH_NAMES = [
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+] as const;
 
 /** Whether text names the day asked for: a YYYY-MM-DD date as written, or as "October 16", "Oct 16" or "16 October"; anything else as written. */
 function namesDay(text: string, by: string): boolean {
@@ -308,7 +327,15 @@ function headings(text: string): string[] {
   return text
     .split('\n')
     .filter((l) => /^#{1,6}\s/.test(l))
-    .map((l) => l.replace(/^#{1,6}\s+/, '').replace(/^\d+[.)]\s*/, '').replace(/<[^>]*>/g, '').replace(/[:\-–—]+\s*$/, '').trim().toLowerCase())
+    .map((l) =>
+      l
+        .replace(/^#{1,6}\s+/, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .replace(/<[^>]*>/g, '')
+        .replace(/[:\-–—]+\s*$/, '')
+        .trim()
+        .toLowerCase(),
+    )
     .filter((h) => h !== '');
 }
 
@@ -361,12 +388,16 @@ function entriesOf(output: unknown, key: 'outsidePeriod' | 'unread', first: 'ref
 
 /** The items an output says belong although they are dated after the period, each with why. */
 export function outsidePeriodOf(output: unknown): OutsidePeriod[] {
-  return entriesOf(output, 'outsidePeriod', 'ref').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ ref: x.name, why: x.why }));
+  return entriesOf(output, 'outsidePeriod', 'ref')
+    .filter((x) => x.name !== '' && x.why !== '')
+    .map((x) => ({ ref: x.name, why: x.why }));
 }
 
 /** The named sources an output says could not be read, each with why. */
 export function unreadOf(output: unknown): Unread[] {
-  return entriesOf(output, 'unread', 'source').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ source: x.name, why: x.why }));
+  return entriesOf(output, 'unread', 'source')
+    .filter((x) => x.name !== '' && x.why !== '')
+    .map((x) => ({ source: x.name, why: x.why }));
 }
 
 /** The distinct, non-empty refs cited, in the order first cited. */
@@ -391,7 +422,12 @@ function sourcesReadFrom(evidence: readonly { readonly ref: string }[], resolve:
  * folders, which are read as they stand now, as undated. Acknowledgments are
  * kept only for items after the period.
  */
-export function periodCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, period: ResolvedPeriod, acknowledged: readonly OutsidePeriod[]): PeriodCoverage {
+export function periodCoverage(
+  evidence: readonly { readonly ref: string }[],
+  resolve: RefResolver,
+  period: ResolvedPeriod,
+  acknowledged: readonly OutsidePeriod[],
+): PeriodCoverage {
   const inside: string[] = [];
   const before: string[] = [];
   const after: string[] = [];
@@ -414,7 +450,12 @@ export function periodCoverage(evidence: readonly { readonly ref: string }[], re
 }
 
 /** Which named sources something was cited from, and which an output said could not be read (and were not read). */
-export function sourcesCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, sources: readonly string[], unread: readonly Unread[]): SourcesCoverage {
+export function sourcesCoverage(
+  evidence: readonly { readonly ref: string }[],
+  resolve: RefResolver,
+  sources: readonly string[],
+  unread: readonly Unread[],
+): SourcesCoverage {
   const read = sourcesReadFrom(evidence, resolve);
   const listed: Unread[] = [];
   for (const u of unread) {
@@ -460,7 +501,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     const problems: string[] = [];
     if (typeof output.summary !== 'string' || output.summary.trim() === '') problems.push('deliverable has no summary');
-    if (!('findings' in output) && !('body' in output) && !('decisions' in output)) problems.push('deliverable has no findings, body, or decisions');
+    if (!('findings' in output) && !('body' in output) && !('decisions' in output))
+      problems.push('deliverable has no findings, body, or decisions');
     if (Array.isArray(output.assumptions) === false && 'assumptions' in output) problems.push('assumptions must be a list');
     return problems;
   },
@@ -500,16 +542,28 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   evidence_refs_resolve: ({ output, evidence, resolvableRefs, resolve }) => {
     if (resolve) {
       const body = output as { historicalEvidence?: readonly { ref: string; why: string }[] };
-      return evidence.flatMap(e => {
+      return evidence.flatMap((e) => {
         const hit = resolve(e.ref);
         if (!hit) return [unheld(e.ref)];
-        if (hit.historical && !(Array.isArray(body?.historicalEvidence) && body.historicalEvidence.some(h => h?.ref === e.ref && typeof h.why === 'string' && h.why.trim()))) return [`evidence "${e.ref}" is historical; acknowledge its historical use under historicalEvidence:{ref,why}, or cite the current generation`];
+        if (
+          hit.historical &&
+          !(
+            Array.isArray(body?.historicalEvidence) &&
+            body.historicalEvidence.some((h) => h?.ref === e.ref && typeof h.why === 'string' && h.why.trim())
+          )
+        )
+          return [
+            `evidence "${e.ref}" is historical; acknowledge its historical use under historicalEvidence:{ref,why}, or cite the current generation`,
+          ];
         return [];
       });
     }
     // Fail closed: with nothing to resolve against, an unchecked pass would read as a checked one.
-    if (resolvableRefs.size === 0) return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
-    return evidence.filter((e) => !resolvableRefs.has(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
+    if (resolvableRefs.size === 0)
+      return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
+    return evidence
+      .filter((e) => !resolvableRefs.has(e.ref))
+      .map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
   },
   reference_coverage: ({ output, evidence, resolve }) => [...researchCoverage(evidence, resolve, output).problems],
   verification_result: ({ output }) => {
@@ -526,7 +580,9 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const revision = verification.revision ?? output.revision;
     const result = verification.result ?? output.result;
     if (!(typeof command === 'string' && command.trim() && typeof exit === 'number') && !(typeof result === 'string' && result.trim())) {
-      problems.push('verification needs a command with observed exit status, or a non-empty inspection result; passed:true alone is not evidence');
+      problems.push(
+        'verification needs a command with observed exit status, or a non-empty inspection result; passed:true alone is not evidence',
+      );
     }
     if (typeof result === 'string' && result.trim() === '') problems.push('verification result is empty');
     if (exit !== undefined && exit !== 0) {
@@ -609,7 +665,12 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     // is read is what is being checked, so citing it, by any name for the same file, grounds nothing.
     const artifact = isRecord(output) ? namedPath(output.artifact) : null;
     const read = [...new Set([...changedPaths(output), ...(artifact ? [artifact] : [])])].filter(isDocument);
-    const own = new Set(read.map((p) => resolve?.(p, 'artifact')?.path).filter((p): p is string => p !== undefined).map(realPath));
+    const own = new Set(
+      read
+        .map((p) => resolve?.(p, 'artifact')?.path)
+        .filter((p): p is string => p !== undefined)
+        .map(realPath),
+    );
     const cited: string[] = [];
     const cut: string[] = [];
     const selfCited: string[] = [];
@@ -651,14 +712,25 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
           const want = figureValue(value);
           if (want === null) problems.push(`derivation of "${value}" gives no numeric value`);
           else if (got === null) problems.push(`derivation of "${value}": "${d.expression}" is not arithmetic over figures`);
-          else if (Math.abs(got - want) > Math.max(Math.abs(want) * 0.01, 1e-9)) problems.push(`derivation of "${value}": "${d.expression}" comes to ${String(Number(got.toPrecision(6)))}, not ${value}`);
-          else pending.push({ value, operands: arithmeticTokens(d.expression)!.filter(t => figureValue(t) !== null).map(normalizeFigure) });
+          else if (Math.abs(got - want) > Math.max(Math.abs(want) * 0.01, 1e-9))
+            problems.push(`derivation of "${value}": "${d.expression}" comes to ${String(Number(got.toPrecision(6)))}, not ${value}`);
+          else
+            pending.push({
+              value,
+              operands: arithmeticTokens(d.expression)!
+                .filter((t) => figureValue(t) !== null)
+                .map(normalizeFigure),
+            });
         } else {
           // A description of where a figure came from is not a check of it; only arithmetic over cited figures is.
           problems.push(`derivation of "${value}" gives no expression; give the arithmetic over cited figures that produces it`);
         }
       });
-      const grounded = (f: string) => figureSupported(f, operandFigures, operandValues) || CONSTANTS.has(f) || derived.has(normalizeFigure(f)) || (figureValue(f) !== null && derivedMagnitudes.has(figureValue(f)!));
+      const grounded = (f: string) =>
+        figureSupported(f, operandFigures, operandValues) ||
+        CONSTANTS.has(f) ||
+        derived.has(normalizeFigure(f)) ||
+        (figureValue(f) !== null && derivedMagnitudes.has(figureValue(f)!));
       let progressed = true;
       while (pending.length && progressed) {
         progressed = false;
@@ -671,7 +743,10 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
           progressed = true;
         }
       }
-      for (const d of pending) for (const f of d.operands) if (!grounded(f)) problems.push(`derivation of "${d.value}" uses "${f}", which no cited source or valid grounded derivation contains`);
+      for (const d of pending)
+        for (const f of d.operands)
+          if (!grounded(f))
+            problems.push(`derivation of "${d.value}" uses "${f}", which no cited source or valid grounded derivation contains`);
     }
     const texts = strings(output);
     for (const p of read) {
@@ -681,12 +756,23 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const unsupported = new Set<string>();
     const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
     for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
-    const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} is partial; report the exact passage under the same stable item ref with truncated:true, and explain the unread remainder in referenceDispositions)` : '';
+    const cutNote =
+      cut.length > 0
+        ? ` (the recorded text of ${cut.join(', ')} is partial; report the exact passage under the same stable item ref with truncated:true, and explain the unread remainder in referenceDispositions)`
+        : '';
     const selfNote = selfCited.length > 0 ? ` (citing ${selfCited.join(', ')}, which this step wrote, grounds nothing in it)` : '';
-    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}${selfNote}`)];
+    return [
+      ...problems,
+      ...[...unsupported].map(
+        (f) =>
+          `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}${selfNote}`,
+      ),
+    ];
   },
   template_conformance: ({ output, input, resolve }) => {
-    const template = (isRecord(output) && typeof output.template === 'string' ? output.template : null) ?? (isRecord(input) && typeof input.template === 'string' ? input.template : null);
+    const template =
+      (isRecord(output) && typeof output.template === 'string' ? output.template : null) ??
+      (isRecord(input) && typeof input.template === 'string' ? input.template : null);
     if (!template) return [];
     if (!resolve) return ['nothing was supplied to read the template'];
     const t = resolve(template);
@@ -698,7 +784,10 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const have = headings(a);
     const want = headings(t.text).filter((h) => h !== '');
     // The template's first heading is the document title placeholder; the artifact's title is its own.
-    return want.slice(1).filter((h) => !have.some((x) => x.includes(h) || h.includes(x))).map((h) => `the artifact has no "${h}" section that the template requires`);
+    return want
+      .slice(1)
+      .filter((h) => !have.some((x) => x.includes(h) || h.includes(x)))
+      .map((h) => `the artifact has no "${h}" section that the template requires`);
   },
   excerpts_match: ({ evidence, resolve }) => {
     if (!resolve) return evidence.some((e) => e.excerpt) ? ['nothing was supplied to check excerpts against'] : [];
@@ -720,33 +809,40 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   evidence_recorded: ({ evidence, resolve }) => {
     if (!resolve) return ['nothing was supplied to resolve evidence against'];
     if (evidence.length === 0) return ['no evidence was submitted'];
-    return evidence.some((e) => holdsContent(resolve(e.ref))) ? [] : ['nothing cited holds content Construct can check: cite a project file, or an item whose text a recorded read holds'];
+    return evidence.some((e) => holdsContent(resolve(e.ref)))
+      ? []
+      : ['nothing cited holds content Construct can check: cite a project file, or an item whose text a recorded read holds'];
   },
   within_period: ({ output, evidence, resolve, period }) => {
     // Only an item dated after the period ends is refused. One last updated before it starts, one with no date, and a
     // file are not: the deliverable counts them so the person sees what the work could not place in the period.
     if (!period || !resolve) return [];
     const problems: string[] = [];
-    if (isRecord(output) && output.outsidePeriod !== undefined && !Array.isArray(output.outsidePeriod)) problems.push('"outsidePeriod" must be a list of {ref, why}');
+    if (isRecord(output) && output.outsidePeriod !== undefined && !Array.isArray(output.outsidePeriod))
+      problems.push('"outsidePeriod" must be a list of {ref, why}');
     const entries = entriesOf(output, 'outsidePeriod', 'ref');
     const cited = citedRefs(evidence);
     for (const entry of entries) {
       if (entry.name === '') problems.push('an "outsidePeriod" entry names no ref; give {ref, why}');
-      else if (!cited.some((ref) => sameRef(ref, entry.name, resolve))) problems.push(`"outsidePeriod" lists "${entry.name}", which this step does not cite; list only what you cite`);
+      else if (!cited.some((ref) => sameRef(ref, entry.name, resolve)))
+        problems.push(`"outsidePeriod" lists "${entry.name}", which this step does not cite; list only what you cite`);
       else if (entry.why === '') problems.push(`"outsidePeriod" lists "${entry.name}" without saying why it belongs`);
     }
     for (const ref of cited) {
       const day = itemDay(resolve(ref), period.timezone);
       if (day === null || day <= period.to) continue;
       if (entries.some((x) => x.name !== '' && sameRef(ref, x.name, resolve))) continue;
-      problems.push(`"${ref}" was updated ${day}, after the period ends (${period.to}); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs`);
+      problems.push(
+        `"${ref}" was updated ${day}, after the period ends (${period.to}); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs`,
+      );
     }
     return problems;
   },
   named_sources_read: ({ output, evidence, resolve, sources }) => {
     if (!sources || sources.length === 0) return [];
     const problems: string[] = [];
-    if (isRecord(output) && output.unread !== undefined && !Array.isArray(output.unread)) problems.push('"unread" must be a list of {source, why}');
+    if (isRecord(output) && output.unread !== undefined && !Array.isArray(output.unread))
+      problems.push('"unread" must be a list of {source, why}');
     const entries = entriesOf(output, 'unread', 'source');
     const read = resolve ? sourcesReadFrom(evidence, resolve) : null;
     for (const id of sources) {
@@ -755,7 +851,10 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       if (entry?.why) continue;
       if (entry) problems.push(`"unread" lists ${id} without saying why it could not be read`);
       else if (!read) problems.push(`nothing was supplied to check what was read from ${id}`);
-      else problems.push(`this run names ${id}, and this step cites nothing read from it; cite what you read (as ${id}:<item>), or list it under "unread" with why`);
+      else
+        problems.push(
+          `this run names ${id}, and this step cites nothing read from it; cite what you read (as ${id}:<item>), or list it under "unread" with why`,
+        );
     }
     return problems;
   },
@@ -790,8 +889,10 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const problems: string[] = [];
     const audience = isRecord(input) && typeof input.audience === 'string' ? input.audience.trim() : '';
     const by = isRecord(input) && typeof input.decisionBy === 'string' ? input.decisionBy.trim() : '';
-    if (audience && !section.toLowerCase().includes(audience.toLowerCase())) problems.push(`the decision section does not name who decides (${audience})`);
-    if (by ? !namesDay(section, by) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
+    if (audience && !section.toLowerCase().includes(audience.toLowerCase()))
+      problems.push(`the decision section does not name who decides (${audience})`);
+    if (by ? !namesDay(section, by) : !/\b(?:by|before|no later than)\b/i.test(section))
+      problems.push('the decision section does not say by when');
     return problems;
   },
   sources_diverse: ({ evidence, resolve }) => {
@@ -805,29 +906,49 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       if (page !== null) roots.add(new URL(page).hostname.replace(/^www\./, ''));
       else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
     }
-    return roots.size >= 2 ? [] : [`the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`];
+    return roots.size >= 2
+      ? []
+      : [
+          `the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`,
+        ];
   },
   revision_linked: ({ output, input, resolve }) => {
     const problems: string[] = [];
-    const revises = (isRecord(output) && typeof output.revises === 'string' ? output.revises : null) ?? (isRecord(input) && typeof input.deliverable === 'string' ? input.deliverable : null);
+    const revises =
+      (isRecord(output) && typeof output.revises === 'string' ? output.revises : null) ??
+      (isRecord(input) && typeof input.deliverable === 'string' ? input.deliverable : null);
     if (!revises) problems.push('the output does not say which deliverable it revises ("revises")');
-    else if (resolve && resolve(revises.startsWith('deliverable:') ? revises : `deliverable:${revises}`)?.kind !== 'deliverable') problems.push(`"${revises}" is not a deliverable of this project`);
+    else if (resolve && resolve(revises.startsWith('deliverable:') ? revises : `deliverable:${revises}`)?.kind !== 'deliverable')
+      problems.push(`"${revises}" is not a deliverable of this project`);
     const summary = isRecord(output) ? output.changeSummary : undefined;
-    const said = typeof summary === 'string' ? summary.trim() : Array.isArray(summary) ? summary.filter((x) => typeof x === 'string' && x.trim() !== '').join(' ') : '';
+    const said =
+      typeof summary === 'string'
+        ? summary.trim()
+        : Array.isArray(summary)
+          ? summary.filter((x) => typeof x === 'string' && x.trim() !== '').join(' ')
+          : '';
     if (said === '') problems.push('the output has no "changeSummary" saying what changed from the version it revises and why');
     return problems;
   },
   settled_not_contradicted: ({ output, settled, resolve }) => {
     if (!settled || settled.length === 0) return [];
     const texts = strings(output);
-    for (const p of artifactPaths(output)) { const t = resolve?.(p, 'artifact')?.text; if (t) texts.push(t); }
+    for (const p of artifactPaths(output)) {
+      const t = resolve?.(p, 'artifact')?.text;
+      if (t) texts.push(t);
+    }
     const problems: string[] = [];
     for (const { term, statementId } of settled) {
       const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]')}\\b`, 'i');
       for (const text of texts) {
         const sentences = text.split(/(?<=[.!?\n])\s+/);
         const hit = sentences.find((sn) => re.test(sn) && !ACKNOWLEDGED.test(sn) && !sn.includes(statementId));
-        if (hit) { problems.push(`"${term}" is stated as current, but the person settled against it (statement:${statementId}); say it was decided against, or name the conflict and cite the statement`); break; }
+        if (hit) {
+          problems.push(
+            `"${term}" is stated as current, but the person settled against it (statement:${statementId}); say it was decided against, or name the conflict and cite the statement`,
+          );
+          break;
+        }
       }
     }
     return problems;
@@ -837,7 +958,9 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const cleared = isRecord(input) && typeof input.clearedFor === 'string' ? input.clearedFor : null;
     return higherSensitivity(cleared, sensitivity) === cleared && cleared !== null
       ? []
-      : [`this rests on ${sensitivity} sources; the person has to clear it for its audience first (start the outcome with clearedFor: "${sensitivity}")`];
+      : [
+          `this rests on ${sensitivity} sources; the person has to clear it for its audience first (start the outcome with clearedFor: "${sensitivity}")`,
+        ];
   },
   published_location: ({ output }) => {
     const loc = isRecord(output) && typeof output.location === 'string' ? output.location.trim() : '';
@@ -845,7 +968,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return /^https?:\/\/\S+|^[a-z][\w-]*:\S+/i.test(loc) ? [] : [`"${loc}" is not a URL or a provider:id location`];
   },
   conflicts_declared: ({ output }) => {
-    if (!isRecord(output) || !Array.isArray(output.conflicts)) return ['the output has no "conflicts" list; give one, empty if the sources agree'];
+    if (!isRecord(output) || !Array.isArray(output.conflicts))
+      return ['the output has no "conflicts" list; give one, empty if the sources agree'];
     const problems: string[] = [];
     output.conflicts.forEach((c, i) => {
       const cites = isRecord(c) && Array.isArray(c.citations) ? c.citations.filter((x) => typeof x === 'string' && x.trim() !== '') : [];

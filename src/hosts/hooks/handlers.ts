@@ -75,18 +75,46 @@ function isObject(v: unknown): v is Record<string, unknown> {
 /** Enter ADF only at a recognized node. Generic provider envelopes also carry
  * type/text/attrs; unknown children inside an ADF tree are handled as partial. */
 function isRichText(o: Record<string, unknown>): boolean {
-  return typeof o.type === 'string' && (ADF_BLOCKS.has(o.type) || ['text', 'hardBreak', 'rule', 'mention', 'emoji', 'status', 'date', 'inlineCard', 'media'].includes(o.type));
+  return (
+    typeof o.type === 'string' &&
+    (ADF_BLOCKS.has(o.type) || ['text', 'hardBreak', 'rule', 'mention', 'emoji', 'status', 'date', 'inlineCard', 'media'].includes(o.type))
+  );
 }
 
-const ADF_BLOCKS = new Set(['doc', 'paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'blockquote', 'codeBlock', 'panel', 'table', 'tableRow', 'tableCell', 'tableHeader', 'mediaGroup', 'mediaSingle']);
+const ADF_BLOCKS = new Set([
+  'doc',
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'listItem',
+  'blockquote',
+  'codeBlock',
+  'panel',
+  'table',
+  'tableRow',
+  'tableCell',
+  'tableHeader',
+  'mediaGroup',
+  'mediaSingle',
+]);
 const TEXT_MARKS = new Set(['strong', 'em', 'code', 'underline', 'textColor', 'backgroundColor']);
-interface ReadableState { partial: boolean; readonly links: Set<string> }
+interface ReadableState {
+  partial: boolean;
+  readonly links: Set<string>;
+}
 
 function linkMarks(node: Record<string, unknown>, state: ReadableState): void {
   if (node.marks === undefined) return;
-  if (!Array.isArray(node.marks)) { state.partial = true; return; }
+  if (!Array.isArray(node.marks)) {
+    state.partial = true;
+    return;
+  }
   for (const mark of node.marks) {
-    if (!isObject(mark) || typeof mark.type !== 'string') { state.partial = true; continue; }
+    if (!isObject(mark) || typeof mark.type !== 'string') {
+      state.partial = true;
+      continue;
+    }
     if (mark.type === 'link') {
       const href = isObject(mark.attrs) ? mark.attrs.href : undefined;
       if (typeof href === 'string' && href.trim()) state.links.add(href);
@@ -102,7 +130,10 @@ function linkMarks(node: Record<string, unknown>, state: ReadableState): void {
  * display content stays partial rather than being guessed from identifiers.
  */
 function richText(node: unknown, depth: number, state: ReadableState): { readonly inline: boolean; readonly text: string } {
-  const missing = () => { state.partial = true; return { inline: true, text: '\n' }; };
+  const missing = () => {
+    state.partial = true;
+    return { inline: true, text: '\n' };
+  };
   if (depth > READABLE_DEPTH || !isObject(node) || typeof node.type !== 'string') return missing();
   if (node.type === 'doc' && node.version !== undefined && node.version !== 1) state.partial = true;
   linkMarks(node, state);
@@ -150,7 +181,10 @@ export function readableCapture(value: unknown): { readonly text: string; readon
   const lines: string[] = [];
   const state: ReadableState = { partial: false, links: new Set() };
   const walk = (v: unknown, depth: number): void => {
-    if (depth > READABLE_DEPTH) { state.partial = true; return; }
+    if (depth > READABLE_DEPTH) {
+      state.partial = true;
+      return;
+    }
     const x = parseMaybeJson(v);
     if (typeof x === 'string') {
       if (x.trim() !== '') lines.push(x);
@@ -212,7 +246,16 @@ export function jiraItemsIn(response: unknown, projectKey: string): HostReportIt
     const url = issueUrl(o, key) ?? prev?.url;
     // The fullest object for a key wins; a bare link to an issue should not displace the issue itself.
     // Without the tracker's own updated time, a response cannot say whether the ticket changed, only that it exists.
-    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(url ? { url } : {}), ...(updatedAt ? { updatedAt } : { weak: true }), text, truncated: capture.truncated, kind: 'work_item' });
+    if (!prev || (prev.text?.length ?? 0) < text.length)
+      byKey.set(key, {
+        ref: key,
+        ...(title ? { title } : {}),
+        ...(url ? { url } : {}),
+        ...(updatedAt ? { updatedAt } : { weak: true }),
+        text,
+        truncated: capture.truncated,
+        kind: 'work_item',
+      });
     else if (url && !prev.url) byKey.set(key, { ...prev, url });
   }
   return [...byKey.values()];
@@ -237,7 +280,12 @@ export function onPostTool(ctx: BrokerContext, input: PostToolInput): { readonly
     if (items.length === 0) continue;
     ctx.sources.reportRead(s.id, { items, partial: true }, ctx.now(), () => ctx.nextId('snap'));
     reported[s.id] = items.length;
-    appendActivity(ctx.store, { at: ctx.now(), kind: 'hook.read_reported', actor: ctx.actor, payload: { sourceId: s.id, items: items.length, tool: name } });
+    appendActivity(ctx.store, {
+      at: ctx.now(),
+      kind: 'hook.read_reported',
+      actor: ctx.actor,
+      payload: { sourceId: s.id, items: items.length, tool: name },
+    });
   }
   return { reported };
 }
@@ -251,11 +299,21 @@ interface TranscriptTurn {
 export function lastTurn(transcriptPath: string): TranscriptTurn {
   let lines: string[];
   try {
-    lines = readFileSync(transcriptPath, 'utf8').split('\n').filter((l) => l.trim() !== '');
+    lines = readFileSync(transcriptPath, 'utf8')
+      .split('\n')
+      .filter((l) => l.trim() !== '');
   } catch {
     return { texts: [], tools: [] };
   }
-  const entries = lines.map((l) => { try { return JSON.parse(l) as Record<string, unknown>; } catch { return null; } }).filter((e): e is Record<string, unknown> => e !== null);
+  const entries = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    })
+    .filter((e): e is Record<string, unknown> => e !== null);
   const isPrompt = (e: Record<string, unknown>) => {
     if (e.type !== 'user') return false;
     const c = (e.message as { content?: unknown } | undefined)?.content;
@@ -263,7 +321,11 @@ export function lastTurn(transcriptPath: string): TranscriptTurn {
     return Array.isArray(c) && c.some((b) => (b as { type?: string }).type === 'text');
   };
   let start = 0;
-  for (let i = entries.length - 1; i >= 0; i -= 1) if (isPrompt(entries[i]!)) { start = i + 1; break; }
+  for (let i = entries.length - 1; i >= 0; i -= 1)
+    if (isPrompt(entries[i]!)) {
+      start = i + 1;
+      break;
+    }
   const texts: string[] = [];
   const tools: string[] = [];
   for (const e of entries.slice(start)) {
@@ -282,7 +344,8 @@ export function lastTurn(transcriptPath: string): TranscriptTurn {
 export function projectFactsIn(ctx: BrokerContext, text: string): string[] {
   const out = new Set<string>();
   for (const s of ctx.sources.list()) {
-    if (s.kind === 'jira' && s.locator) for (const m of text.matchAll(new RegExp(`(?<![\\w-])${projectKeyPattern(s.locator)}-\\d+\\b`, 'g'))) out.add(m[0]);
+    if (s.kind === 'jira' && s.locator)
+      for (const m of text.matchAll(new RegExp(`(?<![\\w-])${projectKeyPattern(s.locator)}-\\d+\\b`, 'g'))) out.add(m[0]);
     if (new RegExp(`\\b${s.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text) && s.id.length >= 4) out.add(s.id);
   }
   // A file name is a project fact only when it names a file this project actually holds: "package.json" in
@@ -322,7 +385,8 @@ export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
 }
 
 /** The line every session starts with, whatever waits: the person's request is read by the host, through classify_request. */
-export const SESSION_START_LINE = 'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
+export const SESSION_START_LINE =
+  'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
 
 /**
  * A short note for the start of a session: the classify_request line, then
@@ -344,7 +408,9 @@ export async function onSessionStart(ctx: BrokerContext): Promise<string> {
   const parts: string[] = [];
   if (waits.inRuns.length > 0) parts.push(`${String(waits.inRuns.length)} decision(s) about runs wait on the person (inbox).`);
   if (moved.length > 0) parts.push(`Changed since last read: ${moved.join(', ')}; refresh before relying on them.`);
-  if (toReport.length > 0) parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
-  if (waits.setup.length > 0) parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
+  if (toReport.length > 0)
+    parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
+  if (waits.setup.length > 0)
+    parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
   return parts.length ? `${SESSION_START_LINE} ${parts.join(' ')} State project facts only after check_answer.` : SESSION_START_LINE;
 }

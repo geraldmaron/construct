@@ -129,7 +129,12 @@ for (const file of docFiles()) {
       if (hit.rest === undefined) {
         // `construct source` alone is how a noun is introduced; fine.
       } else if (!subs.has(hit.rest)) {
-        problems.push({ file, line, text: hit.text, why: `'${hit.token}' has no '${hit.rest}' subcommand (it accepts: ${[...subs].filter(Boolean).sort().join(', ')})` });
+        problems.push({
+          file,
+          line,
+          text: hit.text,
+          why: `'${hit.token}' has no '${hit.rest}' subcommand (it accepts: ${[...subs].filter(Boolean).sort().join(', ')})`,
+        });
         continue;
       } else {
         sub = hit.rest;
@@ -138,7 +143,12 @@ for (const file of docFiles()) {
     const allowed = flagsAllowed(hit.token, sub);
     for (const flag of flagsNamedIn(hit.text)) {
       if (allowed.has(flag)) continue;
-      problems.push({ file, line, text: hit.text, why: `'${[hit.token, sub].filter(Boolean).join(' ')}' does not accept --${flag} (it accepts: ${[...allowed].sort().join(', ')})` });
+      problems.push({
+        file,
+        line,
+        text: hit.text,
+        why: `'${[hit.token, sub].filter(Boolean).join(' ')}' does not accept --${flag} (it accepts: ${[...allowed].sort().join(', ')})`,
+      });
     }
   }
 }

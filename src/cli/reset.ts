@@ -9,7 +9,15 @@ import { initializeProject, readProjectFiles } from '../kernel/project/initializ
 import { projectLayout } from '../kernel/project/layout.ts';
 import { findProjectRoot } from '../kernel/project/discover.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, gitRootOf, initRootFor, mainCheckoutOf, resolveRepository, WorktreeBindingError, type CliContext } from './context.ts';
+import {
+  createContext,
+  gitRootOf,
+  initRootFor,
+  mainCheckoutOf,
+  resolveRepository,
+  WorktreeBindingError,
+  type CliContext,
+} from './context.ts';
 import { esc, OperationError, say, writeJson } from './output.ts';
 import { processesHolding } from './holders.ts';
 import { basename } from 'node:path';
@@ -73,7 +81,13 @@ export function reset(args: ParsedArgs, ctx: CliContext = createContext()): numb
       'Close those sessions (or stop their MCP servers), then run reset again. --force removes it anyway.',
     );
   }
-  const removed = plan.targets.length === 0 ? [] : applyReset(plan, plan.targets.map((t) => t.path));
+  const removed =
+    plan.targets.length === 0
+      ? []
+      : applyReset(
+          plan,
+          plan.targets.map((t) => t.path),
+        );
   let recreated: string | null = null;
   if (!boolFlag(args, 'keep-state')) {
     const existing = readProjectFiles(root).config;

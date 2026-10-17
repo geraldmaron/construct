@@ -5,7 +5,10 @@ import { provides } from '../../src/kernel/registry/capability-registry.ts';
 
 test('broker defaults distinguish kernel readers from unobserved host and headless capabilities', () => {
   for (const surface of ['interactive', 'headless'] as const) {
-    const host = hostCapabilitiesFor({ client: 'codex', surface, sessionId: 's', executorId: 'runner:test', actor: 'test' }, surface === 'interactive' ? 's' : null);
+    const host = hostCapabilitiesFor(
+      { client: 'codex', surface, sessionId: 's', executorId: 'runner:test', actor: 'test' },
+      surface === 'interactive' ? 's' : null,
+    );
     assert.equal(provides(host, 'read_source:directory'), true);
     assert.equal(provides(host, 'read_source:unknown'), false);
     assert.equal(provides(host, 'write_source:unknown'), false);

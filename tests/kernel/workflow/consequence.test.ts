@@ -7,7 +7,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { assessConsequence, DEPTHS, STAKE_AREAS, type ConsequenceInput, type Judgment, type Stakes } from '../../../src/kernel/workflow/consequence.ts';
+import {
+  assessConsequence,
+  DEPTHS,
+  STAKE_AREAS,
+  type ConsequenceInput,
+  type Judgment,
+  type Stakes,
+} from '../../../src/kernel/workflow/consequence.ts';
 import { PROJECT_SCALES, type ProjectScale } from '../../../src/kernel/state/profile.ts';
 import { ACTION_TIERS } from '../../../src/kernel/state/steps.ts';
 
@@ -22,7 +29,12 @@ const rank = (j: Judgment) => DEPTHS.indexOf(j.depth);
 const kinds = (j: Judgment) => j.signals.filter((s) => s.raises).map((s) => s.kind);
 
 test('each structural row raises on its own and names itself', () => {
-  const rows: readonly { readonly name: string; readonly extra: Partial<ConsequenceInput>; readonly kind: string; readonly detail: RegExp }[] = [
+  const rows: readonly {
+    readonly name: string;
+    readonly extra: Partial<ConsequenceInput>;
+    readonly kind: string;
+    readonly detail: RegExp;
+  }[] = [
     { name: 'workflow', extra: { workflowChallenge: true }, kind: 'workflow', detail: /workflow declares/ },
     { name: 'external_write', extra: { stepTiers: ['draft', 'external_write'] }, kind: 'tier', detail: /external_write/ },
     { name: 'destructive', extra: { stepTiers: ['destructive', 'external_write'] }, kind: 'tier', detail: /destructive/ },
@@ -60,14 +72,21 @@ test('every stake area other than none raises, and says what it touches', () => 
   }
   const both = judge('team', { stakes: { reversible: false, affects: ['money', 'public'] } });
   assert.equal(both.signals[0]!.detail, 'the host reported it is hard to undo and touches money, public');
-  assert.equal(judge('team', { stakes: { reversible: null, affects: [] } }).depth, 'standard', 'unknown reversibility alone does not raise');
+  assert.equal(
+    judge('team', { stakes: { reversible: null, affects: [] } }).depth,
+    'standard',
+    'unknown reversibility alone does not raise',
+  );
 });
 
 test('stakes the host did not report are said, never guessed, and raise nothing', () => {
   for (const scale of SCALES) {
     const j = judge(scale, { stakes: null });
     assert.equal(j.challenge, false, String(scale));
-    assert.ok(j.signals.some((s) => s.kind === 'host_stakes' && !s.raises && /did not report/.test(s.detail)), String(scale));
+    assert.ok(
+      j.signals.some((s) => s.kind === 'host_stakes' && !s.raises && /did not report/.test(s.detail)),
+      String(scale),
+    );
     assert.doesNotMatch(j.why, /did not report/, 'a non-raising signal is not given as a reason to challenge');
   }
   const raised = judge('team', { stakes: null, stepTiers: ['external_write'] });
@@ -76,8 +95,19 @@ test('stakes the host did not report are said, never guessed, and raise nothing'
 });
 
 test('raise-only: stakes never lower the depth, and nothing falls below the structural floor', () => {
-  const tierSets: readonly (readonly (typeof ACTION_TIERS)[number][])[] = [[], ['draft', 'project_write'], ['external_write'], ['destructive']];
-  const stakeSets: readonly (Stakes | null)[] = [null, { reversible: true, affects: [] }, NOTHING_TOUCHED, { reversible: false, affects: [] }, { reversible: true, affects: ['customers'] }];
+  const tierSets: readonly (readonly (typeof ACTION_TIERS)[number][])[] = [
+    [],
+    ['draft', 'project_write'],
+    ['external_write'],
+    ['destructive'],
+  ];
+  const stakeSets: readonly (Stakes | null)[] = [
+    null,
+    { reversible: true, affects: [] },
+    NOTHING_TOUCHED,
+    { reversible: false, affects: [] },
+    { reversible: true, affects: ['customers'] },
+  ];
   for (const scale of SCALES) {
     for (const stepTiers of tierSets) {
       for (const contradictions of [0, 1]) {

@@ -70,26 +70,61 @@ rl.on('line',line=>{
 async function exercise(mode: string, heldText = 'FIRST_SYNTHETIC_ITEM\nLAST_SYNTHETIC_ITEM', outputSchema?: unknown) {
   const fx = sandbox();
   try {
-    const file = join(fx.cwd, 'synthetic-peer.mjs'); writeFileSync(file, peer);
-    return await runAppServerHeldReview({ binary: process.execPath, argv: [file], root: fx.cwd, env: { ...fx.ctx.env, CONSTRUCT_REVIEW_SCENARIO: mode }, model: 'synthetic-protocol-test', heldText, timeoutMs: mode === 'timeout' ? 100 : 2000, outputSchema });
-  } finally { fx.cleanup(); }
+    const file = join(fx.cwd, 'synthetic-peer.mjs');
+    writeFileSync(file, peer);
+    return await runAppServerHeldReview({
+      binary: process.execPath,
+      argv: [file],
+      root: fx.cwd,
+      env: { ...fx.ctx.env, CONSTRUCT_REVIEW_SCENARIO: mode },
+      model: 'synthetic-protocol-test',
+      heldText,
+      timeoutMs: mode === 'timeout' ? 100 : 2000,
+      outputSchema,
+    });
+  } finally {
+    fx.cleanup();
+  }
 }
 
 test('exact large user-only staging precedes one bounded integrated turn and clean shutdown', async () => {
   const heldText = 'FIRST_SYNTHETIC_ITEM\n' + 'Evidence remains provisional. '.repeat(45000) + '\nLAST_SYNTHETIC_ITEM';
   const result = await exercise('success', heldText);
-  assert.deepEqual(result.problems, []); assert.equal(result.completed, true); assert.equal(result.exitStatus, 0); assert.equal(result.timedOut, false);
+  assert.deepEqual(result.problems, []);
+  assert.equal(result.completed, true);
+  assert.equal(result.exitStatus, 0);
+  assert.equal(result.timedOut, false);
   assert.equal(result.text, '{"checks":[]}');
-  assert.deepEqual(result.observations, [{ type: 'thread.started', sessionId: 'review-session' }, { type: 'native.evidence_staged', sessionId: 'review-session', characters: [...heldText].length, digest: reviewDigest(heldText) }, { type: 'turn.started' }, { type: 'item.completed', itemType: 'agent_message', text: '{"checks":[]}' }, { type: 'turn.completed' }]);
+  assert.deepEqual(result.observations, [
+    { type: 'thread.started', sessionId: 'review-session' },
+    { type: 'native.evidence_staged', sessionId: 'review-session', characters: [...heldText].length, digest: reviewDigest(heldText) },
+    { type: 'turn.started' },
+    { type: 'item.completed', itemType: 'agent_message', text: '{"checks":[]}' },
+    { type: 'turn.completed' },
+  ]);
   assert.equal(JSON.stringify(result).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false);
   assert.ok(APP_SERVER_REVIEW_TURN.length < 1048576);
 });
 
 test('protocol failure, incorrect policy, tools, unknown operations and compaction cannot supply review assurance', async () => {
-  for (const mode of ['wrong-policy', 'error-null', 'unacknowledged-stage', 'early-close', 'wrong-rpc-turn', 'missing-completion', 'server-request', 'tool', 'compaction', 'unknown', 'malformed', 'duplicate-terminal']) {
+  for (const mode of [
+    'wrong-policy',
+    'error-null',
+    'unacknowledged-stage',
+    'early-close',
+    'wrong-rpc-turn',
+    'missing-completion',
+    'server-request',
+    'tool',
+    'compaction',
+    'unknown',
+    'malformed',
+    'duplicate-terminal',
+  ]) {
     const result = await exercise(mode);
     assert.ok(result.problems.length, mode);
-    if (['wrong-policy', 'error-null', 'unacknowledged-stage', 'early-close'].includes(mode)) assert.ok(!result.observations.some((entry: any) => entry.type === 'native.evidence_staged'), mode);
+    if (['wrong-policy', 'error-null', 'unacknowledged-stage', 'early-close'].includes(mode))
+      assert.ok(!result.observations.some((entry: any) => entry.type === 'native.evidence_staged'), mode);
   }
 });
 
@@ -105,45 +140,75 @@ test('private, stderr and uncompleted streams remain bounded and never retain pr
 
 test('refused protocol diagnostics retain only finite pinned method, item, phase and stage metadata', async () => {
   const compacted = await exercise('compaction');
-  assert.deepEqual(compacted.observations.find((entry: any) => entry.type === 'native.protocol_refusal'), { type: 'native.protocol_refusal', method: 'thread/compacted', itemType: null, phase: null, stage: 'turn' });
+  assert.deepEqual(
+    compacted.observations.find((entry: any) => entry.type === 'native.protocol_refusal'),
+    { type: 'native.protocol_refusal', method: 'thread/compacted', itemType: null, phase: null, stage: 'turn' },
+  );
   const tool = await exercise('tool');
-  assert.deepEqual(tool.observations.find((entry: any) => entry.type === 'native.protocol_refusal'), { type: 'native.protocol_refusal', method: 'item/completed', itemType: 'commandExecution', phase: null, stage: 'turn' });
+  assert.deepEqual(
+    tool.observations.find((entry: any) => entry.type === 'native.protocol_refusal'),
+    { type: 'native.protocol_refusal', method: 'item/completed', itemType: 'commandExecution', phase: null, stage: 'turn' },
+  );
   const unknown = await exercise('unknown-private');
-  assert.deepEqual(unknown.observations.find((entry: any) => entry.type === 'native.protocol_refusal'), { type: 'native.protocol_refusal', method: 'unrecognized', itemType: null, phase: null, stage: 'turn' });
+  assert.deepEqual(
+    unknown.observations.find((entry: any) => entry.type === 'native.protocol_refusal'),
+    { type: 'native.protocol_refusal', method: 'unrecognized', itemType: null, phase: null, stage: 'turn' },
+  );
   assert.equal(JSON.stringify(unknown).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false);
 });
 
 test('only the pinned empty skill-cache invalidation is harmless metadata', async () => {
   const allowed = await exercise('skills-changed');
-  assert.deepEqual(allowed.problems, []); assert.equal(allowed.completed, true);
+  assert.deepEqual(allowed.problems, []);
+  assert.equal(allowed.completed, true);
   for (const mode of ['skills-nonempty', 'skills-null', 'skills-array']) {
     const refused = await exercise(mode);
-    assert.equal(refused.completed, false, mode); assert.ok(refused.problems.length, mode);
-    assert.ok(refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === 'skills/changed'), mode);
+    assert.equal(refused.completed, false, mode);
+    assert.ok(refused.problems.length, mode);
+    assert.ok(
+      refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === 'skills/changed'),
+      mode,
+    );
     assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
   }
 });
 
 test('native structured output schema is forwarded without changing generic held-text transport', async () => {
-  const schema = { type: 'object', additionalProperties: false, properties: { checks: { type: 'array', items: { type: 'object' } } }, required: ['checks'] };
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: { checks: { type: 'array', items: { type: 'object' } } },
+    required: ['checks'],
+  };
   const structured = await exercise('schema', undefined, schema);
-  assert.deepEqual(structured.problems, []); assert.equal(structured.completed, true);
+  assert.deepEqual(structured.problems, []);
+  assert.equal(structured.completed, true);
   const generic = await exercise('success');
-  assert.deepEqual(generic.problems, []); assert.equal(generic.completed, true);
+  assert.deepEqual(generic.problems, []);
+  assert.equal(generic.completed, true);
 });
 
 test('turn moderation metadata is discarded unread, only for this review turn', async () => {
   const allowed = await exercise('moderation');
-  assert.deepEqual(allowed.problems, []); assert.equal(allowed.completed, true);
+  assert.deepEqual(allowed.problems, []);
+  assert.equal(allowed.completed, true);
   assert.equal(JSON.stringify(allowed).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false);
-  assert.deepEqual(allowed.observations.map((entry: any) => entry.type), ['thread.started', 'native.evidence_staged', 'turn.started', 'item.completed', 'turn.completed']);
+  assert.deepEqual(
+    allowed.observations.map((entry: any) => entry.type),
+    ['thread.started', 'native.evidence_staged', 'turn.started', 'item.completed', 'turn.completed'],
+  );
   const flood = await exercise('overflow-moderation');
-  assert.equal(flood.completed, false); assert.ok(flood.problems.length);
+  assert.equal(flood.completed, false);
+  assert.ok(flood.problems.length);
   assert.equal(JSON.stringify(flood).includes('PRIVATEPRIVATE'), false);
   for (const mode of ['moderation-wrong-turn', 'moderation-wrong-thread']) {
     const refused = await exercise(mode);
-    assert.equal(refused.completed, false, mode); assert.ok(refused.problems.length, mode);
-    assert.ok(refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === 'turn/moderationMetadata'), mode);
+    assert.equal(refused.completed, false, mode);
+    assert.ok(refused.problems.length, mode);
+    assert.ok(
+      refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === 'turn/moderationMetadata'),
+      mode,
+    );
     assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
   }
 });

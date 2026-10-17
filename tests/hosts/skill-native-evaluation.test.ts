@@ -15,7 +15,9 @@ import { TOOLS } from '../../src/kernel/broker/tools.ts';
 function fixture(variant = 'pass') {
   const fx = brokerFixture();
   Object.defineProperty(fx.broker.host, 'hostId', { value: 'codex' });
-  const root = fx.box.cwd, bin = join(root, 'fake-bin'); mkdirSync(bin);
+  const root = fx.box.cwd,
+    bin = join(root, 'fake-bin');
+  mkdirSync(bin);
   const executable = `#!${process.execPath}\nimport fs from 'node:fs'; import {randomUUID} from 'node:crypto';
 const args=process.argv.slice(2),variant=${JSON.stringify(variant)};
 if(args.includes('--version')){console.log('codex-protocol-fixture');process.exit(0)}
@@ -43,11 +45,49 @@ console.log(JSON.stringify({type:'turn.completed',usage:{input_tokens:10,output_
   writeFileSync(join(bin, 'codex'), executable, { mode: 0o755 });
   writeFileSync(join(root, 'rubric.txt'), 'Require all predetermined checks; fixture only.');
   writeFileSync(join(root, 'inputs.md'), 'No approved publication permission.');
-  writeFileSync(join(root, 'grader.mjs'), 'import fs from "node:fs";const r=JSON.parse(fs.readFileSync(process.argv[2],"utf8")); if(r.cases.length!==6)process.exit(1); console.log(JSON.stringify(r));');
-  const suite = { formatVersion: 1, id: 'native-protocol', version: '1', scope: 'Native process protocol only, not measured model competence', host: 'codex', model: 'fixture-model', native: { adapter: 'codex' }, verifier: { id: 'fixture', version: '1', argv: [process.execPath, 'grader.mjs', '@native-results'], files: ['grader.mjs'] }, cases: QUALIFICATION_COVERAGE.map((kind, i) => ({ id: `c${String(i)}`, kind, domain: i % 2 ? 'archive' : 'software', checks: ['correctness', 'uncertainty', 'application'], native: { prompt: 'Read inputs.md and save the answer in answer.md.', files: [{ from: 'inputs.md', to: 'inputs.md' }], outputs: ['answer.md'], rubric: 'rubric.txt' } })) };
-  const suitePath = join(root, 'suite.json'); writeFileSync(suitePath, JSON.stringify(suite));
-  const evaluate = () => evaluateSkill({ store: fx.broker.store, skill: fx.broker.skills.get('construct')!, suitePath, root, env: { ...fx.ctx.env, PATH: bin + delimiter + fx.ctx.env.PATH }, now: fx.ctx.now, resolve: (ref) => projectResolver(fx.broker.store, root)(ref), timeoutMs: 30_000 });
-  const qualification = async () => { const t = TOOLS.find((x) => x.name === 'skills')!; return (await t.run(fx.broker, t.validate({ action: 'show', id: 'construct', model: 'fixture-model' })) as any).qualification; };
+  writeFileSync(
+    join(root, 'grader.mjs'),
+    'import fs from "node:fs";const r=JSON.parse(fs.readFileSync(process.argv[2],"utf8")); if(r.cases.length!==6)process.exit(1); console.log(JSON.stringify(r));',
+  );
+  const suite = {
+    formatVersion: 1,
+    id: 'native-protocol',
+    version: '1',
+    scope: 'Native process protocol only, not measured model competence',
+    host: 'codex',
+    model: 'fixture-model',
+    native: { adapter: 'codex' },
+    verifier: { id: 'fixture', version: '1', argv: [process.execPath, 'grader.mjs', '@native-results'], files: ['grader.mjs'] },
+    cases: QUALIFICATION_COVERAGE.map((kind, i) => ({
+      id: `c${String(i)}`,
+      kind,
+      domain: i % 2 ? 'archive' : 'software',
+      checks: ['correctness', 'uncertainty', 'application'],
+      native: {
+        prompt: 'Read inputs.md and save the answer in answer.md.',
+        files: [{ from: 'inputs.md', to: 'inputs.md' }],
+        outputs: ['answer.md'],
+        rubric: 'rubric.txt',
+      },
+    })),
+  };
+  const suitePath = join(root, 'suite.json');
+  writeFileSync(suitePath, JSON.stringify(suite));
+  const evaluate = () =>
+    evaluateSkill({
+      store: fx.broker.store,
+      skill: fx.broker.skills.get('construct')!,
+      suitePath,
+      root,
+      env: { ...fx.ctx.env, PATH: bin + delimiter + fx.ctx.env.PATH },
+      now: fx.ctx.now,
+      resolve: (ref) => projectResolver(fx.broker.store, root)(ref),
+      timeoutMs: 30_000,
+    });
+  const qualification = async () => {
+    const t = TOOLS.find((x) => x.name === 'skills')!;
+    return ((await t.run(fx.broker, t.validate({ action: 'show', id: 'construct', model: 'fixture-model' }))) as any).qualification;
+  };
   return { fx, root, suite, suitePath, evaluate, qualification };
 }
 
@@ -60,7 +100,8 @@ test('native adapter observes fresh per-case producer, artifact and independent 
     assert.equal(record.nativeWitnesses!.length, 6);
     const sessions = record.nativeWitnesses!.flatMap((w) => [w.producer.sessionId, w.reviewer.sessionId]);
     assert.equal(new Set(sessions).size, 12, 'fresh independently observed sessions');
-    const qualified = await f.qualification(); assert.equal(qualified.state, 'qualified', JSON.stringify(qualified));
+    const qualified = await f.qualification();
+    assert.equal(qualified.state, 'qualified', JSON.stringify(qualified));
     const w = record.nativeWitnesses![0]!;
     assert.equal(w.hostVersion, 'codex-protocol-fixture');
     assert.equal(w.skillDigest, f.fx.broker.skills.get('construct')!.digest);
@@ -69,14 +110,22 @@ test('native adapter observes fresh per-case producer, artifact and independent 
     assert.equal(reviewer.role, 'reviewer');
     writeFileSync(join(f.root, w.artifacts[0]!), 'changed');
     assert.equal((await f.qualification()).state, 'degraded');
-  } finally { f.fx.cleanup(); }
+  } finally {
+    f.fx.cleanup();
+  }
 });
 
-for (const variant of ['producer-failed', 'missing-artifact', 'no-session', 'unknown', 'wrong-application']) test(`native qualification rejects ${variant} despite an evaluator result`, async () => {
-  const f = fixture(variant);
-  try { const result = await f.evaluate(); assert.equal(result.passed, false); assert.equal((await f.qualification()).state, 'degraded'); }
-  finally { f.fx.cleanup(); }
-});
+for (const variant of ['producer-failed', 'missing-artifact', 'no-session', 'unknown', 'wrong-application'])
+  test(`native qualification rejects ${variant} despite an evaluator result`, async () => {
+    const f = fixture(variant);
+    try {
+      const result = await f.evaluate();
+      assert.equal(result.passed, false);
+      assert.equal((await f.qualification()).state, 'degraded');
+    } finally {
+      f.fx.cleanup();
+    }
+  });
 
 test('a native case cannot prepopulate its output through an input path alias', async () => {
   const f = fixture();
@@ -84,13 +133,23 @@ test('a native case cannot prepopulate its output through an input path alias', 
     f.suite.cases[0]!.native.files[0]!.to = './answer.md';
     writeFileSync(f.suitePath, JSON.stringify(f.suite));
     const result = await f.evaluate();
-    assert.equal(result.passed, false); assert.match(result.problems.join(' '), /prepopulate/);
-  } finally { f.fx.cleanup(); }
+    assert.equal(result.passed, false);
+    assert.match(result.problems.join(' '), /prepopulate/);
+  } finally {
+    f.fx.cleanup();
+  }
 });
 
-
 test('redaction preserves JSON structure around escaped lines and nested command strings', () => {
-  const value = { command: 'printf "abcDEFghijklMNOP1234567890"', nested: ['abcDEFghijklMNOP1234567890\nnext line', { escaped: '\\nabcDEFghijklMNOP1234567890', secret: 'sk-' + 'a1B2c3D4e5F6g7H8i9J0k1L2' }], count: 12, ok: true };
+  const value = {
+    command: 'printf "abcDEFghijklMNOP1234567890"',
+    nested: [
+      'abcDEFghijklMNOP1234567890\nnext line',
+      { escaped: '\\nabcDEFghijklMNOP1234567890', secret: 'sk-' + 'a1B2c3D4e5F6g7H8i9J0k1L2' },
+    ],
+    count: 12,
+    ok: true,
+  };
   const clean = redactEvaluationValue(value);
   assert.deepEqual(JSON.parse(JSON.stringify(clean)), clean);
   assert.equal(clean.count, 12);
@@ -99,15 +158,17 @@ test('redaction preserves JSON structure around escaped lines and nested command
   assert.doesNotMatch(JSON.stringify(clean), /sk-a1B2/);
 });
 
-
 test('installed method files cannot be claimed as freshly produced artifacts', async () => {
   const f = fixture();
   try {
     f.suite.cases[0]!.native.outputs = ['.agents/skills/construct/SKILL.md'];
     writeFileSync(f.suitePath, JSON.stringify(f.suite));
     const result = await f.evaluate();
-    assert.equal(result.passed, false); assert.match(result.problems.join(' '), /already exist/);
-  } finally { f.fx.cleanup(); }
+    assert.equal(result.passed, false);
+    assert.match(result.problems.join(' '), /already exist/);
+  } finally {
+    f.fx.cleanup();
+  }
 });
 
 test('a producer cannot receive a held-out rubric through an input alias', async () => {
@@ -116,30 +177,53 @@ test('a producer cannot receive a held-out rubric through an input alias', async
     f.suite.cases[0]!.native.files[0]!.from = './rubric.txt';
     writeFileSync(f.suitePath, JSON.stringify(f.suite));
     await assert.rejects(f.evaluate(), /held-out rubric/);
-  } finally { f.fx.cleanup(); }
+  } finally {
+    f.fx.cleanup();
+  }
 });
-
 
 test('external grading cannot substitute adapter-observed artifacts or invocation receipts', async () => {
   const f = fixture();
   try {
-    writeFileSync(join(f.root, 'grader.mjs'), `import fs from 'node:fs';const r=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));for(const c of r.cases){for(const ref of c.evidence){if(ref.endsWith('/output-0.txt'))fs.writeFileSync(ref,'Substituted answer');if(ref.endsWith('/producer.json')){const p=JSON.parse(fs.readFileSync(ref,'utf8'));p.model='substituted-model';fs.writeFileSync(ref,JSON.stringify(p));}}}console.log(JSON.stringify(r));`);
+    writeFileSync(
+      join(f.root, 'grader.mjs'),
+      `import fs from 'node:fs';const r=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));for(const c of r.cases){for(const ref of c.evidence){if(ref.endsWith('/output-0.txt'))fs.writeFileSync(ref,'Substituted answer');if(ref.endsWith('/producer.json')){const p=JSON.parse(fs.readFileSync(ref,'utf8'));p.model='substituted-model';fs.writeFileSync(ref,JSON.stringify(p));}}}console.log(JSON.stringify(r));`,
+    );
     const result = await f.evaluate();
     assert.equal(result.passed, false);
     assert.match(result.problems.join(' '), /native evidence changed/);
     assert.equal((await f.qualification()).state, 'degraded');
-  } finally { f.fx.cleanup(); }
+  } finally {
+    f.fx.cleanup();
+  }
 });
 
 test('hash-matching receipt files still need consistent case relationships and unique native invocations', async () => {
   const f = fixture();
   try {
-    const original = await f.evaluate(); assert.equal(original.passed, true, JSON.stringify(original.problems));
+    const original = await f.evaluate();
+    assert.equal(original.passed, true, JSON.stringify(original.problems));
     const held = new Map(original.evidence.map((entry) => [entry.ref, readFileSync(join(f.root, entry.ref), 'utf8')]));
-    for (const variant of ['host', 'model', 'session', 'exit', 'role', 'inputs', 'rubric', 'skill', 'artifact_binding', 'reviewer_judgment', 'reused_invocations', 'reused_artifacts', 'read_observations']) {
+    for (const variant of [
+      'host',
+      'model',
+      'session',
+      'exit',
+      'role',
+      'inputs',
+      'rubric',
+      'skill',
+      'artifact_binding',
+      'reviewer_judgment',
+      'reused_invocations',
+      'reused_artifacts',
+      'read_observations',
+    ]) {
       for (const [ref, text] of held) writeFileSync(join(f.root, ref), text);
       const changed: any = structuredClone(original);
-      const w = changed.nativeWitnesses[0], path = join(f.root, w.producer.receipt), producer = JSON.parse(readFileSync(path, 'utf8'));
+      const w = changed.nativeWitnesses[0],
+        path = join(f.root, w.producer.receipt),
+        producer = JSON.parse(readFileSync(path, 'utf8'));
       if (variant === 'host') producer.host = 'cursor';
       if (variant === 'model') producer.model = 'different';
       if (variant === 'session') producer.sessionId = 'different-session';
@@ -147,36 +231,63 @@ test('hash-matching receipt files still need consistent case relationships and u
       if (variant === 'role') producer.role = 'reviewer';
       if (variant === 'inputs') producer.context.inputDigests[0].digest = '0'.repeat(64);
       if (variant === 'rubric') producer.context.rubricDigest = '0'.repeat(64);
-      if (variant === 'read_observations') producer.events.push({ type: 'item.completed', item: { type: 'web_search', query: 'substituted observed lookup' } });
+      if (variant === 'read_observations')
+        producer.events.push({ type: 'item.completed', item: { type: 'web_search', query: 'substituted observed lookup' } });
       if (variant === 'skill') producer.context.skill.digest = 'sha256:' + '0'.repeat(64);
       writeFileSync(path, JSON.stringify(producer));
-      if (variant === 'reviewer_judgment') { const file = join(f.root, w.reviewer.receipt); const receipt = JSON.parse(readFileSync(file, 'utf8')); receipt.text = JSON.stringify({ checks: { correctness: 'fail' }, application: 'unknown', reasons: 'Contradictory actual reviewer output' }); writeFileSync(file, JSON.stringify(receipt)); }
-      if (variant === 'artifact_binding') writeFileSync(join(f.root, w.artifacts[0]), 'A different artifact with a newly matching outer hash');
+      if (variant === 'reviewer_judgment') {
+        const file = join(f.root, w.reviewer.receipt);
+        const receipt = JSON.parse(readFileSync(file, 'utf8'));
+        receipt.text = JSON.stringify({
+          checks: { correctness: 'fail' },
+          application: 'unknown',
+          reasons: 'Contradictory actual reviewer output',
+        });
+        writeFileSync(file, JSON.stringify(receipt));
+      }
+      if (variant === 'artifact_binding')
+        writeFileSync(join(f.root, w.artifacts[0]), 'A different artifact with a newly matching outer hash');
       if (variant === 'reused_invocations' || variant === 'reused_artifacts') {
         for (const item of changed.nativeWitnesses) {
           const c = JSON.parse(readFileSync(join(f.root, item.caseRef), 'utf8'));
-          if (variant === 'reused_invocations') for (const role of ['producer', 'reviewer']) {
-            const receipt = JSON.parse(readFileSync(join(f.root, item[role].receipt), 'utf8'));
-            receipt.id = w[role].invocationId; receipt.sessionId = w[role].sessionId;
-            item[role].invocationId = receipt.id; item[role].sessionId = receipt.sessionId;
-            c[role + 'Invocation'] = receipt.id;
-            writeFileSync(join(f.root, item[role].receipt), JSON.stringify(receipt));
-          }
+          if (variant === 'reused_invocations')
+            for (const role of ['producer', 'reviewer']) {
+              const receipt = JSON.parse(readFileSync(join(f.root, item[role].receipt), 'utf8'));
+              receipt.id = w[role].invocationId;
+              receipt.sessionId = w[role].sessionId;
+              item[role].invocationId = receipt.id;
+              item[role].sessionId = receipt.sessionId;
+              c[role + 'Invocation'] = receipt.id;
+              writeFileSync(join(f.root, item[role].receipt), JSON.stringify(receipt));
+            }
           if (variant === 'reused_artifacts') {
-            item.artifacts = [...w.artifacts]; c.outputDigests[0].ref = w.artifacts[0];
+            item.artifacts = [...w.artifacts];
+            c.outputDigests[0].ref = w.artifacts[0];
             const reviewer = JSON.parse(readFileSync(join(f.root, item.reviewer.receipt), 'utf8'));
-            reviewer.reviewedOutputs = c.outputDigests; writeFileSync(join(f.root, item.reviewer.receipt), JSON.stringify(reviewer));
+            reviewer.reviewedOutputs = c.outputDigests;
+            writeFileSync(join(f.root, item.reviewer.receipt), JSON.stringify(reviewer));
           }
           writeFileSync(join(f.root, item.caseRef), JSON.stringify(c));
         }
       }
-      changed.evidence = changed.evidence.map((entry: any) => ({ ...entry, digest: createHash('sha256').update(readFileSync(join(f.root, entry.ref), 'utf8')).digest('hex') }));
-      appendActivity(f.fx.broker.store, { at: f.fx.ctx.now(), kind: 'skill.evaluation_observed', channel: 'host_evaluation', payload: changed });
+      changed.evidence = changed.evidence.map((entry: any) => ({
+        ...entry,
+        digest: createHash('sha256')
+          .update(readFileSync(join(f.root, entry.ref), 'utf8'))
+          .digest('hex'),
+      }));
+      appendActivity(f.fx.broker.store, {
+        at: f.fx.ctx.now(),
+        kind: 'skill.evaluation_observed',
+        channel: 'host_evaluation',
+        payload: changed,
+      });
       assert.equal((await f.qualification()).state, 'degraded', variant);
     }
-  } finally { f.fx.cleanup(); }
+  } finally {
+    f.fx.cleanup();
+  }
 });
-
 
 test('reviewers receive public lookup observations and actual read results, with private thought and producer chat excluded', async () => {
   const f = fixture('execution-evidence');
@@ -190,7 +301,9 @@ test('reviewers receive public lookup observations and actual read results, with
     assert.equal(captured.readObservations.items.length, 2);
     assert.equal(captured.readObservations.items[0].resultObserved, false);
     assert.equal(captured.readObservations.items[1].output.excerpt, 'No approved publication permission.');
-  } finally { f.fx.cleanup(); }
+  } finally {
+    f.fx.cleanup();
+  }
 });
 
 test('public execution projection makes truncated and missing results explicit without inventing lookup success', () => {

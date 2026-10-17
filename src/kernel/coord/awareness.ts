@@ -24,7 +24,14 @@ export const PRESENT_WITHIN_MS = 30 * 60_000;
 export const AWARENESS_BUDGET = 600;
 
 /** Work events other sessions should hear about. */
-const PEER_KINDS = ['work.claimed', 'work.completed', 'work.cancelled', 'work.taken_over', 'work.handoff_offered', 'work.handoff_accepted'] as const;
+const PEER_KINDS = [
+  'work.claimed',
+  'work.completed',
+  'work.cancelled',
+  'work.taken_over',
+  'work.handoff_offered',
+  'work.handoff_accepted',
+] as const;
 
 export interface PresentSession {
   readonly id: string;
@@ -98,7 +105,10 @@ function heldByOthers(store: StateStore, input: { readonly sessionId?: string | 
  * Who else is here and what they hold, for bootstrap. Bounded: the list of
  * held work is cut until the whole summary fits the awareness budget.
  */
-export function coordinationFor(store: StateStore, input: { readonly sessionId?: string | null; readonly laneRoot?: string | null; readonly now: string }): Coordination {
+export function coordinationFor(
+  store: StateStore,
+  input: { readonly sessionId?: string | null; readonly laneRoot?: string | null; readonly now: string },
+): Coordination {
   const lane = input.laneRoot ?? MAIN_LANE;
   const others = presentSessions(store, input).filter((s) => !s.you);
   const sameCheckout = others.filter((s) => s.lane === lane).length;
@@ -109,13 +119,23 @@ export function coordinationFor(store: StateStore, input: { readonly sessionId?:
     sameCheckout,
     offers,
     ...(sameCheckout > 0
-      ? { warning: `${String(sameCheckout)} other session(s) work in this same checkout. Claim with paths before editing, and never switch branches or stash here; a git worktree per writer avoids the collision.` }
+      ? {
+          warning: `${String(sameCheckout)} other session(s) work in this same checkout. Claim with paths before editing, and never switch branches or stash here; a git worktree per writer avoids the collision.`,
+        }
       : {}),
   };
   let held = all.slice(0, 5);
-  const fits = (h: HeldWork[]): boolean => Buffer.byteLength(JSON.stringify({ ...base, held: h, more: all.length - h.length })) <= AWARENESS_BUDGET;
+  const fits = (h: HeldWork[]): boolean =>
+    Buffer.byteLength(JSON.stringify({ ...base, held: h, more: all.length - h.length })) <= AWARENESS_BUDGET;
   while (held.length > 0 && !fits(held)) held = held.slice(0, -1);
-  return { others: base.others, sameCheckout, held, more: all.length - held.length, offers, ...(base.warning ? { warning: base.warning } : {}) };
+  return {
+    others: base.others,
+    sameCheckout,
+    held,
+    more: all.length - held.length,
+    offers,
+    ...(base.warning ? { warning: base.warning } : {}),
+  };
 }
 
 export interface PeerEvent {
@@ -138,7 +158,9 @@ export function latestActivityId(store: StateStore): number {
 }
 
 export function activityCursor(store: StateStore, sessionId: string): number {
-  const row = store.db.prepare('SELECT activity_cursor FROM sessions WHERE id = ?').get(sessionId) as { activity_cursor: number } | undefined;
+  const row = store.db.prepare('SELECT activity_cursor FROM sessions WHERE id = ?').get(sessionId) as
+    | { activity_cursor: number }
+    | undefined;
   return Number(row?.activity_cursor ?? 0);
 }
 
@@ -165,16 +187,28 @@ export function peerDelta(
           AND kind IN (${PEER_KINDS.map(() => '?').join(', ')})
         ORDER BY id`,
     )
-    .all(input.cursor, latest, input.sessionId, input.agent ?? 'main', ...PEER_KINDS) as { at: string; kind: string; actor: string | null; payload_json: string }[];
+    .all(input.cursor, latest, input.sessionId, input.agent ?? 'main', ...PEER_KINDS) as {
+    at: string;
+    kind: string;
+    actor: string | null;
+    payload_json: string;
+  }[];
   if (rows.length === 0) return { delta: null, cursor: latest };
   const events: PeerEvent[] = rows.map((r) => {
     const p = JSON.parse(r.payload_json) as { workId?: unknown; paths?: unknown };
     const paths = Array.isArray(p.paths) ? p.paths.filter((x): x is string => typeof x === 'string').slice(0, 4) : [];
-    return { kind: r.kind.slice('work.'.length), work: String(p.workId ?? ''), by: r.actor, at: r.at, ...(paths.length > 0 ? { paths } : {}) };
+    return {
+      kind: r.kind.slice('work.'.length),
+      work: String(p.workId ?? ''),
+      by: r.actor,
+      at: r.at,
+      ...(paths.length > 0 ? { paths } : {}),
+    };
   });
   const offers = listOffers(store, input.now, { owner: `${input.sessionId}/main`, session: input.sessionId }).length;
   let shown = events.slice(-6);
-  const fits = (e: PeerEvent[]): boolean => Buffer.byteLength(JSON.stringify({ events: e, more: events.length - e.length, offers })) <= AWARENESS_BUDGET;
+  const fits = (e: PeerEvent[]): boolean =>
+    Buffer.byteLength(JSON.stringify({ events: e, more: events.length - e.length, offers })) <= AWARENESS_BUDGET;
   while (shown.length > 0 && !fits(shown)) shown = shown.slice(1);
   return { delta: { events: shown, more: events.length - shown.length, offers }, cursor: latest };
 }
@@ -195,7 +229,16 @@ export interface RecentActivity {
 export function recentActivity(store: StateStore, limit: number): RecentActivity[] {
   const rows = store.db
     .prepare(`SELECT id, at, kind, session_id, agent, channel, actor, payload_json FROM activity_events ORDER BY id DESC LIMIT ?`)
-    .all(Math.max(1, Math.min(limit, 1000))) as { id: number; at: string; kind: string; session_id: string | null; agent: string | null; channel: string | null; actor: string | null; payload_json: string }[];
+    .all(Math.max(1, Math.min(limit, 1000))) as {
+    id: number;
+    at: string;
+    kind: string;
+    session_id: string | null;
+    agent: string | null;
+    channel: string | null;
+    actor: string | null;
+    payload_json: string;
+  }[];
   return rows.map((r) => ({
     id: r.id,
     at: r.at,

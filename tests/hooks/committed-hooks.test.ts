@@ -80,7 +80,15 @@ function failingHooks(root: string, files: readonly string[] = trackedHookFiles(
         input: payloadFor(root),
         encoding: 'utf8',
         timeout: 10_000,
-        env: { PATH: process.env.PATH, HOME: home.root, XDG_CONFIG_HOME: home.paths.configDir, XDG_STATE_HOME: home.paths.stateDir, XDG_DATA_HOME: home.paths.dataDir, XDG_CACHE_HOME: home.paths.cacheDir, CLAUDE_PROJECT_DIR: root },
+        env: {
+          PATH: process.env.PATH,
+          HOME: home.root,
+          XDG_CONFIG_HOME: home.paths.configDir,
+          XDG_STATE_HOME: home.paths.stateDir,
+          XDG_DATA_HOME: home.paths.dataDir,
+          XDG_CACHE_HOME: home.paths.cacheDir,
+          CLAUDE_PROJECT_DIR: root,
+        },
       });
       if (run.status !== 0) {
         failures.push({ file, command, status: run.status, output: `${run.stdout ?? ''}${run.stderr ?? ''}`.slice(0, 400) });
@@ -103,10 +111,7 @@ test('the checker catches a hook whose script imports a module that no longer ex
     mkdirSync(join(fixture.root, 'src'), { recursive: true });
     mkdirSync(join(fixture.root, 'scripts'), { recursive: true });
     mkdirSync(join(fixture.root, '.claude'), { recursive: true });
-    writeFileSync(
-      join(fixture.root, 'scripts', 'lint.mjs'),
-      "import { gone } from '../src/removed/module.ts';\ngone();\n",
-    );
+    writeFileSync(join(fixture.root, 'scripts', 'lint.mjs'), "import { gone } from '../src/removed/module.ts';\ngone();\n");
     writeFileSync(
       join(fixture.root, '.claude', 'settings.json'),
       JSON.stringify({

@@ -29,14 +29,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 
-const ALLOWED_FIELDS = new Set([
-  'name',
-  'description',
-  'license',
-  'compatibility',
-  'metadata',
-  'allowed-tools',
-]);
+const ALLOWED_FIELDS = new Set(['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools']);
 const NAME_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BEAD = /construct-(?!mcp)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
 const SRC_PATH = /(?:^|[\s`>("'])(?:src|tests|scripts|fixtures)\//;
@@ -166,6 +159,6 @@ console.log(
   files.length === 0
     ? 'lint-skill-spec: clean (no skills yet)'
     : `lint-skill-spec: clean - ${files.length} skill(s) conform, descriptions ${descriptionBudgetUsed}/` +
-      `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Format checks only; ` +
-      'Construct record/enforcement ceremony is optional under references/.',
+        `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Format checks only; ` +
+        'Construct record/enforcement ceremony is optional under references/.',
 );

@@ -41,10 +41,20 @@ test('add, link, update, unlink, and admit shape the ledger; show prints the str
     const personal = last((await cli(['work', 'add', 'Rename a helper', '--json'])).out);
     assert.equal(personal.status, 'open', 'the person’s own filing needs no parent');
 
-    const task = await cli([
-      'work', 'add', 'Cache the grammar', `--parent=${String(outcome.id)}`, `--blocked-by=${String(relayedLoose.id)}`,
-      '--accept=cold start under 200 ms', '--accept=no stale cache after an edit', '--risk=cache invalidation', '--json',
-    ], relayed);
+    const task = await cli(
+      [
+        'work',
+        'add',
+        'Cache the grammar',
+        `--parent=${String(outcome.id)}`,
+        `--blocked-by=${String(relayedLoose.id)}`,
+        '--accept=cold start under 200 ms',
+        '--accept=no stale cache after an edit',
+        '--risk=cache invalidation',
+        '--json',
+      ],
+      relayed,
+    );
     assert.equal(task.code, 0, task.err);
     const taskId = String(last(task.out).id);
     assert.equal(last(task.out).status, 'open');
@@ -63,7 +73,10 @@ test('add, link, update, unlink, and admit shape the ledger; show prints the str
     assert.equal(updated.code, 0, updated.err);
     const unlinked = await cli(['work', 'unlink', taskId, `--blocked-by=${String(relayedLoose.id)}`]);
     assert.equal(unlinked.code, 0, unlinked.err);
-    const after = last((await cli(['work', 'show', taskId, '--json'])).out) as { structure: { acceptance: string[]; blockedBy: unknown[] }; readiness: { ready: boolean } };
+    const after = last((await cli(['work', 'show', taskId, '--json'])).out) as {
+      structure: { acceptance: string[]; blockedBy: unknown[] };
+      readiness: { ready: boolean };
+    };
     assert.deepEqual(after.structure.acceptance, ['cold start under 150 ms']);
     assert.deepEqual(after.structure.blockedBy, []);
     assert.equal(after.readiness.ready, true);

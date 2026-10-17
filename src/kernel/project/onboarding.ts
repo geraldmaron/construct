@@ -93,7 +93,10 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
       if (existing.some((e) => e.kind === 'canonical_artifact' && e.text === text)) continue;
       proposed.push(addStatement(store, { id: nextId('st'), kind: 'canonical_artifact', text, provenance: 'discovery', at }));
     }
-    const answered = answeredUnknowns(profile, existing.filter((e) => e.status === 'confirmed'));
+    const answered = answeredUnknowns(
+      profile,
+      existing.filter((e) => e.status === 'confirmed'),
+    );
     for (const u of draft.unknowns) {
       if (answered.has(u)) continue;
       if (existing.some((e) => e.kind === 'unknown' && e.text === u)) continue;
@@ -176,7 +179,8 @@ function answeredUnknowns(profile: ProjectProfile | null, confirmed: readonly St
 function retireAnsweredUnknowns(store: StateStore, at: string): void {
   const answered = answeredUnknowns(getProfile(store), listStatements(store, { status: 'confirmed' }));
   for (const u of listStatements(store, { kind: 'unknown' })) {
-    if (answered.has(u.text) && u.status !== 'retired' && u.status !== 'superseded') setStatementStatus(store, { id: u.id, status: 'retired', at });
+    if (answered.has(u.text) && u.status !== 'retired' && u.status !== 'superseded')
+      setStatementStatus(store, { id: u.id, status: 'retired', at });
   }
 }
 
@@ -228,7 +232,12 @@ export function scaleFromAnswer(text: string): ProjectScale {
 export function onboardingAnswerFor(subject: unknown, resolution: unknown): OnboardingAnswers | null {
   const id = onboardingQuestionOf(subject);
   if (id === null) return null;
-  const words = typeof resolution === 'string' ? [resolution] : Array.isArray(resolution) && resolution.every((r) => typeof r === 'string') ? (resolution as string[]) : null;
+  const words =
+    typeof resolution === 'string'
+      ? [resolution]
+      : Array.isArray(resolution) && resolution.every((r) => typeof r === 'string')
+        ? (resolution as string[])
+        : null;
   if (words === null) throw new Error('a setup question is answered in words');
   if (id === 'scale') return { scale: scaleFromAnswer(words.join(' ')) };
   if (id === 'primary_outcome') return { primaryOutcome: words.join(' ') };
@@ -266,7 +275,13 @@ export interface OnboardingAnswers {
  */
 export function applyOnboardingAnswers(
   store: StateStore,
-  input: { readonly answers: OnboardingAnswers; readonly by: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly channel?: DecisionChannel },
+  input: {
+    readonly answers: OnboardingAnswers;
+    readonly by: string;
+    readonly at: string;
+    readonly nextId: (prefix: string) => string;
+    readonly channel?: DecisionChannel;
+  },
 ): { readonly profile: ProjectProfile; readonly confirmed: readonly Statement[]; readonly missing: readonly string[] } {
   const { answers, by, at, nextId, channel } = input;
   if (answers.scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(answers.scale)) {
@@ -285,7 +300,16 @@ export function applyOnboardingAnswers(
     if (answers.primaryOutcome) patch.primaryOutcome = answers.primaryOutcome;
     for (const text of answers.protectedConstraints ?? []) {
       if (!text.trim()) continue;
-      confirmed.push(addStatement(store, { id: nextId('st'), kind: 'constraint', text: text.trim(), provenance: 'user', ...(channel ? { channel } : {}), at }));
+      confirmed.push(
+        addStatement(store, {
+          id: nextId('st'),
+          kind: 'constraint',
+          text: text.trim(),
+          provenance: 'user',
+          ...(channel ? { channel } : {}),
+          at,
+        }),
+      );
     }
     let profile = upsertProfile(store, patch, at);
     for (const unknown of listStatements(store, { kind: 'unknown', status: 'proposed' })) {
@@ -300,9 +324,15 @@ export function applyOnboardingAnswers(
     }
     for (const d of listOpenDecisions(store)) {
       if (d.kind !== 'clarification') continue;
-      if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at, channel });
-      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at, channel });
-      if (answers.protectedConstraints && answers.protectedConstraints.length > 0 && isOnboardingSubject(d.subject, 'protected_constraints')) {
+      if (answers.scale && isOnboardingSubject(d.subject, 'scale'))
+        resolveDecision(store, { id: d.id, resolution: answers.scale, by, at, channel });
+      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome'))
+        resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at, channel });
+      if (
+        answers.protectedConstraints &&
+        answers.protectedConstraints.length > 0 &&
+        isOnboardingSubject(d.subject, 'protected_constraints')
+      ) {
         resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at, channel });
       }
     }
@@ -380,7 +410,14 @@ export function listInbox(store: StateStore, runId?: string): InboxRow[] {
  */
 export function resolveProposal(
   store: StateStore,
-  input: { readonly id: string; readonly resolution: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly by: string; readonly channel: DecisionChannel },
+  input: {
+    readonly id: string;
+    readonly resolution: string;
+    readonly at: string;
+    readonly nextId: (prefix: string) => string;
+    readonly by: string;
+    readonly channel: DecisionChannel;
+  },
 ): Statement {
   const answer = input.resolution.trim().toLowerCase();
   const confirm = answer === 'confirm' || answer === 'accept' || answer === 'yes';
@@ -388,8 +425,15 @@ export function resolveProposal(
     throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
   }
   return store.transaction(() => {
-    const statement = confirm ? acceptProposal(store, input.id, input.at, input.nextId, input.channel) : declineProposal(store, input.id, input.at);
-    appendActivity(store, { at: input.at, kind: 'proposal.resolved', actor: input.by, payload: { statementId: statement.id, kind: statement.kind, status: statement.status, channel: input.channel } });
+    const statement = confirm
+      ? acceptProposal(store, input.id, input.at, input.nextId, input.channel)
+      : declineProposal(store, input.id, input.at);
+    appendActivity(store, {
+      at: input.at,
+      kind: 'proposal.resolved',
+      actor: input.by,
+      payload: { statementId: statement.id, kind: statement.kind, status: statement.status, channel: input.channel },
+    });
     return statement;
   });
 }
@@ -458,7 +502,10 @@ export function composeConstitution(store: StateStore, base: Constitution): Cons
       const idx = s.text.indexOf(': ');
       return idx === -1 ? { path: s.text, role: 'document' } : { path: s.text.slice(0, idx), role: s.text.slice(idx + 2) };
     });
-  out.canonicalArtifacts = [...base.canonicalArtifacts, ...artifacts.filter((a) => !base.canonicalArtifacts.some((b) => b.path === a.path))];
+  out.canonicalArtifacts = [
+    ...base.canonicalArtifacts,
+    ...artifacts.filter((a) => !base.canonicalArtifacts.some((b) => b.path === a.path)),
+  ];
   const glossary = confirmed.filter((s) => s.kind === 'glossary_entry' && s.term).map((s) => ({ term: s.term!, meaning: s.text }));
   out.glossary = [...base.glossary, ...glossary.filter((g) => !base.glossary.some((b) => b.term.toLowerCase() === g.term.toLowerCase()))];
   return out as unknown as Constitution;

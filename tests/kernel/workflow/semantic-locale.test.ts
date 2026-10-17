@@ -43,16 +43,39 @@ try {
 test('new Unicode-bearing packets and unchanged resubmissions survive a locale handoff', () => {
   const f = brokerFixture();
   try {
-    const started = f.broker.workflow.start({ workflowId: 'managed-outcome', input: { request: 'Review Unicode evidence' }, trigger: 'manual' });
-    const contract = semanticContract({ words: 'Review Unicode evidence', data: { z: 1, ä: 2 } }, { host: 'synthetic-test-only', version: 'fixture', profile: 'fixture', digest: 'fixture' });
-    f.broker.store.db.prepare('UPDATE workflow_runs SET bindings_json=? WHERE id=?').run(JSON.stringify({ ...(started.run.bindings as object), semanticContract: contract }), started.run.id);
+    const started = f.broker.workflow.start({
+      workflowId: 'managed-outcome',
+      input: { request: 'Review Unicode evidence' },
+      trigger: 'manual',
+    });
+    const contract = semanticContract(
+      { words: 'Review Unicode evidence', data: { z: 1, ä: 2 } },
+      { host: 'synthetic-test-only', version: 'fixture', profile: 'fixture', digest: 'fixture' },
+    );
+    f.broker.store.db
+      .prepare('UPDATE workflow_runs SET bindings_json=? WHERE id=?')
+      .run(JSON.stringify({ ...(started.run.bindings as object), semanticContract: contract }), started.run.id);
     const leased = f.broker.workflow.claimNext({ runId: started.run.id }).packet!.leased;
     for (const file of ['brief.md', 'z.md', 'ä.md']) writeFileSync(join(f.box.cwd, file), 'Unicode fixture evidence.');
     const args = { database: f.broker.store.path, root: f.box.cwd, runId: started.run.id, leased, at: f.ctx.now() };
     const invoke = (locale: string, extra: Record<string, unknown>) => {
-      const result = spawnSync(process.execPath, ['--input-type=module', '-e', peer], { cwd: repository, env: { ...f.ctx.env, LC_ALL: locale }, encoding: 'utf8', input: JSON.stringify({ ...args, ...extra }), timeout: 10_000 });
+      const result = spawnSync(process.execPath, ['--input-type=module', '-e', peer], {
+        cwd: repository,
+        env: { ...f.ctx.env, LC_ALL: locale },
+        encoding: 'utf8',
+        input: JSON.stringify({ ...args, ...extra }),
+        timeout: 10_000,
+      });
       assert.equal(result.status, 0, result.stderr);
-      return JSON.parse(result.stdout) as { ref: string; digest: string; canonical: string; readable: boolean; problems: string[]; contractValid: boolean; unrelated: string };
+      return JSON.parse(result.stdout) as {
+        ref: string;
+        digest: string;
+        canonical: string;
+        readable: boolean;
+        problems: string[];
+        contractValid: boolean;
+        unrelated: string;
+      };
     };
     const initial = invoke('en_US.UTF-8', { mode: 'prepare' });
     const migrated = invoke('sv_SE.UTF-8', { mode: 'read', ref: initial.ref });
@@ -67,6 +90,12 @@ test('new Unicode-bearing packets and unchanged resubmissions survive a locale h
     assert.equal(localLegacy.readable, true, 'legacy serialization is preserved under its original locale');
     assert.equal(foreignLegacy.readable, false, 'a legacy digest must not be silently rehashed as a supported new packet');
     assert.match(foreignLegacy.problems.join(), /legacy.*locale-dependent canonicalization/);
-    assert.notEqual(localLegacy.unrelated, foreignLegacy.unrelated, 'arbitrary user objects and other frozen hash callers retain legacy behavior');
-  } finally { f.cleanup(); }
+    assert.notEqual(
+      localLegacy.unrelated,
+      foreignLegacy.unrelated,
+      'arbitrary user objects and other frozen hash callers retain legacy behavior',
+    );
+  } finally {
+    f.cleanup();
+  }
 });

@@ -41,31 +41,57 @@ for (const expirations of [0, 1, 2]) {
         const invalid = { assumptions: [], blockers: [] }; // Missing the required plan.
         assert.equal((await submit(fx, work, invalid)).step.state, 'ready');
         assert.equal((await submit(fx, await claim(fx, runId), invalid)).step.state, 'waiting_for_decision');
-        assert.equal((await claim(fx, runId)), null);
+        assert.equal(await claim(fx, runId), null);
 
         await call(fx, 'decide', { decisionId: await decision(fx, runId), resolution: approval });
         work = await claim(fx, runId);
         // A schema waiver cannot authorize a newly failing method report.
-        const retryOutput = approval === 'another attempt' ? invalid : { ...invalid, methods: [{ id: 'unregistered-method', disposition: 'applied', why: 'unknown method' }] };
+        const retryOutput =
+          approval === 'another attempt'
+            ? invalid
+            : { ...invalid, methods: [{ id: 'unregistered-method', disposition: 'applied', why: 'unknown method' }] };
         const retried = await submit(fx, work, retryOutput);
         assert.equal(retried.step.state, 'waiting_for_decision', 'one approved attempt must not become extra retries after expiration');
-        if (approval === 'accept with these problems') assert.ok(retried.validation.some((entry: { validator: string; ok: boolean }) => entry.validator === 'method_reports' && !entry.ok));
+        if (approval === 'accept with these problems')
+          assert.ok(
+            retried.validation.some((entry: { validator: string; ok: boolean }) => entry.validator === 'method_reports' && !entry.ok),
+          );
         assert.equal(getStep(fx.broker.store, planId)!.maxAttempts, 3);
         assert.equal(getStep(fx.broker.store, planId)!.output, null, 'no new failure was silently waived');
-        assert.equal((await claim(fx, runId)), null);
+        assert.equal(await claim(fx, runId), null);
 
         await call(fx, 'decide', { decisionId: await decision(fx, runId), resolution: 'another attempt' });
-        const fixed = await submit(fx, await claim(fx, runId), { plan: ['Read the design and write a note'], assumptions: [], blockers: [] });
+        const fixed = await submit(fx, await claim(fx, runId), {
+          plan: ['Read the design and write a note'],
+          assumptions: [],
+          blockers: [],
+        });
         assert.equal(fixed.step.state, 'succeeded');
         assert.equal(getStep(fx.broker.store, planId)!.maxAttempts, 4);
         assert.equal(getStep(fx.broker.store, planId)!.attempts, expirations + 4);
-        assert.equal((getStep(fx.broker.store, planId)!.output as { waived?: unknown }).waived, undefined, 'another attempt ends the previous waiver');
+        assert.equal(
+          (getStep(fx.broker.store, planId)!.output as { waived?: unknown }).waived,
+          undefined,
+          'another attempt ends the previous waiver',
+        );
 
         writeFileSync(join(fx.box.cwd, 'retry-note.md'), 'Keep the kernel host-agnostic.\n');
-        const produced = await submit(fx, await claim(fx, runId), { summary: 'Wrote a local design note', findings: ['Keep the kernel host-agnostic'], changes: ['retry-note.md'], artifact: 'retry-note.md' }, [{ ref: 'docs/design.md' }]);
+        const produced = await submit(
+          fx,
+          await claim(fx, runId),
+          {
+            summary: 'Wrote a local design note',
+            findings: ['Keep the kernel host-agnostic'],
+            changes: ['retry-note.md'],
+            artifact: 'retry-note.md',
+          },
+          [{ ref: 'docs/design.md' }],
+        );
         assert.equal(produced.step.state, 'succeeded', JSON.stringify(produced.validation));
         const verify = await claim(fx, runId);
-        const done = await submit(fx, verify, { verification: await observedVerification(fx, verify), passed: true }, [{ ref: 'retry-note.md' }]);
+        const done = await submit(fx, verify, { verification: await observedVerification(fx, verify), passed: true }, [
+          { ref: 'retry-note.md' },
+        ]);
         assert.equal(done.run.state, 'succeeded', JSON.stringify(done.validation));
         assert.equal(done.deliverable.trust, 'validated');
         assert.equal(listAttempts(fx.broker.store, planId).filter((attempt) => attempt.outcome === 'expired').length, expirations);

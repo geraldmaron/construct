@@ -34,9 +34,9 @@ function assignments(store: StateStore, id: string): { capabilities: string[]; s
   const caps = store.db
     .prepare('SELECT capability FROM staff_capabilities WHERE staff_id = ? ORDER BY capability')
     .all(id) as unknown as Array<{ capability: string }>;
-  const skills = store.db
-    .prepare('SELECT skill_id FROM staff_skills WHERE staff_id = ? ORDER BY skill_id')
-    .all(id) as unknown as Array<{ skill_id: string }>;
+  const skills = store.db.prepare('SELECT skill_id FROM staff_skills WHERE staff_id = ? ORDER BY skill_id').all(id) as unknown as Array<{
+    skill_id: string;
+  }>;
   return { capabilities: caps.map((c) => c.capability), skillIds: skills.map((s) => s.skill_id) };
 }
 
@@ -89,10 +89,7 @@ export function getStaffMember(store: StateStore, id: string): StaffMember | nul
   return row ? toStaff(store, row) : null;
 }
 
-export function listStaffMembers(
-  store: StateStore,
-  filter: { readonly status?: StaffStatus } = {},
-): StaffMember[] {
+export function listStaffMembers(store: StateStore, filter: { readonly status?: StaffStatus } = {}): StaffMember[] {
   const rows = store.db
     .prepare(`SELECT * FROM staff_members WHERE (? IS NULL OR status = ?) ORDER BY created_at, id`)
     .all(filter.status ?? null, filter.status ?? null) as unknown as Row[];
@@ -102,9 +99,7 @@ export function listStaffMembers(
 export function setStaffStatus(store: StateStore, id: string, status: StaffStatus, at: string): StaffMember {
   requireOneOf(status, STAFF_STATUSES, 'staff.status');
   requireInstant(at, 'staff.at');
-  const result = store.db
-    .prepare('UPDATE staff_members SET status = ?, updated_at = ? WHERE id = ?')
-    .run(status, at, id);
+  const result = store.db.prepare('UPDATE staff_members SET status = ?, updated_at = ? WHERE id = ?').run(status, at, id);
   if (result.changes === 0) throw new Error(`no staff member ${id}`);
   return getStaffMember(store, id)!;
 }

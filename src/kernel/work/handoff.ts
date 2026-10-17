@@ -74,7 +74,8 @@ function text(value: unknown, field: string, required: boolean): string {
     return '';
   }
   if (typeof value !== 'string') throw new HandoffPacketError(`handoff ${field} is text`);
-  if (value.length > HANDOFF_TEXT_MAX) throw new HandoffPacketError(`handoff ${field} is at most ${String(HANDOFF_TEXT_MAX)} characters; point at a file for more`);
+  if (value.length > HANDOFF_TEXT_MAX)
+    throw new HandoffPacketError(`handoff ${field} is at most ${String(HANDOFF_TEXT_MAX)} characters; point at a file for more`);
   const out = clean(value);
   if (required && !out) throw new HandoffPacketError(`a handoff says ${field}`);
   return out;
@@ -95,10 +96,15 @@ function texts(value: unknown, field: string): string[] {
 export function normalizePacket(raw: Record<string, unknown>): HandoffPacket {
   const where = (raw.where ?? {}) as Record<string, unknown>;
   if (typeof where !== 'object' || Array.isArray(where)) throw new HandoffPacketError('handoff where is an object');
-  if (where.commit !== undefined && where.commit !== null && typeof where.commit !== 'string') throw new HandoffPacketError('handoff where.commit is text');
-  const commit = where.commit === undefined || where.commit === null || where.commit === '' ? null : String(where.commit).trim().toLowerCase();
+  if (where.commit !== undefined && where.commit !== null && typeof where.commit !== 'string')
+    throw new HandoffPacketError('handoff where.commit is text');
+  const commit =
+    where.commit === undefined || where.commit === null || where.commit === '' ? null : String(where.commit).trim().toLowerCase();
   if (commit !== null && !/^[0-9a-f]{7,64}$/.test(commit)) throw new HandoffPacketError('handoff where.commit is a git commit id');
-  const branch = where.branch === undefined || where.branch === null || where.branch === '' ? null : text(where.branch, 'where.branch', false).slice(0, 200) || null;
+  const branch =
+    where.branch === undefined || where.branch === null || where.branch === ''
+      ? null
+      : text(where.branch, 'where.branch', false).slice(0, 200) || null;
   const pathsRaw = where.paths === undefined ? [] : where.paths;
   if (!Array.isArray(pathsRaw)) throw new HandoffPacketError('handoff where.paths is a list');
   if (pathsRaw.length > 200) throw new HandoffPacketError('handoff where.paths holds at most 200 entries');
@@ -107,7 +113,8 @@ export function normalizePacket(raw: Record<string, unknown>): HandoffPacket {
     paths = pathsRaw.map((p) => {
       if (typeof p !== 'string') throw new HandoffPacketError('handoff where.paths holds text paths');
       if (/\p{C}/u.test(p)) throw new HandoffPacketError('handoff where.paths cannot contain control characters');
-      if (Buffer.byteLength(p) > LEASE_PATH_MAX_BYTES) throw new HandoffPacketError(`a handoff path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; point at its directory instead`);
+      if (Buffer.byteLength(p) > LEASE_PATH_MAX_BYTES)
+        throw new HandoffPacketError(`a handoff path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; point at its directory instead`);
       // These locations are context, not writer reservations. Keep readable
       // filenames while retaining the shared repository-confinement checks.
       return normalizeLeasePath(p, 'check');

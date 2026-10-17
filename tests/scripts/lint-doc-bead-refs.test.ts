@@ -101,14 +101,11 @@ test('a closed bead is legitimate lineage, not rot', async () => {
   }
 });
 
-test('a dotted child id is checked against its own record, not its parent\'s', async () => {
+test("a dotted child id is checked against its own record, not its parent's", async () => {
   const repo = scratchRepo();
   try {
     withIssues(repo, FIXTURE_ISSUES);
-    repo.write(
-      'docs/fixture.md',
-      'construct-cd34.2 landed this. construct-cd34.9 did not (never filed).\n',
-    );
+    repo.write('docs/fixture.md', 'construct-cd34.2 landed this. construct-cd34.9 did not (never filed).\n');
     const r = await runLint(repo.root);
     assert.equal(r.code, 1);
     assert.match(r.stderr, /construct-cd34\.9/);

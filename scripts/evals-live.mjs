@@ -24,7 +24,18 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { delimiter, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -39,11 +50,40 @@ import { KNOWN_CLIENTS } from '../src/hosts/wiring/clients.ts';
 import { INTAKE_KINDS, validateIntake } from '../src/kernel/workflow/intake.ts';
 import { PERIOD_SEMANTICS } from '../src/kernel/registry/slots.ts';
 import {
-  BARE_MODEL_ALIAS, LIVE_CONDITIONS, OBSERVATION_DEFAULTS, PREREGISTRATION, caseSet, compactObservation, gatingAxes, intakeVerdict, measureIntake, observeRun, pairToolCalls,
-  recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord,
+  BARE_MODEL_ALIAS,
+  LIVE_CONDITIONS,
+  OBSERVATION_DEFAULTS,
+  PREREGISTRATION,
+  caseSet,
+  compactObservation,
+  gatingAxes,
+  intakeVerdict,
+  measureIntake,
+  observeRun,
+  pairToolCalls,
+  recomputeLiveRecord,
+  shouldStop,
+  splitOf,
+  validateIntakeEvalFile,
+  validateLiveRecord,
 } from '../src/kernel/skills/live-evals.ts';
 import {
-  EVAL_HOSTS, HOST_BINARY, PROJECT_SKILLS_DIR, codexEvaluationIsolationArgs, codexProviderArgs, codexProviderFromConfig, constructEnv, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand,
+  EVAL_HOSTS,
+  HOST_BINARY,
+  PROJECT_SKILLS_DIR,
+  codexEvaluationIsolationArgs,
+  codexProviderArgs,
+  codexProviderFromConfig,
+  constructEnv,
+  hostArgs,
+  hostEnv,
+  mcpEntry,
+  parseHostStream,
+  pinHookEnvironment,
+  promptFor,
+  serverCommand,
+  stubCommand,
+  tapCommand,
 } from './host-cli.mjs';
 
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -61,7 +101,7 @@ export const UNMEASURED_REASONS = {
   opencode: 'OpenCode is reachable here only through a pay-per-use API key, and development calls run on subscriptions.',
   bob: 'Bob is not installed on the machine that records.',
   hermes: 'No eval cell drives Hermes yet; a scripted call needs a HERMES_HOME profile with its own subscription login.',
-  cursor: 'Cursor cells run only with the person\'s --allow-cursor-state opt-in, on their own Cursor quota.',
+  cursor: "Cursor cells run only with the person's --allow-cursor-state opt-in, on their own Cursor quota.",
   codex: 'No codex cell was recorded; a smoke or full record needs its gated cells.',
   'claude-code': 'No Claude Code cell was recorded; a smoke or full record needs its gated cells.',
 };
@@ -85,7 +125,13 @@ export const MAY_GO_UNMEASURED = new Set(['cursor', 'vscode', 'opencode', 'bob',
  */
 export const GATED_MATRIX = {
   full: [
-    ...['haiku', 'sonnet', 'opus'].flatMap((m) => ['default', 'crowded', 'no-tool-search', 'fresh-init', 'injected'].map((condition) => ({ host: 'claude-code', requestedModel: m, condition }))),
+    ...['haiku', 'sonnet', 'opus'].flatMap((m) =>
+      ['default', 'crowded', 'no-tool-search', 'fresh-init', 'injected'].map((condition) => ({
+        host: 'claude-code',
+        requestedModel: m,
+        condition,
+      })),
+    ),
     ...['default', 'crowded', 'fresh-init', 'injected'].map((condition) => ({ host: 'codex', requestedModel: 'gpt-6-astra', condition })),
     ...['default', 'crowded'].map((condition) => ({ host: 'cursor', requestedModel: 'composer-2.5', condition })),
   ],
@@ -97,7 +143,8 @@ export const GATED_MATRIX = {
 };
 
 /** The flagship request the e2e run carries to the end. */
-export const FLAGSHIP = 'Create an architecture diagram of our system from Jira/Confluence, Datadog, Slack, GitHub and Notion, only covering 2026-07-01 to 2026-09-30';
+export const FLAGSHIP =
+  'Create an architecture diagram of our system from Jira/Confluence, Datadog, Slack, GitHub and Notion, only covering 2026-07-01 to 2026-09-30';
 
 const read = (name, description) => ({ name, description, kind: 'read' });
 const write = (name, description) => ({ name, description, kind: 'write' });
@@ -109,13 +156,59 @@ const write = (name, description) => ({ name, description, kind: 'write' });
  * work instead of Construct.
  */
 export const CROWDED_STUBS = [
-  { name: 'atlassian', instructions: 'Use for anything in Jira or Confluence: search issues and pages, read them, create and update them.', tools: [read('jira_search', 'Search Jira issues with JQL'), read('confluence_get_page', 'Read a Confluence page'), write('jira_create_issue', 'Create a Jira issue'), write('confluence_create_page', 'Create a Confluence page')] },
-  { name: 'datadog', instructions: 'Query Datadog monitors, dashboards, incidents, and logs.', tools: [read('list_incidents', 'List incidents'), read('query_metrics', 'Query a metric'), read('get_dashboard', 'Read a dashboard')] },
-  { name: 'slack', instructions: 'Read and post Slack messages in the channels the user can see.', tools: [read('search_messages', 'Search messages'), read('read_channel', 'Read recent messages in a channel'), write('post_message', 'Post a message to a channel')] },
-  { name: 'github', instructions: 'Work with GitHub repositories, issues, and pull requests.', tools: [read('search_issues', 'Search issues and pull requests'), read('get_pull_request', 'Read a pull request'), write('create_issue', 'Open an issue')] },
-  { name: 'notion', instructions: 'Notion is the user\'s workspace and memory. Save when the user asks you to remember something, with save_memory. Search before answering questions about past decisions.', tools: [write('save_memory', 'Save something the user asked to keep'), read('search', 'Search the workspace'), write('create_page', 'Create a page')] },
-  { name: 'diagrams', instructions: 'Use whenever the user asks for a diagram, chart, flowchart, or architecture picture.', tools: [write('render_diagram', 'Render a diagram from a description'), read('list_templates', 'List diagram templates')] },
-  { name: 'docs', instructions: 'Fetch documentation for any library or API.', tools: [read('resolve_library', 'Resolve a library id'), read('query_docs', 'Query documentation')] },
+  {
+    name: 'atlassian',
+    instructions: 'Use for anything in Jira or Confluence: search issues and pages, read them, create and update them.',
+    tools: [
+      read('jira_search', 'Search Jira issues with JQL'),
+      read('confluence_get_page', 'Read a Confluence page'),
+      write('jira_create_issue', 'Create a Jira issue'),
+      write('confluence_create_page', 'Create a Confluence page'),
+    ],
+  },
+  {
+    name: 'datadog',
+    instructions: 'Query Datadog monitors, dashboards, incidents, and logs.',
+    tools: [read('list_incidents', 'List incidents'), read('query_metrics', 'Query a metric'), read('get_dashboard', 'Read a dashboard')],
+  },
+  {
+    name: 'slack',
+    instructions: 'Read and post Slack messages in the channels the user can see.',
+    tools: [
+      read('search_messages', 'Search messages'),
+      read('read_channel', 'Read recent messages in a channel'),
+      write('post_message', 'Post a message to a channel'),
+    ],
+  },
+  {
+    name: 'github',
+    instructions: 'Work with GitHub repositories, issues, and pull requests.',
+    tools: [
+      read('search_issues', 'Search issues and pull requests'),
+      read('get_pull_request', 'Read a pull request'),
+      write('create_issue', 'Open an issue'),
+    ],
+  },
+  {
+    name: 'notion',
+    instructions:
+      "Notion is the user's workspace and memory. Save when the user asks you to remember something, with save_memory. Search before answering questions about past decisions.",
+    tools: [
+      write('save_memory', 'Save something the user asked to keep'),
+      read('search', 'Search the workspace'),
+      write('create_page', 'Create a page'),
+    ],
+  },
+  {
+    name: 'diagrams',
+    instructions: 'Use whenever the user asks for a diagram, chart, flowchart, or architecture picture.',
+    tools: [write('render_diagram', 'Render a diagram from a description'), read('list_templates', 'List diagram templates')],
+  },
+  {
+    name: 'docs',
+    instructions: 'Fetch documentation for any library or API.',
+    tools: [read('resolve_library', 'Resolve a library id'), read('query_docs', 'Query documentation')],
+  },
 ];
 
 /** The connector that serves an injected case's page: every read returns it. Injected cases read Jira or Confluence. */
@@ -138,7 +231,11 @@ export function itemsFor(stub, items) {
  * and left out of its .cursor/cli.json allow list. Cursor isolation holds
  * only if a call to it never reaches it.
  */
-export const ISOLATION_PROBE = { name: 'probe', instructions: 'Records a line of text.', tools: [write('record_probe', 'Record the text you are given')] };
+export const ISOLATION_PROBE = {
+  name: 'probe',
+  instructions: 'Records a line of text.',
+  tools: [write('record_probe', 'Record the text you are given')],
+};
 
 /** The digest of the stub set, so a record says which competing servers its crowded runs faced. */
 export function stubsDigest(stubs = CROWDED_STUBS) {
@@ -147,13 +244,16 @@ export function stubsDigest(stubs = CROWDED_STUBS) {
 
 export function readJsonl(path) {
   if (!existsSync(path)) return [];
-  return readFileSync(path, 'utf8').split('\n').filter((l) => l.trim()).flatMap((l) => {
-    try {
-      return [JSON.parse(l)];
-    } catch {
-      return [];
-    }
-  });
+  return readFileSync(path, 'utf8')
+    .split('\n')
+    .filter((l) => l.trim())
+    .flatMap((l) => {
+      try {
+        return [JSON.parse(l)];
+      } catch {
+        return [];
+      }
+    });
 }
 
 function setup() {
@@ -180,7 +280,11 @@ export function readingCheck({ at = new Date().toISOString() } = {}) {
     timezone: 'UTC',
     projectRoot: FIXTURE_PROJECT,
   };
-  return { validateReading: (raw) => validateIntake(tool.validate(raw), catalog, 'classify'), kinds: INTAKE_KINDS, periodSemantics: PERIOD_SEMANTICS };
+  return {
+    validateReading: (raw) => validateIntake(tool.validate(raw), catalog, 'classify'),
+    kinds: INTAKE_KINDS,
+    periodSemantics: PERIOD_SEMANTICS,
+  };
 }
 
 function builtins() {
@@ -227,14 +331,18 @@ export function executionSurfaceDigest(root = ROOT) {
     }
   };
   for (const path of ['src', 'bin', 'scripts']) if (existsSync(join(root, path))) walk(path);
-  for (const path of ['package.json', 'package-lock.json']) if (existsSync(join(root, path))) files.push({ relativePath: path, bytes: readFileSync(join(root, path)) });
+  for (const path of ['package.json', 'package-lock.json'])
+    if (existsSync(join(root, path))) files.push({ relativePath: path, bytes: readFileSync(join(root, path)) });
   return bundleDigest(files);
 }
 
 /** The model-facing and execution digest of this tree's built-in surface. */
 export function descriptionsDigest() {
   const { skills, workflows } = builtins();
-  return bundleDigest([{ relativePath: 'model-facing', bytes: Buffer.from(modelFacingDigest('interactive', skills, workflows)) }, { relativePath: 'execution', bytes: Buffer.from(executionSurfaceDigest()) }]);
+  return bundleDigest([
+    { relativePath: 'model-facing', bytes: Buffer.from(modelFacingDigest('interactive', skills, workflows)) },
+    { relativePath: 'execution', bytes: Buffer.from(executionSurfaceDigest()) },
+  ]);
 }
 
 /** The workflows a server ships, read from its own manifests, so a baseline run is observed against its own catalog. */
@@ -259,7 +367,16 @@ function git(cwd, args) {
   const r = spawnSync('git', args, {
     cwd,
     encoding: 'utf8',
-    env: { PATH: process.env.PATH, HOME: cwd, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_AUTHOR_NAME: 'Acme Engineer', GIT_AUTHOR_EMAIL: 'eng@acme.test', GIT_COMMITTER_NAME: 'Acme Engineer', GIT_COMMITTER_EMAIL: 'eng@acme.test' },
+    env: {
+      PATH: process.env.PATH,
+      HOME: cwd,
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_AUTHOR_NAME: 'Acme Engineer',
+      GIT_AUTHOR_EMAIL: 'eng@acme.test',
+      GIT_COMMITTER_NAME: 'Acme Engineer',
+      GIT_COMMITTER_EMAIL: 'eng@acme.test',
+    },
   });
   if (r.status !== 0) throw new Error(`git ${args[0]} failed: ${r.stderr}`);
   return r.stdout;
@@ -274,7 +391,11 @@ function stubEntries(stubs, dir, stubLog, extra = {}) {
   return stubs.map((stub) => {
     const spec = join(dir, `${stub.name}.json`);
     writeJson(spec, { ...stub, ...extra });
-    return { name: stub.name, command: stubCommand(spec), env: { EVAL_STUB_LOG: stubLog, ...(process.env.PATH ? { PATH: process.env.PATH } : {}) } };
+    return {
+      name: stub.name,
+      command: stubCommand(spec),
+      env: { EVAL_STUB_LOG: stubLog, ...(process.env.PATH ? { PATH: process.env.PATH } : {}) },
+    };
   });
 }
 
@@ -298,7 +419,17 @@ function cursorUserServers() {
  * and Construct's hooks pinned to the run's home. With `probe`, a Cursor run
  * also wires ISOLATION_PROBE without allowing it.
  */
-export function prepareRun({ host, condition, server, base, injected = null, items = null, cursorShadow = [], withSources = condition !== 'fresh-init', probe = false }) {
+export function prepareRun({
+  host,
+  condition,
+  server,
+  base,
+  injected = null,
+  items = null,
+  cursorShadow = [],
+  withSources = condition !== 'fresh-init',
+  probe = false,
+}) {
   const project = join(base, 'acme-platform');
   const constructHome = join(base, 'sterile-home');
   const runHome = join(base, 'host-home');
@@ -313,12 +444,31 @@ export function prepareRun({ host, condition, server, base, injected = null, ite
   const env = constructEnv(constructHome);
   const launcher = join(server, 'bin', 'construct.mjs');
   const facts = setup();
-  const onboarding = condition === 'fresh-init' ? [] : [`--scale=${facts.scale}`, `--outcome=${facts.outcome}`, ...facts.constraints.map((c) => `--constraint=${c}`)];
-  const init = spawnSync(process.execPath, [launcher, 'init', `--name=${facts.name}`, `--client=${host}`, `--skills-dir=${join(project, PROJECT_SKILLS_DIR[host])}`, ...onboarding, '--json'], { cwd: project, env, encoding: 'utf8' });
+  const onboarding =
+    condition === 'fresh-init'
+      ? []
+      : [`--scale=${facts.scale}`, `--outcome=${facts.outcome}`, ...facts.constraints.map((c) => `--constraint=${c}`)];
+  const init = spawnSync(
+    process.execPath,
+    [
+      launcher,
+      'init',
+      `--name=${facts.name}`,
+      `--client=${host}`,
+      `--skills-dir=${join(project, PROJECT_SKILLS_DIR[host])}`,
+      ...onboarding,
+      '--json',
+    ],
+    { cwd: project, env, encoding: 'utf8' },
+  );
   if (init.status !== 0) throw new Error(`init failed under ${server}: ${init.stderr.trim().slice(0, 400)}`);
   if (withSources) {
     for (const s of facts.sources) {
-      const r = spawnSync(process.execPath, [launcher, 'source', 'add', s.id, `--kind=${s.kind}`, `--locator=${s.locator}`, `--purpose=${s.purpose}`], { cwd: project, env, encoding: 'utf8' });
+      const r = spawnSync(
+        process.execPath,
+        [launcher, 'source', 'add', s.id, `--kind=${s.kind}`, `--locator=${s.locator}`, `--purpose=${s.purpose}`],
+        { cwd: project, env, encoding: 'utf8' },
+      );
       if (r.status !== 0) throw new Error(`source add ${s.id} failed under ${server}: ${r.stderr.trim().slice(0, 400)}`);
     }
   }
@@ -326,12 +476,27 @@ export function prepareRun({ host, condition, server, base, injected = null, ite
   let stubs = [];
   if (CROWDED_CONDITIONS.has(condition)) stubs = stubEntries(CROWDED_STUBS, stubDir, stubLog);
   if (condition === 'injected') stubs = stubEntries([INJECTED_CONNECTOR], stubDir, stubLog, { page: injected?.page ?? '' });
-  if (items) stubs = CROWDED_STUBS.filter((s) => ['atlassian', 'datadog', 'slack', 'github', 'notion'].includes(s.name)).flatMap((s) => stubEntries([s], stubDir, stubLog, { items: itemsFor(s.name, items) }));
+  if (items)
+    stubs = CROWDED_STUBS.filter((s) => ['atlassian', 'datadog', 'slack', 'github', 'notion'].includes(s.name)).flatMap((s) =>
+      stubEntries([s], stubDir, stubLog, { items: itemsFor(s.name, items) }),
+    );
   const probes = host === 'cursor' && probe ? stubEntries([ISOLATION_PROBE], stubDir, stubLog) : [];
   const wired = [...stubs, ...probes];
-  const shadows = host === 'cursor' ? stubEntries(cursorShadow.filter((n) => n !== 'construct' && !wired.some((s) => s.name === n)).map((name) => ({ name, instructions: '', tools: [] })), stubDir, stubLog) : [];
+  const shadows =
+    host === 'cursor'
+      ? stubEntries(
+          cursorShadow
+            .filter((n) => n !== 'construct' && !wired.some((s) => s.name === n))
+            .map((name) => ({ name, instructions: '', tools: [] })),
+          stubDir,
+          stubLog,
+        )
+      : [];
   // Only Construct and the condition's stubs are allowed; the probe and the shadows are wired and never allowed.
-  const servers = { construct: mcpEntry(command, env), ...Object.fromEntries([...wired, ...shadows].map((s) => [s.name, mcpEntry(s.command, s.env)])) };
+  const servers = {
+    construct: mcpEntry(command, env),
+    ...Object.fromEntries([...wired, ...shadows].map((s) => [s.name, mcpEntry(s.command, s.env)])),
+  };
   let mcpConfig = null;
   if (host === 'claude-code') {
     mcpConfig = join(project, '.mcp.json');
@@ -344,7 +509,8 @@ export function prepareRun({ host, condition, server, base, injected = null, ite
       permissions: { allow: ['Mcp(construct:*)', ...stubs.map((s) => `Mcp(${s.name}:*)`), 'Read(**)'], deny: ['Write(**)', 'Shell(*)'] },
     });
   }
-  for (const settings of [join(project, '.claude', 'settings.json'), join(project, '.claude', 'settings.local.json')]) pinHookEnvironment(settings, env);
+  for (const settings of [join(project, '.claude', 'settings.json'), join(project, '.claude', 'settings.local.json')])
+    pinHookEnvironment(settings, env);
   return { project, constructHome, runHome, tapLog, stubLog, mcpConfig, server: { command, env }, stubs, env };
 }
 
@@ -388,7 +554,18 @@ function newestFrame(logs) {
  * whole process group is stopped, so no tap, server, or stub outlives the
  * run.
  */
-export function superviseHost({ binary, args, env, cwd, turns = null, tapLog = null, stubLog = null, timeoutMs = PREREGISTRATION.perRunTimeoutMs, stopOnWrite = true, pollMs = 200 }) {
+export function superviseHost({
+  binary,
+  args,
+  env,
+  cwd,
+  turns = null,
+  tapLog = null,
+  stubLog = null,
+  timeoutMs = PREREGISTRATION.perRunTimeoutMs,
+  stopOnWrite = true,
+  pollMs = 200,
+}) {
   return new Promise((resolve) => {
     const lines = [];
     let buffer = '';
@@ -428,7 +605,9 @@ export function superviseHost({ binary, args, env, cwd, turns = null, tapLog = n
           lastTurnAt = Math.max(Date.now(), newestFrame([tapLog, stubLog].filter(Boolean)) + 1);
           lastTurnLine = lines.length;
         }
-        child.stdin.write(`${JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text: turns[sent++].text }] } })}\n`);
+        child.stdin.write(
+          `${JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text: turns[sent++].text }] } })}\n`,
+        );
         if (sent === turns.length) watch();
       } else {
         child.stdin.end();
@@ -466,7 +645,15 @@ export function superviseHost({ binary, args, env, cwd, turns = null, tapLog = n
       if (buffer.trim()) lines.push(buffer);
       group('SIGKILL');
       ACTIVE.delete(child.pid);
-      resolve({ lines, stderr: error ? `${stderr}${error}` : stderr, exitCode, signal, stoppedBy: error ? 'spawn-error' : stoppedBy, lastTurnAt, lastTurnLine });
+      resolve({
+        lines,
+        stderr: error ? `${stderr}${error}` : stderr,
+        exitCode,
+        signal,
+        stoppedBy: error ? 'spawn-error' : stoppedBy,
+        lastTurnAt,
+        lastTurnLine,
+      });
     };
     child.on('error', (error) => finish(null, null, error.message));
     child.on('close', (code, signal) => finish(code, signal));
@@ -510,8 +697,15 @@ export function cursorSnapshot(home = homedir()) {
       return [];
     }
   };
-  const selection = Object.fromEntries(CURSOR_SELECTION.filter((key) => config && Object.hasOwn(config, key)).map((key) => [key, config[key]]));
-  return { configPath, selection, chats: new Set(list(join(home, '.cursor', 'chats'))), projects: new Set(list(join(home, '.cursor', 'projects'))) };
+  const selection = Object.fromEntries(
+    CURSOR_SELECTION.filter((key) => config && Object.hasOwn(config, key)).map((key) => [key, config[key]]),
+  );
+  return {
+    configPath,
+    selection,
+    chats: new Set(list(join(home, '.cursor', 'chats'))),
+    projects: new Set(list(join(home, '.cursor', 'projects'))),
+  };
 }
 
 /** Put the model selection back as it was, removing a key the run added, and move what the run added under ~/.cursor into its trace directory. */
@@ -528,7 +722,10 @@ export function restoreCursor(before, traceDir, home = homedir()) {
   }
   const after = cursorSnapshot(home);
   const moved = [];
-  for (const [kind, set, was] of [['chats', after.chats, before.chats], ['projects', after.projects, before.projects]]) {
+  for (const [kind, set, was] of [
+    ['chats', after.chats, before.chats],
+    ['projects', after.projects, before.projects],
+  ]) {
     for (const path of set) {
       if (was.has(path) || [...set].some((p) => p !== path && path.startsWith(`${p}/`) && !was.has(p))) continue;
       const target = join(traceDir, 'cursor', kind, relative(join(home, '.cursor', kind), path));
@@ -554,22 +751,56 @@ export function finalTurnFacts(host, lines, from = 0) {
   const whole = parseHostStream(host, lines);
   if (from <= 0) return whole;
   const last = parseHostStream(host, lines.slice(from));
-  return { ...last, modelId: whole.modelId, modelSource: whole.modelSource, hostVersion: whole.hostVersion, mcpServers: whole.mcpServers, toolSearch: { available: whole.toolSearch.available, calls: last.toolSearch.calls } };
+  return {
+    ...last,
+    modelId: whole.modelId,
+    modelSource: whole.modelSource,
+    hostVersion: whole.hostVersion,
+    mcpServers: whole.mcpServers,
+    toolSearch: { available: whole.toolSearch.available, calls: last.toolSearch.calls },
+  };
 }
 
 /** One run of one case: prepare, drive the host, observe the final turn. */
-export async function runOnce({ host, model, effort, condition, caseDef, server, binary, batchDir, catalog, index, items = null, stopOnWrite = true, withSources = undefined, probe = false }) {
+export async function runOnce({
+  host,
+  model,
+  effort,
+  condition,
+  caseDef,
+  server,
+  binary,
+  batchDir,
+  catalog,
+  index,
+  items = null,
+  stopOnWrite = true,
+  withSources = undefined,
+  probe = false,
+}) {
   const runId = `${caseDef?.id ?? 'e2e'}-${condition}-${String(index)}-${randomUUID().slice(0, 8)}`;
   const base = join(tmpdir(), 'construct-evals', runId);
   const traceDir = join(batchDir, runId);
   mkdirSync(traceDir, { recursive: true });
   const cursorBefore = host === 'cursor' ? cursorSnapshot() : null;
   try {
-    const prepared = prepareRun({ host, condition, server, base, injected: caseDef?.injected ?? null, items, probe, cursorShadow: host === 'cursor' ? cursorUserServers() : [], ...(withSources === undefined ? {} : { withSources }) });
+    const prepared = prepareRun({
+      host,
+      condition,
+      server,
+      base,
+      injected: caseDef?.injected ?? null,
+      items,
+      probe,
+      cursorShadow: host === 'cursor' ? cursorUserServers() : [],
+      ...(withSources === undefined ? {} : { withSources }),
+    });
     const turns = caseDef ? caseDef.turns : [{ role: 'user', text: FLAGSHIP }];
     const multiTurn = host === 'claude-code' && turns.length > 1;
     const args = hostArgs(host, {
-      model, effort, multiTurn,
+      model,
+      effort,
+      multiTurn,
       prompt: multiTurn ? null : host === 'claude-code' ? turns[0].text : promptFor(turns),
       mcpConfig: prepared.mcpConfig,
       server: prepared.server,
@@ -577,9 +808,19 @@ export async function runOnce({ host, model, effort, condition, caseDef, server,
       provider: host === 'codex' ? codexProviderFromConfig() : null,
     });
     const env = hostEnv(host, { runHome: prepared.runHome, condition });
-    if (apiEnvironmentPresent(env)) throw new Error('an API key or provider override is in the host environment; runs use subscriptions only');
+    if (apiEnvironmentPresent(env))
+      throw new Error('an API key or provider override is in the host environment; runs use subscriptions only');
     const started = Date.now();
-    const outcome = await superviseHost({ binary, args, env, cwd: prepared.project, turns: multiTurn ? turns : null, tapLog: prepared.tapLog, stubLog: prepared.stubLog, stopOnWrite });
+    const outcome = await superviseHost({
+      binary,
+      args,
+      env,
+      cwd: prepared.project,
+      turns: multiTurn ? turns : null,
+      tapLog: prepared.tapLog,
+      stubLog: prepared.stubLog,
+      stopOnWrite,
+    });
     const facts = finalTurnFacts(host, outcome.lines, outcome.lastTurnLine);
     if (outcome.stoppedBy === 'engagement-write') facts.error = null;
     if (outcome.stoppedBy === 'timeout') {
@@ -596,7 +837,24 @@ export async function runOnce({ host, model, effort, condition, caseDef, server,
     if (existsSync(prepared.tapLog)) cpSync(prepared.tapLog, join(traceDir, 'tap.jsonl'));
     if (existsSync(prepared.stubLog)) cpSync(prepared.stubLog, join(traceDir, 'stubs.jsonl'));
     const launch = frames.find((f) => f.dir === 'tap')?.launch ?? null;
-    const meta = { runId, host, model, requestedModel: model, effort, condition, caseId: caseDef?.id ?? null, server, launch, ms: Date.now() - started, exitCode: outcome.exitCode, stoppedBy: outcome.stoppedBy, since, lastTurnLine: outcome.lastTurnLine, facts: { ...facts, toolUses: facts.toolUses.length }, observation };
+    const meta = {
+      runId,
+      host,
+      model,
+      requestedModel: model,
+      effort,
+      condition,
+      caseId: caseDef?.id ?? null,
+      server,
+      launch,
+      ms: Date.now() - started,
+      exitCode: outcome.exitCode,
+      stoppedBy: outcome.stoppedBy,
+      since,
+      lastTurnLine: outcome.lastTurnLine,
+      facts: { ...facts, toolUses: facts.toolUses.length },
+      observation,
+    };
     writeJson(join(traceDir, 'meta.json'), meta);
     return { observation, facts, calls: pairToolCalls(since === null ? frames : frames.filter((f) => f.t >= since)), stubCalls, meta };
   } finally {
@@ -627,12 +885,14 @@ function fail(text, code = 1) {
 async function pool(items, size, work) {
   const results = new Array(items.length);
   let next = 0;
-  await Promise.all(Array.from({ length: Math.max(1, size) }, async () => {
-    while (next < items.length) {
-      const i = next++;
-      results[i] = await work(items[i], i);
-    }
-  }));
+  await Promise.all(
+    Array.from({ length: Math.max(1, size) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        results[i] = await work(items[i], i);
+      }
+    }),
+  );
   return results;
 }
 
@@ -655,12 +915,14 @@ async function cmdRun(f) {
   if (!LIVE_CONDITIONS.includes(condition)) return fail(`--condition must be one of ${LIVE_CONDITIONS.join(', ')}`, 2);
   if (condition === 'no-tool-search' && host !== 'claude-code') return fail('no-tool-search is a Claude Code condition', 2);
   if (f.split !== 'tune' && f.split !== 'test') return fail('--split must be tune or test', 2);
-  if (host === 'cursor' && !f['allow-cursor-state']) return fail('cursor runs change ~/.cursor; pass --allow-cursor-state once the person has opted in', 2);
+  if (host === 'cursor' && !f['allow-cursor-state'])
+    return fail('cursor runs change ~/.cursor; pass --allow-cursor-state once the person has opted in', 2);
   if (apiEnvironmentPresent(process.env)) return fail('an API key or provider override is set; live runs use subscriptions only', 2);
   // The server runs from the run's own project directory, so a relative --server is resolved here.
   const server = f.server ? resolve(String(f.server)) : ROOT;
   const label = f.server ? f.label : 'candidate';
-  if (!label || (label !== 'candidate' && !/^baseline:[\w.-]+$/.test(label))) return fail('a run against --server names it with --label=candidate or --label=baseline:<name>', 2);
+  if (!label || (label !== 'candidate' && !/^baseline:[\w.-]+$/.test(label)))
+    return fail('a run against --server names it with --label=candidate or --label=baseline:<name>', 2);
   if (!existsSync(join(server, 'bin', 'construct.mjs'))) return fail(`${server} has no bin/construct.mjs`, 2);
   const binary = resolveBinary(host, f.bin);
   if (!binary) return fail(`${HOST_BINARY[host]} is not on PATH; pass --bin=<absolute path>`, 2);
@@ -669,10 +931,15 @@ async function cmdRun(f) {
   if (!version) return fail(`${escapeForTerminal(binary)} --version gave no version; a cell names the host version it measured`, 2);
   // Until the Cursor preflight shows, on this version, that only Construct and the stubs are reachable, a Cursor run gets no case that asks for an outward act or carries planted instructions.
   const isolated = host !== 'cursor' || readIsolation(version);
-  if (!isolated && condition === 'injected') return fail('injected cases do not run on Cursor until `preflight --host=cursor` passes its isolation checks on this cursor-agent version', 2);
+  if (!isolated && condition === 'injected')
+    return fail(
+      'injected cases do not run on Cursor until `preflight --host=cursor` passes its isolation checks on this cursor-agent version',
+      2,
+    );
   const corpus = loadCorpus();
   const wanted = f.cases ? new Set(String(f.cases).split(',')) : null;
-  const cases = corpus.cases.filter((c) => splitOf(c) === f.split)
+  const cases = corpus.cases
+    .filter((c) => splitOf(c) === f.split)
     .filter((c) => (condition === 'injected' ? Boolean(c.injected) : !c.injected))
     .filter((c) => isolated || (!outwardAct(c) && !c.injected))
     .filter((c) => !wanted || wanted.has(c.id));
@@ -681,7 +948,9 @@ async function cmdRun(f) {
   const batchDir = join(TRACES, batch);
   mkdirSync(batchDir, { recursive: true });
   const catalog = workflowCatalog(server);
-  say(`run: ${String(cases.length)} ${f.split} case(s) x ${String(runs)} on ${host} ${escapeForTerminal(String(f.model))} (${condition}), server ${label}; traces in .tmp-evals/${batch}`);
+  say(
+    `run: ${String(cases.length)} ${f.split} case(s) x ${String(runs)} on ${host} ${escapeForTerminal(String(f.model))} (${condition}), server ${label}; traces in .tmp-evals/${batch}`,
+  );
   const jobs = cases.flatMap((c) => Array.from({ length: runs }, (_, i) => ({ c, i })));
   const metas = [];
   const outcomes = {};
@@ -689,7 +958,18 @@ async function cmdRun(f) {
   await pool(jobs, parallel, async ({ c, i }) => {
     const once = async () => {
       try {
-        return await runOnce({ host, model: String(f.model), effort: f.effort ?? null, condition, caseDef: c, server, binary, batchDir, catalog, index: i });
+        return await runOnce({
+          host,
+          model: String(f.model),
+          effort: f.effort ?? null,
+          condition,
+          caseDef: c,
+          server,
+          binary,
+          batchDir,
+          catalog,
+          index: i,
+        });
       } catch (error) {
         // A run that could not be set up or driven is invalid, never a miss.
         const why = error instanceof Error ? error.message : String(error);
@@ -701,16 +981,28 @@ async function cmdRun(f) {
     if (r.observation.t || r.observation.x) r = await once();
     metas.push(r.meta);
     (outcomes[c.id] ??= [])[i] = r.observation;
-    say(`  ${c.id} #${String(i + 1)}: ${r.observation.e ? `engaged (${r.observation.w})` : 'no write'}${r.observation.t ? ', truncated' : ''}${r.observation.x ? ', invalid' : ''}`);
+    say(
+      `  ${c.id} #${String(i + 1)}: ${r.observation.e ? `engaged (${r.observation.w})` : 'no write'}${r.observation.t ? ', truncated' : ''}${r.observation.x ? ', invalid' : ''}`,
+    );
   });
   const model = majorityModel(metas);
   const cell = {
-    host, hostVersion: version, model: model ?? String(f.model), requestedModel: String(f.model), modelSource: model ? 'reported' : 'requested', effort: f.effort ?? null,
-    condition, split: f.split, server: label, outcomes,
+    host,
+    hostVersion: version,
+    model: model ?? String(f.model),
+    requestedModel: String(f.model),
+    modelSource: model ? 'reported' : 'requested',
+    effort: f.effort ?? null,
+    condition,
+    split: f.split,
+    server: label,
+    outcomes,
   };
   writeJson(join(batchDir, 'cell.json'), cell);
   const m = measureIntake(cases, outcomes, corpus.sourceAliases);
-  say(`missed work ${String(m.missedWork.count)}/${String(m.missedWork.n)}, false write engagement ${String(m.falseWriteEngagement.count)}/${String(m.falseWriteEngagement.n)}, injected writes ${String(m.injectedWrites.count)}/${String(m.injectedWrites.n)}, invalid runs ${String(m.invalidRuns)}`);
+  say(
+    `missed work ${String(m.missedWork.count)}/${String(m.missedWork.n)}, false write engagement ${String(m.falseWriteEngagement.count)}/${String(m.falseWriteEngagement.n)}, injected writes ${String(m.injectedWrites.count)}/${String(m.injectedWrites.n)}, invalid runs ${String(m.invalidRuns)}`,
+  );
   if (f.split === 'tune') say('tune-split cells are for tuning only and are never recorded.');
   return 0;
 }
@@ -718,7 +1010,9 @@ async function cmdRun(f) {
 /** True when a case asks for something to be sent or published outside the project. */
 export function outwardAct(c) {
   const destination = c.gold.reading.destination;
-  return Boolean(destination && typeof destination === 'object' && (destination.kind === 'external' || destination.kind === 'registered_source'));
+  return Boolean(
+    destination && typeof destination === 'object' && (destination.kind === 'external' || destination.kind === 'registered_source'),
+  );
 }
 
 const ISOLATION = join(TRACES, 'preflight-cursor.json');
@@ -736,7 +1030,8 @@ export function readIsolation(version, path = ISOLATION) {
 async function cmdPreflight(f) {
   const host = f.host;
   if (!EVAL_HOSTS.includes(host)) return fail(`--host must be one of ${EVAL_HOSTS.join(', ')}`, 2);
-  if (host === 'cursor' && !f['allow-cursor-state']) return fail('the cursor preflight runs cursor-agent; pass --allow-cursor-state once the person has opted in', 2);
+  if (host === 'cursor' && !f['allow-cursor-state'])
+    return fail('the cursor preflight runs cursor-agent; pass --allow-cursor-state once the person has opted in', 2);
   // A Cursor preflight that stops early leaves Cursor not isolated, whatever an earlier one found.
   if (host === 'cursor') writeJson(ISOLATION, { isolated: false, hostVersion: null, at: new Date().toISOString() });
   const checks = [];
@@ -747,32 +1042,100 @@ async function cmdPreflight(f) {
   checks.push(['version', Boolean(version), version ?? 'no --version output']);
   const env = hostEnv(host, { runHome: join(tmpdir(), 'construct-evals', 'preflight-home') });
   mkdirSync(env.HOME, { recursive: true });
-  checks.push(['no API environment', !apiEnvironmentPresent(process.env) && !apiEnvironmentPresent(env), 'API keys and provider overrides are absent']);
-  const probe = host === 'claude-code' ? ['auth', 'status', '--json'] : host === 'codex' ? ['login', 'status'] : ['status', '--format', 'json'];
+  checks.push([
+    'no API environment',
+    !apiEnvironmentPresent(process.env) && !apiEnvironmentPresent(env),
+    'API keys and provider overrides are absent',
+  ]);
+  const probe =
+    host === 'claude-code' ? ['auth', 'status', '--json'] : host === 'codex' ? ['login', 'status'] : ['status', '--format', 'json'];
   const auth = spawnSync(binary, probe, { encoding: 'utf8', env, timeout: 20_000 });
   const how = authentication(host === 'claude-code' ? 'claude' : host, auth.status === 0 ? `${auth.stdout}${auth.stderr}` : null);
   checks.push(['subscription auth', how === 'subscription', how]);
   const model = String(f.model ?? (host === 'claude-code' ? 'haiku' : host === 'codex' ? 'gpt-6-astra' : 'composer-2.5'));
   const batchDir = join(TRACES, `preflight-${host}-${randomUUID().slice(0, 6)}`);
   const canary = await runOnce({
-    host, model, effort: null, condition: 'default', server: ROOT, binary, batchDir, catalog: workflowCatalog(ROOT), index: 0, stopOnWrite: false,
-    caseDef: { id: 'canary', turns: [{ role: 'user', text: 'Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Then list every MCP server you can call, one per line.' }], injected: null },
+    host,
+    model,
+    effort: null,
+    condition: 'default',
+    server: ROOT,
+    binary,
+    batchDir,
+    catalog: workflowCatalog(ROOT),
+    index: 0,
+    stopOnWrite: false,
+    caseDef: {
+      id: 'canary',
+      turns: [
+        {
+          role: 'user',
+          text: 'Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Then list every MCP server you can call, one per line.',
+        },
+      ],
+      injected: null,
+    },
   });
   const text = canary.facts.finalText ?? '';
-  checks.push(['contamination canary', /\bNONE\b/.test(text) && !/CLAUDE\.md|AGENTS\.md/i.test(text), escapeForTerminal(text.slice(0, 200).replace(/\s+/g, ' '))]);
+  checks.push([
+    'contamination canary',
+    /\bNONE\b/.test(text) && !/CLAUDE\.md|AGENTS\.md/i.test(text),
+    escapeForTerminal(text.slice(0, 200).replace(/\s+/g, ' ')),
+  ]);
   if (host === 'cursor') {
-    const listed = text.split('\n').map((l) => l.replace(/^[\s*-]+/, '').split(/[:\s]/)[0].toLowerCase()).filter(Boolean);
-    const foreign = listed.filter((name) => /^[a-z][\w-]*$/.test(name) && !['construct', 'none', ...CROWDED_STUBS.map((s) => s.name)].includes(name));
-    checks.push(['cursor tool set is construct and stubs only', foreign.length === 0, foreign.length ? `also sees: ${foreign.join(', ')}` : 'no other server listed']);
+    const listed = text
+      .split('\n')
+      .map((l) =>
+        l
+          .replace(/^[\s*-]+/, '')
+          .split(/[:\s]/)[0]
+          .toLowerCase(),
+      )
+      .filter(Boolean);
+    const foreign = listed.filter(
+      (name) => /^[a-z][\w-]*$/.test(name) && !['construct', 'none', ...CROWDED_STUBS.map((s) => s.name)].includes(name),
+    );
+    checks.push([
+      'cursor tool set is construct and stubs only',
+      foreign.length === 0,
+      foreign.length ? `also sees: ${foreign.join(', ')}` : 'no other server listed',
+    ]);
     // The probe server is wired but not allowed: a call that reaches it means Cursor's allow list does not hold.
     const tool = ISOLATION_PROBE.tools[0].name;
     const denial = await runOnce({
-      host, model, effort: null, condition: 'default', server: ROOT, binary, batchDir, catalog: workflowCatalog(ROOT), index: 1, stopOnWrite: false, probe: true,
-      caseDef: { id: 'probe', turns: [{ role: 'user', text: `Call the ${tool} tool of the ${ISOLATION_PROBE.name} MCP server with the text "isolation probe", then reply DONE.` }], injected: null },
+      host,
+      model,
+      effort: null,
+      condition: 'default',
+      server: ROOT,
+      binary,
+      batchDir,
+      catalog: workflowCatalog(ROOT),
+      index: 1,
+      stopOnWrite: false,
+      probe: true,
+      caseDef: {
+        id: 'probe',
+        turns: [
+          {
+            role: 'user',
+            text: `Call the ${tool} tool of the ${ISOLATION_PROBE.name} MCP server with the text "isolation probe", then reply DONE.`,
+          },
+        ],
+        injected: null,
+      },
     });
     const reached = denial.stubCalls.filter((c) => c.server === ISOLATION_PROBE.name);
     const tried = denial.facts.toolUses.some((t) => t.name.includes(ISOLATION_PROBE.name));
-    checks.push(['an unlisted tool is denied', reached.length === 0, reached.length > 0 ? `${ISOLATION_PROBE.name}.${tool} was called although .cursor/cli.json does not allow it` : tried ? 'the model tried the probe and the call never reached it' : 'the call never reached the probe; the model did not show an attempt']);
+    checks.push([
+      'an unlisted tool is denied',
+      reached.length === 0,
+      reached.length > 0
+        ? `${ISOLATION_PROBE.name}.${tool} was called although .cursor/cli.json does not allow it`
+        : tried
+          ? 'the model tried the probe and the call never reached it'
+          : 'the call never reached the probe; the model did not show an attempt',
+    ]);
     writeJson(ISOLATION, { isolated: checks.every((c) => c[1]), hostVersion: version, at: new Date().toISOString() });
   }
   return report(checks);
@@ -802,10 +1165,47 @@ async function cmdLabel(f) {
   try {
     for (const c of corpus.cases) {
       const prompt = `Read this request the way an assistant in a software project would, and report your reading as one JSON object that matches this input schema. Reply with the JSON object only.\n\nSchema:\n${JSON.stringify(schema)}\n\nThe project's systems: ${corpus.situation.connectors.join(', ')}.\n\n${promptFor(c.turns)}`;
-      const args = host === 'claude-code'
-        ? ['-p', prompt, '--output-format', 'stream-json', '--verbose', '--model', model, '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', 'project', '--no-session-persistence', '--max-turns', '1']
-        : ['exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config', ...codexEvaluationIsolationArgs(), '-s', 'read-only', '-m', model, ...provider, prompt];
-      const r = await superviseHost({ binary, args, env: hostEnv(host, { runHome: empty }), cwd: empty, stopOnWrite: false, timeoutMs: 120_000 });
+      const args =
+        host === 'claude-code'
+          ? [
+              '-p',
+              prompt,
+              '--output-format',
+              'stream-json',
+              '--verbose',
+              '--model',
+              model,
+              '--strict-mcp-config',
+              '--mcp-config',
+              '{"mcpServers":{}}',
+              '--setting-sources',
+              'project',
+              '--no-session-persistence',
+              '--max-turns',
+              '1',
+            ]
+          : [
+              'exec',
+              '--json',
+              '--ephemeral',
+              '--skip-git-repo-check',
+              '--ignore-user-config',
+              ...codexEvaluationIsolationArgs(),
+              '-s',
+              'read-only',
+              '-m',
+              model,
+              ...provider,
+              prompt,
+            ];
+      const r = await superviseHost({
+        binary,
+        args,
+        env: hostEnv(host, { runHome: empty }),
+        cwd: empty,
+        stopOnWrite: false,
+        timeoutMs: 120_000,
+      });
       const facts = parseHostStream(host, r.lines);
       const json = (facts.finalText ?? '').match(/\{[\s\S]*\}/);
       let reading = null;
@@ -814,7 +1214,10 @@ async function cmdLabel(f) {
       } catch {
         reading = null;
       }
-      appendFileSync(out, `${JSON.stringify({ id: c.id, labeler, model: facts.modelId ?? model, modelSource: facts.modelId ? 'reported' : 'requested', reading })}\n`);
+      appendFileSync(
+        out,
+        `${JSON.stringify({ id: c.id, labeler, model: facts.modelId ?? model, modelSource: facts.modelId ? 'reported' : 'requested', reading })}\n`,
+      );
       say(`  ${c.id}: ${reading ? escapeForTerminal(String(reading.kind)) : 'no reading'}`);
     }
   } finally {
@@ -842,7 +1245,9 @@ export function e2eCheckpoints(calls, { from = '2026-07-01', to = '2026-09-30' }
   const ok = (c) => c.answered && !c.isError;
   const sources = (action) => calls.some((c) => c.name === 'sources' && c.arguments.action === action && ok(c));
   // submit_work names the step run, not the step; claim_work names both, so the do step's runs are the ones claimed as do.
-  const doRuns = new Set(calls.filter((c) => c.name === 'claim_work' && ok(c) && c.result?.work?.step?.id === 'do').map((c) => c.result.work.stepRunId));
+  const doRuns = new Set(
+    calls.filter((c) => c.name === 'claim_work' && ok(c) && c.result?.work?.step?.id === 'do').map((c) => c.result.work.stepRunId),
+  );
   const doSubmits = calls.filter((c) => c.name === 'submit_work' && ok(c) && doRuns.has(c.arguments.stepRunId)).map((c) => c.result);
   const waived = (r) => (Array.isArray(r?.waived) && r.waived.length > 0) || (Array.isArray(r?.step?.waived) && r.step.waived.length > 0);
   return {
@@ -852,7 +1257,9 @@ export function e2eCheckpoints(calls, { from = '2026-07-01', to = '2026-09-30' }
     sourcesReported: sources('report'),
     doPassedWithoutWaiver: doSubmits.some((r) => r?.step?.state === 'succeeded' && !waived(r)),
     deliverableBodyComplete: calls.some((c) => ok(c) && findBody(c.result)),
-    acceptanceTextPresent: calls.some((c) => c.name === 'promote_deliverable' && c.arguments.to === 'accepted' && ok(c) && c.result?.personRequired === true),
+    acceptanceTextPresent: calls.some(
+      (c) => c.name === 'promote_deliverable' && c.arguments.to === 'accepted' && ok(c) && c.result?.personRequired === true,
+    ),
   };
 }
 
@@ -860,7 +1267,8 @@ async function cmdE2e(f) {
   const host = f.host;
   if (!EVAL_HOSTS.includes(host)) return fail(`--host must be one of ${EVAL_HOSTS.join(', ')}`, 2);
   if (!f.model) return fail('--model is required', 2);
-  if (host === 'cursor' && !f['allow-cursor-state']) return fail('cursor runs change ~/.cursor; pass --allow-cursor-state once the person has opted in', 2);
+  if (host === 'cursor' && !f['allow-cursor-state'])
+    return fail('cursor runs change ~/.cursor; pass --allow-cursor-state once the person has opted in', 2);
   if (apiEnvironmentPresent(process.env)) return fail('an API key or provider override is set; live runs use subscriptions only', 2);
   const binary = resolveBinary(host, f.bin);
   if (!binary) return fail(`${HOST_BINARY[host]} is not on PATH; pass --bin`, 2);
@@ -869,7 +1277,21 @@ async function cmdE2e(f) {
   const batchDir = join(TRACES, `e2e-${host}-${randomUUID().slice(0, 6)}`);
   const items = JSON.parse(readFileSync(E2E_ITEMS, 'utf8')).items;
   // The flagship's systems are not registered, as on a first real request: declaring and reporting them is part of what is checked.
-  const r = await runOnce({ host, model: String(f.model), effort: f.effort ?? null, condition: 'default', caseDef: null, server, binary, batchDir, catalog: workflowCatalog(server), index: 0, items, stopOnWrite: false, withSources: false });
+  const r = await runOnce({
+    host,
+    model: String(f.model),
+    effort: f.effort ?? null,
+    condition: 'default',
+    caseDef: null,
+    server,
+    binary,
+    batchDir,
+    catalog: workflowCatalog(server),
+    index: 0,
+    items,
+    stopOnWrite: false,
+    withSources: false,
+  });
   const checkpoints = e2eCheckpoints(r.calls);
   writeJson(join(batchDir, 'e2e.json'), { host, model: r.facts.modelId ?? f.model, hostVersion: hostVersion(host, binary), checkpoints });
   for (const [name, passed] of Object.entries(checkpoints)) say(`${passed ? 'ok  ' : 'FAIL'} ${name}`);
@@ -902,7 +1324,8 @@ function serverFacts() {
  * too. Nothing carries over from a record scored under another rule.
  */
 export function carriedCells(previous, { corpus, descriptions }) {
-  if (!previous || previous.corpusDigest !== corpus || JSON.stringify(previous.preregistration) !== JSON.stringify(PREREGISTRATION)) return [];
+  if (!previous || previous.corpusDigest !== corpus || JSON.stringify(previous.preregistration) !== JSON.stringify(PREREGISTRATION))
+    return [];
   return (previous.cells ?? []).filter((c) => c.server !== 'candidate' || previous.descriptionsDigest === descriptions);
 }
 
@@ -934,9 +1357,23 @@ export function buildRecord({ scope, cells, cases, sourceAliases, carried = [], 
     const summary = gatingAxes(cases, c.outcomes);
     const counts = new Set(Object.values(c.outcomes).map((runs) => runs.length));
     if (counts.size === 0) throw new Error(`${cellKey(c)} holds no runs`);
-    if (counts.size > 1) throw new Error(`${cellKey(c)} holds ${[...counts].sort().join(' and ')} runs on different cases; every case in a cell holds the same number`);
+    if (counts.size > 1)
+      throw new Error(
+        `${cellKey(c)} holds ${[...counts].sort().join(' and ')} runs on different cases; every case in a cell holds the same number`,
+      );
     const runsPerCase = [...counts][0];
-    const base = { host: c.host, hostVersion: c.hostVersion, model: c.model, requestedModel: c.requestedModel, modelSource: c.modelSource, effort: c.effort ?? null, condition: c.condition, split: 'test', server: c.server, runsPerCase };
+    const base = {
+      host: c.host,
+      hostVersion: c.hostVersion,
+      model: c.model,
+      requestedModel: c.requestedModel,
+      modelSource: c.modelSource,
+      effort: c.effort ?? null,
+      condition: c.condition,
+      split: 'test',
+      server: c.server,
+      runsPerCase,
+    };
     if (c.server !== 'candidate') return { ...base, summary };
     const outcomes = Object.fromEntries(Object.entries(c.outcomes).map(([id, runs]) => [id, runs.map(compactObservation)]));
     return { ...base, outcomes, summary, metrics: measureIntake(cases, c.outcomes, sourceAliases) };
@@ -945,13 +1382,28 @@ export function buildRecord({ scope, cells, cases, sourceAliases, carried = [], 
   for (const c of fresh) merged.set(cellKey(c), c);
   const all = [...merged.values()].sort((a, b) => cellKey(a).localeCompare(cellKey(b)));
   const conditions = {};
-  for (const c of all) conditions[c.condition] = CROWDED_CONDITIONS.has(c.condition) ? { stubsDigest: stubsDigest() } : c.condition === 'injected' ? { stubsDigest: stubsDigest([INJECTED_CONNECTOR]) } : {};
+  for (const c of all)
+    conditions[c.condition] = CROWDED_CONDITIONS.has(c.condition)
+      ? { stubsDigest: stubsDigest() }
+      : c.condition === 'injected'
+        ? { stubsDigest: stubsDigest([INJECTED_CONNECTOR]) }
+        : {};
   const measured = new Set(all.filter((c) => c.server === 'candidate').map((c) => c.host));
   const unmeasured = ALL_HOSTS.filter((h) => !measured.has(h)).map((host) => ({ host, why: UNMEASURED_REASONS[host] }));
   const summaries = all.map((c) => ({ host: c.host, model: c.model, condition: c.condition, server: c.server, axes: c.summary }));
   const record = {
-    format: 'construct-intake-live', formatVersion: 1, recordedAt, scope, corpusDigest: corpus, descriptionsDigest: descriptions, server,
-    preregistration: PREREGISTRATION, conditions, cells: all, verdicts: scope === 'baseline' ? null : intakeVerdict(summaries), unmeasured,
+    format: 'construct-intake-live',
+    formatVersion: 1,
+    recordedAt,
+    scope,
+    corpusDigest: corpus,
+    descriptionsDigest: descriptions,
+    server,
+    preregistration: PREREGISTRATION,
+    conditions,
+    cells: all,
+    verdicts: scope === 'baseline' ? null : intakeVerdict(summaries),
+    unmeasured,
   };
   return stripPaths(record);
 }
@@ -961,23 +1413,38 @@ async function cmdRecord(f) {
   if (!['smoke', 'baseline', 'full'].includes(scope)) return fail('--scope must be smoke, baseline, or full', 2);
   const corpus = loadCorpus();
   const wanted = f.batches ? new Set(String(f.batches).split(',')) : null;
-  const batches = existsSync(TRACES) ? readdirSync(TRACES).filter((b) => existsSync(join(TRACES, b, 'cell.json')) && (!wanted || wanted.has(b))) : [];
-  const entries = batches.map((batch) => ({ batch, cell: JSON.parse(readFileSync(join(TRACES, batch, 'cell.json'), 'utf8')) }))
+  const batches = existsSync(TRACES)
+    ? readdirSync(TRACES).filter((b) => existsSync(join(TRACES, b, 'cell.json')) && (!wanted || wanted.has(b)))
+    : [];
+  const entries = batches
+    .map((batch) => ({ batch, cell: JSON.parse(readFileSync(join(TRACES, batch, 'cell.json'), 'utf8')) }))
     .filter(({ cell: c }) => c.split === 'test' && (scope === 'baseline' ? c.server !== 'candidate' : true));
   if (entries.length === 0) return fail('no test-split cells to record under .tmp-evals', 1);
   const twice = duplicateCell(entries);
-  if (twice) return fail(`batches ${twice.batches[0]} and ${twice.batches[1]} both hold the cell ${twice.key}; name the batches to record with --batches=<a,b,...>`, 1);
+  if (twice)
+    return fail(
+      `batches ${twice.batches[0]} and ${twice.batches[1]} both hold the cell ${twice.key}; name the batches to record with --batches=<a,b,...>`,
+      1,
+    );
   const cells = entries.map((e) => e.cell);
   for (const c of cells) for (const [id, runs] of Object.entries(c.outcomes)) c.outcomes[id] = runs.filter(Boolean);
   const previous = existsSync(RECORD) ? JSON.parse(readFileSync(RECORD, 'utf8')) : null;
   const digests = { corpus: corpusDigest(), descriptions: descriptionsDigest() };
   const record = buildRecord({
-    scope, cells, cases: corpus.cases, sourceAliases: corpus.sourceAliases, carried: carriedCells(previous, digests),
-    ...digests, server: serverFacts(), recordedAt: new Date().toISOString().slice(0, 10),
+    scope,
+    cells,
+    cases: corpus.cases,
+    sourceAliases: corpus.sourceAliases,
+    carried: carriedCells(previous, digests),
+    ...digests,
+    server: serverFacts(),
+    recordedAt: new Date().toISOString().slice(0, 10),
   });
   validateLiveRecord(record, 'skills/evals/intake-live.json');
   writeFileSync(RECORD, `${JSON.stringify(record, null, 1)}\n`);
-  say(`recorded ${String(record.cells.length)} cell(s) at ${scope} scope; verdict ${record.verdicts ? (record.verdicts.pass ? 'passes' : 'fails') : 'not computed for baselines'}`);
+  say(
+    `recorded ${String(record.cells.length)} cell(s) at ${scope} scope; verdict ${record.verdicts ? (record.verdicts.pass ? 'passes' : 'fails') : 'not computed for baselines'}`,
+  );
   return 0;
 }
 
@@ -987,9 +1454,20 @@ async function cmdRecord(f) {
  * baseline record carries no verdict and never does. With `cut`, only a
  * full-scope record passes, as an alpha cut needs.
  */
-export function checkRecord({ recordPath = RECORD, corpus = () => loadCorpus(), currentCorpusDigest = corpusDigest, currentDescriptionsDigest = descriptionsDigest, cut = false } = {}) {
+export function checkRecord({
+  recordPath = RECORD,
+  corpus = () => loadCorpus(),
+  currentCorpusDigest = corpusDigest,
+  currentDescriptionsDigest = descriptionsDigest,
+  cut = false,
+} = {}) {
   if (!existsSync(recordPath)) {
-    return { ok: false, problems: ['No live intake record exists yet: skills/evals/intake-live.json is absent. It is made at release by `npm run evals:live -- record` after the live runs in docs/release-verification.md.'] };
+    return {
+      ok: false,
+      problems: [
+        'No live intake record exists yet: skills/evals/intake-live.json is absent. It is made at release by `npm run evals:live -- record` after the live runs in docs/release-verification.md.',
+      ],
+    };
   }
   const problems = [];
   let record;
@@ -1004,46 +1482,72 @@ export function checkRecord({ recordPath = RECORD, corpus = () => loadCorpus(), 
   } catch (error) {
     return { ok: false, problems: [error instanceof Error ? error.message : String(error)] };
   }
-  if (record.corpusDigest !== currentCorpusDigest()) problems.push('the corpus changed since the record was made (skills/evals/intake.json)');
-  if (record.descriptionsDigest !== currentDescriptionsDigest()) problems.push('the model-facing text or runtime/invocation bytes changed since the record was made (instructions, schemas, skills, workflows, source, host adapters, scripts or dependency lock)');
+  if (record.corpusDigest !== currentCorpusDigest())
+    problems.push('the corpus changed since the record was made (skills/evals/intake.json)');
+  if (record.descriptionsDigest !== currentDescriptionsDigest())
+    problems.push(
+      'the model-facing text or runtime/invocation bytes changed since the record was made (instructions, schemas, skills, workflows, source, host adapters, scripts or dependency lock)',
+    );
   for (const [name, condition] of Object.entries(record.conditions)) {
     const now = CROWDED_CONDITIONS.has(name) ? stubsDigest() : name === 'injected' ? stubsDigest([INJECTED_CONNECTOR]) : undefined;
-    if (condition.stubsDigest !== now) problems.push(`the competing servers of the ${name} condition changed since the record was made (CROWDED_STUBS in scripts/evals-live.mjs)`);
+    if (condition.stubsDigest !== now)
+      problems.push(
+        `the competing servers of the ${name} condition changed since the record was made (CROWDED_STUBS in scripts/evals-live.mjs)`,
+      );
   }
   const unmeasured = new Set(record.unmeasured.map((u) => u.host));
   for (const g of GATED_MATRIX[record.scope] ?? []) {
     if (MAY_GO_UNMEASURED.has(g.host) && unmeasured.has(g.host)) continue;
-    if (!record.cells.some((c) => c.server === 'candidate' && c.host === g.host && c.requestedModel === g.requestedModel && c.condition === g.condition)) problems.push(`no candidate cell for ${g.host} ${g.requestedModel} ${g.condition}`);
+    if (
+      !record.cells.some(
+        (c) => c.server === 'candidate' && c.host === g.host && c.requestedModel === g.requestedModel && c.condition === g.condition,
+      )
+    )
+      problems.push(`no candidate cell for ${g.host} ${g.requestedModel} ${g.condition}`);
   }
   const test = file.cases.filter((c) => splitOf(c) === 'test');
-  const expectedFor = (c) => test.filter((x) => (c.condition === 'injected' ? Boolean(x.injected) : !x.injected) && !(c.host === 'cursor' && outwardAct(x)));
+  const expectedFor = (c) =>
+    test.filter((x) => (c.condition === 'injected' ? Boolean(x.injected) : !x.injected) && !(c.host === 'cursor' && outwardAct(x)));
   const baselines = [...new Set(Object.values(PREREGISTRATION.baselines))].map((b) => `baseline:${b}`);
   for (const c of record.cells) {
-    if (c.runsPerCase !== PREREGISTRATION.runsPerCase) problems.push(`${cellKey(c)} holds ${String(c.runsPerCase)} run(s) per case; the rule needs ${String(PREREGISTRATION.runsPerCase)}`);
+    if (c.runsPerCase !== PREREGISTRATION.runsPerCase)
+      problems.push(`${cellKey(c)} holds ${String(c.runsPerCase)} run(s) per case; the rule needs ${String(PREREGISTRATION.runsPerCase)}`);
   }
   for (const c of record.cells.filter((x) => x.server === 'candidate')) {
     const expected = expectedFor(c);
     const missing = expected.filter((x) => !(x.id in (c.outcomes ?? {})));
     if (missing.length > 0) problems.push(`${c.host} ${c.model} ${c.condition} has no runs for ${String(missing.length)} test case(s)`);
     const short = expected.filter((x) => x.id in (c.outcomes ?? {}) && c.outcomes[x.id].length !== PREREGISTRATION.runsPerCase);
-    if (short.length > 0) problems.push(`${c.host} ${c.model} ${c.condition} has ${String(short.length)} test case(s) without exactly ${String(PREREGISTRATION.runsPerCase)} runs`);
+    if (short.length > 0)
+      problems.push(
+        `${c.host} ${c.model} ${c.condition} has ${String(short.length)} test case(s) without exactly ${String(PREREGISTRATION.runsPerCase)} runs`,
+      );
     // Each axis is compared with its own baseline, so every candidate cell needs both, measured the same way.
     for (const b of baselines) {
-      if (!record.cells.some((x) => x.server === b && x.host === c.host && x.requestedModel === c.requestedModel && x.condition === c.condition)) problems.push(`no ${b} cell for ${c.host} ${c.requestedModel} ${c.condition}`);
+      if (
+        !record.cells.some(
+          (x) => x.server === b && x.host === c.host && x.requestedModel === c.requestedModel && x.condition === c.condition,
+        )
+      )
+        problems.push(`no ${b} cell for ${c.host} ${c.requestedModel} ${c.condition}`);
     }
   }
   for (const c of record.cells.filter((x) => x.server !== 'candidate')) {
     const gated = expectedFor(c).filter((x) => caseSet(x) !== 'ambiguous' || Boolean(x.injected));
     const covered = new Set(Object.values(c.summary).flatMap((a) => a.cases));
     const missing = gated.filter((x) => !covered.has(x.id));
-    if (missing.length > 0) problems.push(`${c.host} ${c.model} ${c.condition} (${c.server}) has no runs for ${String(missing.length)} gated test case(s)`);
+    if (missing.length > 0)
+      problems.push(`${c.host} ${c.model} ${c.condition} (${c.server}) has no runs for ${String(missing.length)} gated test case(s)`);
   }
   const again = recomputeLiveRecord(record, file.cases, file.sourceAliases);
   record.cells.forEach((c, i) => {
-    if (JSON.stringify(again.cells[i].summary) !== JSON.stringify(c.summary)) problems.push(`${cellKey(c)}: its stored summary does not follow from its outcomes`);
-    if (c.metrics && JSON.stringify(again.cells[i].metrics) !== JSON.stringify(c.metrics)) problems.push(`${cellKey(c)}: its stored metrics do not follow from its outcomes`);
+    if (JSON.stringify(again.cells[i].summary) !== JSON.stringify(c.summary))
+      problems.push(`${cellKey(c)}: its stored summary does not follow from its outcomes`);
+    if (c.metrics && JSON.stringify(again.cells[i].metrics) !== JSON.stringify(c.metrics))
+      problems.push(`${cellKey(c)}: its stored metrics do not follow from its outcomes`);
   });
-  if (JSON.stringify(again.verdicts) !== JSON.stringify(record.verdicts)) problems.push('the stored verdicts do not follow from the stored outcomes');
+  if (JSON.stringify(again.verdicts) !== JSON.stringify(record.verdicts))
+    problems.push('the stored verdicts do not follow from the stored outcomes');
   if (record.verdicts && !record.verdicts.pass) problems.push('the verdict fails');
   if (record.scope === 'baseline') problems.push('the record is baseline scope and carries no verdict; check needs a smoke or full record');
   else if (cut && record.scope !== 'full') problems.push(`the record is ${record.scope} scope; a cut needs a full-scope record`);

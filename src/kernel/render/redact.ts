@@ -83,10 +83,14 @@ export function redact(value: string): string {
   // entropy to the domain suffix plus a versioned path used to destroy ordinary
   // references. Still inspect each component and the full query/fragment, and
   // never retain userinfo. This is heuristic redaction, not secret detection proof.
-  const candidate = (text: string) => text.replace(TOKEN_CANDIDATE, (run) => looksLikeToken(run) ? REDACTION_PLACEHOLDER : run);
+  const candidate = (text: string) => text.replace(TOKEN_CANDIDATE, (run) => (looksLikeToken(run) ? REDACTION_PLACEHOLDER : run));
   const component = (text: string): string => {
     let decoded = text;
-    try { decoded = decodeURIComponent(text); } catch { /* keep malformed text */ }
+    try {
+      decoded = decodeURIComponent(text);
+    } catch {
+      /* keep malformed text */
+    }
     if (hasKnownSecret(decoded) || candidate(decoded) !== decoded) return REDACTION_PLACEHOLDER;
     return text;
   };
@@ -101,5 +105,5 @@ export function redact(value: string): string {
 }
 
 export function hasKnownSecret(value: string): boolean {
-  return KNOWN_SHAPES.some(shape => new RegExp(shape.source, shape.flags.replace('g', '')).test(value));
+  return KNOWN_SHAPES.some((shape) => new RegExp(shape.source, shape.flags.replace('g', '')).test(value));
 }

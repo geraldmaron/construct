@@ -9,7 +9,17 @@ import assert from 'node:assert/strict';
 import { createSkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../../../src/kernel/registry/workflow-registry.ts';
 
-export const PACKS = ['software-engineering', 'system-architecture', 'product-management', 'experience-design', 'program-delivery', 'operations-reliability', 'security-privacy', 'strategy-research', 'governance-risk'] as const;
+export const PACKS = [
+  'software-engineering',
+  'system-architecture',
+  'product-management',
+  'experience-design',
+  'program-delivery',
+  'operations-reliability',
+  'security-privacy',
+  'strategy-research',
+  'governance-risk',
+] as const;
 
 const skills = createSkillRegistry({ projectDir: null });
 const workflows = createWorkflowRegistry({ projectDir: null });
@@ -22,7 +32,14 @@ test('nine professional packs ship, each complete', () => {
     assert.ok(pack, `${id} is registered`);
     assert.equal(pack.manifest.category, 'professional');
     const body = skills.body(id)!;
-    for (const heading of ['## 1. Scope', '## 2. Obligations', '## 3. Doctrine', '## 4. Procedure', '## 5. Checks', '## 6. Limits and escalation']) {
+    for (const heading of [
+      '## 1. Scope',
+      '## 2. Obligations',
+      '## 3. Doctrine',
+      '## 4. Procedure',
+      '## 5. Checks',
+      '## 6. Limits and escalation',
+    ]) {
       assert.ok(body.includes(heading), `${id} has ${heading}`);
     }
     assert.match(body, /[Ss]tand down/, `${id} says when to stand down`);
@@ -30,11 +47,16 @@ test('nine professional packs ship, each complete', () => {
     for (const file of ['references/sources.md', 'references/obligations.md', 'evals/fixtures.json']) {
       assert.ok(pack.files.includes(file), `${id} ships ${file}`);
     }
-    assert.ok(pack.files.some((f) => f.startsWith('assets/') && f.endsWith('.md')), `${id} ships a template`);
+    assert.ok(
+      pack.files.some((f) => f.startsWith('assets/') && f.endsWith('.md')),
+      `${id} ships a template`,
+    );
     const sources = text(id, 'references/sources.md');
     assert.ok((sources.match(/^- /gm) ?? []).length >= 4, `${id} cites at least four sources`);
     assert.match(sources, /verified: not opened in this build/i, `${id} says plainly its citations were not re-opened`);
-    const fixtures = JSON.parse(text(id, 'evals/fixtures.json')) as { cases: { kind: string; input: string; expect: Record<string, unknown> }[] };
+    const fixtures = JSON.parse(text(id, 'evals/fixtures.json')) as {
+      cases: { kind: string; input: string; expect: Record<string, unknown> }[];
+    };
     const kinds = new Set(fixtures.cases.map((c) => c.kind));
     for (const k of ['positive', 'negative', 'edge', 'adversarial']) assert.ok(kinds.has(k), `${id} fixtures cover ${k}`);
     assert.ok(pack.manifest.requiredValidators.length > 0, `${id} requires at least one validator wherever it is bound`);
@@ -47,7 +69,12 @@ test('nine professional packs ship, each complete', () => {
 test('the governance pack never owns a licensed judgment and every pack refuses to invent doctrine', () => {
   const g = skills.get('governance-risk')!;
   assert.notEqual(g.manifest.maxTier, 'licensed_judgment', 'no step may apply it at licensed_judgment');
-  assert.match(skills.body('governance-risk')!, /tax treatment, and audit opinions are licensed/, 'the body names the licensed judgments it prepares and never gives');
+  assert.match(
+    skills.body('governance-risk')!,
+    /tax treatment, and audit opinions are licensed/,
+    'the body names the licensed judgments it prepares and never gives',
+  );
   assert.match(skills.body('governance-risk')!, /research and issue-spotting, not legal, tax, or financial\s+advice/i);
-  for (const id of PACKS) assert.match(skills.body(id)!, /never\s+invent|do not\s+invent|not\s+invented/i, `${id} forbids invented doctrine`);
+  for (const id of PACKS)
+    assert.match(skills.body(id)!, /never\s+invent|do not\s+invent|not\s+invented/i, `${id} forbids invented doctrine`);
 });

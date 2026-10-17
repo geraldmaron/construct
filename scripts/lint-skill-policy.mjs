@@ -45,10 +45,7 @@ for (const file of files) {
   if (lines.length > HARD_MAX_LINES) {
     fail(file, `${lines.length} lines — hard ceiling ${HARD_MAX_LINES}; move bulk into references/`);
   } else if (lines.length > SOFT_MAX_LINES) {
-    warn(
-      file,
-      `${lines.length} lines — over soft target ${SOFT_MAX_LINES}; prefer progressive disclosure`,
-    );
+    warn(file, `${lines.length} lines — over soft target ${SOFT_MAX_LINES}; prefer progressive disclosure`);
   }
 
   if (!/stand[- ]down|stand[s]? down/i.test(body)) {
@@ -60,7 +57,4 @@ if (violations > 0) {
   console.error(`\n${violations} skill-policy violation(s).`);
   process.exit(1);
 }
-console.log(
-  `lint-skill-policy: clean — ${files.length} method skill(s)` +
-    (warnings > 0 ? `, ${warnings} soft-target warning(s)` : ''),
-);
+console.log(`lint-skill-policy: clean — ${files.length} method skill(s)` + (warnings > 0 ? `, ${warnings} soft-target warning(s)` : ''));

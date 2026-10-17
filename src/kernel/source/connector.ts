@@ -64,7 +64,12 @@ export interface PreviousItem {
   readonly attributes?: Readonly<Record<string, unknown>>;
 }
 
-export type SourceReader = (input: { readonly sourceId: string; readonly kind: string; readonly locator: string | null; readonly previous?: readonly PreviousItem[] }) => Promise<ReadOutcome>;
+export type SourceReader = (input: {
+  readonly sourceId: string;
+  readonly kind: string;
+  readonly locator: string | null;
+  readonly previous?: readonly PreviousItem[];
+}) => Promise<ReadOutcome>;
 
 export const BUILTIN_CONNECTOR_DECLARATIONS: readonly ConnectorDeclaration[] = Object.freeze([
   {
@@ -131,6 +136,8 @@ export function connectorDeclaration(id: string): ConnectorDeclaration | null {
 /** A one-paragraph description a person can read before trusting a source. */
 export function describeConnector(c: ConnectorDeclaration): string {
   const rw = c.read && c.write ? 'reads and writes' : c.read ? 'reads only' : c.write ? 'writes only' : 'neither reads nor writes';
-  const mistaken = c.commonlyMistakenFor.length ? ` It is not authoritative for ${c.commonlyMistakenFor.join(', ')} unless you say so.` : '';
+  const mistaken = c.commonlyMistakenFor.length
+    ? ` It is not authoritative for ${c.commonlyMistakenFor.join(', ')} unless you say so.`
+    : '';
   return `${c.id} ${rw} a ${c.systemKind} system and can supply ${c.supplies.join(', ')}.${mistaken} Credentials stay with the ${c.credentialSource}. ${c.notes}`;
 }

@@ -8,14 +8,7 @@
 
 import type { StateStore } from './open.ts';
 import { latestObservationWith } from './drift.ts';
-import {
-  boolFrom,
-  parseJson,
-  requireInstant,
-  requireNonEmpty,
-  requireOneOf,
-  toJson,
-} from './rows.ts';
+import { boolFrom, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from './rows.ts';
 
 export const AUTHORITY_LEVELS = ['authoritative', 'informative', 'untrusted'] as const;
 export type AuthorityLevel = (typeof AUTHORITY_LEVELS)[number];
@@ -128,13 +121,9 @@ export function addSource(store: StateStore, input: AddSourceInput): Source {
   if (input.freshnessHours !== undefined && !(input.freshnessHours > 0)) {
     throw new Error('source.freshnessHours must be a positive number of hours');
   }
-  const overlap = (input.authoritativeFor ?? []).filter((t) =>
-    (input.notAuthoritativeFor ?? []).includes(t),
-  );
+  const overlap = (input.authoritativeFor ?? []).filter((t) => (input.notAuthoritativeFor ?? []).includes(t));
   if (overlap.length > 0) {
-    throw new Error(
-      `source ${input.id} cannot be both authoritative and not authoritative for ${overlap.join(', ')}`,
-    );
+    throw new Error(`source ${input.id} cannot be both authoritative and not authoritative for ${overlap.join(', ')}`);
   }
   return store.transaction(() => {
     const row = store.db
@@ -213,7 +202,9 @@ export function updateSource(store: StateStore, id: string, patch: UpdateSourceI
         (patch.canRead ?? current.canRead) ? 1 : 0,
         (patch.canWrite ?? current.canWrite) ? 1 : 0,
         patch.identityMapping === undefined
-          ? (current.identityMapping === null ? null : toJson(current.identityMapping))
+          ? current.identityMapping === null
+            ? null
+            : toJson(current.identityMapping)
           : toJson(patch.identityMapping),
         at,
         id,
@@ -227,10 +218,7 @@ export function getSource(store: StateStore, id: string): Source | null {
   return row ? toSource(row) : null;
 }
 
-export function listSources(
-  store: StateStore,
-  filter: { readonly status?: 'active' | 'retired' } = {},
-): Source[] {
+export function listSources(store: StateStore, filter: { readonly status?: 'active' | 'retired' } = {}): Source[] {
   const rows = store.db
     .prepare(`SELECT * FROM sources WHERE (? IS NULL OR status = ?) ORDER BY created_at, id`)
     .all(filter.status ?? null, filter.status ?? null) as unknown as Row[];
@@ -240,35 +228,21 @@ export function listSources(
 export function retireSource(store: StateStore, id: string, at: string): Source {
   requireInstant(at, 'source.at');
   const result = store.db
-    .prepare(
-      `UPDATE sources SET status = 'retired', retired_at = ?, updated_at = ? WHERE id = ? AND status = 'active'`,
-    )
+    .prepare(`UPDATE sources SET status = 'retired', retired_at = ?, updated_at = ? WHERE id = ? AND status = 'active'`)
     .run(at, at, id);
   if (result.changes === 0) throw new Error(`no active source ${id} to retire`);
   return getSource(store, id)!;
 }
 
-export function setReachability(
-  store: StateStore,
-  id: string,
-  reachability: Reachability,
-  at: string,
-): Source {
+export function setReachability(store: StateStore, id: string, reachability: Reachability, at: string): Source {
   requireOneOf(reachability, REACHABILITIES, 'source.reachability');
   requireInstant(at, 'source.at');
-  const result = store.db
-    .prepare('UPDATE sources SET reachability = ?, updated_at = ? WHERE id = ?')
-    .run(reachability, at, id);
+  const result = store.db.prepare('UPDATE sources SET reachability = ?, updated_at = ? WHERE id = ?').run(reachability, at, id);
   if (result.changes === 0) throw new Error(`no source ${id}`);
   return getSource(store, id)!;
 }
 
-export function setAuthority(
-  store: StateStore,
-  sourceId: string,
-  claimType: string,
-  authoritative: boolean,
-): void {
+export function setAuthority(store: StateStore, sourceId: string, claimType: string, authoritative: boolean): void {
   requireNonEmpty(claimType, 'authority.claimType');
   const result = store.db
     .prepare(
@@ -303,11 +277,7 @@ export function authorityOf(store: StateStore, sourceId: string): SourceAuthorit
  * Is this source authoritative for a claim type? Only an explicit row says
  * yes; silence is "not declared", never a default yes.
  */
-export function isAuthoritativeFor(
-  store: StateStore,
-  sourceId: string,
-  claimType: string,
-): 'yes' | 'no' | 'undeclared' {
+export function isAuthoritativeFor(store: StateStore, sourceId: string, claimType: string): 'yes' | 'no' | 'undeclared' {
   const row = store.db
     .prepare('SELECT authoritative FROM source_authority WHERE source_id = ? AND claim_type = ?')
     .get(sourceId, claimType) as { authoritative: number } | undefined;
@@ -379,7 +349,7 @@ export function recordSnapshot(
     } else {
       const row = store.db
         .prepare(
-      `INSERT INTO source_snapshots (id, source_id, digest, summary, evidence_ref, inventory_digest, content_digest, item_count, coverage_json, taken_at)
+          `INSERT INTO source_snapshots (id, source_id, digest, summary, evidence_ref, inventory_digest, content_digest, item_count, coverage_json, taken_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         )
         .get(
@@ -398,9 +368,7 @@ export function recordSnapshot(
       changed = true;
     }
     const updated = store.db
-      .prepare(
-        `UPDATE sources SET last_snapshot_id = ?, reachability = 'reachable', updated_at = ? WHERE id = ?`,
-      )
+      .prepare(`UPDATE sources SET last_snapshot_id = ?, reachability = 'reachable', updated_at = ? WHERE id = ?`)
       .run(snapshot.id, input.at, input.sourceId);
     if (updated.changes === 0) throw new Error(`no source ${input.sourceId}`);
     return { snapshot, changed };
@@ -410,9 +378,7 @@ export function recordSnapshot(
 export function latestSnapshot(store: StateStore, sourceId: string): SourceSnapshot | null {
   const source = getSource(store, sourceId);
   if (!source?.lastSnapshotId) return null;
-  const row = store.db
-    .prepare('SELECT * FROM source_snapshots WHERE id = ?')
-    .get(source.lastSnapshotId) as SnapshotRow | undefined;
+  const row = store.db.prepare('SELECT * FROM source_snapshots WHERE id = ?').get(source.lastSnapshotId) as SnapshotRow | undefined;
   return row ? toSnapshot(row) : null;
 }
 
@@ -432,15 +398,22 @@ export function freshnessOf(store: StateStore, sourceId: string, at: string, req
     const changed = latestObservationWith(store, sourceId, 'source.changed', 'manifest');
     const manifest = (changed?.evidence as { manifest?: { ref: string }[] } | null)?.manifest ?? [];
     const required = requiredRefs ?? manifest.map((entry) => entry.ref);
-    const times = store.db.prepare(`SELECT refs.value AS ref, MAX(observed_at) AS at
+    const times = store.db
+      .prepare(`SELECT refs.value AS ref, MAX(observed_at) AS at
       FROM observations, json_each(evidence_json, '$.refreshedRefs') AS refs
       WHERE source_id = ? AND kind = 'source.access' AND json_extract(evidence_json, '$.outcome') = 'read'
-      GROUP BY refs.value`).all(sourceId) as unknown as { ref: string; at: string }[];
+      GROUP BY refs.value`)
+      .all(sourceId) as unknown as { ref: string; at: string }[];
     const readAt = new Map(times.map((row) => [row.ref, row.at]));
-    if (required.length) return required.every((ref) => readAt.has(ref) && Date.parse(at) - Date.parse(readAt.get(ref)!) <= source.freshnessHours! * 3_600_000) ? 'fresh' : 'stale';
+    if (required.length)
+      return required.every((ref) => readAt.has(ref) && Date.parse(at) - Date.parse(readAt.get(ref)!) <= source.freshnessHours! * 3_600_000)
+        ? 'fresh'
+        : 'stale';
     // An empty complete read has no item timestamps. Its observation still proves freshness.
-    const complete = store.db.prepare(`SELECT MAX(observed_at) AS at FROM observations WHERE source_id = ? AND kind = 'source.access'
-      AND json_extract(evidence_json, '$.outcome') = 'read' AND json_extract(evidence_json, '$.partial') = 0`).get(sourceId) as { at: string | null };
+    const complete = store.db
+      .prepare(`SELECT MAX(observed_at) AS at FROM observations WHERE source_id = ? AND kind = 'source.access'
+      AND json_extract(evidence_json, '$.outcome') = 'read' AND json_extract(evidence_json, '$.partial') = 0`)
+      .get(sourceId) as { at: string | null };
     if (complete.at) return Date.parse(at) - Date.parse(complete.at) <= source.freshnessHours * 3_600_000 ? 'fresh' : 'stale';
   }
   const ageMs = Date.parse(at) - Date.parse(snapshot.takenAt);

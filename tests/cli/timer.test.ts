@@ -22,8 +22,14 @@ function recorder(): SchedulerControl & { readonly calls: string[] } {
   return {
     calls,
     admit: () => undefined,
-    load: (_t: TimerTarget, label: string) => { calls.push(`load ${label}`); loaded.add(label); },
-    unload: (_t: TimerTarget, label: string) => { calls.push(`unload ${label}`); loaded.delete(label); },
+    load: (_t: TimerTarget, label: string) => {
+      calls.push(`load ${label}`);
+      loaded.add(label);
+    },
+    unload: (_t: TimerTarget, label: string) => {
+      calls.push(`unload ${label}`);
+      loaded.delete(label);
+    },
     loaded: (_t: TimerTarget, label: string) => loaded.has(label),
     firing: (_t: TimerTarget, label: string) => loaded.has(label),
   };
@@ -32,7 +38,21 @@ function recorder(): SchedulerControl & { readonly calls: string[] } {
 async function weekly(ctx: CliContext, cwd: string, timezone = 'Europe/Berlin'): Promise<void> {
   mkdirSync(join(cwd, 'docs'), { recursive: true });
   writeFileSync(join(cwd, 'docs', 'a.md'), 'a', 'utf8');
-  const defined = await capture(() => run(['workflow', 'schedule', 'design-conformance', '--cron=0 9 * * 1', `--timezone=${timezone}`, '--max-tier=project_write', '--input=target=docs', '--trigger-id=weekly'], ctx));
+  const defined = await capture(() =>
+    run(
+      [
+        'workflow',
+        'schedule',
+        'design-conformance',
+        '--cron=0 9 * * 1',
+        `--timezone=${timezone}`,
+        '--max-tier=project_write',
+        '--input=target=docs',
+        '--trigger-id=weekly',
+      ],
+      ctx,
+    ),
+  );
   assert.equal(defined.code, 0, defined.err);
   assert.match(defined.out, /workflow install-timer weekly --executor=<id>/);
 }
@@ -40,7 +60,11 @@ async function weekly(ctx: CliContext, cwd: string, timezone = 'Europe/Berlin'):
 test('install-timer writes one launchd unit under the injected home, replaces it on reinstall, and remove-timer takes it away', async () => {
   await inProject(async (base, box) => {
     const control = recorder();
-    const ctx: CliContext = { ...base, env: { ...base.env, OPENAI_API_KEY: 'sk-planted-secret', ANTHROPIC_API_KEY: 'sk-ant-planted', CODEX_HOME: join(box.home, '.codex') }, timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath } };
+    const ctx: CliContext = {
+      ...base,
+      env: { ...base.env, OPENAI_API_KEY: 'sk-planted-secret', ANTHROPIC_API_KEY: 'sk-ant-planted', CODEX_HOME: join(box.home, '.codex') },
+      timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath },
+    };
     await weekly(ctx, box.cwd);
 
     const bare = await capture(() => run(['workflow', 'install-timer', 'weekly'], ctx));
@@ -62,7 +86,10 @@ test('install-timer writes one launchd unit under the injected home, replaces it
     assert.deepEqual(control.calls, [`load ${result.label}`]);
 
     const plist = readFileSync(result.files[0]!, 'utf8');
-    assert.match(plist, /<key>StartCalendarInterval<\/key>\s*<array>\s*<dict><key>Minute<\/key><integer>0<\/integer><key>Hour<\/key><integer>9<\/integer><key>Weekday<\/key><integer>1<\/integer><\/dict>/);
+    assert.match(
+      plist,
+      /<key>StartCalendarInterval<\/key>\s*<array>\s*<dict><key>Minute<\/key><integer>0<\/integer><key>Hour<\/key><integer>9<\/integer><key>Weekday<\/key><integer>1<\/integer><\/dict>/,
+    );
     assert.doesNotMatch(plist, /StartInterval<|RunAtLoad|KeepAlive/);
     assert.doesNotMatch(plist, /sk-planted|sk-ant-planted|OPENAI_API_KEY|ANTHROPIC_API_KEY/, 'no secret rides into the unit');
     assert.match(plist, new RegExp(`<key>WorkingDirectory</key><string>${box.cwd}</string>`));
@@ -79,9 +106,12 @@ test('install-timer writes one launchd unit under the injected home, replaces it
     assert.equal(listed.code, 0, listed.err);
     assert.match(listed.out, new RegExp(`^here  ${result.label.replace(/\./g, '\\.')} \\(trigger weekly, executor codex, firing\\)$`, 'm'));
     const status = await capture(() => run(['status', '--json'], ctx));
-    assert.deepEqual(JSON.parse(status.out).timers, [{ label: result.label, triggerId: 'weekly', executor: 'codex', firing: true, problem: null }]);
+    assert.deepEqual(JSON.parse(status.out).timers, [
+      { label: result.label, triggerId: 'weekly', executor: 'codex', firing: true, problem: null },
+    ]);
     const healthy = await capture(() => run(['doctor', '--json'], ctx));
-    const timerCheck = (out: string) => (JSON.parse(out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find((c) => c.name === 'timers')!;
+    const timerCheck = (out: string) =>
+      (JSON.parse(out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find((c) => c.name === 'timers')!;
     assert.equal(timerCheck(healthy.out).ok, true, timerCheck(healthy.out).detail);
 
     await capture(() => run(['workflow', 'disable', 'weekly'], ctx));
@@ -103,20 +133,36 @@ test('install-timer writes one launchd unit under the injected home, replaces it
 test('a unit whose project is gone is flagged by doctor and removed by its label', async () => {
   await inProject(async (base, box) => {
     const control = recorder();
-    const ctx: CliContext = { ...base, timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath } };
+    const ctx: CliContext = {
+      ...base,
+      timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath },
+    };
     const agents = join(box.home, 'Library', 'LaunchAgents');
     mkdirSync(agents, { recursive: true });
     const orphan = 'construct.proj-00000000.nightly';
     const program = `<key>ProgramArguments</key><array><string>${process.execPath}</string><string>${process.execPath}</string><string>--execute=codex</string></array>`;
-    writeFileSync(join(agents, `${orphan}.plist`), `<plist><dict>${program}<key>WorkingDirectory</key><string>${join(box.home, 'moved-away')}</string></dict></plist>`, 'utf8');
+    writeFileSync(
+      join(agents, `${orphan}.plist`),
+      `<plist><dict>${program}<key>WorkingDirectory</key><string>${join(box.home, 'moved-away')}</string></dict></plist>`,
+      'utf8',
+    );
     const stale = 'construct.proj-00000000.stale';
-    writeFileSync(join(agents, `${stale}.plist`), `<plist><dict><key>ProgramArguments</key><array><string>${process.execPath}</string><string>${join(box.home, 'gone', 'construct.mjs')}</string></array><key>WorkingDirectory</key><string>${box.cwd}</string></dict></plist>`, 'utf8');
+    writeFileSync(
+      join(agents, `${stale}.plist`),
+      `<plist><dict><key>ProgramArguments</key><array><string>${process.execPath}</string><string>${join(box.home, 'gone', 'construct.mjs')}</string></array><key>WorkingDirectory</key><string>${box.cwd}</string></dict></plist>`,
+      'utf8',
+    );
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
-    const check = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find((c) => c.name === 'timers')!;
+    const check = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find(
+      (c) => c.name === 'timers',
+    )!;
     assert.equal(check.ok, false);
     assert.match(check.detail, /0 here, 2 for other projects/);
     assert.match(check.detail, /gone\/construct\.mjs, no longer exists \(Node or Construct moved\)/);
-    assert.match(check.detail, /moved-away no longer exists; `construct workflow remove-timer construct\.proj-00000000\.nightly` removes it/);
+    assert.match(
+      check.detail,
+      /moved-away no longer exists; `construct workflow remove-timer construct\.proj-00000000\.nightly` removes it/,
+    );
     const removed = await capture(() => run(['workflow', 'remove-timer', orphan], ctx));
     assert.equal(removed.code, 0, removed.err);
     assert.equal(existsSync(join(agents, `${orphan}.plist`)), false);
@@ -126,7 +172,10 @@ test('a unit whose project is gone is flagged by doctor and removed by its label
 test('launchd refuses a trigger in another timezone instead of shifting it', async () => {
   await inProject(async (base, box) => {
     const control = recorder();
-    const ctx: CliContext = { ...base, timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath } };
+    const ctx: CliContext = {
+      ...base,
+      timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath },
+    };
     await weekly(ctx, box.cwd, 'UTC');
     const refused = await capture(() => run(['workflow', 'install-timer', 'weekly', '--executor=codex'], ctx));
     assert.equal(refused.code, 1);
@@ -136,7 +185,9 @@ test('launchd refuses a trigger in another timezone instead of shifting it', asy
   });
 });
 
-test('the real scheduler refuses a redirected HOME before it writes or loads anything', { skip: process.platform !== 'darwin' && process.platform !== 'linux' }, async () => {
+test('the real scheduler refuses a redirected HOME before it writes or loads anything', {
+  skip: process.platform !== 'darwin' && process.platform !== 'linux',
+}, async () => {
   await inProject(async (base, box) => {
     const ctx: CliContext = { ...base, timers: undefined };
     await weekly(ctx, box.cwd, 'UTC');
@@ -171,13 +222,27 @@ test('a timer is never installed from a linked git worktree, whose launcher goes
     const repo = join(box.home, 'repo');
     mkdirSync(join(repo, 'bin'), { recursive: true });
     writeFileSync(join(repo, 'bin', 'construct.mjs'), '', 'utf8');
-    const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args], { stdio: 'ignore', env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } });
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-C', repo, ...args], {
+        stdio: 'ignore',
+        env: {
+          ...process.env,
+          GIT_CONFIG_GLOBAL: '/dev/null',
+          GIT_AUTHOR_NAME: 't',
+          GIT_AUTHOR_EMAIL: 't@t',
+          GIT_COMMITTER_NAME: 't',
+          GIT_COMMITTER_EMAIL: 't@t',
+        },
+      });
     git('init', '-q');
     git('add', '.');
     git('commit', '-q', '-m', 'init');
     git('worktree', 'add', '-q', join(box.home, 'linked'));
     const control = recorder();
-    const ctx: CliContext = { ...base, timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: join(box.home, 'linked', 'bin', 'construct.mjs') } };
+    const ctx: CliContext = {
+      ...base,
+      timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: join(box.home, 'linked', 'bin', 'construct.mjs') },
+    };
     await weekly(ctx, box.cwd);
     const refused = await capture(() => run(['workflow', 'install-timer', 'weekly', '--executor=codex'], ctx));
     assert.equal(refused.code, 1);
@@ -189,11 +254,16 @@ test('a timer is never installed from a linked git worktree, whose launcher goes
 test('a unit the scheduler will not fire fails doctor', async () => {
   await inProject(async (base, box) => {
     const control = { ...recorder(), firing: () => false };
-    const ctx: CliContext = { ...base, timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath } };
+    const ctx: CliContext = {
+      ...base,
+      timers: { platform: 'darwin', control, systemTimezone: 'Europe/Berlin', launcher: process.execPath },
+    };
     await weekly(ctx, box.cwd);
     assert.equal((await capture(() => run(['workflow', 'install-timer', 'weekly', '--executor=codex'], ctx))).code, 0);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
-    const check = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find((c) => c.name === 'timers')!;
+    const check = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.find(
+      (c) => c.name === 'timers',
+    )!;
     assert.equal(check.ok, false);
     assert.match(check.detail, /not firing.*installed but the scheduler will not fire it/);
   });

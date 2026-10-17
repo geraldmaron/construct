@@ -27,15 +27,30 @@ if (problems.length > 0) {
 }
 const portable = skills.portableOnly();
 if (portable.length > 0) {
-  for (const p of portable) process.stderr.write(`registry: ${p.dir}: shipped without construct.skill.json; every shipped skill carries a manifest\n`);
+  for (const p of portable)
+    process.stderr.write(`registry: ${p.dir}: shipped without construct.skill.json; every shipped skill carries a manifest\n`);
   process.exit(1);
 }
 
 const index = {
   format: 'construct-registry-index',
   formatVersion: 1,
-  skills: Object.fromEntries(skills.list().map((s) => [s.manifest.id, { version: s.manifest.version, digest: s.digest, category: s.manifest.category, title: s.manifest.title }])),
-  workflows: Object.fromEntries(workflows.list().map((w) => [w.manifest.id, { version: w.manifest.version, digest: w.digest, title: w.manifest.title, interactionClass: w.manifest.interactionClass }])),
+  skills: Object.fromEntries(
+    skills
+      .list()
+      .map((s) => [
+        s.manifest.id,
+        { version: s.manifest.version, digest: s.digest, category: s.manifest.category, title: s.manifest.title },
+      ]),
+  ),
+  workflows: Object.fromEntries(
+    workflows
+      .list()
+      .map((w) => [
+        w.manifest.id,
+        { version: w.manifest.version, digest: w.digest, title: w.manifest.title, interactionClass: w.manifest.interactionClass },
+      ]),
+  ),
 };
 const text = `${JSON.stringify(index, null, 2)}\n`;
 
@@ -54,7 +69,8 @@ if (check) {
             const b = index[kind][id];
             if (!a) diffs.push(`${kind}/${id}: new`);
             else if (!b) diffs.push(`${kind}/${id}: removed`);
-            else if (a.version === b.version && a.digest !== b.digest) diffs.push(`${kind}/${id}: content changed at version ${b.version} without a version bump`);
+            else if (a.version === b.version && a.digest !== b.digest)
+              diffs.push(`${kind}/${id}: content changed at version ${b.version} without a version bump`);
             else if (a.version !== b.version) diffs.push(`${kind}/${id}: ${a.version} -> ${b.version}`);
           }
         }
@@ -63,11 +79,17 @@ if (check) {
         detail = 'registry/index.json is not valid JSON';
       }
     }
-    process.stderr.write(`generate-registry-index: stale — ${detail}\n  bump the version where content changed, then run: node scripts/generate-registry-index.mjs\n`);
+    process.stderr.write(
+      `generate-registry-index: stale — ${detail}\n  bump the version where content changed, then run: node scripts/generate-registry-index.mjs\n`,
+    );
     process.exit(1);
   }
-  process.stdout.write(`generate-registry-index: current — ${Object.keys(index.skills).length} skill(s), ${Object.keys(index.workflows).length} workflow(s)\n`);
+  process.stdout.write(
+    `generate-registry-index: current — ${Object.keys(index.skills).length} skill(s), ${Object.keys(index.workflows).length} workflow(s)\n`,
+  );
 } else {
   writeFileSync(OUT, text, 'utf8');
-  process.stdout.write(`generate-registry-index: wrote registry/index.json (${Object.keys(index.skills).length} skill(s), ${Object.keys(index.workflows).length} workflow(s))\n`);
+  process.stdout.write(
+    `generate-registry-index: wrote registry/index.json (${Object.keys(index.skills).length} skill(s), ${Object.keys(index.workflows).length} workflow(s))\n`,
+  );
 }

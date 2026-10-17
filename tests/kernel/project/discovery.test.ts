@@ -12,7 +12,12 @@ import { join } from 'node:path';
 import { gatherProjectMaterial, MAX_MATERIAL_FILE_BYTES } from '../../../src/hosts/repo/material.ts';
 import { draftFromMaterial, ONBOARDING_QUESTIONS, SCALE_CHOICES } from '../../../src/kernel/project/discovery.ts';
 import {
-  applyDiscoveryDraft, applyOnboardingAnswers, acceptProposal, onboardingStatus, composeConstitution, scaleFromAnswer,
+  applyDiscoveryDraft,
+  applyOnboardingAnswers,
+  acceptProposal,
+  onboardingStatus,
+  composeConstitution,
+  scaleFromAnswer,
 } from '../../../src/kernel/project/onboarding.ts';
 import { PersonChannelRequiredError } from '../../../src/kernel/policy/channels.ts';
 import { getProfile } from '../../../src/kernel/state/profile.ts';
@@ -24,24 +29,84 @@ import { listOpenDecisions } from '../../../src/kernel/state/decisions.ts';
 import { tmpProject, AT } from './support.ts';
 
 function fixtureRepo(root: string): void {
-  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: '@acme/ledger', description: 'Double-entry ledger for small teams', workspaces: ['packages/*'], scripts: { test: 'node --test', lint: 'eslint .' } }), 'utf8');
-  writeFileSync(join(root, 'README.md'), [
-    '# Ledger', '', '[![ci](x)](y)', '', 'A ledger that never loses a cent.', 'It runs anywhere Node runs.', '',
-    '## Design principles', '', '- Every posting is append-only', '- **Balances are derived**, never stored', '', '## Usage', '', '- not a principle',
-  ].join('\n'), 'utf8');
-  writeFileSync(join(root, 'AGENTS.md'), [
-    '# Agent instructions', '', 'Never commit generated files.', 'Do not edit the ledger schema without a decision record.', 'Run the tests before every commit.',
-    '', '## Conventions', '', '- Commit messages state the invariant',
-  ].join('\n'), 'utf8');
+  writeFileSync(
+    join(root, 'package.json'),
+    JSON.stringify({
+      name: '@acme/ledger',
+      description: 'Double-entry ledger for small teams',
+      workspaces: ['packages/*'],
+      scripts: { test: 'node --test', lint: 'eslint .' },
+    }),
+    'utf8',
+  );
+  writeFileSync(
+    join(root, 'README.md'),
+    [
+      '# Ledger',
+      '',
+      '[![ci](x)](y)',
+      '',
+      'A ledger that never loses a cent.',
+      'It runs anywhere Node runs.',
+      '',
+      '## Design principles',
+      '',
+      '- Every posting is append-only',
+      '- **Balances are derived**, never stored',
+      '',
+      '## Usage',
+      '',
+      '- not a principle',
+    ].join('\n'),
+    'utf8',
+  );
+  writeFileSync(
+    join(root, 'AGENTS.md'),
+    [
+      '# Agent instructions',
+      '',
+      'Never commit generated files.',
+      'Do not edit the ledger schema without a decision record.',
+      'Run the tests before every commit.',
+      '',
+      '## Conventions',
+      '',
+      '- Commit messages state the invariant',
+    ].join('\n'),
+    'utf8',
+  );
   mkdirSync(join(root, '.github'), { recursive: true });
-  writeFileSync(join(root, '.github', 'CODEOWNERS'), ['# owners', 'packages/core/ @acme/platform', 'docs/ @acme/docs-team @acme/platform', ''].join('\n'), 'utf8');
-  writeFileSync(join(root, 'GLOSSARY.md'), ['| Term | Retired | Meaning |', '|---|---|---|', '| posting | entry | One immutable line in the ledger. |', '| balance | — | A sum derived from postings. |'].join('\n'), 'utf8');
+  writeFileSync(
+    join(root, '.github', 'CODEOWNERS'),
+    ['# owners', 'packages/core/ @acme/platform', 'docs/ @acme/docs-team @acme/platform', ''].join('\n'),
+    'utf8',
+  );
+  writeFileSync(
+    join(root, 'GLOSSARY.md'),
+    [
+      '| Term | Retired | Meaning |',
+      '|---|---|---|',
+      '| posting | entry | One immutable line in the ledger. |',
+      '| balance | — | A sum derived from postings. |',
+    ].join('\n'),
+    'utf8',
+  );
   mkdirSync(join(root, 'docs', 'adr'), { recursive: true });
-  writeFileSync(join(root, 'docs', 'architecture.md'), ['# Architecture', '', '## Boundaries', '', '- The kernel never touches the network'].join('\n'), 'utf8');
-  writeFileSync(join(root, 'docs', 'adr', '0001-append-only.md'), [
-    '# ADR 1: Append-only postings', '', 'Status: Accepted', '', '## Decision', '', 'Postings are never updated in place.',
-  ].join('\n'), 'utf8');
-  writeFileSync(join(root, 'docs', 'architecture-and-state-model.md'), ['# State model', '', '## Invariants', '', '- Runtime state is transactional'].join('\n'), 'utf8');
+  writeFileSync(
+    join(root, 'docs', 'architecture.md'),
+    ['# Architecture', '', '## Boundaries', '', '- The kernel never touches the network'].join('\n'),
+    'utf8',
+  );
+  writeFileSync(
+    join(root, 'docs', 'adr', '0001-append-only.md'),
+    ['# ADR 1: Append-only postings', '', 'Status: Accepted', '', '## Decision', '', 'Postings are never updated in place.'].join('\n'),
+    'utf8',
+  );
+  writeFileSync(
+    join(root, 'docs', 'architecture-and-state-model.md'),
+    ['# State model', '', '## Invariants', '', '- Runtime state is transactional'].join('\n'),
+    'utf8',
+  );
   writeFileSync(join(root, 'tsconfig.json'), '{}', 'utf8');
 }
 
@@ -55,7 +120,10 @@ test('material is read narrowly, capped, and never through a link', () => {
     assert.equal(m.manifest?.name, '@acme/ledger');
     assert.deepEqual(m.manifest?.scripts, ['lint', 'test']);
     assert.equal(m.readme?.path, 'README.md');
-    assert.deepEqual(m.agentInstructions.map((f) => f.path), ['AGENTS.md']);
+    assert.deepEqual(
+      m.agentInstructions.map((f) => f.path),
+      ['AGENTS.md'],
+    );
     assert.equal(m.contributing?.truncated, true);
     assert.equal(m.contributing?.text.length, MAX_MATERIAL_FILE_BYTES);
     assert.equal(m.codeowners?.path, '.github/CODEOWNERS');
@@ -86,13 +154,38 @@ test('the draft carries provenance on every proposal and asks exactly three ques
     assert.ok(scale.confidence <= 0.3);
 
     const principles = draft.statements.filter((s) => s.kind === 'principle').map((s) => s.text);
-    assert.deepEqual(principles, ['Every posting is append-only', 'Balances are derived, never stored', 'Commit messages state the invariant']);
+    assert.deepEqual(principles, [
+      'Every posting is append-only',
+      'Balances are derived, never stored',
+      'Commit messages state the invariant',
+    ]);
     const constraints = draft.statements.filter((s) => s.kind === 'constraint');
-    assert.deepEqual(constraints.map((s) => s.text), ['Never commit generated files.', 'Do not edit the ledger schema without a decision record.']);
-    assert.deepEqual(constraints.map((s) => [s.provenance.path, s.provenance.line]), [['AGENTS.md', 3], ['AGENTS.md', 4]]);
-    assert.deepEqual(draft.statements.filter((s) => s.kind === 'boundary').map((s) => s.text), ['The kernel never touches the network', 'Runtime state is transactional']);
-    assert.deepEqual(draft.statements.filter((s) => s.kind === 'glossary_entry').map((s) => s.term), ['posting', 'balance']);
-    assert.deepEqual(draft.ownership.map((o) => [o.pattern, o.owners]), [['packages/core/', ['@acme/platform']], ['docs/', ['@acme/docs-team', '@acme/platform']]]);
+    assert.deepEqual(
+      constraints.map((s) => s.text),
+      ['Never commit generated files.', 'Do not edit the ledger schema without a decision record.'],
+    );
+    assert.deepEqual(
+      constraints.map((s) => [s.provenance.path, s.provenance.line]),
+      [
+        ['AGENTS.md', 3],
+        ['AGENTS.md', 4],
+      ],
+    );
+    assert.deepEqual(
+      draft.statements.filter((s) => s.kind === 'boundary').map((s) => s.text),
+      ['The kernel never touches the network', 'Runtime state is transactional'],
+    );
+    assert.deepEqual(
+      draft.statements.filter((s) => s.kind === 'glossary_entry').map((s) => s.term),
+      ['posting', 'balance'],
+    );
+    assert.deepEqual(
+      draft.ownership.map((o) => [o.pattern, o.owners]),
+      [
+        ['packages/core/', ['@acme/platform']],
+        ['docs/', ['@acme/docs-team', '@acme/platform']],
+      ],
+    );
     assert.ok(draft.canonicalArtifacts.some((c) => c.role === 'decision record'));
     assert.ok(draft.statements.some((s) => s.kind === 'decision' && /Postings are never updated in place/.test(s.text)));
     assert.ok(draft.statements.some((s) => s.kind === 'boundary' && s.text === 'Runtime state is transactional'));
@@ -100,7 +193,10 @@ test('the draft carries provenance on every proposal and asks exactly three ques
     assert.ok(draft.canonicalArtifacts.map((c) => c.role).includes('architecture'));
     for (const s of draft.statements) assert.ok(s.provenance.path && s.provenance.excerpt);
     assert.equal(draft.questions.length, 3);
-    assert.deepEqual(draft.questions.map((q) => q.id), ['scale', 'primary_outcome', 'protected_constraints']);
+    assert.deepEqual(
+      draft.questions.map((q) => q.id),
+      ['scale', 'primary_outcome', 'protected_constraints'],
+    );
     assert.equal(draft.questions, ONBOARDING_QUESTIONS);
     assert.ok(draft.unknowns.includes('primary outcome'));
     assert.ok(draft.deferredQuestions.length >= 1);
@@ -161,8 +257,14 @@ test('applying a draft proposes; only answers and acceptances confirm; the file 
       assert.equal(constitutionCompleteness(before).complete, false);
 
       const answered = applyOnboardingAnswers(store, {
-        answers: { scale: 'team', primaryOutcome: 'ship v1 to the first paying team', protectedConstraints: ['Never change posting semantics', ' '] },
-        by: 'gerald', at: AT, nextId,
+        answers: {
+          scale: 'team',
+          primaryOutcome: 'ship v1 to the first paying team',
+          protectedConstraints: ['Never change posting semantics', ' '],
+        },
+        by: 'gerald',
+        at: AT,
+        nextId,
       });
       assert.equal(answered.profile.onboardingState, 'confirmed');
       assert.deepEqual(answered.missing, []);
@@ -185,7 +287,10 @@ test('applying a draft proposes; only answers and acceptances confirm; the file 
       assert.ok(!c.unknowns.includes('primary outcome'), 'an answered setup question is no longer unknown');
       assert.ok(listStatements(store, { kind: 'unknown' }).every((u) => u.text !== 'primary outcome' || u.status === 'retired'));
       assert.equal(constitutionCompleteness(validateConstitution(c, 'constitution.json')).complete, true);
-      assert.throws(() => applyOnboardingAnswers(store, { answers: { scale: 'huge' as never }, by: 'g', at: AT, nextId }), /scale must be one of/);
+      assert.throws(
+        () => applyOnboardingAnswers(store, { answers: { scale: 'huge' as never }, by: 'g', at: AT, nextId }),
+        /scale must be one of/,
+      );
     } finally {
       store.close();
     }
@@ -206,7 +311,12 @@ test('noninteractive answers with nothing supplied leave onboarding incomplete a
       assert.equal(result.profile.onboardingState, 'drafted');
       assert.deepEqual(result.missing, ['purpose', 'scale', 'primaryOutcome']);
       assert.equal(onboardingStatus(init.store).openQuestions.length, 3);
-      const complete = applyOnboardingAnswers(init.store, { answers: { purpose: 'a tool', scale: 'solo', primaryOutcome: 'learn' }, by: 'ci', at: AT, nextId });
+      const complete = applyOnboardingAnswers(init.store, {
+        answers: { purpose: 'a tool', scale: 'solo', primaryOutcome: 'learn' },
+        by: 'ci',
+        at: AT,
+        nextId,
+      });
       assert.equal(complete.profile.onboardingState, 'confirmed');
       assert.equal(onboardingStatus(init.store).openQuestions.length, 1); // the constraints question stays open until answered
       const constitution = composeConstitution(init.store, emptyConstitution());
@@ -224,13 +334,27 @@ test('noninteractive answers with nothing supplied leave onboarding incomplete a
 test('quoted examples are not proposed as constraints, and caps report continuation', () => {
   const { root, cleanup } = tmpProject();
   try {
-    writeFileSync(join(root, 'AGENTS.md'), [
-      '# Agents', '', 'Never commit secrets.', '', '```', 'Never paste this example as policy.', '```', '',
-      ...Array.from({ length: 12 }, (_, i) => `Never do thing ${String(i + 1)}.`),
-    ].join('\n'), 'utf8');
+    writeFileSync(
+      join(root, 'AGENTS.md'),
+      [
+        '# Agents',
+        '',
+        'Never commit secrets.',
+        '',
+        '```',
+        'Never paste this example as policy.',
+        '```',
+        '',
+        ...Array.from({ length: 12 }, (_, i) => `Never do thing ${String(i + 1)}.`),
+      ].join('\n'),
+      'utf8',
+    );
     const draft = draftFromMaterial(gatherProjectMaterial(root));
     const constraints = draft.statements.filter((s) => s.kind === 'constraint');
-    assert.equal(constraints.some((s) => /paste this example/.test(s.text)), false);
+    assert.equal(
+      constraints.some((s) => /paste this example/.test(s.text)),
+      false,
+    );
     assert.ok(draft.coverage.some((c) => c.omitted > 0 && c.continuation !== null));
   } finally {
     cleanup();
@@ -263,7 +387,11 @@ test('applying a draft keeps locator and content digest on the statement', () =>
     const init = initializeProject({ root, projectId: 'p', name: 'ledger', at: AT });
     try {
       let n = 0;
-      const applied = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId: (p) => `${p}-${String(++n)}` });
+      const applied = applyDiscoveryDraft(init.store, {
+        draft: draftFromMaterial(gatherProjectMaterial(root)),
+        at: AT,
+        nextId: (p) => `${p}-${String(++n)}`,
+      });
       const decision = applied.proposedStatements.find((s) => s.kind === 'decision');
       assert.ok(decision);
       assert.equal(decision!.locator, 'docs/adr/0001-append-only.md');
@@ -277,11 +405,15 @@ test('applying a draft keeps locator and content digest on the statement', () =>
   }
 });
 
-test('the files\' guess at the scale is shown in the scale question, with what it rests on, and the profile keeps no scale until the person answers', () => {
+test("the files' guess at the scale is shown in the scale question, with what it rests on, and the profile keeps no scale until the person answers", () => {
   const { root, cleanup } = tmpProject();
   try {
     mkdirSync(join(root, '.github'), { recursive: true });
-    writeFileSync(join(root, '.github', 'CODEOWNERS'), ['src/ @acme/platform', 'docs/ @acme/docs', 'infra/ @acme/sre', ''].join('\n'), 'utf8');
+    writeFileSync(
+      join(root, '.github', 'CODEOWNERS'),
+      ['src/ @acme/platform', 'docs/ @acme/docs', 'infra/ @acme/sre', ''].join('\n'),
+      'utf8',
+    );
     const init = initializeProject({ root, projectId: 'p', name: 'owned', at: AT });
     try {
       let n = 0;
@@ -290,7 +422,10 @@ test('the files\' guess at the scale is shown in the scale question, with what i
       const scale = applied.questions.find((q) => (q.subject as { onboarding?: string }).onboarding === 'scale')!;
       assert.deepEqual(scale.subject, { onboarding: 'scale', suggested: 'multi_team', basis: '3 distinct owners in .github/CODEOWNERS' });
       assert.ok(scale.question.startsWith(ONBOARDING_QUESTIONS[0]!.question), 'the question is asked as written');
-      assert.match(scale.question, /From \.github\/CODEOWNERS \(3 distinct owners\) this looks like several teams' work \(multi_team\); say whether that is right\.$/);
+      assert.match(
+        scale.question,
+        /From \.github\/CODEOWNERS \(3 distinct owners\) this looks like several teams' work \(multi_team\); say whether that is right\.$/,
+      );
       assert.deepEqual(scale.options, ['solo', 'side_project', 'team', 'multi_team', 'organization']);
       assert.equal(applied.profile.scale, null, 'the guess is shown, not applied');
       assert.equal(getProfile(init.store)!.scale, null);
@@ -301,7 +436,8 @@ test('the files\' guess at the scale is shown in the scale question, with what i
       try {
         const plain = initializeProject({ root: bare, projectId: 'q', name: 'bare', at: AT });
         try {
-          const q = applyDiscoveryDraft(plain.store, { draft: draftFromMaterial(gatherProjectMaterial(bare)), at: AT, nextId }).questions[0]!;
+          const q = applyDiscoveryDraft(plain.store, { draft: draftFromMaterial(gatherProjectMaterial(bare)), at: AT, nextId })
+            .questions[0]!;
           assert.equal(q.question, ONBOARDING_QUESTIONS[0]!.question);
           assert.deepEqual(q.subject, { onboarding: 'scale' });
         } finally {
@@ -318,7 +454,7 @@ test('the files\' guess at the scale is shown in the scale question, with what i
   }
 });
 
-test('a scale answer is understood by its id or the question\'s own words for it, and anything else is refused with the choices', () => {
+test("a scale answer is understood by its id or the question's own words for it, and anything else is refused with the choices", () => {
   const said: ReadonlyArray<readonly [string, string]> = [
     ['a side project', 'side_project'],
     ['my primary product', 'solo'],
@@ -336,30 +472,53 @@ test('a scale answer is understood by its id or the question\'s own words for it
     assert.equal(scaleFromAnswer(c.id), c.id);
     assert.equal(scaleFromAnswer(c.label), c.id);
   }
-  const choices = "a side project (side_project) | your primary product, just you (solo) | a team project (team) | several teams' work (multi_team) | an organization-wide system (organization)";
+  const choices =
+    "a side project (side_project) | your primary product, just you (solo) | a team project (team) | several teams' work (multi_team) | an organization-wide system (organization)";
   for (const text of ['something broader', 'enormous', 'side', '']) {
-    assert.throws(() => scaleFromAnswer(text), (e: unknown) => e instanceof Error && e.message === `${JSON.stringify(text)} is not one of them: ${choices}`, text);
+    assert.throws(
+      () => scaleFromAnswer(text),
+      (e: unknown) => e instanceof Error && e.message === `${JSON.stringify(text)} is not one of them: ${choices}`,
+      text,
+    );
   }
 });
 
-test('only the person\'s own channel makes a project a side project; any other scale lands on any channel', () => {
+test("only the person's own channel makes a project a side project; any other scale lands on any channel", () => {
   const { root, cleanup } = tmpProject();
   try {
     const init = initializeProject({ root, projectId: 'p', name: 'light', at: AT });
     try {
       let n = 0;
       const nextId = (p: string) => `${p}-${String(++n)}`;
-      const asked = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId }).questions[0]!;
+      const asked = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId })
+        .questions[0]!;
       for (const channel of ['relay', undefined] as const) {
         assert.throws(
-          () => applyOnboardingAnswers(init.store, { answers: { scale: 'side_project' }, by: 'relayed', at: AT, nextId, ...(channel ? { channel } : {}) }),
-          (e: unknown) => e instanceof PersonChannelRequiredError && e.decisionId === asked.id && e.message.includes(`construct inbox resolve ${asked.id} side_project`),
+          () =>
+            applyOnboardingAnswers(init.store, {
+              answers: { scale: 'side_project' },
+              by: 'relayed',
+              at: AT,
+              nextId,
+              ...(channel ? { channel } : {}),
+            }),
+          (e: unknown) =>
+            e instanceof PersonChannelRequiredError &&
+            e.decisionId === asked.id &&
+            e.message.includes(`construct inbox resolve ${asked.id} side_project`),
         );
       }
       assert.equal(getProfile(init.store)!.scale, null, 'nothing was applied');
       assert.equal(onboardingStatus(init.store).openQuestions.length, 3, 'the question stays open for the person');
-      assert.equal(applyOnboardingAnswers(init.store, { answers: { scale: 'team' }, by: 'relayed', at: AT, nextId, channel: 'relay' }).profile.scale, 'team');
-      assert.equal(applyOnboardingAnswers(init.store, { answers: { scale: 'side_project' }, by: 'person via cli', at: AT, nextId, channel: 'tty_cli' }).profile.scale, 'side_project');
+      assert.equal(
+        applyOnboardingAnswers(init.store, { answers: { scale: 'team' }, by: 'relayed', at: AT, nextId, channel: 'relay' }).profile.scale,
+        'team',
+      );
+      assert.equal(
+        applyOnboardingAnswers(init.store, { answers: { scale: 'side_project' }, by: 'person via cli', at: AT, nextId, channel: 'tty_cli' })
+          .profile.scale,
+        'side_project',
+      );
     } finally {
       init.store.close();
     }

@@ -115,16 +115,12 @@ function beginImmediate(db: DatabaseSync, path: string): void {
 }
 
 function tableNames(db: DatabaseSync): Set<string> {
-  const rows = db
-    .prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`)
-    .all() as Array<{ name: string }>;
+  const rows = db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>;
   return new Set(rows.map((r) => r.name));
 }
 
 function readMeta(db: DatabaseSync, key: string): string | null {
-  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as
-    | { value: string }
-    | undefined;
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined;
   return row?.value ?? null;
 }
 
@@ -239,7 +235,11 @@ function currentJournalMode(db: DatabaseSync): string {
 function assertCurrentFormat(db: DatabaseSync): void {
   const version = Number(readMeta(db, 'format_version'));
   if (version === STATE_FORMAT_VERSION) return;
-  throw new UnsupportedStateError(readMeta(db, 'format'), Number.isFinite(version) ? version : null, version > STATE_FORMAT_VERSION ? 'newer' : 'foreign');
+  throw new UnsupportedStateError(
+    readMeta(db, 'format'),
+    Number.isFinite(version) ? version : null,
+    version > STATE_FORMAT_VERSION ? 'newer' : 'foreign',
+  );
 }
 
 function writableDir(dir: string): boolean {
@@ -287,7 +287,8 @@ interface ReadOnlyTarget {
  * file is already there and this user can write it.
  */
 function readOnlyTarget(dbPath: string): ReadOnlyTarget {
-  if (writableDir(dirname(dbPath)) || headerJournalMode(dbPath) !== 'wal') return { target: dbPath, immutable: false, walInUnwritableDir: false };
+  if (writableDir(dirname(dbPath)) || headerJournalMode(dbPath) !== 'wal')
+    return { target: dbPath, immutable: false, walInUnwritableDir: false };
   if (sizeOf(`${dbPath}-wal`) > 0) return { target: dbPath, immutable: false, walInUnwritableDir: true };
   const url = pathToFileURL(dbPath);
   url.searchParams.set('immutable', '1');
@@ -312,7 +313,9 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
   const busyTimeoutMs = Math.max(0, Math.floor(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS));
   if (readOnly && !existsSync(dbPath)) throw new Error(`no state database at ${dbPath}`);
   if (!readOnly) mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
-  const { target, immutable, walInUnwritableDir } = readOnly ? readOnlyTarget(dbPath) : { target: dbPath, immutable: false, walInUnwritableDir: false };
+  const { target, immutable, walInUnwritableDir } = readOnly
+    ? readOnlyTarget(dbPath)
+    : { target: dbPath, immutable: false, walInUnwritableDir: false };
   let db: DatabaseSync;
   try {
     db = new DatabaseSync(target, { readOnly });

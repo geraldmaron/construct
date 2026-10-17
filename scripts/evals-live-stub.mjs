@@ -22,22 +22,43 @@ const spec = JSON.parse(arg.trim().startsWith('{') ? arg : readFileSync(arg, 'ut
 const tools = spec.tools.map((t) => ({
   name: t.name,
   description: t.description,
-  inputSchema: { type: 'object', properties: { query: { type: 'string', description: 'What to look up or write.' }, text: { type: 'string', description: 'The content.' } } },
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'What to look up or write.' },
+      text: { type: 'string', description: 'The content.' },
+    },
+  },
 }));
 const kinds = new Map(spec.tools.map((t) => [t.name, t.kind === 'write' ? 'write' : 'read']));
 
 function answer(message) {
   if (message.method === 'initialize') {
-    return { protocolVersion: message.params?.protocolVersion ?? '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: spec.name, version: '0.0.0' }, instructions: spec.instructions };
+    return {
+      protocolVersion: message.params?.protocolVersion ?? '2025-06-18',
+      capabilities: { tools: {} },
+      serverInfo: { name: spec.name, version: '0.0.0' },
+      instructions: spec.instructions,
+    };
   }
   if (message.method === 'tools/list') return { tools };
   if (message.method === 'tools/call') {
     const tool = String(message.params?.name ?? '');
     const kind = kinds.get(tool) ?? 'read';
     if (process.env.EVAL_STUB_LOG) {
-      appendFileSync(process.env.EVAL_STUB_LOG, `${JSON.stringify({ t: Date.now(), server: spec.name, tool, kind, arguments: message.params?.arguments ?? {} })}\n`);
+      appendFileSync(
+        process.env.EVAL_STUB_LOG,
+        `${JSON.stringify({ t: Date.now(), server: spec.name, tool, kind, arguments: message.params?.arguments ?? {} })}\n`,
+      );
     }
-    const text = kind === 'write' ? 'stub: saved' : typeof spec.page === 'string' ? spec.page : Array.isArray(spec.items) ? JSON.stringify(spec.items, null, 2) : 'stub: no data';
+    const text =
+      kind === 'write'
+        ? 'stub: saved'
+        : typeof spec.page === 'string'
+          ? spec.page
+          : Array.isArray(spec.items)
+            ? JSON.stringify(spec.items, null, 2)
+            : 'stub: no data';
     return { content: [{ type: 'text', text }] };
   }
   return {};

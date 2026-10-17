@@ -15,7 +15,9 @@ import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 /** Every cited file exists, Construct opened it, and it carries a decision section saying who decides by when. */
 const DESIGN = '# Design\n\n## Decision\nLeadership decides by Friday.\n';
 const resolve: RefResolver = (ref) =>
-  ref.startsWith('deliverable:') ? { ref, kind: 'deliverable', provenance: 'witnessed' } : { ref, kind: 'file', provenance: 'witnessed', path: ref, text: DESIGN, size: DESIGN.length };
+  ref.startsWith('deliverable:')
+    ? { ref, kind: 'deliverable', provenance: 'witnessed' }
+    : { ref, kind: 'file', provenance: 'witnessed', path: ref, text: DESIGN, size: DESIGN.length };
 
 const LIST_KEYS = new Set([
   'assumptions',
@@ -81,7 +83,8 @@ test('every shipped step names a skill range the shipped skill satisfies', () =>
       if (!step.skill) continue;
       const shipped = skills.get(step.skill.id);
       if (!shipped) misses.push(`${w.manifest.id}.${step.id}: no shipped skill ${step.skill.id}`);
-      else if (!satisfies(shipped.manifest.version, step.skill.range)) misses.push(`${w.manifest.id}.${step.id}: ${step.skill.id} ${shipped.manifest.version} is outside ${step.skill.range}`);
+      else if (!satisfies(shipped.manifest.version, step.skill.range))
+        misses.push(`${w.manifest.id}.${step.id}: ${step.skill.id} ${shipped.manifest.version} is outside ${step.skill.range}`);
     }
   }
   assert.deepEqual(misses, []);

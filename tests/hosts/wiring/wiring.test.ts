@@ -57,7 +57,12 @@ test('doctor wiring inspection identifies host-disabled servers and recognizes r
       assert.equal(disabled.status, 'broken', `${id}: a disabled server cannot serve the host`);
       assert.match(disabled.detail, /disabled.*[Ee]nable.*restart/);
       const text = readFileSync(installed.path, 'utf8');
-      writeFileSync(installed.path, w.format === 'toml' ? text.replace('enabled = false', 'enabled = true') : text.replace(id === 'bob' ? '"disabled":true' : '"enabled":false', id === 'bob' ? '"disabled":false' : '"enabled":true'));
+      writeFileSync(
+        installed.path,
+        w.format === 'toml'
+          ? text.replace('enabled = false', 'enabled = true')
+          : text.replace(id === 'bob' ? '"disabled":true' : '"enabled":false', id === 'bob' ? '"disabled":false' : '"enabled":true'),
+      );
       assert.equal(inspectWiring(id, root, homeOf(root)).status, 'installed');
     }
   } finally {
@@ -93,7 +98,10 @@ test('every wirable client writes its documented file with a portable serve entr
     assert.deepEqual(serveArgs('cursor'), ['serve', '--client=cursor']);
     assert.equal(normalizeClient('claude'), 'claude-code');
     assert.equal(normalizeClient('nope'), 'unknown');
-    assert.deepEqual(parseClients(['claude,cursor', 'codex', 'claude-code', 'nope']), { clients: ['claude-code', 'cursor', 'codex'], unknown: ['nope'] });
+    assert.deepEqual(parseClients(['claude,cursor', 'codex', 'claude-code', 'nope']), {
+      clients: ['claude-code', 'cursor', 'codex'],
+      unknown: ['nope'],
+    });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -140,7 +148,11 @@ test('other servers in the file survive; a malformed file is reported, not overw
     assert.equal(readFileSync(join(root, '.mcp.json'), 'utf8'), '{ not json');
     writeFileSync(join(root, '.vscode.json'), '', 'utf8');
     mkdirSync(join(root, '.vscode'));
-    writeFileSync(join(root, '.vscode', 'mcp.json'), JSON.stringify({ servers: { construct: { command: 'node', args: ['serve'] } } }), 'utf8');
+    writeFileSync(
+      join(root, '.vscode', 'mcp.json'),
+      JSON.stringify({ servers: { construct: { command: 'node', args: ['serve'] } } }),
+      'utf8',
+    );
     assert.equal(inspectWiring('vscode', root, homeOf(root)).status, 'broken');
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -150,12 +162,22 @@ test('other servers in the file survive; a malformed file is reported, not overw
 test('init --client wires the host, doctor reports it, and serve --describe names the surface', async () => {
   const box = sandbox();
   try {
-    const init = await capture(() => run(['init', '--client=cursor', '--scale=solo', '--outcome=x', '--constraint=y', `--skills-dir=${join(box.home, 'skills')}`, '--json'], box.ctx));
+    const init = await capture(() =>
+      run(
+        ['init', '--client=cursor', '--scale=solo', '--outcome=x', '--constraint=y', `--skills-dir=${join(box.home, 'skills')}`, '--json'],
+        box.ctx,
+      ),
+    );
     assert.equal(init.code, 0, init.err);
-    const record = JSON.parse(init.out) as { hosts: { client: string; mcp: { path: string; status: string; launch: string }; skill: { dir: string } }[] };
+    const record = JSON.parse(init.out) as {
+      hosts: { client: string; mcp: { path: string; status: string; launch: string }; skill: { dir: string } }[];
+    };
     // The sandbox PATH holds this checkout's launcher as `construct`, which is what the cursor entry starts.
     assert.equal(record.hosts[0]!.client, 'cursor');
-    assert.deepEqual({ path: record.hosts[0]!.mcp.path, status: record.hosts[0]!.mcp.status, launch: record.hosts[0]!.mcp.launch }, { path: join(box.cwd, '.cursor', 'mcp.json'), status: 'installed', launch: 'construct' });
+    assert.deepEqual(
+      { path: record.hosts[0]!.mcp.path, status: record.hosts[0]!.mcp.status, launch: record.hosts[0]!.mcp.launch },
+      { path: join(box.cwd, '.cursor', 'mcp.json'), status: 'installed', launch: 'construct' },
+    );
     assert.equal(record.hosts[0]!.skill.dir, join(box.cwd, '.agents', 'skills'));
     const doctor = await capture(() => run(['doctor', '--json'], box.ctx));
     const checks = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks;
@@ -191,8 +213,17 @@ test('hermes is wired in its user-level config under HERMES_HOME, names its proj
     const state = installWiring('hermes', project, env);
     assert.equal(state.status, 'installed', state.detail);
     assert.equal(state.path, file, 'HERMES_HOME moves the file');
-    assert.deepEqual(readYamlServerBlock(file, 'construct'), { command: 'construct', args: ['serve', '--client=hermes', `--project=${project}`], cwd: project, trust: 'untrusted', enabled: true });
-    assert.deepEqual(launchOf('hermes', project, env), { command: 'construct', args: ['serve', '--client=hermes', `--project=${project}`] });
+    assert.deepEqual(readYamlServerBlock(file, 'construct'), {
+      command: 'construct',
+      args: ['serve', '--client=hermes', `--project=${project}`],
+      cwd: project,
+      trust: 'untrusted',
+      enabled: true,
+    });
+    assert.deepEqual(launchOf('hermes', project, env), {
+      command: 'construct',
+      args: ['serve', '--client=hermes', `--project=${project}`],
+    });
     const bytes = readFileSync(file);
     assert.equal(installWiring('hermes', project, env).status, 'installed', 'idempotent');
     assert.ok(readFileSync(file).equals(bytes), 'unchanged bytes');

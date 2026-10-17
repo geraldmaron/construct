@@ -15,7 +15,11 @@ test('doctor names skill update for a lock behind the shipped bundles, and skill
   await inProject(async (ctx, box) => {
     const lockPath = join(box.cwd, '.construct', 'registry.lock.json');
     const lock = JSON.parse(readFileSync(lockPath, 'utf8')) as { skills: Record<string, { version: string; digest: string }> };
-    lock.skills.construct = { ...lock.skills.construct!, version: '0.0.1', digest: 'sha256:0000000000000000000000000000000000000000000000000000000000000000' };
+    lock.skills.construct = {
+      ...lock.skills.construct!,
+      version: '0.0.1',
+      digest: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+    };
     writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
 
     const behind = await capture(() => run(['doctor'], ctx));

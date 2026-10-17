@@ -23,7 +23,11 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
 test('a start with an undeclared input is blocked; the corrected start cancels it, names the new run, and a claim hands out work', () => {
   const fx = fixture();
   try {
-    const wrong = fx.service.start({ workflowId: 'ship', input: { request: 'Rename the invoice helper', dateRange: 'Q3' }, trigger: 'manual' });
+    const wrong = fx.service.start({
+      workflowId: 'ship',
+      input: { request: 'Rename the invoice helper', dateRange: 'Q3' },
+      trigger: 'manual',
+    });
     assert.equal(wrong.created, true);
     assert.equal(wrong.run.state, 'blocked');
     assert.ok(wrong.preflight.reasons.some((r) => r.code === 'schema_mismatch' && r.message.includes('dateRange')));
@@ -35,9 +39,16 @@ test('a start with an undeclared input is blocked; the corrected start cancels i
     assert.ok(waiting?.kind === 'blocked', 'a claim on a blocked run is not nothing_ready');
     assert.equal(waiting.runId, wrong.run.id);
     assert.equal(waiting.summary, wrong.run.stateReason);
-    assert.ok(waiting.reasons.some((r) => r.code === 'schema_mismatch' && /Remove dateRange/.test(r.remedy)), 'the reason comes with what would clear it');
+    assert.ok(
+      waiting.reasons.some((r) => r.code === 'schema_mismatch' && /Remove dateRange/.test(r.remedy)),
+      'the reason comes with what would clear it',
+    );
 
-    const same = fx.service.start({ workflowId: 'ship', input: { request: 'Rename the invoice helper', dateRange: 'Q3' }, trigger: 'manual' });
+    const same = fx.service.start({
+      workflowId: 'ship',
+      input: { request: 'Rename the invoice helper', dateRange: 'Q3' },
+      trigger: 'manual',
+    });
     assert.equal(same.created, false, 'the same wrong start finds the same blocked run');
     assert.equal(same.run.id, wrong.run.id);
     assert.equal(same.run.state, 'blocked');
@@ -52,7 +63,11 @@ test('a start with an undeclared input is blocked; the corrected start cancels i
     const old = fx.service.status(wrong.run.id)!.run;
     assert.equal(old.state, 'cancelled');
     assert.equal(old.stateReason, `superseded by run ${fixed.run.id}`);
-    assert.ok(listActivity(fx.store, { runId: wrong.run.id }).some((e) => e.kind === 'run.transition' && (e.payload as { to?: string }).to === 'cancelled'));
+    assert.ok(
+      listActivity(fx.store, { runId: wrong.run.id }).some(
+        (e) => e.kind === 'run.transition' && (e.payload as { to?: string }).to === 'cancelled',
+      ),
+    );
 
     const claimed = fx.service.claimNext({ runId: fixed.run.id });
     assert.ok(claimed.packet, 'the corrected run hands out its first step');
@@ -84,7 +99,10 @@ test('the same start after the world changes resolves the blocked run where it s
     assert.equal(retried.preflight.status, 'runnable');
     assert.deepEqual(retried.differs, []);
     assert.equal(retried.superseded, null);
-    assert.deepEqual(fx.service.status(first.run.id)!.steps.map((s) => s.stepId), ['draft', 'push']);
+    assert.deepEqual(
+      fx.service.status(first.run.id)!.steps.map((s) => s.stepId),
+      ['draft', 'push'],
+    );
     const claimed = fx.service.claimNext({ runId: first.run.id });
     assert.equal(claimed.packet?.step.id, 'draft');
   } finally {
@@ -141,7 +159,11 @@ test('a start that fills in what a blocked run left out replaces it; a blocked r
     const vaguer = fx.service.start({ workflowId: 'brief', input: { scope: 'cost' }, trigger: 'manual' });
     assert.equal(vaguer.run.state, 'blocked');
     assert.equal(vaguer.superseded, null);
-    assert.equal(fx.service.status(elsewhere.run.id)!.run.state, 'blocked', 'a start that leaves out the target a blocked run gave does not replace it');
+    assert.equal(
+      fx.service.status(elsewhere.run.id)!.run.state,
+      'blocked',
+      'a start that leaves out the target a blocked run gave does not replace it',
+    );
   } finally {
     fx.cleanup();
   }
@@ -190,7 +212,10 @@ test('a run that is reused says which declared inputs this start gave differentl
     assert.equal(second.run.id, first.run.id);
     assert.deepEqual(second.differs, ['scope']);
     assert.ok(second.preflight.flags.includes(differsFlag(first.run.id, ['scope'])));
-    assert.match(differsFlag(first.run.id, ['scope']), /^run run-\d+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/);
+    assert.match(
+      differsFlag(first.run.id, ['scope']),
+      /^run run-\d+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/,
+    );
     assert.deepEqual(second.run.input, { target: 'docs/a.md', scope: 'security' }, 'the run keeps the input it was started with');
     assert.equal(second.preflight.status, 'runnable', 'the preflight is the existing run’s own');
 
@@ -207,19 +232,28 @@ test('a run that is reused says which declared inputs this start gave differentl
 test('through the tools: an undeclared input is refused and leaves no run, a claim on a blocked run says why, and a reused run asks the person about what differs', async () => {
   const fx = brokerFixture();
   try {
-    const refused = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' } }).catch((e: unknown) => e);
+    const refused = await call(fx, 'start_outcome', {
+      workflowId: 'managed-outcome',
+      input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' },
+    }).catch((e: unknown) => e);
     assert.ok(refused instanceof ToolInputError, 'wrong input is the model’s to fix, not a run');
     assert.equal(refused.field, 'input.dateRange');
     assert.deepEqual(refused.allowed, ['request', 'target', 'period', 'sources']);
     assert.match(refused.message, /dateRange/);
     assert.deepEqual(listRuns(fx.broker.store), [], 'no run is left behind');
 
-    const blocked = fx.broker.workflow.start({ workflowId: 'managed-outcome', input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' }, trigger: 'manual' });
+    const blocked = fx.broker.workflow.start({
+      workflowId: 'managed-outcome',
+      input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' },
+      trigger: 'manual',
+    });
     assert.equal(blocked.run.state, 'blocked', 'the command line still keeps a blocked run to correct');
     const told = await call(fx, 'claim_work', { runId: blocked.run.id });
     assert.equal(told.work, null);
     assert.equal(told.waitingOn.kind, 'blocked');
-    assert.ok(told.waitingOn.reasons.some((r: { message: string; remedy: string }) => r.message.includes('dateRange') && r.remedy.length > 0));
+    assert.ok(
+      told.waitingOn.reasons.some((r: { message: string; remedy: string }) => r.message.includes('dateRange') && r.remedy.length > 0),
+    );
 
     const fixed = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk' } });
     assert.equal(fixed.started, true);
@@ -230,13 +264,22 @@ test('through the tools: an undeclared input is refused and leaves no run, a cla
     const work = await call(fx, 'claim_work', { runId: fixed.run.id });
     assert.ok(work.work, 'the corrected run hands out work');
 
-    const brief = await call(fx, 'start_outcome', { workflowId: 'research-brief', input: { question: 'Why did churn rise?', scope: 'enterprise' } });
+    const brief = await call(fx, 'start_outcome', {
+      workflowId: 'research-brief',
+      input: { question: 'Why did churn rise?', scope: 'enterprise' },
+    });
     assert.equal(brief.created, true);
-    const reused = await call(fx, 'start_outcome', { workflowId: 'research-brief', input: { question: 'Why did churn rise?', scope: 'self-serve' } });
+    const reused = await call(fx, 'start_outcome', {
+      workflowId: 'research-brief',
+      input: { question: 'Why did churn rise?', scope: 'self-serve' },
+    });
     assert.equal(reused.created, false);
     assert.equal(reused.run.id, brief.run.id);
     assert.deepEqual(reused.differs, ['scope']);
-    assert.equal(reused.next, 'Tell the person this work is already running with different scope, and ask whether to carry on with it or cancel it and start again.');
+    assert.equal(
+      reused.next,
+      'Tell the person this work is already running with different scope, and ask whether to carry on with it or cancel it and start again.',
+    );
     assert.ok(reused.preflight.flags.includes(differsFlag(brief.run.id, ['scope'])));
   } finally {
     fx.cleanup();
@@ -248,5 +291,8 @@ test('the tool descriptions say what a refused start and a blocked claim give ba
   assert.doesNotMatch(start.description, /half-started/);
   assert.match(start.description, /nothing starts and you get the questions back/);
   assert.match(start.description, /If this work is already running you get that run back/);
-  assert.match(TOOLS.find((t) => t.name === 'claim_work')!.description, /A blocked run comes back with its reasons and what would unblock it\./);
+  assert.match(
+    TOOLS.find((t) => t.name === 'claim_work')!.description,
+    /A blocked run comes back with its reasons and what would unblock it\./,
+  );
 });

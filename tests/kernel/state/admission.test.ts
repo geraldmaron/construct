@@ -6,7 +6,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { admitWork, bindGoverningStatement, implicationsOf, supersedeGoverning } from '../../../src/kernel/state/admission.ts';
-import { addClaim, addEntity, addRelation, findEntityByRef, listEntities, listRelations, setEntityStatus, supersedeClaim } from '../../../src/kernel/state/graph.ts';
+import {
+  addClaim,
+  addEntity,
+  addRelation,
+  findEntityByRef,
+  listEntities,
+  listRelations,
+  setEntityStatus,
+  supersedeClaim,
+} from '../../../src/kernel/state/graph.ts';
 import { addStatement, listStatements } from '../../../src/kernel/state/profile.ts';
 import { recordObservation, listObservations } from '../../../src/kernel/state/drift.ts';
 import { detectDrift } from '../../../src/kernel/drift/detect.ts';
@@ -73,7 +82,16 @@ test('a superseded assumption surfaces the decision and dependents', () => {
       at: AT,
     });
     addEntity(fx.store, { id: 'code-1', kind: 'code_component', name: 'billing.ts', at: AT });
-    addRelation(fx.store, { id: 'r-g', kind: 'governs', fromId: decision.id, toId: 'code-1', basis: 'declared', confidence: 1, confirmed: true, at: AT });
+    addRelation(fx.store, {
+      id: 'r-g',
+      kind: 'governs',
+      fromId: decision.id,
+      toId: 'code-1',
+      basis: 'declared',
+      confidence: 1,
+      confirmed: true,
+      at: AT,
+    });
     const evidence = addClaim(fx.store, {
       id: 'c-e',
       subjectId: decision.id,

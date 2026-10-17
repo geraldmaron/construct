@@ -19,7 +19,15 @@ import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
 import { endSession, registerSession } from '../kernel/state/sessions.ts';
 import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, initRootFor, locateProject, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
+import {
+  createContext,
+  initRootFor,
+  locateProject,
+  mainCheckoutOf,
+  ProjectBusyError,
+  resolveRepository,
+  type CliContext,
+} from './context.ts';
 import { HostRequests } from '../hosts/mcp/outbound.ts';
 import { refreshLauncher } from '../hosts/wiring/claude-local.ts';
 import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
@@ -54,15 +62,22 @@ const RETRY_INIT_NEXT = 'Run `construct init` in the project, then call again. T
 export function bindFailureFor(error: unknown): BindFailure {
   if (error instanceof ProjectBusyError || error instanceof StateBusyError) return { busy: true };
   if (error instanceof UnsupportedStateError) {
-    const next = error.kind === 'newer'
-      ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
-      : error.kind === 'older'
-        ? 'Run `construct migrate` in the project (it backs the store up first), then call again.'
-        : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
+    const next =
+      error.kind === 'newer'
+        ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
+        : error.kind === 'older'
+          ? 'Run `construct migrate` in the project (it backs the store up first), then call again.'
+          : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
     return { busy: false, reason: error.message.split('\n')[0]!, next };
   }
-  if (error instanceof ProjectFileError) return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
-  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError) return { busy: false, reason: error.message, next: 'Use a Construct build compatible with the project files, then restart this MCP server. Nothing was recorded.' };
+  if (error instanceof ProjectFileError)
+    return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
+  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError)
+    return {
+      busy: false,
+      reason: error.message,
+      next: 'Use a Construct build compatible with the project files, then restart this MCP server. Nothing was recorded.',
+    };
   if (error instanceof StoreProjectError) return { busy: false, reason: error.message, next: error.next };
   if (error instanceof NoProjectError) return { busy: false, reason: error.message.split('\n')[0]!, next: RETRY_INIT_NEXT };
   if (error instanceof OperationError) return { busy: false, reason: error.message, next: error.next ?? RETRY_INIT_NEXT };
@@ -105,21 +120,27 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   // Capture the intended root before retrying. A missing file is not permission
   // to forget an identity already observed before a format or lock refusal.
   const repository = resolveRepository(bound.cwd);
-  let intendedRoot = repository?.linked ? mainCheckoutOf(repository) ?? initRootFor(bound.cwd) : initRootFor(bound.cwd);
-  try { intendedRoot = locateProject(bound).root; } catch { /* The opener reports the actual failure below. */ }
+  let intendedRoot = repository?.linked ? (mainCheckoutOf(repository) ?? initRootFor(bound.cwd)) : initRootFor(bound.cwd);
+  try {
+    intendedRoot = locateProject(bound).root;
+  } catch {
+    /* The opener reports the actual failure below. */
+  }
   intendedRoot = realpathSync(intendedRoot);
   let projectId: string | null = null;
   const openPinned = (timeout: number): ReturnType<typeof openBroker> => {
     const location = locateProject(bound);
-    if (realpathSync(location.root) !== intendedRoot) throw new OperationError(
-      'The project root changed while this connection was waiting to bind.',
-      'Restart the MCP server in the intended project. Nothing was recorded.',
-    );
+    if (realpathSync(location.root) !== intendedRoot)
+      throw new OperationError(
+        'The project root changed while this connection was waiting to bind.',
+        'Restart the MCP server in the intended project. Nothing was recorded.',
+      );
     const id = readJsonFile(intendedRoot, projectFilePath(intendedRoot), validateProjectConfig)?.id ?? null;
-    if (projectId !== null && id !== projectId) throw new OperationError(
-      'The project identity changed while this connection was waiting to bind.',
-      'Restart the MCP server after checking the intended project identity. Nothing was recorded.',
-    );
+    if (projectId !== null && id !== projectId)
+      throw new OperationError(
+        'The project identity changed while this connection was waiting to bind.',
+        'Restart the MCP server after checking the intended project identity. Nothing was recorded.',
+      );
     projectId ??= id;
     return openBroker({ ...bound, stateBusyTimeoutMs: timeout }, flags, binding, { root: intendedRoot, id: projectId });
   };
@@ -138,18 +159,18 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     const lane = o.project.lane;
     try {
       registerSession(o.project.store, {
-      id: o.binding.sessionId,
-      host: o.binding.client,
-      surface: o.binding.surface,
-      machine: hostname(),
-      pid: process.pid,
-      serveVersion: packageVersion(),
-      hostSessionId: identity?.hostSessionId,
-      hostSessionSource: identity?.source,
-      laneRoot: lane?.root,
-      branch: lane?.branch ?? undefined,
-      head: lane?.head ?? undefined,
-      at: ctx.now(),
+        id: o.binding.sessionId,
+        host: o.binding.client,
+        surface: o.binding.surface,
+        machine: hostname(),
+        pid: process.pid,
+        serveVersion: packageVersion(),
+        hostSessionId: identity?.hostSessionId,
+        hostSessionSource: identity?.source,
+        laneRoot: lane?.root,
+        branch: lane?.branch ?? undefined,
+        head: lane?.head ?? undefined,
+        at: ctx.now(),
       });
       registered = true;
     } catch (error) {
@@ -180,23 +201,40 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   } catch (error) {
     if (describe) throw error;
     const failed = bindFailureFor(error);
-    if (failed.busy || error instanceof NoProjectError || error instanceof OperationError || error instanceof UnsupportedStateError || error instanceof ProjectFileError || error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError || error instanceof StoreProjectError) {
+    if (
+      failed.busy ||
+      error instanceof NoProjectError ||
+      error instanceof OperationError ||
+      error instanceof UnsupportedStateError ||
+      error instanceof ProjectFileError ||
+      error instanceof UnsupportedProjectFileError ||
+      error instanceof LegacyProjectError ||
+      error instanceof StoreProjectError
+    ) {
       let lazy: ReturnType<typeof openBroker> | null = null;
       try {
-        await serveLazyMcp(binding.surface, () => {
-          const o = openPinned(LAZY_LOCK_WAIT_MS);
-          o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
-          lazy = o;
-          register(o);
-          refreshLauncher(o.project.layout.stateDir);
-          endOnSignal(o);
-          return o.broker;
-        }, packageVersion(), bindFailureFor, process.stdin, process.stdout, {
-          ...hostOptions,
-          beforeEachCall: () => {
-            if (lazy) register(lazy);
+        await serveLazyMcp(
+          binding.surface,
+          () => {
+            const o = openPinned(LAZY_LOCK_WAIT_MS);
+            o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
+            lazy = o;
+            register(o);
+            refreshLauncher(o.project.layout.stateDir);
+            endOnSignal(o);
+            return o.broker;
           },
-        });
+          packageVersion(),
+          bindFailureFor,
+          process.stdin,
+          process.stdout,
+          {
+            ...hostOptions,
+            beforeEachCall: () => {
+              if (lazy) register(lazy);
+            },
+          },
+        );
       } finally {
         const done = lazy as ReturnType<typeof openBroker> | null;
         if (done) {
@@ -212,7 +250,14 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const { project, broker } = opened;
   try {
     if (describe) {
-      const record = { surface: binding.surface, client: binding.client, executor: binding.executorId, project: project.root, capabilities: [...broker.host.available].sort(), maxTier: broker.host.maxTier };
+      const record = {
+        surface: binding.surface,
+        client: binding.client,
+        executor: binding.executorId,
+        project: project.root,
+        capabilities: [...broker.host.available].sort(),
+        maxTier: broker.host.maxTier,
+      };
       if (args.json) writeJson(record);
       else {
         say(`would serve the ${record.surface} surface for ${record.client} bound to ${record.project}`);

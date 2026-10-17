@@ -92,23 +92,69 @@ test('the architecture diagram request runs end to end through the tools: period
     writeFileSync(join(root, 'services', 'checkout', 'server.ts'), 'export const PORT = 8080;\n');
     writeFileSync(join(root, 'services', 'ledger', 'main.go'), 'package main\n\nconst port = 9090\n');
     writeFileSync(join(root, 'docker-compose.yml'), COMPOSE);
-    writeFileSync(join(root, 'docs', 'architecture-notes.md'), '# Architecture notes\n\nCheckout is the only public entry point. The ledger is the only writer to payments-db.\n');
+    writeFileSync(
+      join(root, 'docs', 'architecture-notes.md'),
+      '# Architecture notes\n\nCheckout is the only public entry point. The ledger is the only writer to payments-db.\n',
+    );
 
     // 1-2. The session declares the systems the person named and reports what it read there.
-    for (const [id, kind, locator] of [['jira', 'jira', 'PAY'], ['confluence', 'docs', undefined], ['github', 'github', 'acme/payments']] as const) {
+    for (const [id, kind, locator] of [
+      ['jira', 'jira', 'PAY'],
+      ['confluence', 'docs', undefined],
+      ['github', 'github', 'acme/payments'],
+    ] as const) {
       const declared = await call(fx, 'sources', { action: 'declare', id, kind, ...(locator ? { locator } : {}) });
       assert.equal(declared.declared, true, id);
     }
-    await call(fx, 'sources', { action: 'report', id: 'jira', partial: true, items: [
-      { ref: 'PAY-412', url: 'https://acme.atlassian.net/browse/PAY-412', title: 'Move the ledger to Postgres 16', updatedAt: '2026-08-14T10:00:00Z', text: 'The ledger moves to Postgres 16. Checkout calls the ledger over gRPC.' },
-      { ref: 'PAY-430', url: 'https://acme.atlassian.net/browse/PAY-430', title: 'Split cart out of checkout', updatedAt: '2026-10-05T08:00:00Z', text: 'Cart moves out of checkout into its own service.' },
-    ] });
-    await call(fx, 'sources', { action: 'report', id: 'confluence', partial: true, items: [
-      { ref: '98765', url: CONFLUENCE_URL, title: 'Payments architecture', updatedAt: '2026-09-01', text: 'Customers reach checkout over HTTPS. Checkout calls the ledger, which owns the payments database.' },
-    ] });
-    await call(fx, 'sources', { action: 'report', id: 'github', partial: true, items: [
-      { ref: 'acme/payments#311', url: 'https://github.com/acme/payments/pull/311', title: 'Add the payments-db healthcheck', updatedAt: '2026-09-20T16:00:00Z', text: 'Adds a healthcheck for payments-db in docker-compose.yml.' },
-    ] });
+    await call(fx, 'sources', {
+      action: 'report',
+      id: 'jira',
+      partial: true,
+      items: [
+        {
+          ref: 'PAY-412',
+          url: 'https://acme.atlassian.net/browse/PAY-412',
+          title: 'Move the ledger to Postgres 16',
+          updatedAt: '2026-08-14T10:00:00Z',
+          text: 'The ledger moves to Postgres 16. Checkout calls the ledger over gRPC.',
+        },
+        {
+          ref: 'PAY-430',
+          url: 'https://acme.atlassian.net/browse/PAY-430',
+          title: 'Split cart out of checkout',
+          updatedAt: '2026-10-05T08:00:00Z',
+          text: 'Cart moves out of checkout into its own service.',
+        },
+      ],
+    });
+    await call(fx, 'sources', {
+      action: 'report',
+      id: 'confluence',
+      partial: true,
+      items: [
+        {
+          ref: '98765',
+          url: CONFLUENCE_URL,
+          title: 'Payments architecture',
+          updatedAt: '2026-09-01',
+          text: 'Customers reach checkout over HTTPS. Checkout calls the ledger, which owns the payments database.',
+        },
+      ],
+    });
+    await call(fx, 'sources', {
+      action: 'report',
+      id: 'github',
+      partial: true,
+      items: [
+        {
+          ref: 'acme/payments#311',
+          url: 'https://github.com/acme/payments/pull/311',
+          title: 'Add the payments-db healthcheck',
+          updatedAt: '2026-09-20T16:00:00Z',
+          text: 'Adds a healthcheck for payments-db in docker-compose.yml.',
+        },
+      ],
+    });
 
     // 3. The portable path leads; this scenario explicitly exercises the command-verified alternative.
     const request = 'Create an architecture diagram of our system from Jira/Confluence and GitHub, only covering 2026-07-01 to 2026-09-30';
@@ -122,20 +168,45 @@ test('the architecture diagram request runs end to end through the tools: period
     });
     assert.equal(read.matches[0].workflowId, 'guided-outcome');
     assert.deepEqual(read.questions, []);
-    assert.deepEqual(read.intake.sources.map((s: { id: string }) => s.id), ['jira', 'confluence', 'github'], 'the named systems resolve to the sources the session declared');
+    assert.deepEqual(
+      read.intake.sources.map((s: { id: string }) => s.id),
+      ['jira', 'confluence', 'github'],
+      'the named systems resolve to the sources the session declared',
+    );
     assert.deepEqual(read.matches[0].input.sources, ['jira', 'confluence', 'github']);
     const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', intake: read.intake });
     assert.equal(started.started, true);
     assert.equal(started.run.state, 'ready', started.preflight.summary);
-    assert.deepEqual([started.preflight.period.from, started.preflight.period.to, started.preflight.period.semantics], ['2026-07-01', '2026-09-30', 'evidence_window']);
+    assert.deepEqual(
+      [started.preflight.period.from, started.preflight.period.to, started.preflight.period.semantics],
+      ['2026-07-01', '2026-09-30', 'evidence_window'],
+    );
     const runId = started.run.id as string;
 
     const plan = (await claim(fx, runId)).work;
     assert.equal(plan.step.id, 'plan');
     assert.equal(plan.inputs.request, request);
-    assert.deepEqual([plan.inputs.period.from, plan.inputs.period.to], ['2026-07-01', '2026-09-30'], 'the plan step gets the period in dates');
+    assert.deepEqual(
+      [plan.inputs.period.from, plan.inputs.period.to],
+      ['2026-07-01', '2026-09-30'],
+      'the plan step gets the period in dates',
+    );
     assert.deepEqual(plan.inputs.sources, ['jira', 'confluence', 'github']);
-    assert.equal((await submit(fx, plan, { plan: ['read the named sources and the repo', 'draw the containers as C4'], assumptions: ['the compose file is the deployed topology'], blockers: [] }, [])).step.state, 'succeeded');
+    assert.equal(
+      (
+        await submit(
+          fx,
+          plan,
+          {
+            plan: ['read the named sources and the repo', 'draw the containers as C4'],
+            assumptions: ['the compose file is the deployed topology'],
+            blockers: [],
+          },
+          [],
+        )
+      ).step.state,
+      'succeeded',
+    );
 
     // 4. The do step, refused in turn for each way honest-looking work goes wrong.
     let work = (await claim(fx, runId)).work;
@@ -144,15 +215,33 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.deepEqual([work.inputs.period.from, work.inputs.period.to], ['2026-07-01', '2026-09-30']);
     assert.deepEqual(work.inputs.sources, ['jira', 'confluence', 'github']);
     assert.deepEqual(work.inputs.plan, ['read the named sources and the repo', 'draw the containers as C4']);
-    assert.deepEqual(work.method, { id: 'system-architecture', version: work.method.version, title: 'System architecture' }, 'the do step binds no skill, so it carries the method the reading chose');
+    assert.deepEqual(
+      work.method,
+      { id: 'system-architecture', version: work.method.version, title: 'System architecture' },
+      'the do step binds no skill, so it carries the method the reading chose',
+    );
     assert.ok(work.instructions.some((i: string) => i.startsWith('Use the System architecture method for this step')));
-    assert.deepEqual(work.intake.period, { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' });
-    assert.ok(work.instructions.some((i: string) => i.startsWith('This run covers 2026-07-01 to 2026-09-30') && i.includes('An item updated after 2026-09-30 is refused')), work.instructions.join('\n'));
+    assert.deepEqual(work.intake.period, {
+      semantics: 'evidence_window',
+      from: '2026-07-01',
+      to: '2026-09-30',
+      phrase: 'only covering 2026-07-01 to 2026-09-30',
+    });
+    assert.ok(
+      work.instructions.some(
+        (i: string) =>
+          i.startsWith('This run covers 2026-07-01 to 2026-09-30') && i.includes('An item updated after 2026-09-30 is refused'),
+      ),
+      work.instructions.join('\n'),
+    );
     assert.ok(work.instructions.some((i: string) => i.startsWith('Read the sources this run names: jira, confluence, github')));
 
     const findings = [
       { text: 'Checkout is the public entry point and calls the ledger over gRPC', citations: ['jira:PAY-412', CONFLUENCE_URL] },
-      { text: 'The ledger is the only writer to payments-db, which runs Postgres 16', citations: ['docker-compose.yml', 'docs/architecture-notes.md'] },
+      {
+        text: 'The ledger is the only writer to payments-db, which runs Postgres 16',
+        citations: ['docker-compose.yml', 'docs/architecture-notes.md'],
+      },
       { text: 'payments-db gained a healthcheck in the quarter', citations: ['github:acme/payments#311'] },
     ];
     const cited = [
@@ -164,20 +253,33 @@ test('the architecture diagram request runs end to end through the tools: period
       { ref: 'docs/architecture-notes.md' },
       { ref: 'services/checkout/server.ts' },
     ];
-    const outsidePeriod = [{ ref: 'jira:PAY-430', why: 'it records the cart split decided after the quarter; the diagram leaves it out and says so' }];
-    const output = { summary: 'A C4 container diagram of checkout, ledger and payments-db as the evidence stood in Q3', findings, changes: ['docs/architecture.md'], artifact: 'docs/architecture.md' };
+    const outsidePeriod = [
+      { ref: 'jira:PAY-430', why: 'it records the cart split decided after the quarter; the diagram leaves it out and says so' },
+    ];
+    const output = {
+      summary: 'A C4 container diagram of checkout, ledger and payments-db as the evidence stood in Q3',
+      findings,
+      changes: ['docs/architecture.md'],
+      artifact: 'docs/architecture.md',
+    };
 
     writeFileSync(join(root, 'docs', 'architecture.md'), diagram());
     const late = await submit(fx, work, output, cited);
     assert.deepEqual(failing(late), ['within_period'], JSON.stringify(late.validation));
-    assert.match(late.validation.find((v: { validator: string }) => v.validator === 'within_period').problems[0], /"jira:PAY-430" was updated 2026-10-05, after the period ends \(2026-09-30\)/);
+    assert.match(
+      late.validation.find((v: { validator: string }) => v.validator === 'within_period').problems[0],
+      /"jira:PAY-430" was updated 2026-10-05, after the period ends \(2026-09-30\)/,
+    );
     assert.equal(late.step.state, 'ready', 'sent back for another attempt');
 
     work = (await claim(fx, runId)).work;
     writeFileSync(join(root, 'docs', 'architecture.md'), diagram(', p99 420ms'));
     const invented = await submit(fx, work, { ...output, outsidePeriod }, cited);
     assert.deepEqual(failing(invented), ['numbers_grounded'], JSON.stringify(invented.validation));
-    assert.match(invented.validation.find((v: { validator: string }) => v.validator === 'numbers_grounded').problems.join('\n'), /the figure "420ms" appears in no cited source/);
+    assert.match(
+      invented.validation.find((v: { validator: string }) => v.validator === 'numbers_grounded').problems.join('\n'),
+      /the figure "420ms" appears in no cited source/,
+    );
     // Its retries are spent: the person decides, and asks for another attempt.
     const waiver = (await claim(fx, runId)).waitingOn;
     assert.equal(waiver.kind, 'decision');
@@ -185,9 +287,17 @@ test('the architecture diagram request runs end to end through the tools: period
 
     work = (await claim(fx, runId)).work;
     writeFileSync(join(root, 'docs', 'architecture.md'), diagram());
-    const unread = await submit(fx, work, { ...output, outsidePeriod }, cited.filter((e) => !e.ref.startsWith('github:')));
+    const unread = await submit(
+      fx,
+      work,
+      { ...output, outsidePeriod },
+      cited.filter((e) => !e.ref.startsWith('github:')),
+    );
     assert.deepEqual(failing(unread), ['named_sources_read'], JSON.stringify(unread.validation));
-    assert.match(unread.validation.find((v: { validator: string }) => v.validator === 'named_sources_read').problems[0], /this run names github, and this step cites nothing read from it/);
+    assert.match(
+      unread.validation.find((v: { validator: string }) => v.validator === 'named_sources_read').problems[0],
+      /this run names github, and this step cites nothing read from it/,
+    );
     await call(fx, 'decide', { decisionId: (await claim(fx, runId)).waitingOn.decision.id, resolution: 'another attempt' });
 
     work = (await claim(fx, runId)).work;
@@ -198,14 +308,48 @@ test('the architecture diagram request runs end to end through the tools: period
     // 5. The verify step runs the project's check and hands the outcome back.
     const verify = (await claim(fx, runId)).work;
     assert.equal(verify.step.id, 'verify');
-    assert.deepEqual(verify.inputs, { summary: output.summary, findings, changes: ['docs/architecture.md'], artifact: 'docs/architecture.md' });
-    assert.ok(verify.instructions.includes('Construct carries summary, findings, changes, artifact into the deliverable as this step received them; return only what this step adds.'), verify.instructions.join('\n'));
-    const observed = await executeVerification({ store: fx.broker.store, runId, stepRunId: verify.stepRunId, token: verify.token, root: fx.broker.root, env: fx.ctx.env, now: fx.ctx.now, resolve: (ref) => projectResolver(fx.broker.store, fx.broker.root)(ref), argv: [process.execPath, '-e', 'require("node:assert").ok(require("node:fs").readFileSync("docs/architecture.md", "utf8").length > 0)'] });
-    const done = await submit(fx, verify, {
-      verification: { executionRef: observed.executionRef, command: observed.command, exitStatus: observed.exitStatus, result: 'The artifact is nonempty; renderer and semantic correctness are not tested.' },
-      passed: true,
-      summary: 'Artifact presence checked',
-    }, [{ ref: 'docs/architecture.md' }]);
+    assert.deepEqual(verify.inputs, {
+      summary: output.summary,
+      findings,
+      changes: ['docs/architecture.md'],
+      artifact: 'docs/architecture.md',
+    });
+    assert.ok(
+      verify.instructions.includes(
+        'Construct carries summary, findings, changes, artifact into the deliverable as this step received them; return only what this step adds.',
+      ),
+      verify.instructions.join('\n'),
+    );
+    const observed = await executeVerification({
+      store: fx.broker.store,
+      runId,
+      stepRunId: verify.stepRunId,
+      token: verify.token,
+      root: fx.broker.root,
+      env: fx.ctx.env,
+      now: fx.ctx.now,
+      resolve: (ref) => projectResolver(fx.broker.store, fx.broker.root)(ref),
+      argv: [
+        process.execPath,
+        '-e',
+        'require("node:assert").ok(require("node:fs").readFileSync("docs/architecture.md", "utf8").length > 0)',
+      ],
+    });
+    const done = await submit(
+      fx,
+      verify,
+      {
+        verification: {
+          executionRef: observed.executionRef,
+          command: observed.command,
+          exitStatus: observed.exitStatus,
+          result: 'The artifact is nonempty; renderer and semantic correctness are not tested.',
+        },
+        passed: true,
+        summary: 'Artifact presence checked',
+      },
+      [{ ref: 'docs/architecture.md' }],
+    );
     assert.equal(done.run.state, 'succeeded', JSON.stringify(done.validation));
     assert.equal(done.deliverable.trust, 'validated');
     assert.deepEqual(done.ignored, ['summary'], 'a restated summary is named and not carried');
@@ -219,12 +363,21 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.equal(body.passed, true);
     assert.equal(body.verification.exitStatus, 0);
     assert.equal(body.sensitivity, 'confidential', 'declared sources are treated as confidential');
-    assert.deepEqual(body.provenance, { witnessed: 4, reported: 4, unverified: 0, unresolved: 0 }, 'everything the run cited: the files Construct opened and what the host reported reading');
+    assert.deepEqual(
+      body.provenance,
+      { witnessed: 4, reported: 4, unverified: 0, unresolved: 0 },
+      'everything the run cited: the files Construct opened and what the host reported reading',
+    );
     assert.deepEqual([body.period.semantics, body.period.from, body.period.to], ['evidence_window', '2026-07-01', '2026-09-30']);
     assert.deepEqual([...body.period.coverage.inside].sort(), ['github:acme/payments#311', 'jira:PAY-412', CONFLUENCE_URL].sort());
     assert.deepEqual(body.period.coverage.after, ['jira:PAY-430']);
     assert.deepEqual(body.period.coverage.before, []);
-    assert.deepEqual([...body.period.coverage.undated].sort(), ['docker-compose.yml', 'docs/architecture-notes.md', 'docs/architecture.md', 'services/checkout/server.ts']);
+    assert.deepEqual([...body.period.coverage.undated].sort(), [
+      'docker-compose.yml',
+      'docs/architecture-notes.md',
+      'docs/architecture.md',
+      'services/checkout/server.ts',
+    ]);
     assert.deepEqual(body.period.coverage.acknowledged, outsidePeriod);
     assert.deepEqual(body.sources, { named: ['jira', 'confluence', 'github'], read: ['jira', 'confluence', 'github'], unread: [] });
 
@@ -241,19 +394,23 @@ test('the architecture diagram request runs end to end through the tools: period
     const inbox = (await call(fx, 'inbox', { runId })) as { id: string; question: string }[];
     const question = inbox.find((d) => d.id === accept.pendingDecision)!.question;
     assert.match(question.split('\n')[3]!, /Host command observation:.*exit 0.*bound to this attempt and artifact bytes/);
-    assert.deepEqual(question.split('\n'), [
-      `Move deliverable ${done.deliverable.id} (outcome/managed) from validated to accepted?`,
-      "Construct's checks passed on the last step: evidence_refs_resolve, within_period, verification_result.",
-      "Construct opened 4 of 8 things this rests on; 4 are your assistant's report of what it read; 0 could not be checked.",
-      question.split('\n')[3]!,
-      'Highest sensitivity cited: confidential.',
-      'Declared by your assistant, not added by you: jira, confluence, github.',
-      'Covers 2026-07-01..2026-09-30 (only evidence dated in it); 4 cited items are dated before it or undated; 1 dated after it.',
-      "Your assistant's description, not checked by Construct:",
-      'assumption (step plan): \u201cthe compose file is the deployed topology\u201d',
-      'dated after the period: \u201cjira:PAY-430: it records the cart split decided after the quarter; the diagram leaves it out and says so\u201d',
-      `request: \u201c${request}\u201d`,
-    ], 'what Construct opened and what the assistant only reported come before the assistant\'s own words');
+    assert.deepEqual(
+      question.split('\n'),
+      [
+        `Move deliverable ${done.deliverable.id} (outcome/managed) from validated to accepted?`,
+        "Construct's checks passed on the last step: evidence_refs_resolve, within_period, verification_result.",
+        "Construct opened 4 of 8 things this rests on; 4 are your assistant's report of what it read; 0 could not be checked.",
+        question.split('\n')[3]!,
+        'Highest sensitivity cited: confidential.',
+        'Declared by your assistant, not added by you: jira, confluence, github.',
+        'Covers 2026-07-01..2026-09-30 (only evidence dated in it); 4 cited items are dated before it or undated; 1 dated after it.',
+        "Your assistant's description, not checked by Construct:",
+        'assumption (step plan): \u201cthe compose file is the deployed topology\u201d',
+        'dated after the period: \u201cjira:PAY-430: it records the cart split decided after the quarter; the diagram leaves it out and says so\u201d',
+        `request: \u201c${request}\u201d`,
+      ],
+      "what Construct opened and what the assistant only reported come before the assistant's own words",
+    );
   } finally {
     fx.cleanup();
   }

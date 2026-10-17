@@ -12,17 +12,61 @@ export function repository() {
   const root = join(state.root, 'repo');
   mkdirSync(home);
   mkdirSync(join(root, 'src'), { recursive: true });
-  const env: NodeJS.ProcessEnv = { HOME: home, PATH: process.env.PATH, XDG_CONFIG_HOME: join(home, '.config'), XDG_CACHE_HOME: join(home, '.cache'), XDG_DATA_HOME: join(home, '.data'), XDG_STATE_HOME: join(home, '.state'), GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' };
-  const git = (...args: string[]) => execFileSync('git', ['-c', 'core.hooksPath=/dev/null', ...args], { cwd: root, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const env: NodeJS.ProcessEnv = {
+    HOME: home,
+    PATH: process.env.PATH,
+    XDG_CONFIG_HOME: join(home, '.config'),
+    XDG_CACHE_HOME: join(home, '.cache'),
+    XDG_DATA_HOME: join(home, '.data'),
+    XDG_STATE_HOME: join(home, '.state'),
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+  };
+  const git = (...args: string[]) =>
+    execFileSync('git', ['-c', 'core.hooksPath=/dev/null', ...args], {
+      cwd: root,
+      env,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
   git('init');
   writeFileSync(join(root, 'src/value.txt'), 'base\n');
   writeFileSync(join(root, 'README.md'), 'fixture\n');
   git('add', '.');
   git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'Fixture base');
   const execution: Execution = {
-    version: 1, id: 'fixture-execution', childWorkId: 'child', leadSession: 'lead', workerSession: 'worker', target: root, machine: 'fixture', model: 'fixture-model', signature: 'signature',
-    assignment: { workId: 'parent', requestKey: 'request', executor: 'codex', role: 'implement', instructions: 'edit', paths: ['src/'], acceptance: ['file is correct'], couplingKeys: [], timeoutMs: 5000 },
-    repairCycle: 0, createdAt: '2026-09-27T12:00:00.000Z', updatedAt: '2026-09-27T12:00:00.000Z', state: 'running', supervisorPid: null, groupPid: null, snapshot: null, artifact: null, result: null, dispositions: [], reason: null, validation: [],
+    version: 1,
+    id: 'fixture-execution',
+    childWorkId: 'child',
+    leadSession: 'lead',
+    workerSession: 'worker',
+    target: root,
+    machine: 'fixture',
+    model: 'fixture-model',
+    signature: 'signature',
+    assignment: {
+      workId: 'parent',
+      requestKey: 'request',
+      executor: 'codex',
+      role: 'implement',
+      instructions: 'edit',
+      paths: ['src/'],
+      acceptance: ['file is correct'],
+      couplingKeys: [],
+      timeoutMs: 5000,
+    },
+    repairCycle: 0,
+    createdAt: '2026-09-27T12:00:00.000Z',
+    updatedAt: '2026-09-27T12:00:00.000Z',
+    state: 'running',
+    supervisorPid: null,
+    groupPid: null,
+    snapshot: null,
+    artifact: null,
+    result: null,
+    dispositions: [],
+    reason: null,
+    validation: [],
   };
   return { ...state, home, root, env, git, execution, artifactsDir: join(state.root, 'artifacts') };
 }
@@ -57,11 +101,39 @@ else {
 `;
   writeFileSync(binary, source, { mode: 0o700 });
   const receipt = join(fixture.home, `receipt-${executor}.json`);
-  writeFileSync(receipt, JSON.stringify({ executor, version: 'fixture-1', model: 'fixture-model', checkedAt: '2026-09-26T12:00:00.000Z', subscriptionOnly: true,
-    binarySha256: createHash('sha256').update(source).digest('hex'), roles: Object.fromEntries(['implement', 'review'].map(role => [role, {
-      argsSha256: createHash('sha256').update(JSON.stringify(commandFor(executor, 'fixture-model', role as 'implement' | 'review', '<checkout>'))).digest('hex'),
-      permissionBoundary: true, noMcp: true, noRecursiveLaunch: true, processTreeTermination: true, readOnly: true, record: 'synthetic CLI fixture, not live compatibility evidence',
-    }])) }), { mode: 0o600 });
-  return { executors: { [executor]: { binary, enabled: true, model: 'fixture-model', receipt } }, maxWorkers: 2, maxRepairCycles: 2, maxTimeoutMs: 20 * 60_000,
-    validation: [[process.execPath, '-e', 'process.exit(0)']] };
+  writeFileSync(
+    receipt,
+    JSON.stringify({
+      executor,
+      version: 'fixture-1',
+      model: 'fixture-model',
+      checkedAt: '2026-09-26T12:00:00.000Z',
+      subscriptionOnly: true,
+      binarySha256: createHash('sha256').update(source).digest('hex'),
+      roles: Object.fromEntries(
+        ['implement', 'review'].map((role) => [
+          role,
+          {
+            argsSha256: createHash('sha256')
+              .update(JSON.stringify(commandFor(executor, 'fixture-model', role as 'implement' | 'review', '<checkout>')))
+              .digest('hex'),
+            permissionBoundary: true,
+            noMcp: true,
+            noRecursiveLaunch: true,
+            processTreeTermination: true,
+            readOnly: true,
+            record: 'synthetic CLI fixture, not live compatibility evidence',
+          },
+        ]),
+      ),
+    }),
+    { mode: 0o600 },
+  );
+  return {
+    executors: { [executor]: { binary, enabled: true, model: 'fixture-model', receipt } },
+    maxWorkers: 2,
+    maxRepairCycles: 2,
+    maxTimeoutMs: 20 * 60_000,
+    validation: [[process.execPath, '-e', 'process.exit(0)']],
+  };
 }

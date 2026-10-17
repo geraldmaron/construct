@@ -21,7 +21,11 @@ import { hasKnownSecret } from '../render/redact.ts';
 function carriesCredentials(url: URL): boolean {
   if (url.username !== '' || url.password !== '') return true;
   if ([...url.searchParams.keys(), ...url.searchParams.values()].some(hasKnownSecret)) return true;
-  return [url.search, url.hash].some((part) => hasKnownSecret(part) || hasKnownSecret(part.replace(/%([0-7][0-9a-f])/gi, (_escape, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)))));
+  return [url.search, url.hash].some(
+    (part) =>
+      hasKnownSecret(part) ||
+      hasKnownSecret(part.replace(/%([0-7][0-9a-f])/gi, (_escape, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)))),
+  );
 }
 
 /** One parser; stored URL fields stay plain while citations may use complete wrappers. */
@@ -31,9 +35,9 @@ function parseUrl(ref: string, presentation: boolean): URL | null {
   try {
     const raw = ref.trim();
     // Match the entire presentation. Labels never become evidence identifiers.
-    const address = presentation ? /^<([^<>|\s]+)(?:\|[^<>\r\n]*)?>$/.exec(raw)?.[1]
-      ?? /^\[[^\]\r\n]*\]\((https?:\/\/[^\s]+)\)$/.exec(raw)?.[1]
-      ?? raw : raw;
+    const address = presentation
+      ? (/^<([^<>|\s]+)(?:\|[^<>\r\n]*)?>$/.exec(raw)?.[1] ?? /^\[[^\]\r\n]*\]\((https?:\/\/[^\s]+)\)$/.exec(raw)?.[1] ?? raw)
+      : raw;
     url = new URL(address);
   } catch {
     return null;

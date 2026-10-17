@@ -53,8 +53,7 @@ interface Scratch {
 
 function scratch(beadsStub: string = BEADS_STUB): Scratch {
   const root = mkdtempSync(join(tmpdir(), 'construct-hooks-'));
-  const git = (...args: string[]): string =>
-    execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' });
+  const git = (...args: string[]): string => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' });
   const tryCommit = (...args: string[]): number => {
     const result = spawnSync('git', ['-C', root, 'commit', ...args], { encoding: 'utf8' });
     return result.status ?? -1;
@@ -67,10 +66,7 @@ function scratch(beadsStub: string = BEADS_STUB): Scratch {
 
   mkdirSync(join(root, 'scripts', 'hooks'), { recursive: true });
   mkdirSync(join(root, '.beads'), { recursive: true });
-  copyFileSync(
-    join(REPO, 'scripts', 'install-git-hooks.sh'),
-    join(root, 'scripts', 'install-git-hooks.sh'),
-  );
+  copyFileSync(join(REPO, 'scripts', 'install-git-hooks.sh'), join(root, 'scripts', 'install-git-hooks.sh'));
   // The gate's own checks are not what this test is about, and running the real
   // ones would drag the whole repository in. They are replaced by scripts that
   // pass, so the only behavior left to observe is the staging.
@@ -119,10 +115,7 @@ test('the keeper is armed before the section it undoes, and is a trap', () => {
     // Arming, not appending: the keeper has to survive the beads section
     // exiting the hook, and only a trap does.
     assert.match(text, /trap _construct_keep_tracker EXIT/);
-    assert.ok(
-      text.indexOf('trap _construct_keep_tracker EXIT') < beads,
-      'the trap is armed before the section that can exit past it',
-    );
+    assert.ok(text.indexOf('trap _construct_keep_tracker EXIT') < beads, 'the trap is armed before the section that can exit past it');
     // The old trailing section is gone, not merely outvoted: two keepers would
     // run twice, and the second run reads a state the first one cleared.
     assert.ok(!text.includes('BEGIN CONSTRUCT TRACKER KEEPER'), 'no trailing keeper section');

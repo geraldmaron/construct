@@ -40,7 +40,8 @@ test('an absent file gets one block, and reads back as the entry', () => {
 
 test('the block is appended after one blank line, beside other servers and comments', () => {
   inScratch((file) => {
-    const before = '# my codex settings\nmodel = "gpt-5"\n\n[mcp_servers.linear]\ncommand = "npx"\nargs = [\n  "-y", # the runner\n  "linear-mcp",\n]\nenv = { TOKEN = "t" }\n\n\n';
+    const before =
+      '# my codex settings\nmodel = "gpt-5"\n\n[mcp_servers.linear]\ncommand = "npx"\nargs = [\n  "-y", # the runner\n  "linear-mcp",\n]\nenv = { TOKEN = "t" }\n\n\n';
     write(file, before);
     const r = mergeTomlServerTable(file, 'construct', ENTRY);
     assert.equal(r.ok, true);
@@ -71,7 +72,12 @@ test('an existing block and its subtables are replaced in place, and what follow
     assert.deepEqual(readTomlServerTable(file, 'construct'), { command: '/old/node', args: ['/old/bin/construct.mjs', 'serve'] });
     const r = mergeTomlServerTable(file, 'construct', ENTRY);
     assert.equal(r.ok, true);
-    assert.equal(readFileSync(file, 'utf8'), ['model = "gpt-5"', '', ...BLOCK.trimEnd().split('\n'), '', '# the tracker', '[mcp_servers.linear]', 'command = "npx"', ''].join('\n'));
+    assert.equal(
+      readFileSync(file, 'utf8'),
+      ['model = "gpt-5"', '', ...BLOCK.trimEnd().split('\n'), '', '# the tracker', '[mcp_servers.linear]', 'command = "npx"', ''].join(
+        '\n',
+      ),
+    );
     assert.deepEqual(readTomlServerTable(file, 'construct'), ENTRY);
   });
 });
@@ -138,7 +144,12 @@ test('forms it does not fully read are refused and the bytes are left as they we
 
 test('values are written as escaped basic strings, and read back exactly', () => {
   inScratch((file) => {
-    const entry = { command: 'C:\\tools\\construct "beta"', args: ['tab\there', 'quote\'s', '#not a comment'], enabled: true, tool_timeout_sec: 120 };
+    const entry = {
+      command: 'C:\\tools\\construct "beta"',
+      args: ['tab\there', "quote's", '#not a comment'],
+      enabled: true,
+      tool_timeout_sec: 120,
+    };
     assert.equal(mergeTomlServerTable(file, 'construct', entry).ok, true);
     assert.match(readFileSync(file, 'utf8'), /^command = "C:\\\\tools\\\\construct \\"beta\\""$/m);
     assert.deepEqual(readTomlServerTable(file, 'construct'), entry);

@@ -85,9 +85,7 @@ export function orgView(store: StateStore, entityId: string): OrgView {
     declared: by('declared'),
     observed: by('observed'),
     inferred: by('inferred'),
-    awaitingConfirmation: touching.filter(
-      (r) => r.status === 'proposed' && CONFIRMATION_REQUIRED_RELATIONS.includes(r.kind),
-    ),
+    awaitingConfirmation: touching.filter((r) => r.status === 'proposed' && CONFIRMATION_REQUIRED_RELATIONS.includes(r.kind)),
   };
 }
 

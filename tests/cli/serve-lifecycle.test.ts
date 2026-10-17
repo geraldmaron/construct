@@ -20,47 +20,80 @@ function cli(box: Sandbox, args: string[]): string {
 }
 function session(box: Sandbox, client: ClientId = 'cursor') {
   const child = spawn(process.execPath, [launcher, 'serve', `--client=${client}`], { cwd: box.cwd, env: box.ctx.env });
-  let buffer = '', stderr = '', next = 0;
+  let buffer = '',
+    stderr = '',
+    next = 0;
   const pending = new Map<number, { resolve: (r: JsonRpcResponse) => void; reject: (e: Error) => void }>();
-  child.stderr.on('data', chunk => { stderr += String(chunk); });
-  child.stdout.on('data', chunk => {
+  child.stderr.on('data', (chunk) => {
+    stderr += String(chunk);
+  });
+  child.stdout.on('data', (chunk) => {
     buffer += String(chunk);
     let end: number;
     while ((end = buffer.indexOf('\n')) >= 0) {
-      const line = buffer.slice(0, end); buffer = buffer.slice(end + 1);
+      const line = buffer.slice(0, end);
+      buffer = buffer.slice(end + 1);
       if (!line.trim()) continue;
       const reply = JSON.parse(line) as JsonRpcResponse;
       const waiter = pending.get(Number(reply.id));
-      if (waiter) { pending.delete(Number(reply.id)); waiter.resolve(reply); }
+      if (waiter) {
+        pending.delete(Number(reply.id));
+        waiter.resolve(reply);
+      }
     }
   });
-  child.on('exit', code => {
+  child.on('exit', (code) => {
     for (const waiter of pending.values()) waiter.reject(new Error(`server exited ${String(code)}: ${stderr}`));
     pending.clear();
   });
-  const rpc = (method: string, params: unknown = {}): Promise<JsonRpcResponse> => new Promise((resolve, reject) => {
-    const id = ++next;
-    const timeout = setTimeout(() => { pending.delete(id); reject(new Error(`timeout: ${method}, ${stderr}`)); }, 10000);
-    pending.set(id, { resolve: r => { clearTimeout(timeout); resolve(r); }, reject: e => { clearTimeout(timeout); reject(e); } });
-    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
-  });
-  return { rpc, close: () => new Promise<void>(resolve => {
-    if (child.exitCode !== null) return resolve();
-    child.once('exit', () => resolve()); child.stdin.end();
-    setTimeout(() => { if (child.exitCode === null) child.kill(); }, 2000).unref();
-  }) };
+  const rpc = (method: string, params: unknown = {}): Promise<JsonRpcResponse> =>
+    new Promise((resolve, reject) => {
+      const id = ++next;
+      const timeout = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`timeout: ${method}, ${stderr}`));
+      }, 10000);
+      pending.set(id, {
+        resolve: (r) => {
+          clearTimeout(timeout);
+          resolve(r);
+        },
+        reject: (e) => {
+          clearTimeout(timeout);
+          reject(e);
+        },
+      });
+      child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n');
+    });
+  return {
+    rpc,
+    close: () =>
+      new Promise<void>((resolve) => {
+        if (child.exitCode !== null) return resolve();
+        child.once('exit', () => resolve());
+        child.stdin.end();
+        setTimeout(() => {
+          if (child.exitCode === null) child.kill();
+        }, 2000).unref();
+      }),
+  };
 }
-function toolResult(reply: JsonRpcResponse): { isError?: boolean; structuredContent: { error?: string; next?: string; construct?: { project: { id: string } } } } {
+function toolResult(reply: JsonRpcResponse): {
+  isError?: boolean;
+  structuredContent: { error?: string; next?: string; construct?: { project: { id: string } } };
+} {
   assert.equal(reply.error, undefined, JSON.stringify(reply.error));
   return reply.result as ReturnType<typeof toolResult>;
 }
 async function discovery(s: ReturnType<typeof session>) {
   const list = await s.rpc('tools/list');
-  return (list.result as { tools: { name: string }[] }).tools.map(t => t.name);
+  return (list.result as { tools: { name: string }[] }).tools.map((t) => t.name);
 }
-async function bootstrap(s: ReturnType<typeof session>) { return toolResult(await s.rpc('tools/call', { name: 'bootstrap', arguments: {} })); }
+async function bootstrap(s: ReturnType<typeof session>) {
+  return toolResult(await s.rpc('tools/call', { name: 'bootstrap', arguments: {} }));
+}
 for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as const) {
-  test(`same stdio connection recovers after ${repair}, with stable discovery`, async t => {
+  test(`same stdio connection recovers after ${repair}, with stable discovery`, async (t) => {
     const lsof = repair === 'migrate' ? findOnPath('lsof', process.env) : null;
     if (repair === 'migrate' && !lsof) return t.skip('real process-holder inspection requires lsof');
     const box = sandbox();
@@ -82,7 +115,10 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
       const init = await s.rpc('initialize', { capabilities: {}, clientInfo: { name: 'sterile-lifecycle-test', version: '1' } });
       assert.equal((init.result as { capabilities: { tools: { listChanged: boolean } } }).capabilities.tools.listChanged, false);
       const names = await discovery(s);
-      assert.deepEqual(names, toolsFor('interactive').map(t => t.name));
+      assert.deepEqual(
+        names,
+        toolsFor('interactive').map((t) => t.name),
+      );
       const refused = await bootstrap(s);
       assert.equal(refused.isError, true);
       if (repair === 'newer') assert.match(refused.structuredContent.next!, /Upgrade Construct.*Do not reset/);
@@ -91,7 +127,8 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
       else if (repair === 'malformed') writeFileSync(join(box.cwd, '.construct/project.json'), original);
       else {
         const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
-        if (repair === 'foreign') db.prepare("UPDATE meta SET value=? WHERE key='project_id'").run((JSON.parse(original) as { id: string }).id);
+        if (repair === 'foreign')
+          db.prepare("UPDATE meta SET value=? WHERE key='project_id'").run((JSON.parse(original) as { id: string }).id);
         else db.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run();
         db.close();
       }
@@ -99,47 +136,71 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
       assert.notEqual(recovered.isError, true, JSON.stringify(recovered));
       assert.ok(recovered.structuredContent.construct?.project.id);
       assert.deepEqual(await discovery(s), names);
-      const doctor = JSON.parse(cli(box, ['doctor', '--json'])) as { healthy: boolean; scope: string; readiness: { connected: string; exercised: string } };
+      const doctor = JSON.parse(cli(box, ['doctor', '--json'])) as {
+        healthy: boolean;
+        scope: string;
+        readiness: { connected: string; exercised: string };
+      };
       assert.equal(doctor.healthy, true);
       assert.equal(doctor.scope, 'installation');
       assert.deepEqual(doctor.readiness, { installed: true, connected: 'unverified', exercised: 'unverified' });
-    } finally { await s.close(); box.cleanup(); }
+    } finally {
+      await s.close();
+      box.cleanup();
+    }
   });
 }
 test('a refused connection never follows replacement identity', async () => {
-  const box = sandbox(); cli(box, ['init', '--client=cursor']);
+  const box = sandbox();
+  cli(box, ['init', '--client=cursor']);
   const file = join(box.cwd, '.construct/project.json');
   const original = readFileSync(file, 'utf8');
   const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
-  db.prepare("UPDATE meta SET value='99' WHERE key='format_version'").run(); db.close();
+  db.prepare("UPDATE meta SET value='99' WHERE key='format_version'").run();
+  db.close();
   const s = session(box);
   try {
-    await s.rpc('initialize'); assert.equal((await bootstrap(s)).isError, true);
+    await s.rpc('initialize');
+    assert.equal((await bootstrap(s)).isError, true);
     // Invalid bytes cannot erase an identity observed before the format refusal.
-    writeFileSync(file, '{broken'); assert.equal((await bootstrap(s)).isError, true);
+    writeFileSync(file, '{broken');
+    assert.equal((await bootstrap(s)).isError, true);
     writeFileSync(file, JSON.stringify({ ...JSON.parse(original), id: 'replacement-project' }));
-    const switched = await bootstrap(s); assert.equal(switched.isError, true);
+    const switched = await bootstrap(s);
+    assert.equal(switched.isError, true);
     assert.match(switched.structuredContent.error!, /identity changed/);
     writeFileSync(file, original);
     const repaired = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
-    repaired.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run(); repaired.close();
+    repaired.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run();
+    repaired.close();
     assert.notEqual((await bootstrap(s)).isError, true);
-  } finally { await s.close(); box.cleanup(); }
+  } finally {
+    await s.close();
+    box.cleanup();
+  }
 });
 
 test('a refused connection does not follow a newly introduced nested project root', async () => {
-  const box = sandbox(); cli(box, ['init', '--client=cursor']);
-  const nested = join(box.cwd, 'nested'); mkdirSync(nested);
+  const box = sandbox();
+  cli(box, ['init', '--client=cursor']);
+  const nested = join(box.cwd, 'nested');
+  mkdirSync(nested);
   const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
-  db.prepare("UPDATE meta SET value='99' WHERE key='format_version'").run(); db.close();
+  db.prepare("UPDATE meta SET value='99' WHERE key='format_version'").run();
+  db.close();
   const s = session({ ...box, cwd: nested });
   try {
-    await s.rpc('initialize'); assert.equal((await bootstrap(s)).isError, true);
+    await s.rpc('initialize');
+    assert.equal((await bootstrap(s)).isError, true);
     mkdirSync(join(nested, '.construct'));
     writeFileSync(join(nested, '.construct/project.json'), readFileSync(join(box.cwd, '.construct/project.json')));
     const refused = await bootstrap(s);
-    assert.equal(refused.isError, true); assert.match(refused.structuredContent.error!, /root changed/);
-  } finally { await s.close(); box.cleanup(); }
+    assert.equal(refused.isError, true);
+    assert.match(refused.structuredContent.error!, /root changed/);
+  } finally {
+    await s.close();
+    box.cleanup();
+  }
 });
 
 test('expected binding is checked against the actual bound files before opening state', () => {
@@ -153,12 +214,15 @@ test('expected binding is checked against the actual bound files before opening 
     assert.deepEqual(readFileSync(dbPath), before);
     const opened = openProject(box.ctx, { root: box.cwd, id: config.id });
     opened.store.close();
-  } finally { box.cleanup(); }
+  } finally {
+    box.cleanup();
+  }
 });
 
 for (const client of WIRABLE_CLIENTS) {
   test(`${client} adapter recovers on the same stdio connection after setup`, async () => {
-    const box = sandbox(); const s = session(box, client);
+    const box = sandbox();
+    const s = session(box, client);
     try {
       await s.rpc('initialize', { clientInfo: { name: `${client}-sterile-probe`, version: '1' }, capabilities: {} });
       const names = await discovery(s);
@@ -173,8 +237,12 @@ for (const client of WIRABLE_CLIENTS) {
       const again = (await bootstrap(s)).structuredContent as typeof payload;
       assert.deepEqual(again.session, payload.session, 'recovery preserves one process session and executor');
       const doctor = JSON.parse(cli(box, ['doctor', '--json'])) as { healthy: boolean; scope: string; readiness: { connected: string } };
-      assert.equal(doctor.healthy, true); assert.equal(doctor.scope, 'installation');
+      assert.equal(doctor.healthy, true);
+      assert.equal(doctor.scope, 'installation');
       assert.equal(doctor.readiness.connected, 'unverified');
-    } finally { await s.close(); box.cleanup(); }
+    } finally {
+      await s.close();
+      box.cleanup();
+    }
   });
 }

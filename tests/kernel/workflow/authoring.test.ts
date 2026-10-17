@@ -25,14 +25,22 @@ test('a reading that asks for a PRD, an RFC or a proposal matches its authoring 
     const cases: [string, string, string, string][] = [
       ['Write a PRD for public webhooks using our PRD template.', 'document/prd', 'requirements-structuring', 'prd-authoring'],
       ['Draft an RFC for webhook event delivery, building on RFC-012.', 'document/rfc', 'system-architecture', 'rfc-authoring'],
-      ['Write a one-page proposal for Sam to fully fund webhooks this half.', 'document/proposal', 'decision-framing', 'proposal-authoring'],
+      [
+        'Write a one-page proposal for Sam to fully fund webhooks this half.',
+        'document/proposal',
+        'decision-framing',
+        'proposal-authoring',
+      ],
     ];
     for (const [words, kind, skill, workflow] of cases) {
       const c = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind } });
       assert.equal(c.matches[0].workflowId, workflow, words);
       assert.equal(c.matches[0].because, 'deliverable kind');
       assert.ok(c.matches[0].missing.includes('target'), `${workflow} asks for its target: ${JSON.stringify(c.matches[0].missing)}`);
-      assert.ok(c.questions.some((q: { slot: string }) => q.slot === 'target'), 'the missing target is a question for the person');
+      assert.ok(
+        c.questions.some((q: { slot: string }) => q.slot === 'target'),
+        'the missing target is a question for the person',
+      );
       assert.match(c.skills[skill]?.useWhen ?? '', /\S/, `${skill} comes with its use-when text`);
       assert.ok(c.skills[skill].useWhen.length <= 200);
     }
@@ -49,7 +57,10 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     writeFileSync(join(root, 'docs', 'templates', 'prd.md'), '# PRD: <title>\n## 1. Problem\n## 2. Evidence\n## 3. Open questions\n');
     writeFileSync(join(root, 'docs', 'metrics.md'), '429 responses per month: June 1.6M, September 2.1M.\n');
     writeFileSync(join(root, 'docs', 'okrs.md'), 'KR2: reduce API 429 responses by 50% vs the June baseline.\n');
-    const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD for webhooks', target: 'docs/prd-webhooks.md', template: 'docs/templates/prd.md' } });
+    const started = await call(fx, 'start_outcome', {
+      workflowId: 'prd-authoring',
+      input: { request: 'PRD for webhooks', target: 'docs/prd-webhooks.md', template: 'docs/templates/prd.md' },
+    });
     assert.equal(started.preflight.status, 'runnable', started.preflight.summary);
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
@@ -58,28 +69,51 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
 
     let w = await step();
     assert.equal(w.step.id, 'gather');
-    assert.ok(w.instructions.some((i: string) => i.includes('conflicts_declared needs')), 'the host is told what each check needs');
-    const gathered = await submit(w, { summary: 'polling hurts', findings: ['429s rose'], material: ['metrics', 'okrs'], conflicts: [], unknowns: ['polling baseline'] }, [{ ref: 'docs/metrics.md', excerpt: 'September 2.1M' }, { ref: 'docs/okrs.md' }]);
+    assert.ok(
+      w.instructions.some((i: string) => i.includes('conflicts_declared needs')),
+      'the host is told what each check needs',
+    );
+    const gathered = await submit(
+      w,
+      { summary: 'polling hurts', findings: ['429s rose'], material: ['metrics', 'okrs'], conflicts: [], unknowns: ['polling baseline'] },
+      [{ ref: 'docs/metrics.md', excerpt: 'September 2.1M' }, { ref: 'docs/okrs.md' }],
+    );
     assert.equal(gathered.step.state, 'succeeded', JSON.stringify(gathered.validation));
 
     const prd = join(root, 'docs', 'prd-webhooks.md');
     writeFileSync(prd, '# PRD: Webhooks\n## Problem\n429s reached 2.1M and cost us $3.2M.\n## Evidence\nsee metrics\n');
     w = await step();
     assert.equal(w.step.id, 'draft');
-    const bad = await submit(w, { summary: 'draft', findings: ['429s rose'], artifact: 'docs/prd-webhooks.md', derivations: [] }, [{ ref: 'docs/metrics.md' }]);
+    const bad = await submit(w, { summary: 'draft', findings: ['429s rose'], artifact: 'docs/prd-webhooks.md', derivations: [] }, [
+      { ref: 'docs/metrics.md' },
+    ]);
     assert.notEqual(bad.step.state, 'succeeded');
     const problems = bad.validation.flatMap((v: { problems: string[] }) => v.problems).join(' | ');
     assert.match(problems, /3\.2m/);
     assert.match(problems, /open questions/);
 
-    writeFileSync(prd, '# PRD: Webhooks\n## Problem\n429s reached 2.1M a month; the target is 0.8M.\n## Evidence\nmetrics and KR2\n## Open questions\nNo polling baseline yet.\n');
+    writeFileSync(
+      prd,
+      '# PRD: Webhooks\n## Problem\n429s reached 2.1M a month; the target is 0.8M.\n## Evidence\nmetrics and KR2\n## Open questions\nNo polling baseline yet.\n',
+    );
     w = await step();
-    const good = await submit(w, { summary: 'draft', findings: ['429s rose'], artifact: 'docs/prd-webhooks.md', derivations: [{ value: '0.8M', expression: '1.6M * 50%' }] }, [{ ref: 'docs/metrics.md' }, { ref: 'docs/okrs.md', excerpt: 'reduce API 429 responses by 50%' }]);
+    const good = await submit(
+      w,
+      {
+        summary: 'draft',
+        findings: ['429s rose'],
+        artifact: 'docs/prd-webhooks.md',
+        derivations: [{ value: '0.8M', expression: '1.6M * 50%' }],
+      },
+      [{ ref: 'docs/metrics.md' }, { ref: 'docs/okrs.md', excerpt: 'reduce API 429 responses by 50%' }],
+    );
     assert.equal(good.step.state, 'succeeded', JSON.stringify(good.validation));
 
     w = await step();
     assert.equal(w.step.id, 'challenge');
-    const challenged = await submit(w, { verdict: 'holds', summary: 'no unsupported claims', findings: [] }, [{ ref: 'docs/prd-webhooks.md' }]);
+    const challenged = await submit(w, { verdict: 'holds', summary: 'no unsupported claims', findings: [] }, [
+      { ref: 'docs/prd-webhooks.md' },
+    ]);
     assert.equal(challenged.deliverable.trust, 'draft');
     w = await step();
     const done = await submit(w, { artifact: 'docs/prd-webhooks.md', verdict: 'holds' }, [{ ref: 'docs/prd-webhooks.md' }]);
@@ -87,7 +121,11 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     assert.equal(done.deliverable.trust, 'validated');
     const status = await call(fx, 'run_status', { runId });
     const final = status.deliverables.at(-1);
-    assert.deepEqual(final.verification.evidence, { witnessed: 3, reported: 0, unverified: 0, unresolved: 0 }, 'the deliverable records what the whole run rested on');
+    assert.deepEqual(
+      final.verification.evidence,
+      { witnessed: 3, reported: 0, unverified: 0, unresolved: 0 },
+      'the deliverable records what the whole run rested on',
+    );
   } finally {
     fx.cleanup();
   }
@@ -102,7 +140,8 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
-    const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string }[]) => call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+    const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string }[]) =>
+      call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
     await submit(await step(), { summary: 's', findings: ['f'], material: [], conflicts: [], unknowns: [] }, [{ ref: 'docs/notes.md' }]);
     const draft = { summary: 'draft', findings: ['cost'], artifact: 'docs/prd.md', derivations: [] };
     let r: Record<string, any> = {};
@@ -131,11 +170,18 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     const grounded = waived.find((x) => x.validator === 'numbers_grounded')!;
     assert.equal(grounded.stepId, 'draft');
     assert.match(grounded.problems.join(' '), /9\.9m/);
-    assert.ok(waived.every((x) => x.channel === 'relay' && x.acceptedBy === `relayed via ${fx.broker.host.hostId}`), 'each waiver says it was relayed, and through which host');
+    assert.ok(
+      waived.every((x) => x.channel === 'relay' && x.acceptedBy === `relayed via ${fx.broker.host.hostId}`),
+      'each waiver says it was relayed, and through which host',
+    );
     const byHand = await call(fx, 'promote_deliverable', { deliverableId: final.id, to: 'validated' }).catch((error: Error) => error);
     assert.ok(byHand instanceof Error);
     assert.match(byHand.message, /validated is set when the step's checks pass, not by promotion/);
-    assert.equal((await call(fx, 'run_status', { runId })).deliverables.find((d: { id: string }) => d.id === final.id).trust, final.trust, 'nothing moved');
+    assert.equal(
+      (await call(fx, 'run_status', { runId })).deliverables.find((d: { id: string }) => d.id === final.id).trust,
+      final.trust,
+      'nothing moved',
+    );
   } finally {
     fx.cleanup();
   }

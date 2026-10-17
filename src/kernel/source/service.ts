@@ -156,7 +156,11 @@ export interface SourceServiceDeps {
 
 function canonicalSchema(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalSchema).join(',')}]`;
-  if (value !== null && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonicalSchema(v)}`).join(',')}}`;
+  if (value !== null && typeof value === 'object')
+    return `{${Object.entries(value)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${JSON.stringify(k)}:${canonicalSchema(v)}`)
+      .join(',')}}`;
   return JSON.stringify(value) ?? 'null';
 }
 
@@ -166,13 +170,26 @@ function sameAuthority(a: readonly string[], b: readonly string[]): boolean {
 
 export function createSourceService(store: StateStore, deps: SourceServiceDeps): SourceService {
   function access(id: string, outcome: SourceReadOutcome, at: string, nextId: () => string, evidence: Record<string, unknown>) {
-    recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.access', summary: `${id}: ${outcome}`, evidence: { ...evidence, ...(typeof evidence.scope === 'string' ? { scope: redact(evidence.scope) } : {}), ...(evidence.coverage ? { coverage: JSON.parse(redact(JSON.stringify(evidence.coverage))) } : {}), outcome }, at });
+    recordObservation(store, {
+      id: nextId(),
+      sourceId: id,
+      kind: 'source.access',
+      summary: `${id}: ${outcome}`,
+      evidence: {
+        ...evidence,
+        ...(typeof evidence.scope === 'string' ? { scope: redact(evidence.scope) } : {}),
+        ...(evidence.coverage ? { coverage: JSON.parse(redact(JSON.stringify(evidence.coverage))) } : {}),
+        outcome,
+      },
+      at,
+    });
   }
 
   function declare(d: DeclaredSource, at: string, existing: Source | null): 'added' | 'updated' | 'unchanged' {
     const problem = locatorProblem(d.kind, d.locator);
     if (problem) throw new Error(`source ${d.id}: ${problem}`);
-    if (existing && existing.kind !== d.kind) throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
+    if (existing && existing.kind !== d.kind)
+      throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
     if (!existing) {
       addSource(store, {
         id: d.id,
@@ -223,21 +240,54 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
     return 'updated';
   }
 
-  function recordRead(id: string, received: SnapshotReport, partial: boolean, at: string, nextId: () => string, notChanged: ReadonlySet<string> = new Set()): RefreshResult {
+  function recordRead(
+    id: string,
+    received: SnapshotReport,
+    partial: boolean,
+    at: string,
+    nextId: () => string,
+    notChanged: ReadonlySet<string> = new Set(),
+  ): RefreshResult {
     return store.transaction(() => {
       let report = received;
       if (partial && received.items) {
         const seen = new Set(received.items.map((item) => item.externalRef));
         const previous = currentManifestRecord(store, id);
-        const carried = (previous?.entries ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, supersededBy: entry.supersededBy, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
+        const carried = (previous?.entries ?? [])
+          .filter((entry) => !seen.has(entry.ref))
+          .map((entry) => ({
+            externalRef: entry.ref,
+            kind: entry.kind,
+            name: entry.ref,
+            attributes: {
+              ...entry.attributes,
+              fingerprint: entry.fingerprint,
+              schema: entry.schema,
+              text: entry.text,
+              supersededBy: entry.supersededBy,
+              url: entry.url,
+              truncated: entry.truncated,
+              updatedAt: entry.updatedAt,
+              weak: entry.weak,
+              via: entry.via,
+            },
+          }));
         const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
         // Provenance describes the whole manifest. Carried reported content was
         // not witnessed by this read, so a mixed manifest remains reported.
-        if (carried.length) report = { ...received, evidence: previous?.provenance === 'reported' ? 'reported' : received.evidence, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
+        if (carried.length)
+          report = {
+            ...received,
+            evidence: previous?.provenance === 'reported' ? 'reported' : received.evidence,
+            items,
+            digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`,
+            coverage: { ...received.coverage, complete: false },
+          };
       }
       for (const item of report.items ?? []) {
         const url = item.attributes?.url;
-        if (urlCarriesCredentials(item.externalRef) || (typeof url === 'string' && urlCarriesCredentials(url))) throw new Error('source item address carries credentials; give the address without them');
+        if (urlCarriesCredentials(item.externalRef) || (typeof url === 'string' && urlCarriesCredentials(url)))
+          throw new Error('source item address carries credentials; give the address without them');
       }
       const { snapshot, changed } = recordSnapshot(store, {
         id: nextId(),
@@ -258,17 +308,34 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         for (const item of received.items) {
           const entity =
             findEntityByRef(store, 'artifact', `source:${id}:${item.externalRef}`) ??
-            addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: `source:${id}:${item.externalRef}`, attributes: item.attributes, at });
+            addEntity(store, {
+              id: nextId(),
+              kind: 'artifact',
+              name: item.name,
+              externalRef: `source:${id}:${item.externalRef}`,
+              attributes: item.attributes,
+              at,
+            });
           const attributes = item.attributes as { contentDigest?: unknown; fingerprint?: unknown } | undefined;
           const statement = `${item.name} observed in ${id}`;
           const value = JSON.parse(toJson(item.attributes ?? item)) as unknown;
           // A collection revision does not make every item new evidence.
           // Compare the latest observed claim for this item, preserving A-B-A
           // changes while avoiding duplicate claims for unchanged neighbours.
-          const previous = store.db.prepare(`SELECT statement, value_json, authority, sensitivity FROM claims
+          const previous = store.db
+            .prepare(`SELECT statement, value_json, authority, sensitivity FROM claims
             WHERE subject_id = ? AND source_id = ? AND claim_type = ? AND provenance = 'source'
-            ORDER BY rowid DESC LIMIT 1`).get(entity.id, id, item.kind) as { statement: string; value_json: string | null; authority: string; sensitivity: string } | undefined;
-          if (previous?.statement === statement && previous.authority === source.authorityLevel && previous.sensitivity === source.sensitivity && canonicalSchema(previous.value_json === null ? null : JSON.parse(previous.value_json)) === canonicalSchema(value)) continue;
+            ORDER BY rowid DESC LIMIT 1`)
+            .get(entity.id, id, item.kind) as
+            | { statement: string; value_json: string | null; authority: string; sensitivity: string }
+            | undefined;
+          if (
+            previous?.statement === statement &&
+            previous.authority === source.authorityLevel &&
+            previous.sensitivity === source.sensitivity &&
+            canonicalSchema(previous.value_json === null ? null : JSON.parse(previous.value_json)) === canonicalSchema(value)
+          )
+            continue;
           addClaim(store, {
             id: nextId(),
             subjectId: entity.id,
@@ -284,7 +351,12 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
             locator: item.externalRef,
             excerpt: item.name,
             sourceRevision: received.contentDigest ?? received.digest,
-            contentDigest: typeof attributes?.contentDigest === 'string' ? attributes.contentDigest : typeof attributes?.fingerprint === 'string' ? attributes.fingerprint : received.contentDigest,
+            contentDigest:
+              typeof attributes?.contentDigest === 'string'
+                ? attributes.contentDigest
+                : typeof attributes?.fingerprint === 'string'
+                  ? attributes.fingerprint
+                  : received.contentDigest,
             at,
           });
         }
@@ -304,18 +376,46 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
           sourceId: id,
           kind: 'source.changed',
           summary: `${id} changed: ${report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
-          evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, contentDigest: report.contentDigest, inventoryDigest: report.inventoryDigest, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
+          evidence: {
+            digest: report.digest,
+            evidence: report.evidence,
+            items: report.items?.length ?? 0,
+            contentDigest: report.contentDigest,
+            inventoryDigest: report.inventoryDigest,
+            ...(partial ? { partial: true } : {}),
+            ...(manifest ? { manifest } : {}),
+            ...(changes && !firstRead ? { changes } : {}),
+          },
           at,
         });
         markPremisesStale(store, id, at);
         if (changes && !firstRead && deps.root) {
           // Which finished work drew on this source is a question of what it cited, not of the citation policy, so
           // a citation admitted on the host's word still counts as drawing on it.
-          const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence }, { hostReads: 'accept' });
-          staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root, previous: before }).map((f) => f.id);
+          const resolve = projectResolver(
+            store,
+            deps.root,
+            { sourceId: id, manifest, provenance: report.evidence },
+            { hostReads: 'accept' },
+          );
+          staleDeliverables = flagStaleDeliverables(store, {
+            sourceId: id,
+            changes,
+            resolve,
+            at,
+            nextId,
+            root: deps.root,
+            previous: before,
+          }).map((f) => f.id);
         }
       }
-      return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
+      return {
+        sourceId: id,
+        outcome: changed ? 'changed' : 'unchanged',
+        snapshot,
+        ...(changes ? { changes } : {}),
+        ...(staleDeliverables ? { staleDeliverables } : {}),
+      };
     });
   }
 
@@ -332,7 +432,9 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
           let committedLocal = false;
           if (existing && existing.origin === 'local' && existing.status === 'active') {
             if (existing.kind !== d.kind) {
-              throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
+              throw new Error(
+                `source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`,
+              );
             }
             existing = updateSource(store, d.id, { origin: 'declared' }, at);
             committedLocal = true;
@@ -388,10 +490,18 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const reader = deps.readers.get(source.kind);
       let outcome: ReadOutcome;
       if (!reader) {
-        outcome = { outcome: 'unreachable', reason: `nothing in this session can read a ${source.kind} source; connect one through your host` };
+        outcome = {
+          outcome: 'unreachable',
+          reason: `nothing in this session can read a ${source.kind} source; connect one through your host`,
+        };
       } else {
         try {
-          outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator, previous: currentManifest(store, id) ?? undefined });
+          outcome = await reader({
+            sourceId: source.id,
+            kind: source.kind,
+            locator: source.locator,
+            previous: currentManifest(store, id) ?? undefined,
+          });
         } catch (error) {
           outcome = { outcome: 'unreachable', reason: (error as Error).message };
         }
@@ -408,15 +518,33 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
           if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
           // Missing scope on a failed whole-source refresh is unknown access, never
           // a reason to reuse an older success. It invalidates read readiness only.
-          access(id, 'unreachable', at, nextId, { ...(descriptor ?? { scope: '*', operation: '*', mode: 'read', applicability: 'source' }), sessionId: outcome.sessionId ?? null, provenance: 'witnessed', reason: redact(outcome.reason) });
+          access(id, 'unreachable', at, nextId, {
+            ...(descriptor ?? { scope: '*', operation: '*', mode: 'read', applicability: 'source' }),
+            sessionId: outcome.sessionId ?? null,
+            provenance: 'witnessed',
+            reason: redact(outcome.reason),
+          });
           recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
           return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
         }
         const descriptor = outcome.report.observation ? accessDescriptor(outcome.report.observation) : undefined;
         if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
         setReachability(store, id, 'reachable', at);
-        access(id, 'read', at, nextId, { ...(descriptor ?? {}), sessionId: outcome.report.sessionId ?? null, provenance: outcome.report.evidence, refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
-        return recordRead(id, outcome.report, outcome.report.coverage?.complete === false || !!outcome.report.coverage?.nextCursor, at, nextId);
+        access(id, 'read', at, nextId, {
+          ...(descriptor ?? {}),
+          sessionId: outcome.report.sessionId ?? null,
+          provenance: outcome.report.evidence,
+          refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef),
+          partial: outcome.report.coverage?.complete === false,
+          coverage: outcome.report.coverage ?? null,
+        });
+        return recordRead(
+          id,
+          outcome.report,
+          outcome.report.coverage?.complete === false || !!outcome.report.coverage?.nextCursor,
+          at,
+          nextId,
+        );
       });
     },
     reportRead(id, received, at, nextId) {
@@ -434,16 +562,29 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         if (report.items.length) throw new Error(`${outcome} cannot contain read items`);
         if (!report.reason?.trim() || !report.scope?.trim()) throw new Error(`${outcome} needs the attempted scope and reason`);
         // A failed request or empty query says nothing about removal of prior items.
-        access(id, outcome, at, nextId, { ...(descriptor ?? { operation: '*', mode: 'read', applicability: 'scope' }), provenance: 'reported', scope: descriptor?.scope ?? redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
+        access(id, outcome, at, nextId, {
+          ...(descriptor ?? { operation: '*', mode: 'read', applicability: 'scope' }),
+          provenance: 'reported',
+          scope: descriptor?.scope ?? redact(report.scope),
+          reason: redact(report.reason),
+          sessionId: report.sessionId ?? null,
+          coverage: report.coverage ?? null,
+        });
         // This attempted scope says nothing about access to other items of the source.
         return { sourceId: id, outcome, snapshot: null, reason: redact(report.reason) };
       }
 
-      if (report.items.some(i => urlCarriesCredentials(i.ref))) throw new Error('item reference carries credentials; give the address without them');
-      if (report.items.some(i => i.truncated !== undefined && typeof i.truncated !== 'boolean')) throw new Error('item truncated must be a boolean');
-      if (new Set(report.items.map((i) => i.ref)).size !== report.items.length) throw new Error('a report cannot contain duplicate item references');
+      if (report.items.some((i) => urlCarriesCredentials(i.ref)))
+        throw new Error('item reference carries credentials; give the address without them');
+      if (report.items.some((i) => i.truncated !== undefined && typeof i.truncated !== 'boolean'))
+        throw new Error('item truncated must be a boolean');
+      if (new Set(report.items.map((i) => i.ref)).size !== report.items.length)
+        throw new Error('a report cannot contain duplicate item references');
       const prior = new Map((currentManifest(store, id) ?? []).map((e) => [e.ref, e]));
-      const contentHash = (ref: string, text: string | undefined, title: string | undefined) => createHash('sha256').update(text ?? `${ref}\t${title ?? ''}`).digest('hex');
+      const contentHash = (ref: string, text: string | undefined, title: string | undefined) =>
+        createHash('sha256')
+          .update(text ?? `${ref}\t${title ?? ''}`)
+          .digest('hex');
       // Items whose fingerprint moves only because the basis did (an unversioned or passing sighting now read with a
       // version), not because the item changed; the read records them without calling them modified.
       const rebased = new Set<string>();
@@ -456,11 +597,14 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         // Provider revisions and timestamps are claims about identity, not proof
         // that the observed bytes are unchanged. Include both in the fingerprint.
         const bodyHash = contentHash(i.ref, text, i.title);
-        const schema = i.schema === undefined ? undefined : JSON.parse(redact(JSON.stringify(i.schema))) as Record<string, unknown>;
+        const schema = i.schema === undefined ? undefined : (JSON.parse(redact(JSON.stringify(i.schema))) as Record<string, unknown>);
         const schemaHash = i.schema === undefined ? null : createHash('sha256').update(canonicalSchema(i.schema)).digest('hex');
-        const fingerprint = i.updatedAt || i.fingerprint || schemaHash
-          ? createHash('sha256').update(JSON.stringify([i.ref, i.fingerprint ?? null, i.updatedAt ?? null, bodyHash, ...(schemaHash ? [schemaHash] : [])])).digest('hex')
-          : bodyHash;
+        const fingerprint =
+          i.updatedAt || i.fingerprint || schemaHash
+            ? createHash('sha256')
+                .update(JSON.stringify([i.ref, i.fingerprint ?? null, i.updatedAt ?? null, bodyHash, ...(schemaHash ? [schemaHash] : [])]))
+                .digest('hex')
+            : bodyHash;
         if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
         // What is kept is what was read with credentials removed, then capped; truncated says the cut happened. The cut
         // text is cleaned once more, so text kept from one report to the next reads the same when it is cleaned again.
@@ -482,21 +626,80 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         const url = i.url?.trim() ?? was?.url;
         if (url !== undefined && urlCarriesCredentials(url)) throw new Error('item url carries credentials; give the address without them');
         if (truncated) cut.push(i.ref);
-        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title !== undefined ? redact(i.title) : i.ref, attributes: { fingerprint, ...(schema !== undefined ? { schema } : {}), ...(keptText !== undefined ? { text: keptText } : {}), ...(url ? { url } : {}), ...(truncated ? { truncated: true } : {}), ...(via ? { via } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
+        return [
+          {
+            externalRef: i.ref,
+            kind: i.kind ?? 'item',
+            name: i.title !== undefined ? redact(i.title) : i.ref,
+            attributes: {
+              fingerprint,
+              ...(schema !== undefined ? { schema } : {}),
+              ...(keptText !== undefined ? { text: keptText } : {}),
+              ...(url ? { url } : {}),
+              ...(truncated ? { truncated: true } : {}),
+              ...(via ? { via } : {}),
+              ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}),
+              ...(i.weak ? { weak: true } : {}),
+            },
+          },
+        ];
       });
       // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
       const weakSeen = new Set(report.items.filter((i) => i.weak).map((i) => i.ref));
       const before = [...prior.values()].filter((entry) => report.partial || weakSeen.has(entry.ref));
       const seen = new Set(reported.map((r) => r.externalRef));
-      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { ...e.attributes, fingerprint: e.fingerprint, ...(e.supersededBy ? { supersededBy: e.supersededBy } : {}), ...(e.schema !== undefined ? { schema: e.schema } : {}), ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
+      const kept = before
+        .filter((e) => !seen.has(e.ref))
+        .map((e) => ({
+          externalRef: e.ref,
+          kind: e.kind,
+          name: e.ref,
+          attributes: {
+            ...e.attributes,
+            fingerprint: e.fingerprint,
+            ...(e.supersededBy ? { supersededBy: e.supersededBy } : {}),
+            ...(e.schema !== undefined ? { schema: e.schema } : {}),
+            ...(e.text !== undefined ? { text: redact(e.text) } : {}),
+            ...(e.url ? { url: e.url } : {}),
+            ...(e.truncated ? { truncated: true } : {}),
+            ...(e.via ? { via: e.via } : {}),
+            ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}),
+            ...(e.weak ? { weak: true } : {}),
+          },
+        }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
       // Identity covers every persisted manifest field, including retained
       // supersession and metadata. Display titles are not persisted there.
       // Item drift remains judged by fingerprint rather than metadata alone.
-      const digest = `sha256:${createHash('sha256').update(canonicalSchema(toManifest(items))).digest('hex')}`;
+      const digest = `sha256:${createHash('sha256')
+        .update(canonicalSchema(toManifest(items)))
+        .digest('hex')}`;
       setReachability(store, id, 'reachable', at);
-      const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, coverage: report.coverage, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
-      access(id, 'read', at, nextId, { ...(descriptor ?? {}), provenance: 'reported', operation: descriptor?.operation ?? 'read', refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref), sessionId: report.sessionId ?? null, scope: descriptor?.scope ?? report.scope ?? null, partial: report.partial === true, coverage: report.coverage ?? null });
+      const result = recordRead(
+        id,
+        {
+          digest,
+          summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`,
+          coverage: report.coverage,
+          evidenceRef: `host:${id}`,
+          evidence: 'reported',
+          items,
+        },
+        report.partial === true,
+        at,
+        nextId,
+        rebased,
+      );
+      access(id, 'read', at, nextId, {
+        ...(descriptor ?? {}),
+        provenance: 'reported',
+        operation: descriptor?.operation ?? 'read',
+        refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref),
+        sessionId: report.sessionId ?? null,
+        scope: descriptor?.scope ?? report.scope ?? null,
+        partial: report.partial === true,
+        coverage: report.coverage ?? null,
+      });
       return cut.length > 0 ? { ...result, truncated: cut } : result;
     },
     canRead(id) {
@@ -510,7 +713,12 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const last = latestSnapshot(store, id);
       if (!last) return null;
       try {
-        const outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator, previous: currentManifest(store, id) ?? undefined });
+        const outcome = await reader({
+          sourceId: source.id,
+          kind: source.kind,
+          locator: source.locator,
+          previous: currentManifest(store, id) ?? undefined,
+        });
         return outcome.outcome === 'read' ? outcome.report.digest !== last.digest : null;
       } catch {
         return null;

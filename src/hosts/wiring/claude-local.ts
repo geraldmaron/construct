@@ -142,7 +142,8 @@ export function launcherProblem(stateDir: string): string | null {
     }
   };
   if (!node || !usable(node, constants.X_OK)) return `the launcher names ${node || 'no Node'}, which no longer exists here`;
-  if (!construct || !usable(construct, constants.R_OK)) return `the launcher names ${construct || 'no Construct'}, which no longer exists here`;
+  if (!construct || !usable(construct, constants.R_OK))
+    return `the launcher names ${construct || 'no Construct'}, which no longer exists here`;
   return null;
 }
 
@@ -208,16 +209,31 @@ export function isSetEntry(entry: unknown, set: HookSet): boolean {
 }
 
 /** The entries one set adds, by Claude Code event, exactly as Construct writes them. */
-export function hookEntries(set: HookSet, stateDir: string): readonly { readonly hostEvent: string; readonly entry: Record<string, unknown> }[] {
+export function hookEntries(
+  set: HookSet,
+  stateDir: string,
+): readonly { readonly hostEvent: string; readonly entry: Record<string, unknown> }[] {
   if (set === 'coordination') {
     return [
-      { hostEvent: 'SessionStart', entry: { hooks: [{ type: 'command', command: hostHookCommand(stateDir, 'claude-code', 'session-start'), timeout: 5 }] } },
-      { hostEvent: 'PostToolUse', entry: { matcher: 'Edit|Write|MultiEdit|NotebookEdit', hooks: [{ type: 'command', command: hostHookCommand(stateDir, 'claude-code', 'post-tool-use'), timeout: 5 }] } },
+      {
+        hostEvent: 'SessionStart',
+        entry: { hooks: [{ type: 'command', command: hostHookCommand(stateDir, 'claude-code', 'session-start'), timeout: 5 }] },
+      },
+      {
+        hostEvent: 'PostToolUse',
+        entry: {
+          matcher: 'Edit|Write|MultiEdit|NotebookEdit',
+          hooks: [{ type: 'command', command: hostHookCommand(stateDir, 'claude-code', 'post-tool-use'), timeout: 5 }],
+        },
+      },
     ];
   }
   return GROUNDING_HOOKS.map((h) => ({
     hostEvent: h.hostEvent,
-    entry: { ...(h.matcher ? { matcher: h.matcher } : {}), hooks: [{ type: 'command', command: launcherCommand(stateDir, ['hook', h.event, '--client=claude-code']), timeout: 20 }] },
+    entry: {
+      ...(h.matcher ? { matcher: h.matcher } : {}),
+      hooks: [{ type: 'command', command: launcherCommand(stateDir, ['hook', h.event, '--client=claude-code']), timeout: 20 }],
+    },
   }));
 }
 
@@ -251,11 +267,16 @@ export function parseSettings(file: string, text: string | null): Record<string,
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new SettingsFileError(`${file} is not valid JSON, so Construct will not edit it`, 'Fix the file (Claude Code reads it as JSON), then install again.');
+    throw new SettingsFileError(
+      `${file} is not valid JSON, so Construct will not edit it`,
+      'Fix the file (Claude Code reads it as JSON), then install again.',
+    );
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new SettingsFileError(`${file} does not hold a settings object`);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new SettingsFileError(`${file} does not hold a settings object`);
   const hooks = (parsed as { hooks?: unknown }).hooks;
-  if (hooks !== undefined && (typeof hooks !== 'object' || hooks === null || Array.isArray(hooks))) throw new SettingsFileError(`the hooks in ${file} are not an object, so Construct will not edit them`);
+  if (hooks !== undefined && (typeof hooks !== 'object' || hooks === null || Array.isArray(hooks)))
+    throw new SettingsFileError(`the hooks in ${file} are not an object, so Construct will not edit them`);
   return parsed as Record<string, unknown>;
 }
 
@@ -273,7 +294,7 @@ function excludeFromGit(checkout: string, relPath: string, env: NodeJS.ProcessEn
   if (!infoExclude.ok || !infoExclude.out) return null;
   const file = isAbsolute(infoExclude.out) ? infoExclude.out : resolve(checkout, infoExclude.out);
   const original = existsSync(file) ? readFileSync(file, 'utf8') : null;
-  const prefix = original === null || original === '' || original.endsWith('\n') ? original ?? '' : `${original}\n`;
+  const prefix = original === null || original === '' || original.endsWith('\n') ? (original ?? '') : `${original}\n`;
   mkdirSync(join(file, '..'), { recursive: true });
   writeFileSync(file, `${prefix}${EXCLUDE_LINES(relPath)}`);
   return { file, original };
@@ -285,7 +306,13 @@ function excludeFromGit(checkout: string, relPath: string, env: NodeJS.ProcessEn
  * write now differs. Throws SettingsFileError for a file it will not edit,
  * including one git tracks: hooks written there would be committed.
  */
-export function installClaudeLocal(checkout: string, stateDir: string, env: NodeJS.ProcessEnv, at: string, set: HookSet): { record: ClaudeLocalRecord; changed: boolean } {
+export function installClaudeLocal(
+  checkout: string,
+  stateDir: string,
+  env: NodeJS.ProcessEnv,
+  at: string,
+  set: HookSet,
+): { record: ClaudeLocalRecord; changed: boolean } {
   const file = join(checkout, CLAUDE_LOCAL_SETTINGS_PATH);
   const current = existsSync(file) ? readFileSync(file, 'utf8') : null;
   const settings = parseSettings(file, current);
@@ -313,8 +340,16 @@ export function installClaudeLocal(checkout: string, stateDir: string, env: Node
 }
 
 const SET_NAMES: Readonly<Record<HookSet, { readonly name: string; readonly none: string; readonly since: string }>> = {
-  coordination: { name: 'the claude-code hook pack', none: 'no host hook pack is installed in this checkout', since: 'the pack was installed' },
-  grounding: { name: 'the grounding hooks', none: 'no grounding hooks are installed in this checkout', since: 'the grounding hooks were installed' },
+  coordination: {
+    name: 'the claude-code hook pack',
+    none: 'no host hook pack is installed in this checkout',
+    since: 'the pack was installed',
+  },
+  grounding: {
+    name: 'the grounding hooks',
+    none: 'no grounding hooks are installed in this checkout',
+    since: 'the grounding hooks were installed',
+  },
 };
 
 /**
@@ -352,7 +387,9 @@ export function uninstallClaudeLocal(checkout: string, stateDir: string, set: Ho
       try {
         written = `${JSON.stringify(withoutSets(parseSettings(file, current), [set]), null, 2)}\n`;
         writeFileSync(file, written);
-        notes.push(`${file} keeps ${remaining.map((s) => SET_NAMES[s].name).join(' and ')}${record.exclude ? ', and stays out of git' : ''}`);
+        notes.push(
+          `${file} keeps ${remaining.map((s) => SET_NAMES[s].name).join(' and ')}${record.exclude ? ', and stays out of git' : ''}`,
+        );
       } catch {
         notes.push(`${file} is no longer valid JSON; left as it is, with Construct's hooks still in it`);
       }

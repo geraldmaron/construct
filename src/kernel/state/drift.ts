@@ -8,15 +8,7 @@
 
 import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
-import {
-  assertTransition,
-  parseJson,
-  requireInstant,
-  requireNonEmpty,
-  requireOneOf,
-  requireUnitInterval,
-  toJson,
-} from './rows.ts';
+import { assertTransition, parseJson, requireInstant, requireNonEmpty, requireOneOf, requireUnitInterval, toJson } from './rows.ts';
 
 export interface Observation {
   readonly id: string;
@@ -77,9 +69,27 @@ export function latestObservationWith(store: StateStore, sourceId: string, kind:
         WHERE source_id = ? AND kind = ? AND evidence_json IS NOT NULL AND json_type(evidence_json, '$.' || ?) IS NOT NULL
         ORDER BY rowid DESC LIMIT 1`,
     )
-    .get(sourceId, kind, evidenceKey) as { id: string; run_id: string | null; source_id: string | null; kind: string; summary: string; evidence_json: string | null; observed_at: string } | undefined;
+    .get(sourceId, kind, evidenceKey) as
+    | {
+        id: string;
+        run_id: string | null;
+        source_id: string | null;
+        kind: string;
+        summary: string;
+        evidence_json: string | null;
+        observed_at: string;
+      }
+    | undefined;
   if (!row) return null;
-  return { id: row.id, runId: row.run_id, sourceId: row.source_id, kind: row.kind, summary: row.summary, evidence: parseJson(row.evidence_json), observedAt: row.observed_at };
+  return {
+    id: row.id,
+    runId: row.run_id,
+    sourceId: row.source_id,
+    kind: row.kind,
+    summary: row.summary,
+    evidence: parseJson(row.evidence_json),
+    observedAt: row.observed_at,
+  };
 }
 
 export function listObservations(
@@ -264,9 +274,7 @@ export function setDriftStatus(
     if (!current) throw new Error(`no drift finding ${input.id}`);
     assertTransition(DRIFT_TRANSITIONS, `drift finding ${input.id}`, current.status, input.status);
     const resolved = input.status === 'repaired' || input.status === 'dismissed' ? input.at : null;
-    store.db
-      .prepare('UPDATE drift_findings SET status = ?, resolved_at = ? WHERE id = ?')
-      .run(input.status, resolved, input.id);
+    store.db.prepare('UPDATE drift_findings SET status = ?, resolved_at = ? WHERE id = ?').run(input.status, resolved, input.id);
     appendActivity(store, {
       at: input.at,
       kind: 'drift.status',
@@ -357,7 +365,16 @@ export function proposeLesson(
       `INSERT INTO lessons (id, statement, version, status, evidence_json, scope_json, run_id, created_at, updated_at)
        VALUES (?, ?, ?, 'proposed', ?, ?, ?, ?, ?) RETURNING *`,
     )
-    .get(input.id, input.statement, version, toJson(input.evidence), toJson(input.scope), input.runId ?? null, input.at, input.at) as unknown as LessonRow;
+    .get(
+      input.id,
+      input.statement,
+      version,
+      toJson(input.evidence),
+      toJson(input.scope),
+      input.runId ?? null,
+      input.at,
+      input.at,
+    ) as unknown as LessonRow;
   return toLesson(row);
 }
 

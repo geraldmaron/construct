@@ -29,7 +29,10 @@ test('a host command on PATH is found, with the path as its evidence', () => {
     const env = { PATH: bin, HOME: home };
     assert.deepEqual(presentHosts(env, resolveHostConfigDirs(env)), [{ client: 'claude-code', evidence: `claude on PATH (${claude})` }]);
     executable(bin, 'cursor-agent');
-    assert.deepEqual(presentHosts(env, resolveHostConfigDirs(env)).map((h) => h.client), ['claude-code', 'cursor']);
+    assert.deepEqual(
+      presentHosts(env, resolveHostConfigDirs(env)).map((h) => h.client),
+      ['claude-code', 'cursor'],
+    );
   } finally {
     fx.cleanup();
   }
@@ -46,11 +49,20 @@ test('a configuration directory in HOME is found, and CODEX_HOME is where Codex 
     const codexHome = join(fx.root, 'codex-config');
     mkdirSync(codexHome);
     const withCodex = { ...env, CODEX_HOME: codexHome };
-    assert.deepEqual(presentHosts(withCodex, resolveHostConfigDirs(withCodex)).map((h) => [h.client, h.evidence]), [['cursor', `found ${join(home, '.cursor')}`], ['codex', `found ${codexHome}`]]);
+    assert.deepEqual(
+      presentHosts(withCodex, resolveHostConfigDirs(withCodex)).map((h) => [h.client, h.evidence]),
+      [
+        ['cursor', `found ${join(home, '.cursor')}`],
+        ['codex', `found ${codexHome}`],
+      ],
+    );
     // With CODEX_HOME set, ~/.codex is not where Codex looks, so it is not evidence.
     mkdirSync(join(home, '.codex'));
     const elsewhere = { ...env, CODEX_HOME: join(fx.root, 'absent') };
-    assert.deepEqual(presentHosts(elsewhere, resolveHostConfigDirs(elsewhere)).map((h) => h.client), ['cursor']);
+    assert.deepEqual(
+      presentHosts(elsewhere, resolveHostConfigDirs(elsewhere)).map((h) => h.client),
+      ['cursor'],
+    );
   } finally {
     fx.cleanup();
   }

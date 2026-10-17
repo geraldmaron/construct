@@ -96,12 +96,33 @@ function repo(): Repo {
   const session = (cwd: string, sessionId: string): BrokerContext => {
     const known = opened.get(sessionId);
     if (known) return known;
-    const env: NodeJS.ProcessEnv = { HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, PATH: process.env.PATH };
+    const env: NodeJS.ProcessEnv = {
+      HOME: join(fx.root, 'home'),
+      XDG_CONFIG_HOME: fx.paths.configDir,
+      XDG_STATE_HOME: fx.paths.stateDir,
+      XDG_DATA_HOME: fx.paths.dataDir,
+      XDG_CACHE_HOME: fx.paths.cacheDir,
+      PATH: process.env.PATH,
+    };
     const ctx: CliContext = { ...createContext(cwd, env), now: clock, nextId: ids };
     const project = openProject(ctx);
     // As serve does: a session is registered before its agents are recorded.
-    registerSession(project.store, { id: sessionId, host: 'claude-code', surface: 'interactive', machine: 'fixture', at: clock(), laneRoot: project.lane?.root, branch: project.lane?.branch ?? undefined });
-    const binding: BrokerBinding = { client: 'claude-code', surface: 'interactive', sessionId, executorId: `session:claude-code:${sessionId}`, actor: 'model via claude-code' };
+    registerSession(project.store, {
+      id: sessionId,
+      host: 'claude-code',
+      surface: 'interactive',
+      machine: 'fixture',
+      at: clock(),
+      laneRoot: project.lane?.root,
+      branch: project.lane?.branch ?? undefined,
+    });
+    const binding: BrokerBinding = {
+      client: 'claude-code',
+      surface: 'interactive',
+      sessionId,
+      executorId: `session:claude-code:${sessionId}`,
+      actor: 'model via claude-code',
+    };
     const broker = createBrokerContext(ctx, project, binding);
     opened.set(sessionId, broker);
     return broker;
@@ -114,7 +135,12 @@ function repo(): Repo {
     return (call(lead, { action: 'add', serves: reason, title }) as { id: string }).id;
   };
   return {
-    fx, main, one, two, session, item,
+    fx,
+    main,
+    one,
+    two,
+    session,
+    item,
     cleanup: () => {
       for (const b of opened.values()) b.store.close();
       fx.cleanup();
@@ -126,12 +152,19 @@ test('the project’s worktrees are listed from the repository: the main checkou
   const r = repo();
   try {
     const listed = projectWorktrees(r.main);
-    assert.deepEqual(listed.map((w) => [w.checkout, w.branch, w.main]), [
-      [r.main, 'main', true],
-      [r.two, 'feat/two', false],
-      [r.one, 'feat/one', false],
-    ]);
-    assert.deepEqual(listed.map((w) => w.root), [r.main, r.two, r.one], 'the project sits at the repository root, so each root is its checkout');
+    assert.deepEqual(
+      listed.map((w) => [w.checkout, w.branch, w.main]),
+      [
+        [r.main, 'main', true],
+        [r.two, 'feat/two', false],
+        [r.one, 'feat/one', false],
+      ],
+    );
+    assert.deepEqual(
+      listed.map((w) => w.root),
+      [r.main, r.two, r.one],
+      'the project sits at the repository root, so each root is its checkout',
+    );
   } finally {
     r.cleanup();
   }
@@ -145,18 +178,40 @@ test('a claim that names a worktree records its root and branch; a claim that na
     const plain = r.item('docs');
 
     const held = call(lead, { action: 'claim', id: named, agent: 'builder', worktree: r.one, paths: ['src/lexer.ts'] }) as Claimed;
-    assert.deepEqual(held.leases.map((l) => [l.path, l.laneRoot, l.branch, l.agent]), [['src/lexer.ts', r.one, 'feat/one', 'builder']]);
+    assert.deepEqual(
+      held.leases.map((l) => [l.path, l.laneRoot, l.branch, l.agent]),
+      [['src/lexer.ts', r.one, 'feat/one', 'builder']],
+    );
     assert.equal(held.claimLane, r.one, 'the claim itself records the worktree too');
 
     const unnamed = call(lead, { action: 'claim', id: plain, paths: ['docs/'] }) as Claimed;
-    assert.deepEqual(unnamed.leases.map((l) => [l.path, l.laneRoot, l.branch]), [['docs/', 'main', null]], 'no worktree: the main checkout, branch unrecorded, as always');
+    assert.deepEqual(
+      unnamed.leases.map((l) => [l.path, l.laneRoot, l.branch]),
+      [['docs/', 'main', null]],
+      'no worktree: the main checkout, branch unrecorded, as always',
+    );
     assert.equal(unnamed.claimLane, null);
 
-    const trailing = call(lead, { action: 'claim', id: named, agent: 'builder', token: held.claimToken, worktree: `${r.one}/`, paths: ['src/lexer.ts'] }) as Claimed;
-    assert.deepEqual(trailing.leases.map((l) => l.laneRoot), [r.one], 'a renewal spelled with a trailing slash names the same worktree');
+    const trailing = call(lead, {
+      action: 'claim',
+      id: named,
+      agent: 'builder',
+      token: held.claimToken,
+      worktree: `${r.one}/`,
+      paths: ['src/lexer.ts'],
+    }) as Claimed;
+    assert.deepEqual(
+      trailing.leases.map((l) => l.laneRoot),
+      [r.one],
+      'a renewal spelled with a trailing slash names the same worktree',
+    );
 
     const mainNamed = call(lead, { action: 'claim', id: r.item('notes'), worktree: r.main, paths: ['NOTES.md'] }) as Claimed;
-    assert.deepEqual(mainNamed.leases.map((l) => [l.laneRoot, l.branch]), [['main', 'main']], 'naming the main checkout keeps the main lane and records its branch');
+    assert.deepEqual(
+      mainNamed.leases.map((l) => [l.laneRoot, l.branch]),
+      [['main', 'main']],
+      'naming the main checkout keeps the main lane and records its branch',
+    );
   } finally {
     r.cleanup();
   }
@@ -172,20 +227,50 @@ test('the same path claimed from two worktrees: both claims succeed and each rep
     const a = call(lead, { action: 'claim', id: first, agent: 'one', worktree: r.one, paths: ['src/parser.ts'] }) as Claimed;
     assert.deepEqual(a.mergeRisks, []);
     const b = call(lead, { action: 'claim', id: second, agent: 'two', worktree: r.two, paths: ['src/parser.ts'] }) as Claimed;
-    assert.deepEqual(b.leases.map((l) => [l.laneRoot, l.branch]), [[r.two, 'feat/two']]);
-    assert.deepEqual(b.mergeRisks.map((o) => [o.kind, o.workId, o.laneRoot, o.branch]), [['merge_risk', first, r.one, 'feat/one']]);
+    assert.deepEqual(
+      b.leases.map((l) => [l.laneRoot, l.branch]),
+      [[r.two, 'feat/two']],
+    );
+    assert.deepEqual(
+      b.mergeRisks.map((o) => [o.kind, o.workId, o.laneRoot, o.branch]),
+      [['merge_risk', first, r.one, 'feat/one']],
+    );
     assert.equal(whereHeld(b.mergeRisks[0]!), `in the worktree at ${r.one} on feat/one`);
 
-    const renewed = call(lead, { action: 'claim', id: first, agent: 'one', token: a.claimToken, worktree: r.one, paths: ['src/parser.ts'] }) as Claimed;
-    assert.deepEqual(renewed.mergeRisks.map((o) => [o.kind, o.workId, o.laneRoot, o.branch]), [['merge_risk', second, r.two, 'feat/two']], 'the first claim, renewed, sees the second');
+    const renewed = call(lead, {
+      action: 'claim',
+      id: first,
+      agent: 'one',
+      token: a.claimToken,
+      worktree: r.one,
+      paths: ['src/parser.ts'],
+    }) as Claimed;
+    assert.deepEqual(
+      renewed.mergeRisks.map((o) => [o.kind, o.workId, o.laneRoot, o.branch]),
+      [['merge_risk', second, r.two, 'feat/two']],
+      'the first claim, renewed, sees the second',
+    );
     assert.equal(whereHeld(renewed.mergeRisks[0]!), `in the worktree at ${r.two} on feat/two`);
 
-    const otherAgent = call(lead, { action: 'check', id: first, worktree: r.one, paths: ['src/parser.ts'] }) as { clear: boolean; collisions: Overlap[] };
+    const otherAgent = call(lead, { action: 'check', id: first, worktree: r.one, paths: ['src/parser.ts'] }) as {
+      clear: boolean;
+      collisions: Overlap[];
+    };
     assert.equal(otherAgent.clear, false, 'another agent cannot hide the reservation');
-    assert.deepEqual(otherAgent.collisions.map((o) => o.workId), [first]);
-    const checked = call(lead, { action: 'check', id: first, agent: 'one', worktree: r.one, paths: ['src/parser.ts'] }) as { clear: boolean; collisions: Overlap[]; mergeRisks: Overlap[] };
+    assert.deepEqual(
+      otherAgent.collisions.map((o) => o.workId),
+      [first],
+    );
+    const checked = call(lead, { action: 'check', id: first, agent: 'one', worktree: r.one, paths: ['src/parser.ts'] }) as {
+      clear: boolean;
+      collisions: Overlap[];
+      mergeRisks: Overlap[];
+    };
     assert.equal(checked.clear, true, 'a merge risk does not block');
-    assert.deepEqual(checked.mergeRisks.map((o) => o.workId), [second]);
+    assert.deepEqual(
+      checked.mergeRisks.map((o) => o.workId),
+      [second],
+    );
 
     const fromMain = call(lead, { action: 'check', paths: ['src/parser.ts'] }) as { clear: boolean; mergeRisks: Overlap[] };
     assert.equal(fromMain.clear, true, 'from the main checkout both are in other worktrees');
@@ -204,21 +289,53 @@ test('a renewal that names no worktree keeps the one its claim records; naming a
 
     const quiet = call(lead, { action: 'claim', id, agent: 'builder', token: held.claimToken }) as Claimed;
     assert.equal(quiet.claimLane, r.one, 'a bare renewal keeps the claim in its worktree');
-    const again = call(lead, { action: 'claim', id, agent: 'builder', token: held.claimToken, paths: ['src/lexer.ts', 'src/token.ts'] }) as Claimed;
-    assert.deepEqual(again.leases.map((l) => [l.path, l.laneRoot, l.branch]), [['src/lexer.ts', r.one, 'feat/one'], ['src/token.ts', r.one, 'feat/one']], 'renewed paths stay in that worktree');
+    const again = call(lead, {
+      action: 'claim',
+      id,
+      agent: 'builder',
+      token: held.claimToken,
+      paths: ['src/lexer.ts', 'src/token.ts'],
+    }) as Claimed;
+    assert.deepEqual(
+      again.leases.map((l) => [l.path, l.laneRoot, l.branch]),
+      [
+        ['src/lexer.ts', r.one, 'feat/one'],
+        ['src/token.ts', r.one, 'feat/one'],
+      ],
+      'renewed paths stay in that worktree',
+    );
     assert.equal(again.claimLane, r.one);
 
-    const moved = call(lead, { action: 'claim', id, agent: 'builder', token: held.claimToken, worktree: r.main, paths: ['src/lexer.ts'] }) as Claimed;
-    assert.deepEqual(moved.leases.map((l) => [l.laneRoot, l.branch]), [['main', 'main']], 'naming the main checkout moves it there');
+    const moved = call(lead, {
+      action: 'claim',
+      id,
+      agent: 'builder',
+      token: held.claimToken,
+      worktree: r.main,
+      paths: ['src/lexer.ts'],
+    }) as Claimed;
+    assert.deepEqual(
+      moved.leases.map((l) => [l.laneRoot, l.branch]),
+      [['main', 'main']],
+      'naming the main checkout moves it there',
+    );
     assert.equal(moved.claimLane, null);
 
     const inOne = r.session(r.one, 'ses_in_one');
     const mainFromOne = call(inOne, { action: 'claim', id: r.item('notes'), worktree: r.main, paths: ['NOTES.md'] }) as Claimed;
     const kept = call(inOne, { action: 'claim', id: mainFromOne.id, token: mainFromOne.claimToken, paths: ['NOTES.md'] }) as Claimed;
-    assert.deepEqual(kept.leases.map((l) => [l.laneRoot, l.branch]), [['main', 'main']], 'a claim a worktree session placed in the main checkout stays there on renewal');
+    assert.deepEqual(
+      kept.leases.map((l) => [l.laneRoot, l.branch]),
+      [['main', 'main']],
+      'a claim a worktree session placed in the main checkout stays there on renewal',
+    );
     const own = call(inOne, { action: 'claim', id: r.item('own'), paths: ['src/own.ts'] }) as Claimed;
     const renewedOwn = call(inOne, { action: 'claim', id: own.id, token: own.claimToken, paths: ['src/own.ts'] }) as Claimed;
-    assert.deepEqual(renewedOwn.leases.map((l) => [l.laneRoot, l.branch]), [[r.one, 'feat/one']], 'a claim in the session’s own checkout renews as it always did');
+    assert.deepEqual(
+      renewedOwn.leases.map((l) => [l.laneRoot, l.branch]),
+      [[r.one, 'feat/one']],
+      'a claim in the session’s own checkout renews as it always did',
+    );
   } finally {
     r.cleanup();
   }
@@ -240,7 +357,11 @@ test('a claim naming the worktree another session runs in collides with that ses
       'one worktree, one writer per path, whichever session names it',
     );
     const elsewhere = call(lead, { action: 'claim', id: ours, agent: 'builder', worktree: r.two, paths: ['src/lexer.ts'] }) as Claimed;
-    assert.deepEqual(elsewhere.mergeRisks.map((o) => [o.laneRoot, o.branch]), [[r.one, 'feat/one']], 'from another worktree it is a merge risk');
+    assert.deepEqual(
+      elsewhere.mergeRisks.map((o) => [o.laneRoot, o.branch]),
+      [[r.one, 'feat/one']],
+      'from another worktree it is a merge risk',
+    );
   } finally {
     r.cleanup();
   }
@@ -267,13 +388,29 @@ test('a path that is not a worktree of this project is refused with the ones tha
         },
       );
     }
-    assert.equal((call(lead, { action: 'show', id }) as { status: string; leases: unknown[] }).status, 'open', 'the refused claim left the item open');
-    assert.throws(() => call(lead, { action: 'check', worktree: outside, paths: ['src/lexer.ts'] }), ToolInputError, 'check is held to the same list');
-    assert.throws(() => work.validate(record({ action: 'claim', id, worktree: '.claude/worktrees/one' })), ToolInputError, 'a relative path names nothing');
+    assert.equal(
+      (call(lead, { action: 'show', id }) as { status: string; leases: unknown[] }).status,
+      'open',
+      'the refused claim left the item open',
+    );
+    assert.throws(
+      () => call(lead, { action: 'check', worktree: outside, paths: ['src/lexer.ts'] }),
+      ToolInputError,
+      'check is held to the same list',
+    );
+    assert.throws(
+      () => work.validate(record({ action: 'claim', id, worktree: '.claude/worktrees/one' })),
+      ToolInputError,
+      'a relative path names nothing',
+    );
     assert.throws(() => work.validate(record({ action: 'claim', id, worktree: `${r.one}\u0007` })), ToolInputError);
 
     rmSync(r.two, { recursive: true, force: true });
-    assert.deepEqual(projectWorktrees(r.main).map((w) => w.checkout), [r.main, r.one], 'a worktree whose directory is gone is no longer one to name');
+    assert.deepEqual(
+      projectWorktrees(r.main).map((w) => w.checkout),
+      [r.main, r.one],
+      'a worktree whose directory is gone is no longer one to name',
+    );
     assert.throws(() => call(lead, { action: 'claim', id, worktree: r.two, paths: ['src/lexer.ts'] }), ToolInputError);
   } finally {
     r.cleanup();
@@ -286,14 +423,32 @@ test('an accepted handoff and a takeover move reservations to the worktree the n
     const lead = r.session(r.main, 'ses_lead');
     const id = r.item('parser');
     const held = call(lead, { action: 'claim', id, agent: 'first', worktree: r.one, paths: ['src/parser.ts'] }) as Claimed;
-    call(lead, { action: 'handoff', id, agent: 'first', token: held.claimToken, packet: { state: 'half done', next: 'finish the parser' } });
+    call(lead, {
+      action: 'handoff',
+      id,
+      agent: 'first',
+      token: held.claimToken,
+      packet: { state: 'half done', next: 'finish the parser' },
+    });
     const accepted = call(lead, { action: 'accept', id, agent: 'second', worktree: r.two }) as Claimed;
-    assert.deepEqual(accepted.leases.map((l) => [l.laneRoot, l.branch, l.agent]), [[r.two, 'feat/two', 'second']]);
+    assert.deepEqual(
+      accepted.leases.map((l) => [l.laneRoot, l.branch, l.agent]),
+      [[r.two, 'feat/two', 'second']],
+    );
 
     const other = r.item('lexer');
     call(lead, { action: 'claim', id: other, agent: 'third', paths: ['src/lexer.ts'] });
-    const back = call(lead, { action: 'takeover', id: other, agent: 'main', worktree: r.one, reason: 'the lead finishes it in worktree one' }) as Claimed;
-    assert.deepEqual(back.leases.map((l) => [l.laneRoot, l.branch]), [[r.one, 'feat/one']]);
+    const back = call(lead, {
+      action: 'takeover',
+      id: other,
+      agent: 'main',
+      worktree: r.one,
+      reason: 'the lead finishes it in worktree one',
+    }) as Claimed;
+    assert.deepEqual(
+      back.leases.map((l) => [l.laneRoot, l.branch]),
+      [[r.one, 'feat/one']],
+    );
   } finally {
     r.cleanup();
   }
@@ -308,8 +463,13 @@ test('explicit worktree renewal without paths moves the existing reservations or
     const moving = call(lead, { action: 'claim', id, token: held.claimToken, worktree: r.two }) as Claimed;
     assert.equal(moving.claimToken, held.claimToken);
     assert.equal(moving.claimLane, r.two);
-    assert.deepEqual(moving.leases.map(lease => [lease.laneRoot, lease.branch]), [[r.two, 'feat/two']]);
+    assert.deepEqual(
+      moving.leases.map((lease) => [lease.laneRoot, lease.branch]),
+      [[r.two, 'feat/two']],
+    );
     const other = r.item('other parser');
     assert.throws(() => call(lead, { action: 'claim', id: other, worktree: r.two, paths: ['src/parser.ts'] }), /reserved by other work/);
-  } finally { r.cleanup(); }
+  } finally {
+    r.cleanup();
+  }
 });

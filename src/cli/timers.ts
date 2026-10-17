@@ -10,7 +10,16 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { findOnPath } from '../hosts/presence.ts';
 import { LAUNCHER } from '../hosts/wiring/clients.ts';
-import { listTimers, platformScheduler, systemTimezone, timerPathFor, timerPlatformFor, type InstalledTimer, type SchedulerControl, type TimerTarget } from '../hosts/timer.ts';
+import {
+  listTimers,
+  platformScheduler,
+  systemTimezone,
+  timerPathFor,
+  timerPlatformFor,
+  type InstalledTimer,
+  type SchedulerControl,
+  type TimerTarget,
+} from '../hosts/timer.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { resolveAccountScheduleDir, resolveScheduleDir } from '../kernel/paths.ts';
 import { getTrigger } from '../kernel/state/triggers.ts';
@@ -74,15 +83,20 @@ export interface TimerRow extends InstalledTimer {
  * names: a project that moved or is gone, or a trigger that was removed or
  * disabled, is a unit that will fire into nothing.
  */
-export function timerRows(ctx: CliContext, here: { readonly id: string | null; readonly root: string; readonly store: StateStore | null }): TimerRow[] {
+export function timerRows(
+  ctx: CliContext,
+  here: { readonly id: string | null; readonly root: string; readonly store: StateStore | null },
+): TimerRow[] {
   const setup = timerSetup(ctx);
   if (!setup) return [];
   return listTimers(setup.target).map((t) => {
     const isHere = here.id !== null && t.projectId === here.id;
     let problem: string | null = null;
     const missing = t.program.find((p) => !existsSync(p));
-    if (t.program.length < 2 || missing) problem = `the program it starts, ${missing ?? '(unreadable)'}, no longer exists (Node or Construct moved); install the timer again from its project`;
-    else if (!t.projectRoot || !existsSync(t.projectRoot)) problem = `its project directory ${t.projectRoot ?? '(unnamed)'} no longer exists`;
+    if (t.program.length < 2 || missing)
+      problem = `the program it starts, ${missing ?? '(unreadable)'}, no longer exists (Node or Construct moved); install the timer again from its project`;
+    else if (!t.projectRoot || !existsSync(t.projectRoot))
+      problem = `its project directory ${t.projectRoot ?? '(unnamed)'} no longer exists`;
     else {
       let id: string | null = null;
       try {
@@ -109,6 +123,8 @@ export function timerRows(ctx: CliContext, here: { readonly id: string | null; r
 }
 
 export function describeTimer(t: TimerRow): string {
-  const state = [t.firing === null ? '' : t.firing ? 'firing' : 'not firing', t.triggerChecked ? '' : 'trigger state unchecked from here'].filter(Boolean).join(', ');
+  const state = [t.firing === null ? '' : t.firing ? 'firing' : 'not firing', t.triggerChecked ? '' : 'trigger state unchecked from here']
+    .filter(Boolean)
+    .join(', ');
   return `${t.label} (trigger ${t.triggerId}${t.executor ? `, executor ${t.executor}` : ''}${state ? `, ${state}` : ''})${t.problem ? `: ${t.problem}; \`construct workflow remove-timer ${t.label}\` removes it` : ''}`;
 }

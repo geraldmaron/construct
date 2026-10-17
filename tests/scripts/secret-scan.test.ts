@@ -13,7 +13,6 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-// @ts-expect-error — the hook is plain .mjs, deliberately outside src/
 import { scanAddedLines, scanDiff, isSecretEnvFile } from '../../scripts/hooks/secret-scan.mjs';
 
 const BODY = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -39,10 +38,7 @@ test('every named credential shape trips the scanner', () => {
 });
 
 test('an ordinary added line is not flagged', () => {
-  const hits = scanAddedLines([
-    '+  const message = "Model not found: ollama/qwen3.5:4b";',
-    '+// internationalization is not a secret',
-  ]);
+  const hits = scanAddedLines(['+  const message = "Model not found: ollama/qwen3.5:4b";', '+// internationalization is not a secret']);
   assert.deepEqual(hits, []);
 });
 

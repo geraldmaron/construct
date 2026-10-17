@@ -26,17 +26,28 @@ test('create, query, claim with fencing, complete, and reopen', () => {
     const a = createWork(fx.store, { id: 'w-a', kind: 'task', title: 'Do A', description: 'A', at: at(), actor: 't' });
     const b = createWork(fx.store, { id: 'w-b', kind: 'task', title: 'Do B', description: 'B', at: at(), actor: 't' });
     addWorkDependency(fx.store, { id: 'd1', fromId: b.id, toId: a.id, kind: 'blocks', at: at() });
-    assert.equal(listReady(fx.store, at()).map((w) => w.id).join(','), 'w-a');
+    assert.equal(
+      listReady(fx.store, at())
+        .map((w) => w.id)
+        .join(','),
+      'w-a',
+    );
     const now = at();
     const claimed = claimWork(fx.store, { id: a.id, owner: 's1', until: new Date(Date.parse(now) + 60_000).toISOString(), now });
     assert.equal(claimed.status, 'claimed');
-    assert.throws(() => claimWork(fx.store, { id: a.id, owner: 's2', until: new Date(Date.parse(now) + 60_000).toISOString(), now }), /claimed by s1/);
+    assert.throws(
+      () => claimWork(fx.store, { id: a.id, owner: 's2', until: new Date(Date.parse(now) + 60_000).toISOString(), now }),
+      /claimed by s1/,
+    );
     completeWork(fx.store, { id: a.id, owner: 's1', token: claimed.claimToken!, at: at() });
     assert.equal(listReady(fx.store, at())[0]?.id, 'w-b');
     const page = queryWork(fx.store, { query: 'Do A' });
     assert.equal(page.total, 1);
     reopenWork(fx.store, { id: a.id, actor: 't', at: at(), reason: 'found a miss' });
-    assert.equal(queryWork(fx.store, { status: 'open' }).items.some((w) => w.id === 'w-a'), true);
+    assert.equal(
+      queryWork(fx.store, { status: 'open' }).items.some((w) => w.id === 'w-a'),
+      true,
+    );
   } finally {
     fx.cleanup();
   }
@@ -52,7 +63,10 @@ test('ready selection ignores historical items and terminal blockers', () => {
     completeWork(fx.store, { id: done.id, owner: 's1', token: claimed.claimToken!, at: at() });
     const open = createWork(fx.store, { id: 'w-new', kind: 'task', title: 'New', description: 'open', at: at() });
     addWorkDependency(fx.store, { id: 'd-hist', fromId: open.id, toId: done.id, kind: 'blocks', at: at() });
-    assert.deepEqual(listReady(fx.store, at()).map((w) => w.id), ['w-new']);
+    assert.deepEqual(
+      listReady(fx.store, at()).map((w) => w.id),
+      ['w-new'],
+    );
   } finally {
     fx.cleanup();
   }

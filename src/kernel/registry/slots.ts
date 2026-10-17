@@ -22,7 +22,19 @@ export type SlotType = (typeof SLOT_TYPES)[number];
 export const PERIOD_SEMANTICS = ['as_of', 'changed_during', 'evidence_window'] as const;
 export type PeriodSemantics = (typeof PERIOD_SEMANTICS)[number];
 
-export const PERIOD_RELATIVES = ['today', 'this_week', 'last_week', 'this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'year_to_date', 'last_n_days'] as const;
+export const PERIOD_RELATIVES = [
+  'today',
+  'this_week',
+  'last_week',
+  'this_month',
+  'last_month',
+  'this_quarter',
+  'last_quarter',
+  'this_year',
+  'last_year',
+  'year_to_date',
+  'last_n_days',
+] as const;
 export type PeriodRelative = (typeof PERIOD_RELATIVES)[number];
 
 /** The longest last_n_days window, in days: about ten years. */
@@ -94,7 +106,11 @@ export function describeSlot(type: SlotType): string {
 
 // ---------------------------------------------------------------- dates
 
-interface Day { readonly y: number; readonly m: number; readonly d: number }
+interface Day {
+  readonly y: number;
+  readonly m: number;
+  readonly d: number;
+}
 
 function dayText(x: Day): string {
   return `${String(x.y).padStart(4, '0')}-${String(x.m).padStart(2, '0')}-${String(x.d).padStart(2, '0')}`;
@@ -230,54 +246,81 @@ function windowOf(spec: Record<string, unknown>, today: Day): Window {
 
 /** Everything wrong with a period, in plain words; empty when it is well formed. */
 function periodProblems(key: string, value: unknown, at: string, callerTimezone: string | undefined): string[] {
-  if (!isRecord(value)) return [`input "${key}" is ${Array.isArray(value) ? 'a list' : value === null ? 'null' : typeof value}, not a period`];
+  if (!isRecord(value))
+    return [`input "${key}" is ${Array.isArray(value) ? 'a list' : value === null ? 'null' : typeof value}, not a period`];
   const problems: string[] = [];
   const unknown = Object.keys(value).filter((k) => !(PERIOD_KEYS as readonly string[]).includes(k));
-  if (unknown.length) problems.push(`input "${key}" has ${unknown.map((k) => `"${k}"`).join(', ')}, which a period does not take (it takes ${PERIOD_KEYS.join(', ')})`);
+  if (unknown.length)
+    problems.push(
+      `input "${key}" has ${unknown.map((k) => `"${k}"`).join(', ')}, which a period does not take (it takes ${PERIOD_KEYS.join(', ')})`,
+    );
   if (typeof value.semantics !== 'string' || !(PERIOD_SEMANTICS as readonly string[]).includes(value.semantics)) {
-    problems.push(`input "${key}" needs "semantics", one of ${PERIOD_SEMANTICS.join(', ')}${value.semantics === undefined ? '' : ` (got ${JSON.stringify(value.semantics)})`}`);
+    problems.push(
+      `input "${key}" needs "semantics", one of ${PERIOD_SEMANTICS.join(', ')}${value.semantics === undefined ? '' : ` (got ${JSON.stringify(value.semantics)})`}`,
+    );
   }
-  if (value.relative !== undefined && (typeof value.relative !== 'string' || !(PERIOD_RELATIVES as readonly string[]).includes(value.relative))) {
+  if (
+    value.relative !== undefined &&
+    (typeof value.relative !== 'string' || !(PERIOD_RELATIVES as readonly string[]).includes(value.relative))
+  ) {
     problems.push(`input "${key}" has relative ${JSON.stringify(value.relative)}; relative is one of ${PERIOD_RELATIVES.join(', ')}`);
   }
   if (value.n !== undefined) {
     if (value.relative !== 'last_n_days') problems.push(`input "${key}" gives "n", which only last_n_days takes`);
-    else if (!isWhole(value.n) || value.n < 1 || value.n > MAX_PERIOD_DAYS) problems.push(`input "${key}" has n ${JSON.stringify(value.n)}; n is a whole number of days from 1 to ${String(MAX_PERIOD_DAYS)}`);
+    else if (!isWhole(value.n) || value.n < 1 || value.n > MAX_PERIOD_DAYS)
+      problems.push(`input "${key}" has n ${JSON.stringify(value.n)}; n is a whole number of days from 1 to ${String(MAX_PERIOD_DAYS)}`);
   } else if (value.relative === 'last_n_days') {
     problems.push(`input "${key}" is last_n_days without "n", the number of days`);
   }
-  if (value.quarter !== undefined && (!isWhole(value.quarter) || value.quarter < 1 || value.quarter > 4)) problems.push(`input "${key}" has quarter ${JSON.stringify(value.quarter)}; quarter is 1, 2, 3 or 4`);
-  if (value.year !== undefined && (!isWhole(value.year) || value.year < 1000 || value.year > 9999)) problems.push(`input "${key}" has year ${JSON.stringify(value.year)}; year is a four-digit whole number such as 2026`);
+  if (value.quarter !== undefined && (!isWhole(value.quarter) || value.quarter < 1 || value.quarter > 4))
+    problems.push(`input "${key}" has quarter ${JSON.stringify(value.quarter)}; quarter is 1, 2, 3 or 4`);
+  if (value.year !== undefined && (!isWhole(value.year) || value.year < 1000 || value.year > 9999))
+    problems.push(`input "${key}" has year ${JSON.stringify(value.year)}; year is a four-digit whole number such as 2026`);
   for (const k of ['from', 'to'] as const) {
-    if (value[k] !== undefined && !parseDay(value[k])) problems.push(`input "${key}" has ${k} ${JSON.stringify(value[k])}, which is not a real date as YYYY-MM-DD`);
+    if (value[k] !== undefined && !parseDay(value[k]))
+      problems.push(`input "${key}" has ${k} ${JSON.stringify(value[k])}, which is not a real date as YYYY-MM-DD`);
   }
-  if (value.timezone !== undefined && (typeof value.timezone !== 'string' || !isValidTimezone(value.timezone))) problems.push(`input "${key}" has timezone ${JSON.stringify(value.timezone)}, which is not an IANA timezone this runtime knows`);
-  if (value.phrase !== undefined && (typeof value.phrase !== 'string' || value.phrase.length > MAX_PHRASE)) problems.push(`input "${key}" has a phrase that is not text of at most ${String(MAX_PHRASE)} characters`);
+  if (value.timezone !== undefined && (typeof value.timezone !== 'string' || !isValidTimezone(value.timezone)))
+    problems.push(`input "${key}" has timezone ${JSON.stringify(value.timezone)}, which is not an IANA timezone this runtime knows`);
+  if (value.phrase !== undefined && (typeof value.phrase !== 'string' || value.phrase.length > MAX_PHRASE))
+    problems.push(`input "${key}" has a phrase that is not text of at most ${String(MAX_PHRASE)} characters`);
   if (problems.length) return problems;
 
   const hasRelative = value.relative !== undefined;
   const hasQuarter = value.quarter !== undefined;
   const hasYear = value.year !== undefined;
   const hasDates = value.from !== undefined || value.to !== undefined;
-  if (hasRelative && (hasQuarter || hasYear)) return [`input "${key}" gives relative and ${hasQuarter ? 'quarter' : 'year'}; give one way of naming the period`];
+  if (hasRelative && (hasQuarter || hasYear))
+    return [`input "${key}" gives relative and ${hasQuarter ? 'quarter' : 'year'}; give one way of naming the period`];
   if (!hasRelative && !hasQuarter && !hasYear) {
     if (!hasDates) return [`input "${key}" names no period: give relative, quarter, year, or from and to`];
     if (value.to === undefined) return [`input "${key}" gives from without to; a period needs its end date`];
-    if (value.from === undefined && value.semantics !== 'as_of') return [`input "${key}" gives to without from; a ${String(value.semantics)} period needs both dates (as_of takes only to)`];
-    if (value.from !== undefined && (value.from as string) > (value.to as string)) return [`input "${key}" runs from ${String(value.from)} to ${String(value.to)}; from must not be after to`];
+    if (value.from === undefined && value.semantics !== 'as_of')
+      return [`input "${key}" gives to without from; a ${String(value.semantics)} period needs both dates (as_of takes only to)`];
+    if (value.from !== undefined && (value.from as string) > (value.to as string))
+      return [`input "${key}" runs from ${String(value.from)} to ${String(value.to)}; from must not be after to`];
     return [];
   }
   if (hasDates) {
-    const tz = typeof value.timezone === 'string' ? value.timezone : callerTimezone && isValidTimezone(callerTimezone) ? callerTimezone : 'UTC';
+    const tz =
+      typeof value.timezone === 'string' ? value.timezone : callerTimezone && isValidTimezone(callerTimezone) ? callerTimezone : 'UTC';
     const today = parseDay(calendarDate(at, tz))!;
     const w = windowOf(value, today);
     const resolved = resolvePeriod(value as unknown as PeriodSpec, at, callerTimezone);
     const fromOk = value.from === undefined || value.from === dayText(w.from);
     const toOk = value.to === undefined || value.to === dayText(w.to) || (value.semantics === 'as_of' && value.to === resolved.to);
     if (!fromOk || !toOk) {
-      const named = hasRelative ? String(value.relative) : hasQuarter ? `Q${String(value.quarter)}${hasYear ? ` ${String(value.year)}` : ''}` : String(value.year);
-      const given = [value.from !== undefined ? `from ${String(value.from)}` : '', value.to !== undefined ? `to ${String(value.to)}` : ''].filter(Boolean).join(' and ');
-      return [`input "${key}" gives ${given}, but ${named} on ${dayText(today)} (${tz}) runs from ${dayText(w.from)} to ${dayText(w.to)}; drop the dates or make them agree`];
+      const named = hasRelative
+        ? String(value.relative)
+        : hasQuarter
+          ? `Q${String(value.quarter)}${hasYear ? ` ${String(value.year)}` : ''}`
+          : String(value.year);
+      const given = [value.from !== undefined ? `from ${String(value.from)}` : '', value.to !== undefined ? `to ${String(value.to)}` : '']
+        .filter(Boolean)
+        .join(' and ');
+      return [
+        `input "${key}" gives ${given}, but ${named} on ${dayText(today)} (${tz}) runs from ${dayText(w.from)} to ${dayText(w.to)}; drop the dates or make them agree`,
+      ];
     }
   }
   return [];
@@ -290,17 +333,24 @@ function periodProblems(key: string, value: unknown, at: string, callerTimezone:
  */
 export function resolvePeriod(spec: PeriodSpec, at: string, timezone?: string): ResolvedPeriod {
   const raw = spec as unknown as Record<string, unknown>;
-  const tz = typeof spec.timezone === 'string' && isValidTimezone(spec.timezone) ? spec.timezone : timezone && isValidTimezone(timezone) ? timezone : 'UTC';
+  const tz =
+    typeof spec.timezone === 'string' && isValidTimezone(spec.timezone)
+      ? spec.timezone
+      : timezone && isValidTimezone(timezone)
+        ? timezone
+        : 'UTC';
   if (Number.isNaN(Date.parse(at))) throw new Error(`"${at}" is not an instant to work a period out against`);
   const todayText = calendarDate(at, tz);
   const today = parseDay(todayText)!;
-  if (!isRecord(raw) || typeof raw.semantics !== 'string' || !(PERIOD_SEMANTICS as readonly string[]).includes(raw.semantics)) throw new Error('a period needs semantics');
+  if (!isRecord(raw) || typeof raw.semantics !== 'string' || !(PERIOD_SEMANTICS as readonly string[]).includes(raw.semantics))
+    throw new Error('a period needs semantics');
   const w = windowOf(raw, today);
   const assumptions = [`dates are in ${tz}`, ...w.assumptions];
   let from: string | null = dayText(w.from);
   let to = dayText(w.to);
   let endsAfterToday = to > todayText;
-  if (endsAfterToday && spec.relative !== undefined) assumptions.push(`${spec.relative} is the whole ${spec.relative.slice('this_'.length)}, which ends after today (${todayText})`);
+  if (endsAfterToday && spec.relative !== undefined)
+    assumptions.push(`${spec.relative} is the whole ${spec.relative.slice('this_'.length)}, which ends after today (${todayText})`);
   else if (endsAfterToday) assumptions.push(`the period ends after today (${todayText})`);
   if (spec.semantics === 'as_of') {
     from = null;
@@ -339,9 +389,22 @@ export function normalizeSourceIds(value: unknown): unknown {
 function sourceProblems(key: string, value: unknown, known: readonly string[]): SlotProblem[] {
   const normalized = normalizeSourceIds(value);
   if (!Array.isArray(normalized) || normalized.some((v) => typeof v !== 'string')) {
-    return [{ code: 'schema_mismatch', message: `input "${key}" is not a list of source ids`, remedy: `Pass ${key} as ${describeSlot('source_ids')}.` }];
+    return [
+      {
+        code: 'schema_mismatch',
+        message: `input "${key}" is not a list of source ids`,
+        remedy: `Pass ${key} as ${describeSlot('source_ids')}.`,
+      },
+    ];
   }
-  if (normalized.length === 0) return [{ code: 'schema_mismatch', message: `input "${key}" names no source`, remedy: `Pass ${key} as ${describeSlot('source_ids')}, or leave it out.` }];
+  if (normalized.length === 0)
+    return [
+      {
+        code: 'schema_mismatch',
+        message: `input "${key}" names no source`,
+        remedy: `Pass ${key} as ${describeSlot('source_ids')}, or leave it out.`,
+      },
+    ];
   const unknownIds = (normalized as string[]).filter((id) => !known.includes(id));
   return unknownIds.map((id) => ({
     code: 'unavailable_source' as const,
@@ -355,12 +418,17 @@ function sourceProblems(key: string, value: unknown, known: readonly string[]): 
 /** What is wrong with a value of a kernel-typed input; empty when it is acceptable. */
 export function checkSlot(type: SlotType, key: string, value: unknown, ctx: SlotContext): SlotProblem[] {
   if (type === 'source_ids') return sourceProblems(key, value, ctx.sourceIds);
-  return periodProblems(key, value, ctx.at, ctx.timezone).map((message) => ({ code: 'schema_mismatch' as const, message, remedy: `Pass ${key} as ${describeSlot('period')}.` }));
+  return periodProblems(key, value, ctx.at, ctx.timezone).map((message) => ({
+    code: 'schema_mismatch' as const,
+    message,
+    remedy: `Pass ${key} as ${describeSlot('period')}.`,
+  }));
 }
 
 function canonical(value: unknown): string {
   return JSON.stringify(value ?? null, (_k, v: unknown) =>
-    isRecord(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v);
+    isRecord(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) : v,
+  );
 }
 
 /**
@@ -373,7 +441,13 @@ export function slotIdentity(type: SlotType, value: unknown): string {
     const ids = normalizeSourceIds(value);
     return Array.isArray(ids) ? [...(ids as string[])].sort().join(',') : canonical(value);
   }
-  if (isRecord(value) && typeof value.semantics === 'string' && typeof value.to === 'string' && typeof value.timezone === 'string' && (value.from === null || typeof value.from === 'string')) {
+  if (
+    isRecord(value) &&
+    typeof value.semantics === 'string' &&
+    typeof value.to === 'string' &&
+    typeof value.timezone === 'string' &&
+    (value.from === null || typeof value.from === 'string')
+  ) {
     return `${value.semantics}|${value.from ?? ''}|${value.to}|${value.timezone}`;
   }
   return canonical(value);

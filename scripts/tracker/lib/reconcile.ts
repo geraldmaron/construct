@@ -71,15 +71,13 @@ export function reconcileProjection(
       continue;
     }
 
-    const authoritativeValue =
-      domainRecord && field in domainRecord ? domainRecord[field] : projection.fields?.[field];
+    const authoritativeValue = domainRecord && field in domainRecord ? domainRecord[field] : projection.fields?.[field];
     if (!valuesEqual(liveValue, authoritativeValue)) {
       conflicts.push({ field, domain: authoritativeValue, tracker: liveValue });
     }
   }
 
-  const state: ProjectionState =
-    conflicts.length > 0 ? 'drifted' : absorbed.length > 0 ? 'reconciling' : 'in_sync';
+  const state: ProjectionState = conflicts.length > 0 ? 'drifted' : absorbed.length > 0 ? 'reconciling' : 'in_sync';
   return { external_id: projection.external_id, state, absorbed, conflicts };
 }
 

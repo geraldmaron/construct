@@ -17,7 +17,9 @@ import { sterile, type SterileFixture } from '../harness/sterile.ts';
 import { toolsFor } from '../../src/kernel/broker/tools.ts';
 import { envFor, initProject, INITIALIZE as INIT, Session } from './support.ts';
 
-test('under another process’s write lock the handshake answers at once and a call binds once the lock is gone', { timeout: 60_000 }, async () => {
+test('under another process’s write lock the handshake answers at once and a call binds once the lock is gone', {
+  timeout: 60_000,
+}, async () => {
   const fx = sterile();
   try {
     const { dir, db } = initProject(fx);
@@ -42,7 +44,10 @@ test('under another process’s write lock the handshake answers at once and a c
       assert.notEqual(after.result?.isError, true, JSON.stringify(after.result?.structuredContent));
       assert.ok(after.result?.structuredContent?.profile, 'a bound bootstrap reports the project profile');
     } finally {
-      if (holder.isOpen) { holder.exec('ROLLBACK'); holder.close(); }
+      if (holder.isOpen) {
+        holder.exec('ROLLBACK');
+        holder.close();
+      }
       await session.close();
     }
   } finally {
@@ -55,8 +60,16 @@ async function unboundAdvice(fx: SterileFixture, dir: string, db: string): Promi
     const store = new DatabaseSync(db, { readOnly: true });
     try {
       const tables = store.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as { name: string }[];
-      return { tables, meta: store.prepare('SELECT key, value FROM meta ORDER BY key').all(), work: tables.some(t => t.name === 'work_items') ? store.prepare('SELECT id, title, status FROM work_items ORDER BY id').all() : null };
-    } finally { store.close(); }
+      return {
+        tables,
+        meta: store.prepare('SELECT key, value FROM meta ORDER BY key').all(),
+        work: tables.some((t) => t.name === 'work_items')
+          ? store.prepare('SELECT id, title, status FROM work_items ORDER BY id').all()
+          : null,
+      };
+    } finally {
+      store.close();
+    }
   };
   const before = snapshot();
   const session = new Session(dir, envFor(fx));
@@ -67,7 +80,10 @@ async function unboundAdvice(fx: SterileFixture, dir: string, db: string): Promi
     assert.match(String(init.result?.instructions), /project binding is checked on each call/);
     const list = await session.request('tools/list');
     const listed = list.result as { tools: { name: string }[] };
-    assert.deepEqual(listed.tools.map(t => t.name), toolsFor('interactive').map(t => t.name));
+    assert.deepEqual(
+      listed.tools.map((t) => t.name),
+      toolsFor('interactive').map((t) => t.name),
+    );
     const boot = await session.call('bootstrap');
     assert.equal(boot.result?.isError, true, 'incompatible state is refused without claiming a usable binding');
     assert.equal(boot.result?.structuredContent?.bound, false);
@@ -105,7 +121,8 @@ test('an older store yields the migrate step; a foreign one says to ask the pers
     const { dir, db } = initProject(fx);
     const d = new DatabaseSync(db);
     d.exec('PRAGMA foreign_keys = OFF');
-    for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) d.exec(`DROP TABLE IF EXISTS ${table}`);
+    for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items'])
+      d.exec(`DROP TABLE IF EXISTS ${table}`);
     d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
     d.close();
     assert.match(await unboundAdvice(fx, dir, db), /construct migrate/);

@@ -33,7 +33,10 @@ export type BrokerSurface = 'interactive' | 'headless';
 export const SERVER_NAMES: Readonly<Record<BrokerSurface, string>> = { interactive: 'construct', headless: 'construct-runner' };
 
 function text(payload: unknown): { content: Array<{ type: 'text'; text: string }>; structuredContent?: unknown } {
-  return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }], structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined };
+  return {
+    content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }],
+    structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined,
+  };
 }
 
 /** A tool result with what peers did since the session last looked, when they did anything. */
@@ -76,8 +79,11 @@ export function modelFacingSurface(surface: BrokerSurface, skills: SkillRegistry
   return {
     instructions: instructionsFor(surface, null),
     tools: toolsFor(surface).map(mcpTool),
-    operationalSkillDigest: operational === null ? null : bundleDigest([{ relativePath: 'SKILL.md', bytes: new TextEncoder().encode(operational) }]),
-    skills: skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, category: s.manifest.category, description: s.description })),
+    operationalSkillDigest:
+      operational === null ? null : bundleDigest([{ relativePath: 'SKILL.md', bytes: new TextEncoder().encode(operational) }]),
+    skills: skills
+      .list()
+      .map((s) => ({ id: s.manifest.id, title: s.manifest.title, category: s.manifest.category, description: s.description })),
     workflows: workflows.list().map((w) => ({
       id: w.manifest.id,
       title: w.manifest.title,
@@ -152,14 +158,20 @@ function elicitor(requests: HostRequests, waitMs: number, stillPerson: () => boo
         'elicitation/create',
         {
           message: question.message,
-          requestedSchema: { type: 'object', properties: { answer: { type: 'string', title: 'Your answer', enum: [...question.options] } }, required: ['answer'] },
+          requestedSchema: {
+            type: 'object',
+            properties: { answer: { type: 'string', title: 'Your answer', enum: [...question.options] } },
+            required: ['answer'],
+          },
         },
         waitMs,
       )) as { action?: unknown; content?: { answer?: unknown } } | null;
       if (result?.action === 'accept') {
         if (!stillPerson()) return { answered: false, why: 'unavailable' };
         const choice = result.content?.answer;
-        return typeof choice === 'string' && question.options.includes(choice) ? { answered: true, choice } : { answered: false, why: 'unavailable' };
+        return typeof choice === 'string' && question.options.includes(choice)
+          ? { answered: true, choice }
+          : { answered: false, why: 'unavailable' };
       }
       return { answered: false, why: result?.action === 'decline' ? 'declined' : 'cancelled' };
     } catch (error) {
@@ -204,8 +216,10 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
       touchSession(ctx.store, { id: ctx.sessionId, at });
       // A capability retry recovers exactly its existing live term. Even a
       // wrong key must not extend that item through the presence courtesy.
-      const excludeWorkId = name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
-        ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id : undefined;
+      const excludeWorkId =
+        name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
+          ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id
+          : undefined;
       renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS, excludeWorkId });
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
@@ -241,14 +255,29 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
         const declared = (record(params) as { capabilities?: { elicitation?: unknown } }).capabilities;
         const prompts = options.personPrompts;
         const stillPerson = typeof prompts === 'function' ? prompts : () => prompts === true;
-        if (surface === 'interactive' && options.hostRequests && stillPerson() && declared && typeof declared === 'object' && declared.elicitation) {
-          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, personPromptWaitFor(ctx.host.hostId, options.personPromptWaitMs), stillPerson) };
+        if (
+          surface === 'interactive' &&
+          options.hostRequests &&
+          stillPerson() &&
+          declared &&
+          typeof declared === 'object' &&
+          declared.elicitation
+        ) {
+          callCtx = {
+            ...ctx,
+            askPerson: elicitor(options.hostRequests, personPromptWaitFor(ctx.host.hostId, options.personPromptWaitMs), stillPerson),
+          };
         }
         const client = (record(params) as { clientInfo?: unknown }).clientInfo;
         if (ctx.sessionId && client && typeof client === 'object') {
           const info = client as { name?: unknown; version?: unknown };
           try {
-            recordClient(ctx.store, { id: ctx.sessionId, name: typeof info.name === 'string' ? info.name : null, version: typeof info.version === 'string' ? info.version : null, at: ctx.now() });
+            recordClient(ctx.store, {
+              id: ctx.sessionId,
+              name: typeof info.name === 'string' ? info.name : null,
+              version: typeof info.version === 'string' ? info.version : null,
+              at: ctx.now(),
+            });
           } catch {
             // Describing the client is a courtesy; the handshake never fails for it.
           }
@@ -285,12 +314,40 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           // Wrong input is a tool error the model reads and corrects; only a tool
           // this surface does not carry is a protocol error.
           if (error instanceof ToolInputError) {
-            return response(id, { ...text({ error: messageText, field: error.field, allowed: error.allowed, example: error.example, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Correct the indicated input or satisfy the missing prerequisite, then retry. Do not advance a managed outcome as though this operation succeeded; do not invent a run, source or claim.' } }), isError: true });
+            return response(id, {
+              ...text({
+                error: messageText,
+                field: error.field,
+                allowed: error.allowed,
+                example: error.example,
+                recovery: {
+                  tool: tool.name,
+                  inputSchema: tool.inputSchema,
+                  next: 'This call failed. Correct the indicated input or satisfy the missing prerequisite, then retry. Do not advance a managed outcome as though this operation succeeded; do not invent a run, source or claim.',
+                },
+              }),
+              isError: true,
+            });
           }
           if (error instanceof UnsupportedStateError) {
-            return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
+            return response(id, {
+              ...text({
+                error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.`,
+              }),
+              isError: true,
+            });
           }
-          return response(id, { ...text({ error: messageText, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.' } }), isError: true });
+          return response(id, {
+            ...text({
+              error: messageText,
+              recovery: {
+                tool: tool.name,
+                inputSchema: tool.inputSchema,
+                next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.',
+              },
+            }),
+            isError: true,
+          });
         }
       }
       default:
@@ -303,7 +360,12 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
 /** Handshake-capable server when no project is bound, so a host can show why. */
 export const INIT_NEXT = 'Run `construct init` in the project, then restart this MCP server.';
 
-export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, version: string, next: string = INIT_NEXT): AsyncMessageHandler {
+export function createUnboundMcpHandler(
+  surface: BrokerSurface,
+  reason: string,
+  version: string,
+  next: string = INIT_NEXT,
+): AsyncMessageHandler {
   const payload = {
     bound: false,
     error: reason,
@@ -340,7 +402,8 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
       case 'tools/call': {
         const p = record(params) as { name?: unknown };
         const name = typeof p.name === 'string' ? p.name : '';
-        if (name !== 'bootstrap') return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" until Construct is bound to a project`);
+        if (name !== 'bootstrap')
+          return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" until Construct is bound to a project`);
         return response(id, { ...text(payload), isError: true });
       }
       default:
@@ -351,7 +414,12 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
 }
 
 /** Official stdio transport: newline-delimited JSON-RPC, replies in arrival order. */
-export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = process.stdin, stdout: Writable = process.stdout, hostRequests?: HostRequests): Promise<void> {
+export function serveHandler(
+  handle: AsyncMessageHandler,
+  stdin: Readable = process.stdin,
+  stdout: Writable = process.stdout,
+  hostRequests?: HostRequests,
+): Promise<void> {
   const transport = new StdioServerTransport(stdin, stdout);
   hostRequests?.attach((message) => transport.send(message as never));
   let chain: Promise<void> = Promise.resolve();
@@ -406,7 +474,13 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
   );
 }
 
-export function serveMcp(surface: BrokerSurface, ctx: BrokerContext, stdin: Readable = process.stdin, stdout: Writable = process.stdout, options: HandlerOptions = {}): Promise<void> {
+export function serveMcp(
+  surface: BrokerSurface,
+  ctx: BrokerContext,
+  stdin: Readable = process.stdin,
+  stdout: Writable = process.stdout,
+  options: HandlerOptions = {},
+): Promise<void> {
   return serveHandler(createMcpHandler(surface, ctx, options), stdin, stdout, options.hostRequests);
 }
 

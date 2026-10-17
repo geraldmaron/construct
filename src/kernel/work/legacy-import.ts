@@ -151,7 +151,13 @@ export function importLegacySnapshot(
           .prepare(
             `UPDATE work_items SET status = ?, completed_at = ?, reason = ?, claim_owner = NULL, claim_token = NULL, claim_until = NULL, updated_at = ? WHERE id = ?`,
           )
-          .run(status, asText(issue.closed_at) || input.at, asText(issue.close_reason) || 'imported as recorded by the source', input.at, id);
+          .run(
+            status,
+            asText(issue.closed_at) || input.at,
+            asText(issue.close_reason) || 'imported as recorded by the source',
+            input.at,
+            id,
+          );
       }
       bindLegacyId(store, { legacyId: id, workId: id, source: input.source ?? 'legacy-jsonl', at: input.at });
       imported += 1;

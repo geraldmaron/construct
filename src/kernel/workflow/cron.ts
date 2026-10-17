@@ -52,7 +52,15 @@ export function parseCron(expression: string): CronFields {
   const days = field(d, 1, 31, 'day');
   const months = field(mo, 1, 12, 'month');
   const weekdays = field(w.replace(/\b7\b/g, '0'), 0, 6, 'weekday');
-  return { minutes: minutes.set, hours: hours.set, days: days.set, months: months.set, weekdays: weekdays.set, dayRestricted: days.restricted, weekdayRestricted: weekdays.restricted };
+  return {
+    minutes: minutes.set,
+    hours: hours.set,
+    days: days.set,
+    months: months.set,
+    weekdays: weekdays.set,
+    dayRestricted: days.restricted,
+    weekdayRestricted: weekdays.restricted,
+  };
 }
 
 function matches(c: CronFields, w: WallClock): boolean {
@@ -81,7 +89,14 @@ export function nextCronAfter(expression: string, timezone: string, after: strin
     }
     if (!matches(c, { ...w, minute: c.minutes.values().next().value ?? w.minute, hour: c.hours.values().next().value ?? w.hour })) {
       // Day does not match on its date fields; skip to the next day.
-      const dayOk = (c.dayRestricted && c.weekdayRestricted) ? (c.days.has(w.day) || c.weekdays.has(w.weekday)) : (c.dayRestricted ? c.days.has(w.day) : c.weekdayRestricted ? c.weekdays.has(w.weekday) : true);
+      const dayOk =
+        c.dayRestricted && c.weekdayRestricted
+          ? c.days.has(w.day) || c.weekdays.has(w.weekday)
+          : c.dayRestricted
+            ? c.days.has(w.day)
+            : c.weekdayRestricted
+              ? c.weekdays.has(w.weekday)
+              : true;
       if (!dayOk) {
         t += 86_400_000 - (w.hour * 3_600_000 + w.minute * 60_000);
         continue;

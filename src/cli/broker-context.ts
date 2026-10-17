@@ -38,7 +38,11 @@ export interface BrokerBinding {
 }
 
 /** What this session may do, described as capabilities rather than binaries. */
-export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null, readerKinds: readonly string[] = ['directory']): HostCapabilities {
+export function hostCapabilitiesFor(
+  binding: BrokerBinding,
+  sessionId: string | null,
+  readerKinds: readonly string[] = ['directory'],
+): HostCapabilities {
   // A local session always has the project checkout and the readers wired here. Interactivity adds a person and
   // the host's own tools for the systems the person already has open: what they read is recorded as evidence, and
   // every write to them is an external write that only the person approves, one action at a time.
@@ -52,8 +56,15 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
     }
     permitted.add('write_project_files');
   }
-  if (binding.surface === 'headless') for (const capability of runnerCapabilities(binding.executorId)) { declared.add(capability); permitted.add(capability); }
-  const unavailable = binding.surface === 'headless' ? ['ask_user', 'model_review', 'write_project_files', 'read_source', 'write_source', 'run_tests'].filter((c) => !permitted.has(c)) : [];
+  if (binding.surface === 'headless')
+    for (const capability of runnerCapabilities(binding.executorId)) {
+      declared.add(capability);
+      permitted.add(capability);
+    }
+  const unavailable =
+    binding.surface === 'headless'
+      ? ['ask_user', 'model_review', 'write_project_files', 'read_source', 'write_source', 'run_tests'].filter((c) => !permitted.has(c))
+      : [];
   return {
     hostId: binding.client,
     sessionId,
@@ -66,9 +77,18 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
     unavailable,
     exercised: new Set(),
     maxTier: binding.surface === 'interactive' ? 'external_write' : 'project_write',
-    restrictions: binding.surface === 'headless'
-      ? ['no person is present: nothing that needs a decision proceeds', runnerCapabilities(binding.executorId).length ? 'explicit host adapter declares local model, file and command capabilities; external connectors are not provisioned, and execution is verified separately' : 'no model or test executor is supplied by this broker; a clock firing alone does not perform model work']
-      : ['host-mediated capabilities are declarations, not proof that a connector, test executable, or sandbox permission is available; discover and report actual access', 'writes to the person\'s systems go through the host\'s own tools and are external writes the person approves per action'],
+    restrictions:
+      binding.surface === 'headless'
+        ? [
+            'no person is present: nothing that needs a decision proceeds',
+            runnerCapabilities(binding.executorId).length
+              ? 'explicit host adapter declares local model, file and command capabilities; external connectors are not provisioned, and execution is verified separately'
+              : 'no model or test executor is supplied by this broker; a clock firing alone does not perform model work',
+          ]
+        : [
+            'host-mediated capabilities are declarations, not proof that a connector, test executable, or sandbox permission is available; discover and report actual access',
+            "writes to the person's systems go through the host's own tools and are external writes the person approves per action",
+          ],
     budgetCents: null,
   };
 }
@@ -76,23 +96,31 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
 /** The prefix of an interactive session's executor id, which only `serve` itself mints. */
 const SESSION_EXECUTOR_PREFIX = 'session:';
 
-export function bindingFor(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): BrokerBinding {
+export function bindingFor(
+  ctx: CliContext,
+  flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string },
+): BrokerBinding {
   const client = normalizeClient(flags.client ?? detectAmbientHost(ctx.env)?.host);
   const surface = flags.headless ? 'headless' : 'interactive';
   // Grants name their executor. A runner that took a session's id would act
   // under the approvals the person gave that session.
   if (surface === 'headless' && flags.executor?.startsWith(SESSION_EXECUTOR_PREFIX)) {
-    throw new UsageError(`--executor ${flags.executor} names an interactive session; a headless runner needs an id of its own (for example runner:nightly)`);
+    throw new UsageError(
+      `--executor ${flags.executor} names an interactive session; a headless runner needs an id of its own (for example runner:nightly)`,
+    );
   }
   // runner:ses_… is what Construct mints for a runner given no id; taking one
   // would inherit the approvals given to that runner.
   if (surface === 'headless' && flags.executor?.startsWith('runner:ses_')) {
-    throw new UsageError(`--executor ${flags.executor} is an id Construct mints for a runner started without one; choose a name of your own (for example runner:nightly)`);
+    throw new UsageError(
+      `--executor ${flags.executor} is an id Construct mints for a runner started without one; choose a name of your own (for example runner:nightly)`,
+    );
   }
   // Minted here, once per process, and never taken from anything a host or a
   // model supplies: a reused pid or a copied host id inherits nothing.
   const sessionId = `ses_${randomUUID()}`;
-  const executorId = surface === 'headless' ? (flags.executor ?? `runner:${sessionId}`) : `${SESSION_EXECUTOR_PREFIX}${client}:${sessionId}`;
+  const executorId =
+    surface === 'headless' ? (flags.executor ?? `runner:${sessionId}`) : `${SESSION_EXECUTOR_PREFIX}${client}:${sessionId}`;
   // What a session does is the model's act on the person's behalf; only an
   // answer on a person channel is recorded as the person.
   return { client, surface, sessionId, executorId, actor: surface === 'headless' ? executorId : `model via ${client}` };
@@ -122,10 +150,17 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     hostReads: explainConfig(configInputs(ctx, project, {}), 'policy.hostReads').effective.value as 'require' | 'accept',
     answerCheck: explainConfig(configInputs(ctx, project, {}), 'policy.answerCheck').effective.value as 'nudge' | 'off',
   };
-  const available = () => sources.list().map((s) => {
-    const st = sources.status(s.id, ctx.now());
-    return { kind: s.kind, id: s.id, reachability: s.canRead ? s.reachability : 'unreachable' as const, freshness: st.freshness, lastReadAt: st.lastSnapshot?.takenAt ?? null };
-  });
+  const available = () =>
+    sources.list().map((s) => {
+      const st = sources.status(s.id, ctx.now());
+      return {
+        kind: s.kind,
+        id: s.id,
+        reachability: s.canRead ? s.reachability : ('unreachable' as const),
+        freshness: st.freshness,
+        lastReadAt: st.lastSnapshot?.takenAt ?? null,
+      };
+    });
   const workflow = createWorkflowService({
     store: project.store,
     skills,
@@ -140,16 +175,64 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     nextId: ctx.nextId,
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),
   });
-  const triggers = createTriggerService({ store: project.store, workflows, workflowService: workflow, sources: available, now: ctx.now, nextId: ctx.nextId, projectRoot: project.root });
-  const delegation = binding.surface === 'interactive' && projectWritePolicy !== 'never' ? createDelegationService({
-    store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
-    driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
-  }) : undefined;
-  return { surface: binding.surface, version: packageVersion(), root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root), sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
+  const triggers = createTriggerService({
+    store: project.store,
+    workflows,
+    workflowService: workflow,
+    sources: available,
+    now: ctx.now,
+    nextId: ctx.nextId,
+    projectRoot: project.root,
+  });
+  const delegation =
+    binding.surface === 'interactive' && projectWritePolicy !== 'never'
+      ? createDelegationService({
+          store: project.store,
+          sessionId: binding.sessionId,
+          target: project.lane?.root ?? project.root,
+          now: ctx.now,
+          driver: createDelegationDriver({
+            configDir: ctx.paths.configDir,
+            artifactsDir: join(project.layout.stateDir, 'delegation'),
+            env: ctx.env,
+            machine: hostname(),
+            processAlive,
+          }),
+        })
+      : undefined;
+  return {
+    surface: binding.surface,
+    version: packageVersion(),
+    root: project.root,
+    lane: project.lane,
+    worktrees: () => projectWorktrees(project.root),
+    sessionId: binding.sessionId,
+    layout: project.layout,
+    files: project.files,
+    store: project.store,
+    skills,
+    workflows,
+    host,
+    workflow,
+    triggers,
+    sources,
+    now: ctx.now,
+    nextId: ctx.nextId,
+    actor: binding.actor,
+    processAlive,
+    delegation,
+    policy,
+  };
 }
 
-export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }, binding: BrokerBinding = bindingFor(ctx, flags), expected?: ExpectedProject): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {
-  if (ctx.env.CONSTRUCT_DELEGATED_WORKER) throw new UsageError('delegated workers receive only their supplied context, not another Construct surface');
+export function openBroker(
+  ctx: CliContext,
+  flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string },
+  binding: BrokerBinding = bindingFor(ctx, flags),
+  expected?: ExpectedProject,
+): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {
+  if (ctx.env.CONSTRUCT_DELEGATED_WORKER)
+    throw new UsageError('delegated workers receive only their supplied context, not another Construct surface');
   const project = openProject(ctx, expected);
   try {
     return { project, binding, broker: createBrokerContext(ctx, project, binding) };

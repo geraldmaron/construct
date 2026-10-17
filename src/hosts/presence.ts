@@ -44,7 +44,10 @@ function isDirectory(path: string): boolean {
  * its configuration directories exists. `configDirs` comes from
  * resolveHostConfigDirs, the module allowed to read home.
  */
-export function presentHosts(env: NodeJS.ProcessEnv, configDirs: Readonly<Partial<Record<WirableClient, readonly string[]>>>): PresentHost[] {
+export function presentHosts(
+  env: NodeJS.ProcessEnv,
+  configDirs: Readonly<Partial<Record<WirableClient, readonly string[]>>>,
+): PresentHost[] {
   const found: PresentHost[] = [];
   for (const w of CLIENT_WIRINGS) {
     const binary = w.binaries.map((name) => ({ name, path: findOnPath(name, env) })).find((b) => b.path !== null);

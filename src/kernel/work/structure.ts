@@ -108,7 +108,14 @@ export function admissionBasis(store: StateStore, work: WorkItem): AdmissionBasi
   return null;
 }
 
-function addDeps(store: StateStore, from: string, ids: readonly string[], kind: 'blocks' | 'informs', at: string, nextId: (p: string) => string): void {
+function addDeps(
+  store: StateStore,
+  from: string,
+  ids: readonly string[],
+  kind: 'blocks' | 'informs',
+  at: string,
+  nextId: (p: string) => string,
+): void {
   for (const to of ids) {
     requireWork(store, to, kind === 'blocks' ? 'blocking' : 'related');
     if (listWorkDependencies(store, from).some((d) => d.fromId === from && d.toId === to && d.kind === kind)) continue;
@@ -195,7 +202,8 @@ export function linkWork(store: StateStore, input: LinkInput): WorkItem {
     addDeps(store, current.id, related, 'informs', input.at, input.nextId);
     if (blockedBy.length) changed.blockedBy = blockedBy;
     if (related.length) changed.related = related;
-    if (Object.keys(changed).length === 0) throw new Error('nothing to link: name a parent, a reason it serves, or work it is blocked by or related to');
+    if (Object.keys(changed).length === 0)
+      throw new Error('nothing to link: name a parent, a reason it serves, or work it is blocked by or related to');
     store.db.prepare('UPDATE work_items SET revision = revision + 1, updated_at = ? WHERE id = ?').run(input.at, current.id);
     recordEvent(store, current.id, input.at, 'linked', input.actor ?? null, current.revision + 1, changed);
     const now = getWork(store, current.id)!;
@@ -243,7 +251,10 @@ export function unlinkWork(store: StateStore, input: UnlinkInput): WorkItem {
  * Move proposed work into the backlog. The person may admit anything; any
  * other caller only work that already carries a reason.
  */
-export function admitProposedWork(store: StateStore, input: { readonly id: string; readonly byPerson: boolean; readonly at: string; readonly actor?: string }): WorkItem {
+export function admitProposedWork(
+  store: StateStore,
+  input: { readonly id: string; readonly byPerson: boolean; readonly at: string; readonly actor?: string },
+): WorkItem {
   requireInstant(input.at, 'work.at');
   return store.transaction(() => {
     const current = requireWork(store, input.id, 'such');
@@ -283,7 +294,11 @@ function recordedBasis(store: StateStore, id: string): AdmissionBasis | null {
 /** Everything around one work item, for show. */
 export function workStructure(store: StateStore, work: WorkItem): WorkStructure {
   const deps = listWorkDependencies(store, work.id);
-  const items = (ids: readonly string[]) => ids.map((id) => getWork(store, id)).filter((w): w is WorkItem => w !== null).map(brief);
+  const items = (ids: readonly string[]) =>
+    ids
+      .map((id) => getWork(store, id))
+      .filter((w): w is WorkItem => w !== null)
+      .map(brief);
   const premises = work.premises as { sources?: unknown } | null;
   const parent = work.parentId ? getWork(store, work.parentId) : null;
   return {
@@ -296,7 +311,6 @@ export function workStructure(store: StateStore, work: WorkItem): WorkStructure 
     acceptance: acceptanceOf(work),
     risk: typeof work.risk === 'string' ? work.risk : work.risk === null || work.risk === undefined ? null : JSON.stringify(work.risk),
     sources: Array.isArray(premises?.sources) ? premises.sources.filter((s): s is string => typeof s === 'string') : [],
-    admittedBy: work.status === 'proposed' ? null : recordedBasis(store, work.id) ?? admissionBasis(store, work),
+    admittedBy: work.status === 'proposed' ? null : (recordedBasis(store, work.id) ?? admissionBasis(store, work)),
   };
 }
-

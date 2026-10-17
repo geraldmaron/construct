@@ -13,13 +13,69 @@ import { fixture, T0 } from './support.ts';
 test('a schedule trigger is validated, computes its next due instant, and fires once per tick', () => {
   const fx = fixture({ interactive: false });
   try {
-    assert.throws(() => fx.triggers.define({ workflowId: 'apply', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'UTC', adapter: 'cron', overlap: 'skip', maxTier: 'external_write', delivery: {}, input: {} }), /does not accept schedule/);
-    assert.throws(() => fx.triggers.define({ workflowId: 'sweep', kind: 'schedule', scheduleExpression: 'nope', timezone: 'UTC', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} }), /five fields/);
-    assert.throws(() => fx.triggers.define({ workflowId: 'review', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'UTC', adapter: 'cron', overlap: 'skip', maxTier: 'draft', delivery: {}, input: { target: 't' } }), /permission boundary \(draft\) is below/);
-    const t = fx.triggers.define({ id: 'monthly', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 1 * *', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: { destination: 'inbox' }, input: {} });
+    assert.throws(
+      () =>
+        fx.triggers.define({
+          workflowId: 'apply',
+          kind: 'schedule',
+          scheduleExpression: '0 9 * * 1',
+          timezone: 'UTC',
+          adapter: 'cron',
+          overlap: 'skip',
+          maxTier: 'external_write',
+          delivery: {},
+          input: {},
+        }),
+      /does not accept schedule/,
+    );
+    assert.throws(
+      () =>
+        fx.triggers.define({
+          workflowId: 'sweep',
+          kind: 'schedule',
+          scheduleExpression: 'nope',
+          timezone: 'UTC',
+          adapter: 'cron',
+          overlap: 'skip',
+          maxTier: 'observe',
+          delivery: {},
+          input: {},
+        }),
+      /five fields/,
+    );
+    assert.throws(
+      () =>
+        fx.triggers.define({
+          workflowId: 'review',
+          kind: 'schedule',
+          scheduleExpression: '0 9 * * 1',
+          timezone: 'UTC',
+          adapter: 'cron',
+          overlap: 'skip',
+          maxTier: 'draft',
+          delivery: {},
+          input: { target: 't' },
+        }),
+      /permission boundary \(draft\) is below/,
+    );
+    const t = fx.triggers.define({
+      id: 'monthly',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 1 * *',
+      timezone: 'Europe/Berlin',
+      adapter: 'cron',
+      overlap: 'skip',
+      maxTier: 'observe',
+      delivery: { destination: 'inbox' },
+      input: {},
+    });
     assert.equal(t.nextDueAt, '2026-10-01T07:00:00.000Z');
     assert.deepEqual(fx.triggers.due(T0), []);
-    assert.deepEqual(fx.triggers.due('2026-10-01T07:00:00.000Z').map((x) => x.id), ['monthly']);
+    assert.deepEqual(
+      fx.triggers.due('2026-10-01T07:00:00.000Z').map((x) => x.id),
+      ['monthly'],
+    );
 
     const first = fx.triggers.fire({ triggerId: 'monthly', firingKey: 'tick-1' });
     assert.equal(first.outcome, 'started');
@@ -30,7 +86,12 @@ test('a schedule trigger is validated, computes its next due instant, and fires 
     const overlap = fx.triggers.fire({ triggerId: 'monthly', firingKey: 'tick-2' });
     assert.equal(overlap.outcome, 'skipped_overlap');
     assert.match(overlap.reason, /still active/);
-    assert.deepEqual(listFirings(fx.store, 'monthly').map((f) => f.outcome).sort(), ['skipped_overlap', 'started']);
+    assert.deepEqual(
+      listFirings(fx.store, 'monthly')
+        .map((f) => f.outcome)
+        .sort(),
+      ['skipped_overlap', 'started'],
+    );
 
     // The headless runner does the one step, then the next tick starts fresh.
     const work = fx.service.claimNext({ runId: first.runId!, owner: 'runner:cron' });
@@ -52,7 +113,18 @@ test('a schedule trigger is validated, computes its next due instant, and fires 
 test('stale data blocks a firing whose workflow says so; no data succeeds empty when it says so; dry-run starts nothing', () => {
   const fx = fixture({ interactive: false });
   try {
-    fx.triggers.define({ id: 'sweep', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'ci', overlap: 'replace', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.define({
+      id: 'sweep',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * *',
+      timezone: 'UTC',
+      adapter: 'ci',
+      overlap: 'replace',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     fx.sources = [{ kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'stale' }];
     const dry = fx.triggers.fire({ triggerId: 'sweep', firingKey: 'k0', dryRun: true });
     assert.equal(dry.outcome, 'dry_run');
@@ -81,7 +153,18 @@ test('stale data blocks a firing whose workflow says so; no data succeeds empty 
 test('recipes name the trigger, the project, and the firing key, for cron and CI', () => {
   const fx = fixture({ interactive: false });
   try {
-    fx.triggers.define({ id: 'monthly', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 1 * *', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.define({
+      id: 'monthly',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 1 * *',
+      timezone: 'Europe/Berlin',
+      adapter: 'cron',
+      overlap: 'skip',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     assert.match(fx.triggers.recipe('monthly', 'cron'), /Unprovisioned/);
     const cron = fx.triggers.recipe('monthly', 'cron', 'codex');
     assert.match(cron, /CRON_TZ=Europe\/Berlin/);
@@ -107,7 +190,18 @@ test('a weekly trigger covers a fresh week on every firing, worked out at the du
     const lastWeek = { semantics: 'changed_during', relative: 'last_week' };
     // Define it on Sunday 2026-10-11, so the first due firing is Monday 09:00 in Berlin.
     moveTo(fx, '2026-10-11T12:00:00.000Z');
-    const t = fx.triggers.define({ id: 'weekly', workflowId: 'digest', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'queue', maxTier: 'draft', delivery: {}, input: { target: 'payments', period: lastWeek, sources: ['jira'] } });
+    const t = fx.triggers.define({
+      id: 'weekly',
+      workflowId: 'digest',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * 1',
+      timezone: 'Europe/Berlin',
+      adapter: 'cron',
+      overlap: 'queue',
+      maxTier: 'draft',
+      delivery: {},
+      input: { target: 'payments', period: lastWeek, sources: ['jira'] },
+    });
     assert.equal(t.nextDueAt, '2026-10-12T07:00:00.000Z');
     assert.deepEqual(t.input, { target: 'payments', period: lastWeek, sources: ['jira'] }, 'the relative period is stored as given');
 
@@ -115,7 +209,10 @@ test('a weekly trigger covers a fresh week on every firing, worked out at the du
     const first = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w42' });
     assert.equal(first.outcome, 'started', first.reason);
     const run1 = fx.service.status(first.runId!)!.run;
-    assert.deepEqual([askedOf(run1).period?.from, askedOf(run1).period?.to, askedOf(run1).period?.timezone], ['2026-10-05', '2026-10-11', 'Europe/Berlin']);
+    assert.deepEqual(
+      [askedOf(run1).period?.from, askedOf(run1).period?.to, askedOf(run1).period?.timezone],
+      ['2026-10-05', '2026-10-11', 'Europe/Berlin'],
+    );
     assert.deepEqual(askedOf(run1).firing, { triggerId: 'weekly', dueAt: '2026-10-12T07:00:00.000Z' });
     assert.deepEqual(run1.input, { target: 'payments', period: lastWeek, sources: ['jira'] });
     assert.equal(first.nextDueAt, '2026-10-19T07:00:00.000Z');
@@ -151,14 +248,40 @@ test('a weekly trigger covers a fresh week on every firing, worked out at the du
 test('defining a trigger checks its input: undeclared keys, malformed periods, unknown sources, and fixed windows on a standing trigger are refused', () => {
   const fx = fixture({ interactive: false });
   try {
-    const define = (input: Record<string, unknown>, kind: 'schedule' | 'manual' = 'schedule') => fx.triggers.define({ workflowId: 'digest', kind, scheduleExpression: kind === 'schedule' ? '0 9 * * 1' : undefined, timezone: kind === 'schedule' ? 'Europe/Berlin' : undefined, adapter: 'cron', overlap: 'skip', maxTier: 'draft', delivery: {}, input });
-    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_week' }, owner: 'sam' }), /input "owner" is not declared by the workflow/);
-    assert.throws(() => define({ period: { semantics: 'during', relative: 'last_week' } }), /needs "semantics", one of as_of, changed_during, evidence_window/);
-    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_week' }, sources: ['datadog'] }), /datadog, which is not a declared active source/);
+    const define = (input: Record<string, unknown>, kind: 'schedule' | 'manual' = 'schedule') =>
+      fx.triggers.define({
+        workflowId: 'digest',
+        kind,
+        scheduleExpression: kind === 'schedule' ? '0 9 * * 1' : undefined,
+        timezone: kind === 'schedule' ? 'Europe/Berlin' : undefined,
+        adapter: 'cron',
+        overlap: 'skip',
+        maxTier: 'draft',
+        delivery: {},
+        input,
+      });
+    assert.throws(
+      () => define({ period: { semantics: 'changed_during', relative: 'last_week' }, owner: 'sam' }),
+      /input "owner" is not declared by the workflow/,
+    );
+    assert.throws(
+      () => define({ period: { semantics: 'during', relative: 'last_week' } }),
+      /needs "semantics", one of as_of, changed_during, evidence_window/,
+    );
+    assert.throws(
+      () => define({ period: { semantics: 'changed_during', relative: 'last_week' }, sources: ['datadog'] }),
+      /datadog, which is not a declared active source/,
+    );
     assert.throws(() => define({}), /input "period" is required and absent/);
-    assert.throws(() => define({ period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30' } }), /a standing trigger fires again and again; give the period as relative \(for example last_week\)/);
+    assert.throws(
+      () => define({ period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30' } }),
+      /a standing trigger fires again and again; give the period as relative \(for example last_week\)/,
+    );
     assert.throws(() => define({ period: { semantics: 'changed_during', quarter: 3, year: 2026 } }), /fixed window/);
-    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-04-01', to: '2026-06-30' } }), /give the relative period alone/);
+    assert.throws(
+      () => define({ period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-04-01', to: '2026-06-30' } }),
+      /give the relative period alone/,
+    );
     const asOf = define({ period: { semantics: 'as_of', to: '2026-09-30' } });
     assert.equal(asOf.workflowId, 'digest', 'a fixed reference date stays allowed');
     const quarter = define({ period: { semantics: 'changed_during', quarter: 3 } });
@@ -172,31 +295,61 @@ function moveTo(fx: ReturnType<typeof fixture>, iso: string): void {
   fx.tick(Date.parse(iso) - Date.parse(fx.now()));
 }
 
-
 test('events cannot replace the standing input and workflow changes cannot exceed its stored tier', () => {
   const fx = fixture({ interactive: false });
   try {
-    const t = fx.triggers.define({ id: 'bounded', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
+    const t = fx.triggers.define({
+      id: 'bounded',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * *',
+      timezone: 'UTC',
+      adapter: 'cron',
+      overlap: 'skip',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     // Simulate a stored definition carrying a protected input; the event must not replace it.
     fx.store.db.prepare('UPDATE triggers SET input_json = ? WHERE id = ?').run(JSON.stringify({ request: 'keep local' }), t.id);
     const changed = fx.triggers.fire({ triggerId: t.id, firingKey: 'override', eventPayload: { request: 'publish elsewhere' } });
-    assert.equal(changed.outcome, 'blocked'); assert.equal(changed.runId, null); assert.match(changed.reason, /frozen trigger input/);
+    assert.equal(changed.outcome, 'blocked');
+    assert.equal(changed.runId, null);
+    assert.match(changed.reason, /frozen trigger input/);
     // The review workflow requires project_write, unlike the original observe-only sweep.
-    fx.store.db.prepare('UPDATE triggers SET workflow_id = ?, input_json = ? WHERE id = ?').run('review', JSON.stringify({ target: 't' }), t.id);
+    fx.store.db
+      .prepare('UPDATE triggers SET workflow_id = ?, input_json = ? WHERE id = ?')
+      .run('review', JSON.stringify({ target: 't' }), t.id);
     const elevated = fx.triggers.fire({ triggerId: t.id, firingKey: 'higher-tier' });
-    assert.equal(elevated.outcome, 'blocked'); assert.equal(elevated.runId, null); assert.match(elevated.reason, /frozen observe boundary/);
-  } finally { fx.cleanup(); }
+    assert.equal(elevated.outcome, 'blocked');
+    assert.equal(elevated.runId, null);
+    assert.match(elevated.reason, /frozen observe boundary/);
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('standing intents isolate identical keys, overlap, replacement and cancellation on the same workflow', () => {
   for (const overlap of ['skip', 'replace', 'queue'] as const) {
     const fx = fixture({ interactive: false });
     try {
-      for (const id of ['east', 'west']) fx.triggers.define({ id, workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap, maxTier: 'observe', delivery: { destination: `${id}.md` }, input: {} });
+      for (const id of ['east', 'west'])
+        fx.triggers.define({
+          id,
+          workflowId: 'sweep',
+          kind: 'schedule',
+          scheduleExpression: '0 9 * * *',
+          timezone: 'UTC',
+          adapter: 'cron',
+          overlap,
+          maxTier: 'observe',
+          delivery: { destination: `${id}.md` },
+          input: {},
+        });
       const east = fx.triggers.fire({ triggerId: 'east', firingKey: '09:00' });
       const west = fx.triggers.fire({ triggerId: 'west', firingKey: '09:00' });
-      assert.equal(east.outcome, 'started'); assert.equal(west.outcome, 'started');
+      assert.equal(east.outcome, 'started');
+      assert.equal(west.outcome, 'started');
       assert.notEqual(east.runId, west.runId);
       assert.equal(askedOf(fx.service.status(west.runId!)!.run).firing?.triggerId, 'west');
       assert.equal(fx.triggers.fire({ triggerId: 'west', firingKey: '09:00' }).runId, west.runId);
@@ -215,7 +368,9 @@ test('standing intents isolate identical keys, overlap, replacement and cancella
       }
       fx.service.cancel({ runId: next.runId!, by: 'test owner', reason: 'done' });
       assert.equal(fx.service.status(west.runId!)!.run.state, 'succeeded');
-    } finally { fx.cleanup(); }
+    } finally {
+      fx.cleanup();
+    }
   }
 });
 
@@ -224,7 +379,18 @@ test('a firing without a key names the schedule slot that was due, so a late or 
   try {
     const lastWeek = { semantics: 'changed_during', relative: 'last_week' };
     moveTo(fx, '2026-10-11T12:00:00.000Z');
-    fx.triggers.define({ id: 'weekly', workflowId: 'digest', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'queue', maxTier: 'draft', delivery: {}, input: { target: 'payments', period: lastWeek, sources: ['jira'] } });
+    fx.triggers.define({
+      id: 'weekly',
+      workflowId: 'digest',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * 1',
+      timezone: 'Europe/Berlin',
+      adapter: 'cron',
+      overlap: 'queue',
+      maxTier: 'draft',
+      delivery: {},
+      input: { target: 'payments', period: lastWeek, sources: ['jira'] },
+    });
 
     // The timer starts the process half a minute after the slot.
     moveTo(fx, '2026-10-12T07:00:31.000Z');
@@ -259,15 +425,43 @@ test('a firing without a key names the schedule slot that was due, so a late or 
 test('a platform timer is written only for a schedule trigger with an explicit executor', () => {
   const fx = fixture({ interactive: false });
   try {
-    fx.triggers.define({ id: 'monthly', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 1 * *', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
-    const facts = { projectId: 'proj-abc12345', node: '/n/node', launcher: '/c/construct.mjs', path: '/n:/usr/bin', logDir: '/s/timers', systemTimezone: 'Europe/Berlin' };
-    assert.throws(() => fx.triggers.timer('monthly', 'launchd', undefined, facts), /needs an explicit executor: without one a firing only records a tick/);
+    fx.triggers.define({
+      id: 'monthly',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 1 * *',
+      timezone: 'Europe/Berlin',
+      adapter: 'cron',
+      overlap: 'skip',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
+    const facts = {
+      projectId: 'proj-abc12345',
+      node: '/n/node',
+      launcher: '/c/construct.mjs',
+      path: '/n:/usr/bin',
+      logDir: '/s/timers',
+      systemTimezone: 'Europe/Berlin',
+    };
+    assert.throws(
+      () => fx.triggers.timer('monthly', 'launchd', undefined, facts),
+      /needs an explicit executor: without one a firing only records a tick/,
+    );
     assert.throws(() => fx.triggers.timer('monthly', 'launchd', 'rm -rf', facts), /adapter id, not a shell command/);
     const [plist] = fx.triggers.timer('monthly', 'launchd', 'codex', facts);
     assert.match(plist!.content, /<key>WorkingDirectory<\/key><string>\/repo<\/string>/);
-    assert.equal(fx.triggers.recipe('monthly', 'launchd', 'codex', facts), `# ${plist!.name}\n${plist!.content}`, 'the recipe prints exactly what install-timer writes');
+    assert.equal(
+      fx.triggers.recipe('monthly', 'launchd', 'codex', facts),
+      `# ${plist!.name}\n${plist!.content}`,
+      'the recipe prints exactly what install-timer writes',
+    );
     assert.match(fx.triggers.recipe('monthly', 'systemd', undefined, facts), /Unprovisioned/);
-    assert.throws(() => fx.triggers.timer('monthly', 'launchd', 'codex', { ...facts, systemTimezone: 'UTC' }), /launchd cannot express it exactly/);
+    assert.throws(
+      () => fx.triggers.timer('monthly', 'launchd', 'codex', { ...facts, systemTimezone: 'UTC' }),
+      /launchd cannot express it exactly/,
+    );
   } finally {
     fx.cleanup();
   }
@@ -277,7 +471,18 @@ test('a slot passed over while disabled never stands in for a later one: enablin
   const fx = fixture({ interactive: false });
   try {
     moveTo(fx, '2026-10-11T12:00:00.000Z');
-    fx.triggers.define({ id: 'daily', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.define({
+      id: 'daily',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * *',
+      timezone: 'UTC',
+      adapter: 'cron',
+      overlap: 'queue',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     fx.triggers.enable('daily', false);
 
     moveTo(fx, '2026-10-12T09:00:05.000Z');
@@ -306,7 +511,18 @@ test('enabling a trigger that is already on keeps the slot it owes', () => {
   const fx = fixture({ interactive: false });
   try {
     moveTo(fx, '2026-10-11T12:00:00.000Z');
-    fx.triggers.define({ id: 'daily', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.define({
+      id: 'daily',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * *',
+      timezone: 'UTC',
+      adapter: 'cron',
+      overlap: 'queue',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     moveTo(fx, '2026-10-12T09:00:02.000Z');
     assert.equal(fx.triggers.enable('daily', true).nextDueAt, '2026-10-12T09:00:00.000Z');
     assert.equal(fx.triggers.fire({ triggerId: 'daily' }).firing?.idempotencyKey, 'daily@2026-10-12T09:00:00.000Z');
@@ -319,7 +535,18 @@ test('a clock-supplied key cannot pose as a disabled record, and slot lookup cou
   const fx = fixture({ interactive: false });
   try {
     moveTo(fx, '2026-10-11T12:00:00.000Z');
-    fx.triggers.define({ id: 'daily📅', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.define({
+      id: 'daily📅',
+      workflowId: 'sweep',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * *',
+      timezone: 'UTC',
+      adapter: 'cron',
+      overlap: 'queue',
+      maxTier: 'observe',
+      delivery: {},
+      input: {},
+    });
     assert.throws(() => fx.triggers.fire({ triggerId: 'daily📅', firingKey: 'order-1~disabled' }), /may not end in ~disabled/);
     moveTo(fx, '2026-10-12T09:00:01.000Z');
     const first = fx.triggers.fire({ triggerId: 'daily📅' });

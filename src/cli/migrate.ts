@@ -29,7 +29,8 @@ const STOP_SESSIONS = 'Stop every Construct session on this project first (close
 
 export const MIGRATE_SPEC: CommandSpec = {
   path: ['migrate'],
-  gloss: 'upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first',
+  gloss:
+    'upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first',
   group: 'Recover',
   positionals: [],
   flags: [{ name: 'force', gloss: 'upgrade despite live holders or unavailable holder inspection', takesValue: false }],
@@ -150,7 +151,9 @@ export function migrate(args: ParsedArgs, ctx: CliContext = createContext()): nu
   if (from === null) {
     // Another process upgraded the store while this one waited for the lock,
     // and took its own backup first; the store is now this format, complete.
-    return report(false, null, null, [`State at ${esc(dbPath)} was upgraded to format ${String(STATE_FORMAT_VERSION)} by another Construct process; nothing to do.`]);
+    return report(false, null, null, [
+      `State at ${esc(dbPath)} was upgraded to format ${String(STATE_FORMAT_VERSION)} by another Construct process; nothing to do.`,
+    ]);
   }
   return report(true, from, taken.path, [
     `Upgraded ${esc(dbPath)} from format ${String(from)} to ${String(STATE_FORMAT_VERSION)}.`,

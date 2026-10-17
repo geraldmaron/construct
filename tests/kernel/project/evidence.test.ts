@@ -20,8 +20,21 @@ function project() {
   const input = {
     root,
     sources: [
-      { id: 'strategy', kind: 'directory', locator: join(root, 'docs', 'strategy'), manifest: [{ ref: 'old.md', kind: 'file', fingerprint: 'a', supersededBy: 'new.md' }, { ref: 'new.md', kind: 'file', fingerprint: 'b' }] },
-      { id: 'jira-plat', kind: 'jira', locator: 'PLAT', manifest: [{ ref: 'PLAT-101', kind: 'work_item', fingerprint: 'c', text: '{"key":"PLAT-101","summary":"Events"}' }] },
+      {
+        id: 'strategy',
+        kind: 'directory',
+        locator: join(root, 'docs', 'strategy'),
+        manifest: [
+          { ref: 'old.md', kind: 'file', fingerprint: 'a', supersededBy: 'new.md' },
+          { ref: 'new.md', kind: 'file', fingerprint: 'b' },
+        ],
+      },
+      {
+        id: 'jira-plat',
+        kind: 'jira',
+        locator: 'PLAT',
+        manifest: [{ ref: 'PLAT-101', kind: 'work_item', fingerprint: 'c', text: '{"key":"PLAT-101","summary":"Events"}' }],
+      },
       { id: 'wiki', kind: 'docs', locator: 'confluence:ENG:1', manifest: null, neverRead: true },
     ],
     deliverableIds: new Set(['deliverable-1']),
@@ -29,7 +42,16 @@ function project() {
   };
   const resolve = createEvidenceResolver(input);
   const accept = createEvidenceResolver({ ...input, hostReads: 'accept' });
-  return { root, outside, resolve, accept, cleanup: () => { rmSync(root, { recursive: true, force: true }); rmSync(outside, { recursive: true, force: true }); } };
+  return {
+    root,
+    outside,
+    resolve,
+    accept,
+    cleanup: () => {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    },
+  };
 }
 
 test('a file inside the project resolves as witnessed, with its text; anchors and line ranges are ignored', () => {
@@ -61,18 +83,30 @@ test('missing files, paths outside the project, and invented items do not resolv
   }
 });
 
-test('sources, their items, deliverables, and kernel records resolve; an item no recorded read holds is the host\'s word, admitted only under accept', () => {
+test("sources, their items, deliverables, and kernel records resolve; an item no recorded read holds is the host's word, admitted only under accept", () => {
   const p = project();
   try {
-    assert.equal(p.resolve('PLAT-101')?.provenance, 'reported', 'a manifest that does not say how it was obtained is a report, not Construct\'s own reading');
+    assert.equal(
+      p.resolve('PLAT-101')?.provenance,
+      'reported',
+      "a manifest that does not say how it was obtained is a report, not Construct's own reading",
+    );
     assert.match(p.resolve('jira-plat:PLAT-101')?.text ?? '', /Events/);
     assert.equal(p.resolve('source:strategy')?.kind, 'source');
     assert.equal(p.resolve('deliverable:deliverable-1')?.kind, 'deliverable');
     assert.equal(p.resolve('decision:q-1')?.kind, 'record');
     assert.equal(p.resolve('wiki:Some Page'), null, 'under the default policy an unrecorded item does not resolve');
     assert.equal(p.accept('wiki:Some Page')?.provenance, 'unverified');
-    assert.deepEqual(provenanceOf([{ ref: 'PLAT-101' }, { ref: 'wiki:x' }, { ref: 'nope.md' }], p.resolve), { witnessed: 0, reported: 1, unverified: 0, unresolved: 2 });
-    assert.deepEqual(provenanceOf([{ ref: 'docs/strategy/new.md' }, { ref: 'PLAT-101' }, { ref: 'wiki:x' }, { ref: 'nope.md' }], p.accept), { witnessed: 1, reported: 1, unverified: 1, unresolved: 1 });
+    assert.deepEqual(provenanceOf([{ ref: 'PLAT-101' }, { ref: 'wiki:x' }, { ref: 'nope.md' }], p.resolve), {
+      witnessed: 0,
+      reported: 1,
+      unverified: 0,
+      unresolved: 2,
+    });
+    assert.deepEqual(
+      provenanceOf([{ ref: 'docs/strategy/new.md' }, { ref: 'PLAT-101' }, { ref: 'wiki:x' }, { ref: 'nope.md' }], p.accept),
+      { witnessed: 1, reported: 1, unverified: 1, unresolved: 1 },
+    );
   } finally {
     p.cleanup();
   }
@@ -97,13 +131,45 @@ function connectors(hostReads?: 'require' | 'accept') {
     hostReads,
     sources: [
       { id: 'docs', kind: 'directory', locator: join(root, 'docs'), manifest: null },
-      { id: 'jira', kind: 'jira', locator: 'PAY', provenance: 'reported', manifest: [{ ref: 'PAY-1', kind: 'item', fingerprint: 'p1', text: 'Refunds settle in two days.', updatedAt: '2026-09-30' }] },
-      { id: 'github', kind: 'github', locator: 'acme/checkout', provenance: 'reported', manifest: [
-        { ref: 'acme/checkout', kind: 'item', fingerprint: 'g0', text: 'the repository' },
-        { ref: 'acme/checkout#311', kind: 'item', fingerprint: 'g1', text: 'PR 311 moves retries into the queue.' },
-      ] },
-      { id: 'confluence', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: '98765', kind: 'item', fingerprint: 'c1', text: 'The checkout service calls the ledger.', url: 'https://wiki.example.com/spaces/ENG/pages/98765/Architecture' }] },
-      { id: 'web', kind: 'other', locator: null, provenance: 'reported', manifest: [{ ref: 'https://example.com/report', kind: 'item', fingerprint: 'w1', text: 'The report says 40%.' }] },
+      {
+        id: 'jira',
+        kind: 'jira',
+        locator: 'PAY',
+        provenance: 'reported',
+        manifest: [{ ref: 'PAY-1', kind: 'item', fingerprint: 'p1', text: 'Refunds settle in two days.', updatedAt: '2026-09-30' }],
+      },
+      {
+        id: 'github',
+        kind: 'github',
+        locator: 'acme/checkout',
+        provenance: 'reported',
+        manifest: [
+          { ref: 'acme/checkout', kind: 'item', fingerprint: 'g0', text: 'the repository' },
+          { ref: 'acme/checkout#311', kind: 'item', fingerprint: 'g1', text: 'PR 311 moves retries into the queue.' },
+        ],
+      },
+      {
+        id: 'confluence',
+        kind: 'docs',
+        locator: null,
+        provenance: 'reported',
+        manifest: [
+          {
+            ref: '98765',
+            kind: 'item',
+            fingerprint: 'c1',
+            text: 'The checkout service calls the ledger.',
+            url: 'https://wiki.example.com/spaces/ENG/pages/98765/Architecture',
+          },
+        ],
+      },
+      {
+        id: 'web',
+        kind: 'other',
+        locator: null,
+        provenance: 'reported',
+        manifest: [{ ref: 'https://example.com/report', kind: 'item', fingerprint: 'w1', text: 'The report says 40%.' }],
+      },
       { id: 'notion', kind: 'docs', locator: null, manifest: null, neverRead: true },
     ],
   });
@@ -149,7 +215,11 @@ test('a url resolves to the item recorded under it, whatever its fragment, case,
   const req = connectors();
   const acc = connectors('accept');
   try {
-    for (const ref of ['https://wiki.example.com/spaces/ENG/pages/98765/Architecture', 'HTTP://Wiki.Example.com/spaces/ENG/pages/98765/Architecture/#section', 'confluence:https://wiki.example.com/spaces/ENG/pages/98765/Architecture']) {
+    for (const ref of [
+      'https://wiki.example.com/spaces/ENG/pages/98765/Architecture',
+      'HTTP://Wiki.Example.com/spaces/ENG/pages/98765/Architecture/#section',
+      'confluence:https://wiki.example.com/spaces/ENG/pages/98765/Architecture',
+    ]) {
       const r = req.resolve(ref);
       assert.equal(r?.sourceId, 'confluence', ref);
       assert.equal(r?.itemRef, '98765', ref);
@@ -166,7 +236,7 @@ test('a url resolves to the item recorded under it, whatever its fragment, case,
   }
 });
 
-test('Construct\'s own surfaces resolve as surfaces with no text, and source:<id>:<item> is <id>:<item>', () => {
+test("Construct's own surfaces resolve as surfaces with no text, and source:<id>:<item> is <id>:<item>", () => {
   const c = connectors();
   try {
     for (const name of ['project_context', 'sources']) {
@@ -185,7 +255,7 @@ test('a whole host-read source resolves only after a recorded read; a directory 
   const req = connectors();
   const acc = connectors('accept');
   try {
-    assert.equal(req.resolve('notion'), null, 'a never-read source is not taken on the host\'s word');
+    assert.equal(req.resolve('notion'), null, "a never-read source is not taken on the host's word");
     assert.equal(acc.resolve('notion')?.provenance, 'unverified');
     assert.equal(req.resolve('jira')?.provenance, 'reported');
     assert.equal(req.resolve('docs')?.provenance, 'witnessed');
@@ -197,9 +267,13 @@ test('a whole host-read source resolves only after a recorded read; a directory 
   }
 });
 
-
 test('ambiguous bare item ids and URLs are refused; qualified refs keep source identity', () => {
-  const sources = ['a', 'b'].map((id) => ({ id, kind: 'docs', locator: null, manifest: [{ ref: '42', kind: 'item', fingerprint: id, text: `content ${id}`, url: 'https://wiki.example.com/shared' }] }));
+  const sources = ['a', 'b'].map((id) => ({
+    id,
+    kind: 'docs',
+    locator: null,
+    manifest: [{ ref: '42', kind: 'item', fingerprint: id, text: `content ${id}`, url: 'https://wiki.example.com/shared' }],
+  }));
   for (const hostReads of ['require', 'accept'] as const) {
     const resolve = createEvidenceResolver({ root: '/nonexistent', sources, hostReads });
     assert.equal(resolve('42'), null);
@@ -212,12 +286,33 @@ test('ambiguous bare item ids and URLs are refused; qualified refs keep source i
 test('revoked source content cannot resolve through aliases or unverified-read fallback', () => {
   const p = project();
   try {
-    const resolve = createEvidenceResolver({ root: p.root, hostReads: 'accept', sources: [
-      { id: 'wiki', kind: 'docs', canRead: false, locator: null, manifest: [{ ref: '42', kind: 'item', fingerprint: 'x', text: 'private', url: 'https://wiki.example.com/42' }] },
-      { id: 'docs', kind: 'directory', canRead: false, locator: join(p.root, 'docs'), manifest: null },
-    ] });
-    for (const ref of ['wiki', 'wiki:42', '42', 'https://wiki.example.com/42', 'wiki:unknown', 'docs/strategy/new.md', 'docs:strategy/new.md']) assert.equal(resolve(ref), null, ref);
-  } finally { p.cleanup(); }
+    const resolve = createEvidenceResolver({
+      root: p.root,
+      hostReads: 'accept',
+      sources: [
+        {
+          id: 'wiki',
+          kind: 'docs',
+          canRead: false,
+          locator: null,
+          manifest: [{ ref: '42', kind: 'item', fingerprint: 'x', text: 'private', url: 'https://wiki.example.com/42' }],
+        },
+        { id: 'docs', kind: 'directory', canRead: false, locator: join(p.root, 'docs'), manifest: null },
+      ],
+    });
+    for (const ref of [
+      'wiki',
+      'wiki:42',
+      '42',
+      'https://wiki.example.com/42',
+      'wiki:unknown',
+      'docs/strategy/new.md',
+      'docs:strategy/new.md',
+    ])
+      assert.equal(resolve(ref), null, ref);
+  } finally {
+    p.cleanup();
+  }
 });
 
 test('historical manifests cannot turn credential URLs into exact item citations', () => {
@@ -225,8 +320,24 @@ test('historical manifests cannot turn credential URLs into exact item citations
   try {
     const dirty = 'https://user:synthetic-password@wiki.example/page';
     for (const ref of [dirty, `<${dirty}|page>`, `[page](${dirty})`]) {
-      const resolve = createEvidenceResolver({ root: p.root, hostReads: 'accept', sources: [{ id: 'wiki', kind: 'docs', locator: null, manifest: [{ ref, kind: 'item', fingerprint: 'dirty', text: 'Untrusted stored passage.' }, { ref: 'opaque', kind: 'item', fingerprint: 'dirty-url', url: dirty, text: 'Untrusted stored passage.' }] }] });
+      const resolve = createEvidenceResolver({
+        root: p.root,
+        hostReads: 'accept',
+        sources: [
+          {
+            id: 'wiki',
+            kind: 'docs',
+            locator: null,
+            manifest: [
+              { ref, kind: 'item', fingerprint: 'dirty', text: 'Untrusted stored passage.' },
+              { ref: 'opaque', kind: 'item', fingerprint: 'dirty-url', url: dirty, text: 'Untrusted stored passage.' },
+            ],
+          },
+        ],
+      });
       for (const citation of [ref, `wiki:${ref}`, 'opaque', 'wiki:opaque']) assert.equal(resolve(citation), null);
     }
-  } finally { p.cleanup(); }
+  } finally {
+    p.cleanup();
+  }
 });

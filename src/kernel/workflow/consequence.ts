@@ -20,7 +20,18 @@ export const DEPTHS = ['light', 'standard', 'challenged'] as const;
 export type Depth = (typeof DEPTHS)[number];
 
 /** What the host may say the work touches. 'none' says it touches nothing listed. */
-export const STAKE_AREAS = ['none', 'production', 'shared_data', 'personal_data', 'security', 'money', 'legal', 'customers', 'other_teams', 'public'] as const;
+export const STAKE_AREAS = [
+  'none',
+  'production',
+  'shared_data',
+  'personal_data',
+  'security',
+  'money',
+  'legal',
+  'customers',
+  'other_teams',
+  'public',
+] as const;
 export type StakeArea = (typeof STAKE_AREAS)[number];
 
 /** The host's own account of the stakes: whether the work can be undone, and what it touches. */
@@ -71,35 +82,63 @@ const SCALE_WORDS: Readonly<Record<ProjectScale, string>> = {
 };
 
 function stakesSignal(stakes: Stakes | null): Signal | null {
-  if (!stakes) return { kind: 'host_stakes', detail: 'the host did not report whether this can be undone or what it touches', raises: false };
+  if (!stakes)
+    return { kind: 'host_stakes', detail: 'the host did not report whether this can be undone or what it touches', raises: false };
   const hard = stakes.reversible === false;
   const areas = [...new Set(stakes.affects.filter((a) => a !== 'none'))].map((a) => a.replace(/_/g, ' '));
   if (!hard && areas.length === 0) return null;
   const touches = areas.length ? `touches ${areas.join(', ')}` : '';
-  const detail = hard && touches ? `the host reported it is hard to undo and ${touches}` : hard ? 'the host reported it is hard to undo' : `the host reported it ${touches}`;
+  const detail =
+    hard && touches
+      ? `the host reported it is hard to undo and ${touches}`
+      : hard
+        ? 'the host reported it is hard to undo'
+        : `the host reported it ${touches}`;
   return { kind: 'host_stakes', detail, raises: true };
 }
 
 /** Judge one piece of work. Every row that applies adds a raising signal; any raising signal means challenged. */
 export function assessConsequence(c: ConsequenceInput): Judgment {
   const signals: Signal[] = [];
-  if (c.workflowChallenge) signals.push({ kind: 'workflow', detail: 'the workflow declares that its deliverable must be challenged', raises: true });
+  if (c.workflowChallenge)
+    signals.push({ kind: 'workflow', detail: 'the workflow declares that its deliverable must be challenged', raises: true });
   const outward = c.stepTiers.filter((t) => tierAtLeast(t, 'external_write'));
   if (outward.length) {
     const top = outward.reduce((a, b) => (tierRank(b) > tierRank(a) ? b : a));
-    signals.push({ kind: 'tier', detail: `a bound step acts at ${top} (it ${TIER_WORDS[top] ?? 'acts outside the project'})`, raises: true });
+    signals.push({
+      kind: 'tier',
+      detail: `a bound step acts at ${top} (it ${TIER_WORDS[top] ?? 'acts outside the project'})`,
+      raises: true,
+    });
   }
   if (c.activeContradictions > 0) {
-    signals.push({ kind: 'contradiction', detail: `${String(c.activeContradictions)} active contradiction(s) stand against a governing decision or requirement`, raises: true });
+    signals.push({
+      kind: 'contradiction',
+      detail: `${String(c.activeContradictions)} active contradiction(s) stand against a governing decision or requirement`,
+      raises: true,
+    });
   }
   const stakes = stakesSignal(c.stakes);
   if (stakes) signals.push(stakes);
 
   if (signals.some((s) => s.raises)) {
-    return { depth: 'challenged', challenge: true, why: `challenge before treating the result as strongly validated: ${signals.filter((s) => s.raises).map((s) => s.detail).join('; ')}`, signals };
+    return {
+      depth: 'challenged',
+      challenge: true,
+      why: `challenge before treating the result as strongly validated: ${signals
+        .filter((s) => s.raises)
+        .map((s) => s.detail)
+        .join('; ')}`,
+      signals,
+    };
   }
   if (c.scale === 'side_project') {
-    return { depth: 'light', challenge: false, why: 'The person set this up as a side project and nothing in the work raised the stakes', signals };
+    return {
+      depth: 'light',
+      challenge: false,
+      why: 'The person set this up as a side project and nothing in the work raised the stakes',
+      signals,
+    };
   }
   if (c.scale === null) {
     return {
@@ -109,7 +148,12 @@ export function assessConsequence(c: ConsequenceInput): Judgment {
       signals: [...signals, { kind: 'scale', detail: 'not answered; treated as a team project', raises: false }],
     };
   }
-  return { depth: 'standard', challenge: false, why: `ordinary managed work for ${SCALE_WORDS[c.scale]}; verify it, do not run a full architectural challenge`, signals };
+  return {
+    depth: 'standard',
+    challenge: false,
+    why: `ordinary managed work for ${SCALE_WORDS[c.scale]}; verify it, do not run a full architectural challenge`,
+    signals,
+  };
 }
 
 export function judgmentRequired(workflowChallenge: boolean, judgment: Judgment): boolean {

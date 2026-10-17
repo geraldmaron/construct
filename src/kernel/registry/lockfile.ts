@@ -22,16 +22,32 @@ export interface LockRow {
   readonly why: string;
 }
 
-function compare(kind: 'skill' | 'workflow', id: string, locked: LockedBundle | undefined, live: { version: string; digest: string; origin: 'builtin' | 'project' } | undefined): LockRow {
+function compare(
+  kind: 'skill' | 'workflow',
+  id: string,
+  locked: LockedBundle | undefined,
+  live: { version: string; digest: string; origin: 'builtin' | 'project' } | undefined,
+): LockRow {
   if (!locked && !live) return { kind, id, state: 'missing', locked: null, registry: null, why: 'neither locked nor present' };
-  if (!locked) return { kind, id, state: 'unlocked', locked: null, registry: live!, why: `present at ${live!.version} but not in the lock` };
+  if (!locked)
+    return { kind, id, state: 'unlocked', locked: null, registry: live!, why: `present at ${live!.version} but not in the lock` };
   if (!live) return { kind, id, state: 'missing', locked, registry: null, why: `locked at ${locked.version} but no longer present` };
-  if (locked.digest === live.digest && locked.version === live.version) return { kind, id, state: 'current', locked, registry: live, why: 'lock and registry agree' };
+  if (locked.digest === live.digest && locked.version === live.version)
+    return { kind, id, state: 'current', locked, registry: live, why: 'lock and registry agree' };
   const lv = parseVersion(locked.version);
   const rv = parseVersion(live.version);
-  if (lv && rv && compareVersions(rv, lv) > 0) return { kind, id, state: 'outdated', locked, registry: live, why: `locked at ${locked.version}; ${live.version} is present` };
-  if (lv && rv && compareVersions(rv, lv) < 0) return { kind, id, state: 'blocked', locked, registry: live, why: `locked at ${locked.version} but only ${live.version} is present` };
-  return { kind, id, state: 'diverged', locked, registry: live, why: `version ${live.version} is locked with a different digest; its content changed without a version bump` };
+  if (lv && rv && compareVersions(rv, lv) > 0)
+    return { kind, id, state: 'outdated', locked, registry: live, why: `locked at ${locked.version}; ${live.version} is present` };
+  if (lv && rv && compareVersions(rv, lv) < 0)
+    return { kind, id, state: 'blocked', locked, registry: live, why: `locked at ${locked.version} but only ${live.version} is present` };
+  return {
+    kind,
+    id,
+    state: 'diverged',
+    locked,
+    registry: live,
+    why: `version ${live.version} is locked with a different digest; its content changed without a version bump`,
+  };
 }
 
 export function lockStatus(lock: RegistryLock, skills: readonly RegisteredSkill[], workflows: readonly RegisteredWorkflow[]): LockRow[] {
@@ -39,12 +55,26 @@ export function lockStatus(lock: RegistryLock, skills: readonly RegisteredSkill[
   const skillIds = new Set([...Object.keys(lock.skills), ...skills.map((s) => s.manifest.id)]);
   for (const id of [...skillIds].sort()) {
     const live = skills.find((s) => s.manifest.id === id);
-    rows.push(compare('skill', id, lock.skills[id], live ? { version: live.manifest.version, digest: live.digest, origin: live.origin } : undefined));
+    rows.push(
+      compare(
+        'skill',
+        id,
+        lock.skills[id],
+        live ? { version: live.manifest.version, digest: live.digest, origin: live.origin } : undefined,
+      ),
+    );
   }
   const workflowIds = new Set([...Object.keys(lock.workflows), ...workflows.map((w) => w.manifest.id)]);
   for (const id of [...workflowIds].sort()) {
     const live = workflows.find((w) => w.manifest.id === id);
-    rows.push(compare('workflow', id, lock.workflows[id], live ? { version: live.manifest.version, digest: live.digest, origin: live.origin } : undefined));
+    rows.push(
+      compare(
+        'workflow',
+        id,
+        lock.workflows[id],
+        live ? { version: live.manifest.version, digest: live.digest, origin: live.origin } : undefined,
+      ),
+    );
   }
   return rows;
 }
@@ -67,7 +97,12 @@ export interface UpdateLockResult {
  * named in `confirmProjectBundles`, so an edit nobody meant to lock is
  * never locked silently.
  */
-export function updateLock(lock: RegistryLock, skills: readonly RegisteredSkill[], workflows: readonly RegisteredWorkflow[], options: UpdateLockOptions = {}): UpdateLockResult {
+export function updateLock(
+  lock: RegistryLock,
+  skills: readonly RegisteredSkill[],
+  workflows: readonly RegisteredWorkflow[],
+  options: UpdateLockOptions = {},
+): UpdateLockResult {
   const confirm = new Set(options.confirmProjectBundles ?? []);
   const nextSkills: Record<string, LockedBundle> = {};
   const nextWorkflows: Record<string, LockedBundle> = {};

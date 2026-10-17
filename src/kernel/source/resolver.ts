@@ -27,16 +27,32 @@ function sayingSo(store: StateStore, statementId: string): string | null {
   return `${s.kind} "${text.length > 160 ? `${text.slice(0, 159)}…` : text}"`;
 }
 
-export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null; readonly provenance?: 'witnessed' | 'reported' } | null, options?: { readonly hostReads?: 'require' | 'accept' }): RefResolver {
+export function projectResolver(
+  store: StateStore,
+  root: string,
+  override?: {
+    readonly sourceId: string;
+    readonly manifest: readonly ManifestEntry[] | null;
+    readonly provenance?: 'witnessed' | 'reported';
+  } | null,
+  options?: { readonly hostReads?: 'require' | 'accept' },
+): RefResolver {
   const knows = (kind: RecordKind, id: string): boolean => {
     switch (kind) {
-      case 'statement': return getStatement(store, id) !== null;
-      case 'claim': return getClaim(store, id) !== null;
-      case 'entity': return getEntity(store, id) !== null;
-      case 'decision': return getDecision(store, id) !== null;
-      case 'run': return getRun(store, id) !== null;
-      case 'work': return getWork(store, id) !== null;
-      case 'drift': return getDriftFinding(store, id) !== null;
+      case 'statement':
+        return getStatement(store, id) !== null;
+      case 'claim':
+        return getClaim(store, id) !== null;
+      case 'entity':
+        return getEntity(store, id) !== null;
+      case 'decision':
+        return getDecision(store, id) !== null;
+      case 'run':
+        return getRun(store, id) !== null;
+      case 'work':
+        return getWork(store, id) !== null;
+      case 'drift':
+        return getDriftFinding(store, id) !== null;
     }
   };
   const current = createEvidenceResolver({
@@ -49,8 +65,8 @@ export function projectResolver(store: StateStore, root: string, override?: { re
         kind: s.kind,
         canRead: s.canRead,
         locator: s.locator,
-        manifest: overridden ? override.manifest : rec?.entries ?? null,
-        provenance: overridden ? override.provenance ?? rec?.provenance : rec?.provenance,
+        manifest: overridden ? override.manifest : (rec?.entries ?? null),
+        provenance: overridden ? (override.provenance ?? rec?.provenance) : rec?.provenance,
         neverRead: !overridden && !s.lastSnapshotId,
       };
     }),
@@ -62,33 +78,69 @@ export function projectResolver(store: StateStore, root: string, override?: { re
   });
   return (ref, use) => {
     if (use === 'artifact') return current(ref, use);
-    const raw=ref.trim();
+    const raw = ref.trim();
     const match = /^snapshot:([^:]+):(.+)$/.exec(raw);
     if (!match) {
       const hit = current(ref);
       if (hit?.kind !== 'record') return hit;
-      const colon=raw.indexOf(':'); const id=raw.slice(colon+1);
+      const colon = raw.indexOf(':');
+      const id = raw.slice(colon + 1);
       if (raw.startsWith('statement:')) {
-        const s=getStatement(store,id);
-        if (s) return {...hit,text:s.text,recordStatus:s.status,recordOrigin:s.provenance,...(s.supersededBy ? {supersededBy:`statement:${s.supersededBy}`} : {})};
+        const s = getStatement(store, id);
+        if (s)
+          return {
+            ...hit,
+            text: s.text,
+            recordStatus: s.status,
+            recordOrigin: s.provenance,
+            ...(s.supersededBy ? { supersededBy: `statement:${s.supersededBy}` } : {}),
+          };
       }
       if (raw.startsWith('decision:')) {
-        const d=getDecision(store,id);
-        if (d) return {...hit,text:`${d.question}\n${JSON.stringify(d.resolution)}`,recordStatus:d.state,recordOrigin:d.channel ?? 'unrecorded'};
+        const d = getDecision(store, id);
+        if (d)
+          return {
+            ...hit,
+            text: `${d.question}\n${JSON.stringify(d.resolution)}`,
+            recordStatus: d.state,
+            recordOrigin: d.channel ?? 'unrecorded',
+          };
       }
       return hit;
     }
     let snapshotId: string, itemRef: string;
-    try { snapshotId = decodeURIComponent(match[1]!); itemRef = decodeURIComponent(match[2]!); } catch { return null; }
+    try {
+      snapshotId = decodeURIComponent(match[1]!);
+      itemRef = decodeURIComponent(match[2]!);
+    } catch {
+      return null;
+    }
     const captured = snapshotManifestRecord(store, snapshotId);
     const source = captured ? getSource(store, captured.sourceId) : null;
     // Historical citations do not resurrect withdrawn access.
     if (!captured || !source?.canRead || source.status !== 'active') return null;
-    const entry = captured.entries.find(e => e.ref === itemRef);
-    if (!entry || typeof entry.text !== 'string' || urlCarriesCredentials(entry.ref) || (entry.url !== undefined && urlCarriesCredentials(entry.url))) return null;
-    return { ref, kind: 'item', sourceId: source.id, itemRef, snapshotId, contentDigest: entry.fingerprint,
-      historical: source.lastSnapshotId !== snapshotId, provenance: captured.provenance, text: entry.text,
-      ...(entry.url ? { url: entry.url } : {}), ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
-      ...(entry.truncated ? { truncated: true } : {}), ...(entry.supersededBy ? { supersededBy: entry.supersededBy } : {}) };
+    const entry = captured.entries.find((e) => e.ref === itemRef);
+    if (
+      !entry ||
+      typeof entry.text !== 'string' ||
+      urlCarriesCredentials(entry.ref) ||
+      (entry.url !== undefined && urlCarriesCredentials(entry.url))
+    )
+      return null;
+    return {
+      ref,
+      kind: 'item',
+      sourceId: source.id,
+      itemRef,
+      snapshotId,
+      contentDigest: entry.fingerprint,
+      historical: source.lastSnapshotId !== snapshotId,
+      provenance: captured.provenance,
+      text: entry.text,
+      ...(entry.url ? { url: entry.url } : {}),
+      ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
+      ...(entry.truncated ? { truncated: true } : {}),
+      ...(entry.supersededBy ? { supersededBy: entry.supersededBy } : {}),
+    };
   };
 }
