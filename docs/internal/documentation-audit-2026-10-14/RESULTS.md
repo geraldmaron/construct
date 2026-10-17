@@ -28,12 +28,12 @@ was observed outside this scope and remains a separate upkeep item.
 | Claim corrected or bounded | Code or evidence checked |
 |---|---|
 | State format and supported upgrades | `src/kernel/state/format.ts`, migration guidance and existing migration tests |
-| General carrier versus explicit implementation path; matching precedence | `src/kernel/workflow/intake.ts`, `src/kernel/broker/tools.ts`, workflow manifests |
+| General carrier versus explicit implementation path; matching precedence | `src/kernel/workflow/intake.ts`, `src/kernel/broker/tools/intake-helpers.ts`, workflow manifests |
 | Exact native qualification rather than filenames/lock | `src/kernel/registry/qualification.ts`, qualification evidence checks |
-| Claim returns bound skill text by default | `src/kernel/broker/tools.ts` claim parser and generated schema |
+| Claim returns bound skill text by default | `src/kernel/broker/tools/claim-work.ts` claim parser and generated schema |
 | Local text ranking, budgets, optional supplied vectors, no inference fallback | `src/kernel/context/retrieval.ts` |
 | Immutable generation citations and revoked access | `src/kernel/source/manifest.ts`, `src/kernel/source/resolver.ts` |
-| Standing trigger creation is available from chat; clock is separate | `src/kernel/broker/tools.ts` start-outcome branch and scheduling tests |
+| Standing trigger creation is available from chat; clock is separate | `src/kernel/broker/tools/start-outcome.ts` start-outcome branch and scheduling tests |
 | Verification needs command, exit status and execution reference | `src/cli/run.ts`, command observation and workflow verification tests |
 | Doctor reports index observations rather than efficacy | `src/cli/doctor.ts` |
 | Node requirement, scripts and packaging | `package.json`, `bin/construct.mjs`, packaged smoke |
