@@ -11,7 +11,7 @@ export const promote = define<{ deliverableId: string; to: TrustState; reason?: 
   name: 'promote_deliverable',
   title: 'Move a deliverable’s trust',
   description:
-    'After the person has reviewed a deliverable: record a challenge with the objections it raised, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. Validated is set only by passing checks, never by this tool. A finished step never moves trust.',
+    "After the person has reviewed a deliverable, record a challenge with its objections, or ask them to accept it or make it final. Accepted and final are the person's own answer, asked directly when the host can; validated comes only from passing checks.",
   surface: 'interactive',
   readOnly: false,
   destructive: true,

@@ -139,7 +139,7 @@ export const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
   description:
-    'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), its url when it has one, title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
+    'Declare, refresh, report and inspect the systems and documents this project reads, with what each is trusted to settle and whether it is reachable and fresh. Declare a system the person named before citing it (open-web pages go under one source named web with kind other), and report only the items you cite from a source Construct cannot read itself, each with its ref, url, title, updatedAt and the passage you rely on.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {

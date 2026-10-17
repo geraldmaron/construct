@@ -16,7 +16,7 @@ export const bootstrap = define<Record<string, never>, unknown>({
   name: 'bootstrap',
   title: 'Where things stand',
   description:
-    'Call once at the start of a session. Returns the project binding, how complete its setup is, the questions still open, source and registry health, what this session may do, open decisions and active runs, and the recommended next action. Small on purpose; ask for details with project_context.',
+    'Call once at the start of a session for the project binding, how complete its setup is, open questions, source and registry health, what this session may do, open decisions, active runs and the recommended next action. Ask project_context for details.',
   surface: 'both',
   readOnly: true,
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },

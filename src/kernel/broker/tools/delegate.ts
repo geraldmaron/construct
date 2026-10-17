@@ -16,7 +16,7 @@ export const delegate: ToolDefinition<BrokerContext, Input, unknown> = {
   name: 'delegate',
   title: 'Bounded local delegation',
   description:
-    'Opt-in local subscription workers, owned by this lead session. Start returns an execution id immediately; status, result, and cancel supervise it. Implementation requires existing claimed work, scoped paths and acceptance checks. Review a fixed implementation with role review and subject. Triage every finding before serial local integration and combined validation. No recursive dispatch, commits, publication, approval inheritance, or automatic executor fallback. Disabled until explicit configuration and matching live evidence exist.',
+    'Start and supervise opt-in local subscription workers owned by this lead session: start returns an execution id, and status, result and cancel follow it. Disabled until configured and live-verified; implementation needs claimed work, scoped paths and acceptance checks, and workers never dispatch, commit, publish or inherit approvals.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,

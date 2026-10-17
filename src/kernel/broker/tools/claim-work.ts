@@ -7,7 +7,7 @@ export const claimWork = define<{ runId?: string; includeSkillBody: boolean }, u
   name: 'claim_work',
   title: 'Claim the next step',
   description:
-    'Take the next ready step of a run to do in this session. Returns the step, its inputs, bound skill, compact method index and instructions. For a requested local artifact, delivery includes its existing native work/path reservation and held draft: use that reservation instead of creating another commitment or work claim. Only the current step tier authorizes writing. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
+    "Take the next ready step of a run to do in this session, with its inputs, bound skill, method index and instructions; a run waiting on a decision returns the decision, and a blocked run comes back with its reasons and what would unblock it. A delivery packet already reserves its requested file, so use that reservation instead of another work claim; only the current step's tier authorizes writing.",
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
