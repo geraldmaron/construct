@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 45 are
+Nothing in §§1–32 describes the current product. Sections 33 to 46 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3799,4 +3799,30 @@ bump, so what landed is:
 The single-record design waits for evidence: it is re-proposed only if
 execution and custody are seen to diverge after this fix. If it comes back,
 step nonces survive the migration and only work tokens are reissued.
+
+## 46. Construct ships no plugin; skills reach hosts through init and ai-workflow-config (2026-10-17)
+
+§40 left a Claude Code plugin for the skills waiting for its own decision.
+The two choices it named were a plugin rooted at this repository, which
+would install all of Construct into the plugin cache, and a separate
+skills-only package. Since then, Gerald decided on 2026-10-17 that
+ai-workflow-config owns the personal copies of the method skills it shares
+with Construct, and `construct init` plants the operational skill in each
+project.
+
+**Decision.** No plugin. The operational skill reaches a host through `init`,
+in the project skills directory each wired host reads. The method skills
+reach a person's hosts through ai-workflow-config. Construct's own runs take
+a method's text from the registry, never from a host's skills directory.
+`construct skill install` stays for an explicit, by-name copy.
+
+**Challenge.** Strongest failure mode: a person who uses Construct without
+ai-workflow-config has no one-step way to get the method skills into their
+host. They do not need them for Construct's work, since every managed step
+receives its bound method in the claim packet, and `construct skill install`
+covers the rest. Best alternative: a skills-only plugin package. Rejected
+for now: it would be a third distribution channel for the same files, the
+kind of duplicate copy that drifted before, with nothing that needs it.
+Verdict: **accepted**. Reopen it when someone who does not use
+ai-workflow-config asks for the method skills in a host.
 
