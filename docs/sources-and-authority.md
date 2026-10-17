@@ -166,5 +166,5 @@ Host-reported reads retain reported provenance; adapter-witnessed reads retain
 witnessed provenance. Professional-method references inform procedure and do
 not support project factual claims. Method reports can bind obligations to
 output sections and project evidence; receipt presence alone establishes no
-method effectiveness. See [skills](skills-and-packs.md#qualification-and-skill-impact)
+method effectiveness. See [skills](skills-and-packs.md#evals-and-skill-impact)
 and the [host-tool reference](broker-reference.md#context_search).

@@ -44,7 +44,7 @@ judgment step that binds no skill is told to load the method the reading
 chose. A claim supplies the current step's bound method, not the whole library.
 
 The `skills` tool lists the project's skills with their descriptions,
-shows one with its digest, files, and qualification (its full text only
+shows one with its digest, files, and lock state (its full text only
 with `includeBody`), and with `status` reports each
 bundle's lock state.
 
@@ -95,23 +95,13 @@ changed is left alone until you name it with `--confirm=<id>`. `status` and
 `doctor` report skew. A built-in bundle whose content changes without a
 version bump fails the release check.
 
-## Qualification and skill impact
+## Evals and skill impact
 
-A skill is qualified only by current passing executed evidence for its exact
-version, digest, host and model, within the recorded scope. The observed suite
-must include matching native producer and independent reviewer witnesses,
-artifacts, method application and passing checks, with unchanged witnessed
-sources/evaluator bytes and an unexpired evidence window. A lock and evaluation
-filenames alone do not qualify it.
-
-Missing locks or missing executed evidence leave a skill experimental. An
-outdated or blocked lock, failed or stale evidence, or incomplete matching native
-witnesses makes it degraded. Same-version digest divergence or text attempting
-to raise Construct’s authority makes it unsafe. A missing locked skill is
-reported missing by status (deprecated in the qualification projection).
-The `skills` tool’s show action reports the reason and any evidence identity;
-see the host/model input in the [tool reference](broker-reference.md#skills).
-These states never grant permission or promise universal correctness.
+Each skill ships `evals/evals.json` and `evals/trigger-queries.json` in the
+Agent Skills shape; [authoring](authoring-and-qualification.md#evals) says
+how they are written and run. The `skills` tool's show action reports lock
+integrity only: whether the bytes are the ones the project locked. It never
+grants permission or claims a skill works; a run of its evals shows that.
 
 ```bash
 construct skill impact
