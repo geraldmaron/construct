@@ -176,7 +176,6 @@ Surface: both. Reads only: yes.
 |---|---|---|---|
 | `action` | `list`, `show`, `status` | yes | list, show, or status. |
 | `id` | string | no | The skill id, for show. |
-| `model` | string | no | Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `start_outcome`
@@ -450,7 +449,6 @@ Surface: both. Reads only: yes.
 |---|---|---|---|
 | `action` | `list`, `show`, `status` | yes | list, show, or status. |
 | `id` | string | no | The skill id, for show. |
-| `model` | string | no | Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `submit_work`

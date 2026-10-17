@@ -37,8 +37,6 @@ import { listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
 import { extendLease, getStep, heldLease } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
-import { qualificationRecords } from '../registry/qualification-evidence.ts';
-import { qualifySkill } from '../registry/qualification.ts';
 import { emptyLock } from '../project/lock.ts';
 import { constitutionCompleteness } from '../project/constitution.ts';
 import { TIER_POLICIES } from '../policy/lattice.ts';
@@ -975,7 +973,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
   },
 });
 
-const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; includeBody: boolean; model?: string }, unknown>({
+const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; includeBody: boolean }, unknown>({
   name: 'skills',
   title: 'Skills',
   description:
@@ -987,10 +985,6 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     properties: {
       action: { type: 'string', description: 'list, show, or status.', enum: ['list', 'show', 'status'] },
       id: { type: 'string', description: 'The skill id, for show.' },
-      model: {
-        type: 'string',
-        description: 'Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies.',
-      },
       includeBody: { type: 'boolean', description: 'Include the skill’s full text (default false).' },
     },
     required: ['action'],
@@ -1002,10 +996,9 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
       action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status',
       id: str(raw, 'id', { optional: true }),
       includeBody: bool(raw, 'includeBody', false),
-      model: str(raw, 'model', { optional: true }),
     };
   },
-  run(ctx, { action, id, includeBody, model }) {
+  run(ctx, { action, id, includeBody }) {
     if (action === 'list')
       return ctx.skills.list().map((s) => ({
         id: s.manifest.id,
@@ -1027,20 +1020,14 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).find(
       (r) => r.kind === 'skill' && r.id === id,
     );
-    const body = ctx.skills.body(id);
     return {
       ...s.manifest,
       origin: s.origin,
       digest: s.digest,
       files: s.files,
-      qualification: qualifySkill(s, lock, body, {
-        host: ctx.host.hostId,
-        model: model ?? null,
-        now: ctx.now(),
-        records: qualificationRecords(ctx.store, id),
-        resolve: projectResolver(ctx),
-      }),
-      body: includeBody ? body : undefined,
+      // Whether these bytes are the ones the project locked; how well the skill works is measured by its evals.
+      lock: lock ? { state: lock.state, why: lock.why } : { state: 'unlocked', why: 'present but not locked' },
+      body: includeBody ? ctx.skills.body(id) : undefined,
     };
   },
 });

@@ -125,8 +125,8 @@ Three ways to get a skill into your agent:
 
 Method folders are designed to be used without the Construct runtime. Dated
 [standalone skill records](../docs/internal/skill-runs/) document earlier trials;
-they do not qualify the current version on every host. Current qualification
-requires executed evidence bound to the exact digest, host, model and scope.
+they do not show the current version works on every host. A recorded run of
+the skill's evals (`scripts/run-skill-evals.mjs`) does, for the host it ran on.
 
 ## Limits
 
@@ -142,9 +142,7 @@ requires executed evidence bound to the exact digest, host, model and scope.
 
 ## Status
 
-Experimental and actively developed. Shipped behavior checks and fixtures are
-checked by the test suite; filenames and a matching lock alone do
-not qualify a method. In a project, `construct skill impact` reports how each
+Experimental and actively developed. The test suite checks the shape of each
+skill's evals; only running them against a host shows how a skill does. In a project, `construct skill impact` reports how each
 version's steps did against their checks. These receipts do not establish causal
-method benefit. See [qualification](../docs/skills-and-packs.md#qualification-and-skill-impact)
-for the current executed-evidence contract and its limits.
+method benefit. See [evals and skill impact](../docs/skills-and-packs.md#evals-and-skill-impact).
