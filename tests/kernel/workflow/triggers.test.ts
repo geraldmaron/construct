@@ -272,3 +272,62 @@ test('a platform timer is written only for a schedule trigger with an explicit e
     fx.cleanup();
   }
 });
+
+test('a slot passed over while disabled never stands in for a later one: enabling again fires the next slot', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    moveTo(fx, '2026-10-11T12:00:00.000Z');
+    fx.triggers.define({ id: 'daily', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    fx.triggers.enable('daily', false);
+
+    moveTo(fx, '2026-10-12T09:00:05.000Z');
+    const off = fx.triggers.fire({ triggerId: 'daily' });
+    assert.equal(off.outcome, 'disabled');
+    assert.equal(fx.triggers.get('daily')!.nextDueAt, '2026-10-13T09:00:00.000Z', 'the disabled firing still moves past its slot');
+
+    // Days pass while disabled; enabling owes none of the slots missed meanwhile.
+    moveTo(fx, '2026-10-15T12:00:00.000Z');
+    assert.equal(fx.triggers.enable('daily', true).nextDueAt, '2026-10-16T09:00:00.000Z');
+    const early = fx.triggers.fire({ triggerId: 'daily' });
+    assert.notEqual(early.outcome, 'deduplicated', 'a slot handled only as disabled is not a slot handled');
+
+    for (const day of ['16', '17', '18']) {
+      moveTo(fx, `2026-10-${day}T09:00:02.000Z`);
+      const tick = fx.triggers.fire({ triggerId: 'daily' });
+      assert.equal(tick.firing?.idempotencyKey, `daily@2026-10-${day}T09:00:00.000Z`);
+      assert.notEqual(tick.outcome, 'deduplicated', `day ${day} is its own slot`);
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('enabling a trigger that is already on keeps the slot it owes', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    moveTo(fx, '2026-10-11T12:00:00.000Z');
+    fx.triggers.define({ id: 'daily', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    moveTo(fx, '2026-10-12T09:00:02.000Z');
+    assert.equal(fx.triggers.enable('daily', true).nextDueAt, '2026-10-12T09:00:00.000Z');
+    assert.equal(fx.triggers.fire({ triggerId: 'daily' }).firing?.idempotencyKey, 'daily@2026-10-12T09:00:00.000Z');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a clock-supplied key cannot pose as a disabled record, and slot lookup counts characters, not UTF-16 units', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    moveTo(fx, '2026-10-11T12:00:00.000Z');
+    fx.triggers.define({ id: 'daily📅', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'queue', maxTier: 'observe', delivery: {}, input: {} });
+    assert.throws(() => fx.triggers.fire({ triggerId: 'daily📅', firingKey: 'order-1~disabled' }), /may not end in ~disabled/);
+    moveTo(fx, '2026-10-12T09:00:01.000Z');
+    const first = fx.triggers.fire({ triggerId: 'daily📅' });
+    assert.equal(first.outcome, 'started', first.reason);
+    moveTo(fx, '2026-10-12T09:05:00.000Z');
+    const repeat = fx.triggers.fire({ triggerId: 'daily📅' });
+    assert.equal(repeat.outcome, 'deduplicated', 'a non-BMP trigger id still finds its last slot');
+  } finally {
+    fx.cleanup();
+  }
+});

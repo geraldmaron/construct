@@ -13,7 +13,7 @@ import { listTriggers } from '../kernel/state/triggers.ts';
 import { OVERLAP_POLICIES, TRIGGER_ADAPTERS } from '../kernel/state/triggers.ts';
 import { ACTION_TIERS, type ActionTier } from '../kernel/state/steps.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, type CliContext } from './context.ts';
+import { createContext, resolveRepository, type CliContext } from './context.ts';
 import { openBroker } from './broker-context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { runExecutionProblems } from '../kernel/workflow/verification.ts';
@@ -23,7 +23,7 @@ import { transitionRun } from '../kernel/state/runs.ts';
 import { timerLabel, type TimerFacts } from '../kernel/workflow/timer-unit.ts';
 import { installTimer, uninstallTimer } from '../hosts/timer.ts';
 import { describeTimer, timerFacts, timerRows, timerSetup, type TimerSetup } from './timers.ts';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const group = 'Workflows';
 
@@ -231,9 +231,12 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         const state = result.runId ? broker.workflow.status(result.runId)?.run.state : null;
         const verificationProblems = state === 'succeeded' && result.runId ? runExecutionProblems(project.store, result.runId, projectResolver(project.store, project.root)) : [];
         const complete = state === 'succeeded' && verificationProblems.length === 0;
-        const response = { ...result, execution, runState: state, complete, verificationProblems, next: complete ? 'Review the local deliverable and its assurance.' : execute ? 'Inspect run show; resolve its blocker or retry this same firing key. No executor fallback occurred.' : 'A tick alone performs no model work. Provision an explicit executor and a persistent project state, then use --execute or claim the run in a session.' };
+        const disabled = result.outcome === 'disabled';
+        const response = { ...result, execution, runState: state, complete, verificationProblems, next: disabled ? `The trigger is off, so the slot was recorded and passed over; \`construct workflow enable ${args.positionals[0]!}\` turns it back on.` : complete ? 'Review the local deliverable and its assurance.' : execute ? 'Inspect run show; resolve its blocker or retry this same firing key. No executor fallback occurred.' : 'A tick alone performs no model work. Provision an explicit executor and a persistent project state, then use --execute or claim the run in a session.' };
         if (args.json) writeJson(response);
         else say(`${response.outcome}${response.runId ? ` run ${response.runId} (${state})` : ''}: ${esc(response.reason)}. ${response.next}`);
+        // A disabled trigger is the person's choice, not a failure of the clock that fired it.
+        if (disabled) return 0;
         return result.outcome === 'blocked' || verificationProblems.length > 0 || (execute && !complete) ? 1 : 0;
       }
       case 'install-timer': {
@@ -245,6 +248,9 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         if (!projectId) throw new OperationError('this project has no identity to name a timer by', 'Run `construct init` first.');
         const id = args.positionals[0]!;
         setup.control.admit(setup.target);
+        // A unit outlives the checkout it was installed from; a linked worktree is the checkout most likely to go.
+        const launcherRepo = resolveRepository(dirname(setup.launcher));
+        if (launcherRepo?.linked) throw new OperationError(`this Construct runs from the git worktree ${launcherRepo.checkout}, and a timer installed from it stops working when that worktree is removed`, 'Install the timer from the main checkout or from an installed construct.');
         const files = broker.triggers.timer(id, setup.target.platform, executor, timerFacts(ctx, setup, projectId, executor));
         const label = timerLabel(projectId, id);
         const installed = installTimer(setup.target, label, files, setup.control, join(ctx.paths.stateDir, 'timers'));

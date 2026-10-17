@@ -53,7 +53,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       drift: { open: drift.length },
       sessions: present.map((p) => ({ id: p.id, host: p.host, client: p.client, lane: p.lane, branch: p.branch, lastSeenAt: p.lastSeenAt, agents: p.agents, holds: p.holds })),
       habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
-      timers: timerRows(ctx, { id: files.config?.id ?? null, root, store }).filter((t) => t.here).map((t) => ({ label: t.label, triggerId: t.triggerId, executor: t.executor, loaded: t.loaded, problem: t.problem })),
+      timers: timerRows(ctx, { id: files.config?.id ?? null, root, store }).filter((t) => t.here).map((t) => ({ label: t.label, triggerId: t.triggerId, executor: t.executor, firing: t.firing, problem: t.problem })),
     };
     if (args.json) {
       writeJson(record);
@@ -72,7 +72,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     say(`  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`);
     say(`  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`);
     say(`  drift: ${drift.length === 0 ? 'nothing open' : `${String(drift.length)} finding(s) open`}`);
-    say(`  timers: ${record.timers.length === 0 ? 'none installed' : record.timers.map((t) => `${esc(t.triggerId)}${t.loaded === false ? ' (not loaded)' : ''}${t.problem ? ` (${esc(t.problem)})` : ''}`).join(', ')}`);
+    say(`  timers: ${record.timers.length === 0 ? 'none installed' : record.timers.map((t) => `${esc(t.triggerId)}${t.firing === false ? ' (not firing)' : ''}${t.problem ? ` (${esc(t.problem)})` : ''}`).join(', ')}`);
     say();
     say('Sessions');
     say(`  sessions: ${present.length === 0 ? 'none present' : `${String(present.length)} present`}`);

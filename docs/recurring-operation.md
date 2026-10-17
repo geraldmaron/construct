@@ -66,8 +66,20 @@ project's main checkout and exits; it is never kept alive.
 - An install whose `HOME` or `XDG_CONFIG_HOME` is not this account's own is
   refused before anything is written, because the real scheduler would never
   read a unit written there.
+- An install from a Construct that runs out of a linked git worktree is
+  refused: the unit would stop working when that worktree is removed.
+- A path the platform cannot hold exactly is refused rather than escaped
+  into something else: a `$` in a command path, a working directory ending
+  in a backslash or whitespace, or any control character.
 
-`workflow timers`, `status` and `doctor` list the installed units. Doctor
+`remove-timer` unloads the unit before it deletes anything. When the
+scheduler cannot say whether the unit is gone, or still holds it after ten
+seconds, the files stay and the command fails with the reason.
+
+`workflow timers`, `status` and `doctor` list the installed units and whether
+the scheduler will fire each one (loaded on macOS; active and enabled on
+Linux). Another project's trigger state is marked unchecked, since its store
+is not opened from here. Doctor
 fails health for a unit whose project directory is gone or now holds another
 project, and for one whose trigger was removed or disabled; `workflow
 remove-timer <label>` removes a unit by the label doctor names, from any
@@ -94,7 +106,12 @@ without `--key`, as a platform timer or the cron line fires it, is keyed by
 the schedule slot that was due, not the wall clock. A start that comes late,
 or one start on wake standing for the slots missed while the machine slept,
 covers the earliest slot that was due; a repeat after that slot was handled
-names it again and is deduplicated. A firing while a run is
+names it again and is deduplicated.
+
+A disabled trigger records each slot it passes over and moves past it, and
+the firing exits 0. Turning the trigger back on owes none of the slots missed
+while it was off: the next firing is the first slot after it was enabled. A
+clock-supplied `--key` may not end in `~disabled`, which marks those records. A firing while a run is
 still active follows the overlap policy and says so. Stale or missing data
 follows the workflow's declared policy: a standing review blocks at start
 when a source it reads is stale or unread, and a step that finds nothing

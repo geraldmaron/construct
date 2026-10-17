@@ -18,7 +18,6 @@ import { listActiveRuns } from '../state/runs.ts';
 import {
   createTrigger,
   getTrigger,
-  listFirings,
   listTriggers,
   markTriggerFired,
   recordFiring,
@@ -84,6 +83,9 @@ export interface TriggerService {
   nextDue(id: string, after: string): string | null;
 }
 
+/** Marks the record of a slot passed over while disabled; no clock-supplied key may end in it. */
+const DISABLED_SUFFIX = '~disabled';
+
 export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
   const { store } = deps;
 
@@ -105,7 +107,12 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
     if (trigger.kind !== 'schedule') return null;
     const prefix = `${trigger.id}@`;
     if (slotDue) return `${prefix}${trigger.nextDueAt!}`;
-    return listFirings(store, trigger.id, 50).find((f) => f.idempotencyKey.startsWith(prefix))?.idempotencyKey ?? null;
+    // The last slot a firing handled; a slot passed over while disabled was never handled.
+    const row = store.db
+      // length() in SQLite, which counts characters where JavaScript counts UTF-16 units.
+      .prepare("SELECT idempotency_key AS k FROM trigger_firings WHERE trigger_id = ? AND substr(idempotency_key, 1, length(?)) = ? AND outcome <> 'disabled' ORDER BY fired_at DESC, id DESC LIMIT 1")
+      .get(trigger.id, prefix, prefix) as { k: string } | undefined;
+    return row?.k ?? null;
   }
 
   return {
@@ -143,7 +150,20 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
     },
     list: () => listTriggers(store),
     get: (id) => getTrigger(store, id),
-    enable: (id, enabled) => setTriggerEnabled(store, id, enabled, deps.now()),
+    enable(id, enabled) {
+      const at = deps.now();
+      return store.transaction(() => {
+        const wasEnabled = getTrigger(store, id)?.enabled ?? false;
+        const t = setTriggerEnabled(store, id, enabled, at);
+        // Only turning a disabled trigger on skips ahead; enabling one already on keeps its pending slot.
+        if (!enabled || wasEnabled) return t;
+        // Slots that fell due while disabled are not owed: the next one is the first after now.
+        const due = nextDue(t, at);
+        if (due === t.nextDueAt) return t;
+        store.db.prepare('UPDATE triggers SET next_due_at = ?, updated_at = ? WHERE id = ?').run(due, at, id);
+        return getTrigger(store, id)!;
+      });
+    },
     due(at) {
       return listTriggers(store, { enabled: true }).filter((t) => t.kind === 'schedule' && t.nextDueAt !== null && t.nextDueAt <= at);
     },
@@ -153,23 +173,34 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
       return nextDue(t, after);
     },
     fire({ triggerId, firingKey, eventPayload, dryRun }) {
+      if (firingKey !== undefined && firingKey.endsWith(DISABLED_SUFFIX)) throw new Error(`a firing key may not end in ${DISABLED_SUFFIX}; that suffix marks a slot passed over while the trigger was disabled`);
       const at = deps.now();
-      const trigger = getTrigger(store, triggerId);
-      if (!trigger) throw new Error(`no trigger ${triggerId}`);
-      const slotDue = trigger.nextDueAt !== null && trigger.nextDueAt <= at;
-      const key = firingKey ?? slotKey(trigger, slotDue) ?? `${triggerId}:${at.slice(0, 16)}`;
-      const due = nextDue(trigger, at);
-      const input = { ...((trigger.input ?? {}) as Record<string, unknown>), ...(eventPayload ?? {}) };
-      // A firing covers the window of the tick that was due, even when the clock arrives late.
-      const dueAt = slotDue ? trigger.nextDueAt! : at;
-      const clock = { periodAt: dueAt, timezone: trigger.timezone ?? 'UTC' };
+      // Everything the firing decides from the trigger is read inside the write
+      // transaction (BEGIN IMMEDIATE), so a concurrent enable or firing cannot
+      // be overwritten by a decision made from a stale read.
+      const resolveFiring = () => {
+        const trigger = getTrigger(store, triggerId);
+        if (!trigger) throw new Error(`no trigger ${triggerId}`);
+        const slotDue = trigger.nextDueAt !== null && trigger.nextDueAt <= at;
+        const key = firingKey ?? slotKey(trigger, slotDue) ?? `${triggerId}:${at.slice(0, 16)}`;
+        const due = nextDue(trigger, at);
+        const input = { ...((trigger.input ?? {}) as Record<string, unknown>), ...(eventPayload ?? {}) };
+        // A firing covers the window of the tick that was due, even when the clock arrives late.
+        const dueAt = slotDue ? trigger.nextDueAt! : at;
+        return { trigger, slotDue, key, due, input, dueAt, clock: { periodAt: dueAt, timezone: trigger.timezone ?? 'UTC' } };
+      };
       if (dryRun) {
+        const { trigger, input, clock, due } = resolveFiring();
         const { preflight } = deps.workflowService.preflight(trigger.workflowId, input, clock);
         return { firing: null, outcome: 'dry_run', runId: null, reason: preflight.summary, nextDueAt: due };
       }
       return store.transaction(() => {
+        const { trigger, slotDue, key, due, input, dueAt, clock } = resolveFiring();
         if (!trigger.enabled) {
-          const { firing } = recordFiring(store, { id: deps.nextId('firing'), triggerId, idempotencyKey: key, at, outcome: 'disabled', reason: 'trigger is disabled' });
+          // Recorded under its own key, so passing a slot over never consumes the key an enabled firing will use.
+          const { firing } = recordFiring(store, { id: deps.nextId('firing'), triggerId, idempotencyKey: `${key}${DISABLED_SUFFIX}`, at, outcome: 'disabled', reason: 'trigger is disabled' });
+          // A disabled trigger still moves past the slot, so the slot's key never stands in for a later one.
+          if (slotDue) store.db.prepare('UPDATE triggers SET next_due_at = ?, updated_at = ? WHERE id = ?').run(due, at, triggerId);
           return { firing, outcome: 'disabled', runId: null, reason: 'trigger is disabled', nextDueAt: due };
         }
         const already = recordFiring(store, { id: deps.nextId('firing'), triggerId, idempotencyKey: key, at, outcome: 'deduplicated', reason: 'placeholder' });

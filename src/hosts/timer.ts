@@ -26,9 +26,12 @@ export interface SchedulerControl {
   /** Throws, with the reason, when units in `dir` must not be handed to the scheduler. */
   admit(target: TimerTarget): void;
   load(target: TimerTarget, label: string): void;
+  /** Unloads the unit; throws when it is still loaded afterwards. Does nothing when it was not loaded. */
   unload(target: TimerTarget, label: string): void;
-  /** Whether the scheduler has the unit loaded; null when it cannot be asked. */
+  /** Whether the scheduler holds the unit in any form, so removing it must unload it; null when it cannot be asked. */
   loaded(target: TimerTarget, label: string): boolean | null;
+  /** Whether the unit will fire: loaded on launchd, active and enabled on systemd; null when it cannot be asked. */
+  firing(target: TimerTarget, label: string): boolean | null;
 }
 
 export function timerPlatformFor(platform: NodeJS.Platform): TimerPlatform | null {
@@ -37,22 +40,59 @@ export function timerPlatformFor(platform: NodeJS.Platform): TimerPlatform | nul
   return null;
 }
 
-const run = (binary: string, args: string[]): { ok: boolean; output: string } => {
+export interface Ran {
+  readonly ok: boolean;
+  /** Exit status; null when the command was killed or never started. */
+  readonly status: number | null;
+  readonly stdout: string;
+  readonly output: string;
+}
+
+const run = (binary: string, args: string[]): Ran => {
   try {
-    return { ok: true, output: execFileSync(binary, args, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000 }).toString() };
+    const stdout = execFileSync(binary, args, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000 }).toString();
+    return { ok: true, status: 0, stdout: stdout.trim(), output: stdout.trim() };
   } catch (error) {
-    const e = error as { stderr?: Buffer; message: string };
-    return { ok: false, output: e.stderr?.toString().trim() || e.message };
+    const e = error as { status?: number | null; stdout?: Buffer; stderr?: Buffer; message: string };
+    const stdout = e.stdout?.toString().trim() ?? '';
+    return { ok: false, status: typeof e.status === 'number' ? e.status : null, stdout, output: e.stderr?.toString().trim() || stdout || e.message };
   }
 };
+
+/**
+ * What a scheduler query established: present, confirmed absent, or nothing.
+ * A timeout or an unrecognized failure is not absence, and treating it as
+ * absence would let removal delete the files of a job that keeps firing.
+ */
+function presence(query: string, ran: Ran, present: (r: Ran) => boolean, absent: (r: Ran) => boolean): boolean {
+  // An unfinished command proves nothing, whatever it printed before it stopped.
+  if (ran.status === null) throw new Error(`${query} did not finish (${ran.output || 'no output'}); nothing was changed`);
+  if (present(ran)) return true;
+  if (absent(ran)) return false;
+  throw new Error(`${query} could not say whether the unit is loaded (${ran.status === null ? 'it did not finish' : `exit ${String(ran.status)}`}: ${ran.output || 'no output'}); nothing was changed`);
+}
+
+const UNLOAD_WAIT_MS = 10_000;
+const UNLOAD_POLL_MS = 250;
+
+const SYSTEMD_ACTIVE = new Set(['active', 'activating', 'reloading', 'refreshing']);
+const SYSTEMD_INACTIVE = new Set(['inactive', 'failed', 'deactivating', 'maintenance']);
+const SYSTEMD_ENABLED = new Set(['enabled', 'enabled-runtime', 'linked', 'linked-runtime', 'alias', 'static', 'indirect', 'generated', 'transient']);
+const SYSTEMD_DISABLED = new Set(['disabled', 'masked', 'masked-runtime', 'not-found']);
 
 /**
  * The real scheduler: launchctl in this user's GUI domain on macOS, the
  * systemd user manager on Linux. It admits only the account's own scheduler
  * directory.
  */
-export function platformScheduler(accountDir: string | null, uid: number): SchedulerControl {
+export function platformScheduler(accountDir: string | null, uid: number, command: (binary: string, args: string[]) => Ran = run, unloadWaitMs = UNLOAD_WAIT_MS): SchedulerControl {
+  const run = command;
   const domain = `gui/${String(uid)}`;
+  // launchctl print exits 113 for a service it does not hold.
+  const launchdLoaded = (label: string) => presence('launchctl print', run('launchctl', ['print', `${domain}/${label}`]), (r) => r.ok, (r) => r.status === 113 || /could not find service/i.test(r.output));
+  // systemctl names the state on stdout; only a named state, or the unit-specific not-found message, is an answer.
+  const systemdActive = (label: string) => presence('systemctl is-active', run('systemctl', ['--user', 'is-active', `${label}.timer`]), (r) => SYSTEMD_ACTIVE.has(r.stdout), (r) => SYSTEMD_INACTIVE.has(r.stdout));
+  const systemdEnabled = (label: string) => presence('systemctl is-enabled', run('systemctl', ['--user', 'is-enabled', `${label}.timer`]), (r) => SYSTEMD_ENABLED.has(r.stdout), (r) => SYSTEMD_DISABLED.has(r.stdout) || r.output.includes(`Failed to get unit file state for ${label}.timer: No such file or directory`));
   return {
     admit(target) {
       if (accountDir === null) throw new Error('this platform has no per-user scheduler Construct writes to');
@@ -73,16 +113,27 @@ export function platformScheduler(accountDir: string | null, uid: number): Sched
       if (!enabled.ok) throw new Error(`systemctl --user enable --now ${label}.timer failed: ${enabled.output}`);
     },
     unload(target, label) {
-      if (target.platform === 'launchd') {
-        run('launchctl', ['bootout', `${domain}/${label}`]);
-        return;
+      if (!this.loaded(target, label)) return;
+      const result = target.platform === 'launchd'
+        ? run('launchctl', ['bootout', `${domain}/${label}`])
+        : run('systemctl', ['--user', 'disable', '--now', `${label}.timer`]);
+      // launchd unloads a running job asynchronously (it signals the job and waits), so give it a few seconds.
+      // The deadline is wall time, so slow queries count against it as well as the sleeps between them.
+      const deadline = Date.now() + unloadWaitMs;
+      while (this.loaded(target, label)) {
+        const left = deadline - Date.now();
+        if (left <= 0) throw new Error(`the scheduler still has ${label} loaded ${String(unloadWaitMs / 1000)}s after unloading it (${result.output || 'no output'}); its files were kept`);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.min(UNLOAD_POLL_MS, left));
       }
-      run('systemctl', ['--user', 'disable', '--now', `${label}.timer`]);
     },
     loaded(target, label) {
-      if (target.platform === 'launchd') return run('launchctl', ['print', `${domain}/${label}`]).ok;
-      const active = run('systemctl', ['--user', 'is-enabled', `${label}.timer`]);
-      return active.ok;
+      if (target.platform === 'launchd') return launchdLoaded(label);
+      // Enabled without active never fires; active without enabled is gone at the next login. Either still counts as there.
+      return systemdActive(label) || systemdEnabled(label);
+    },
+    firing(target, label) {
+      if (target.platform === 'launchd') return launchdLoaded(label);
+      return systemdActive(label) && systemdEnabled(label);
     },
   };
 }
@@ -106,6 +157,8 @@ export function installTimer(target: TimerTarget, label: string, files: readonly
     writeFileSync(temp, f.content, { mode: 0o644 });
     renameSync(temp, written[i]!);
   }
+  // launchd appends to the log forever; each install starts it fresh.
+  if (target.platform === 'launchd') writeFileSync(join(logDir, `${label}.log`), '');
   control.load(target, label);
   return { files: written, replaced };
 }
@@ -115,7 +168,7 @@ export function uninstallTimer(target: TimerTarget, label: string, control: Sche
   control.admit(target);
   const paths = timerFileNames(target.platform, label).map((n) => join(target.dir, n));
   const present = paths.filter((p) => existsSync(p));
-  if (present.length === 0) return { removed: [] };
+  // Unload first, even when the files are already gone: a loaded job without files still fires.
   control.unload(target, label);
   for (const p of present) rmSync(p, { force: true });
   return { removed: present };

@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { launchdCalendar, launchdUnit, readTimerUnit, systemdCalendar, systemdUnit, timerLabel, type TimerUnitInput } from '../../../src/kernel/workflow/timer-unit.ts';
+import { launchdCalendar, launchdUnit, readTimerUnit, systemdCalendar, systemdPath, systemdQuoted, systemdUnit, timerLabel, type TimerUnitInput } from '../../../src/kernel/workflow/timer-unit.ts';
 
 const facts = { projectId: 'proj-abc12345', node: '/opt/node/bin/node', launcher: '/opt/construct/bin/construct.mjs', path: '/opt/node/bin:/usr/bin:/bin', logDir: '/tmp/state/timers', systemTimezone: 'Europe/Berlin' };
 const input = (over: Partial<TimerUnitInput> = {}): TimerUnitInput => ({ triggerId: 'weekly', expression: '0 9 * * 1', timezone: 'Europe/Berlin', executor: 'codex', projectRoot: '/work/demo & co', facts, ...over });
@@ -52,8 +52,8 @@ test('a systemd timer uses OnCalendar with Persistent=true in the trigger’s ow
   assert.match(timer!.content, /^OnCalendar=Mon,Tue,Wed,Thu,Fri \*-\*-\* 06:15:00 America\/New_York$/m);
   assert.match(timer!.content, /^Persistent=true$/m);
   assert.match(service!.content, /^Type=oneshot$/m);
-  assert.match(service!.content, /^WorkingDirectory="\/work\/demo & co"$/m);
-  assert.match(service!.content, /^ExecStart=\/opt\/node\/bin\/node \/opt\/construct\/bin\/construct.mjs workflow fire weekly --execute=codex$/m);
+  assert.match(service!.content, /^WorkingDirectory=\/work\/demo & co$/m);
+  assert.match(service!.content, /^ExecStart="\/opt\/node\/bin\/node" "\/opt\/construct\/bin\/construct.mjs" "workflow" "fire" "weekly" "--execute=codex"$/m);
   assert.deepEqual(systemdCalendar('*/30 9-17 * * *', 'UTC'), ['*-*-* 09,10,11,12,13,14,15,16,17:00,30:00 UTC']);
 });
 
@@ -66,4 +66,22 @@ test('one name per project and trigger, read back from the unit itself', () => {
   assert.deepEqual(readTimerUnit('systemd', service!.name, service!.content)?.projectRoot, '/work/demo & co');
   assert.deepEqual(readTimerUnit('systemd', service!.name, service!.content)?.program, ['/opt/node/bin/node', '/opt/construct/bin/construct.mjs']);
   assert.equal(readTimerUnit('launchd', 'com.apple.something.plist', ''), null);
+});
+
+test('systemd directives escape what each context expands, refuse what no escape holds, and read back to the same values', () => {
+  assert.equal(systemdPath('/srv/100% done'), '/srv/100%% done');
+  assert.equal(systemdQuoted('/srv/100% done', true), '"/srv/100%% done"');
+  assert.equal(systemdQuoted('/srv/a"b\\c', true), '"/srv/a\\"b\\\\c"');
+  assert.equal(systemdQuoted('PATH=/a/$b%', false), '"PATH=/a/$b%%"', 'Environment does not substitute $');
+  assert.throws(() => systemdQuoted('/opt/no$de/node', true), /holds a \$/);
+  assert.throws(() => systemdPath('relative/dir'), /absolute directory/);
+  assert.throws(() => systemdPath('/srv/end\\'), /ends in a backslash or whitespace/);
+  assert.throws(() => systemdPath('/srv/end '), /ends in a backslash or whitespace/);
+  assert.throws(() => systemdQuoted('a\nExecStartPost=/bin/sh', true), /control character/);
+  const root = '/srv/100% $done "q"';
+  const [service] = systemdUnit(input({ projectRoot: root, facts: { ...facts, launcher: '/opt/con%truct/100%.mjs' } }));
+  const read = readTimerUnit('systemd', service!.name, service!.content)!;
+  assert.equal(read.projectRoot, root);
+  assert.deepEqual(read.program, ['/opt/node/bin/node', '/opt/con%truct/100%.mjs']);
+  assert.throws(() => systemdUnit(input({ facts: { ...facts, node: '/opt/no$de/node' } })), /holds a \$/);
 });

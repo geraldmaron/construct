@@ -10,12 +10,12 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { installTimer, listTimers, platformScheduler, timerPathFor, uninstallTimer, type SchedulerControl } from '../../src/hosts/timer.ts';
+import { installTimer, listTimers, platformScheduler, timerPathFor, uninstallTimer, type Ran, type SchedulerControl } from '../../src/hosts/timer.ts';
 import { resolveAccountScheduleDir, resolveScheduleDir } from '../../src/kernel/paths.ts';
 import { launchdUnit } from '../../src/kernel/workflow/timer-unit.ts';
 import { sterile } from '../harness/sterile.ts';
 
-const quiet: SchedulerControl = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null };
+const quiet: SchedulerControl = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null, firing: () => null };
 
 test('the timer directory comes from the env it is given, and the account directory from the account itself', () => {
   assert.equal(resolveScheduleDir('darwin', { HOME: '/sandbox' }), '/sandbox/Library/LaunchAgents');
@@ -70,4 +70,77 @@ test('only the explicit timer commands reach install and removal, and every call
     }
   }
   assert.deepEqual(reaching, [join('cli', 'workflow.ts')]);
+});
+
+test('removal unloads first, keeps the files when the scheduler refuses, and unloads a job whose files are gone', () => {
+  const fx = sterile();
+  try {
+    const target = { platform: 'launchd' as const, dir: join(fx.root, 'LaunchAgents') };
+    const facts = { projectId: 'proj-abc12345', node: '/n/node', launcher: '/c/construct.mjs', path: '/n:/usr/bin', logDir: join(fx.paths.stateDir, 'timers'), systemTimezone: 'UTC' };
+    const files = launchdUnit({ triggerId: 'weekly', expression: '0 9 * * 1', timezone: 'UTC', executor: 'codex', projectRoot: fx.root, facts });
+    const label = 'construct.proj-abc12345.weekly';
+    installTimer(target, label, files, quiet, facts.logDir);
+    const stuck: SchedulerControl = { ...quiet, unload: () => { throw new Error('the scheduler still has it loaded'); } };
+    assert.throws(() => uninstallTimer(target, label, stuck), /still has it loaded/);
+    assert.deepEqual(readdirSync(target.dir), [`${label}.plist`], 'a refused unload keeps the files');
+    const calls: string[] = [];
+    const recording: SchedulerControl = { ...quiet, unload: (_t, l) => { calls.push(l); } };
+    uninstallTimer(target, label, recording);
+    assert.deepEqual(uninstallTimer(target, label, recording).removed, [], 'nothing left on disk');
+    assert.deepEqual(calls, [label, label], 'a job whose files are gone is still unloaded');
+    assert.equal(readFileSync(join(facts.logDir, `${label}.log`), 'utf8'), '', 'each install starts the log empty');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('the real scheduler control never reads a failed query as absence', () => {
+  const fx = sterile();
+  try {
+    const dir = join(fx.root, 'LaunchAgents');
+    const target = { platform: 'launchd' as const, dir };
+    const facts = { projectId: 'proj-abc12345', node: '/n/node', launcher: '/c/construct.mjs', path: '/n:/usr/bin', logDir: join(fx.paths.stateDir, 'timers'), systemTimezone: 'UTC' };
+    const label = 'construct.proj-abc12345.weekly';
+    installTimer(target, label, launchdUnit({ triggerId: 'weekly', expression: '0 9 * * 1', timezone: 'UTC', executor: 'codex', projectRoot: fx.root, facts }), quiet, facts.logDir);
+    const answers = (print: Ran) => {
+      const calls: string[] = [];
+      const control = platformScheduler(dir, 501, (binary, args) => {
+        calls.push(`${binary} ${args[0]!}`);
+        return args[0] === 'print' ? print : { ok: true, status: 0, stdout: '', output: '' };
+      }, 500);
+      return { control, calls };
+    };
+    const timedOut = answers({ ok: false, status: null, stdout: '', output: 'spawnSync launchctl ETIMEDOUT' });
+    assert.throws(() => uninstallTimer(target, label, timedOut.control), /launchctl print did not finish.*nothing was changed/);
+    assert.deepEqual(readdirSync(dir), [`${label}.plist`], 'an unanswered query keeps the files');
+    assert.ok(!timedOut.calls.includes('launchctl bootout'));
+    const stuck = answers({ ok: true, status: 0, stdout: 'state = running', output: '' });
+    assert.throws(() => uninstallTimer(target, label, stuck.control), /still has .* loaded 0.5s after unloading it/);
+    assert.deepEqual(readdirSync(dir), [`${label}.plist`]);
+    let prints = 0;
+    const draining = platformScheduler(dir, 501, (_b, args) => (args[0] === 'print' && ++prints <= 3 ? { ok: true, status: 0, stdout: 'state = running', output: '' } : args[0] === 'print' ? { ok: false, status: 113, stdout: '', output: 'Could not find service' } : { ok: true, status: 0, stdout: '', output: '' }));
+    draining.unload(target, label);
+    assert.ok(prints >= 4, 'a job launchd is still stopping is waited for, not reported stuck');
+    const absent = answers({ ok: false, status: 113, stdout: '', output: 'Could not find service' });
+    assert.equal(absent.control.loaded(target, label), false);
+    assert.deepEqual(uninstallTimer(target, label, absent.control).removed, [join(dir, `${label}.plist`)]);
+    const partial = platformScheduler(dir, 501, () => ({ ok: false, status: null, stdout: 'inactive', output: 'ETIMEDOUT' }));
+    assert.throws(() => partial.loaded({ platform: 'systemd', dir }, label), /did not finish/, 'partial output from an unfinished query is not an answer');
+    const bus = platformScheduler(dir, 501, (_b, args) => args[1] === 'is-active' ? { ok: false, status: 3, stdout: 'inactive', output: 'inactive' } : { ok: false, status: 1, stdout: '', output: 'Failed to connect to bus: No such file or directory' });
+    assert.throws(() => bus.loaded({ platform: 'systemd', dir }, label), /could not say whether the unit is loaded/, 'a bus failure is not absence');
+    const gone = platformScheduler(dir, 501, (_b, args) => args[1] === 'is-active' ? { ok: false, status: 3, stdout: 'inactive', output: 'inactive' } : { ok: false, status: 1, stdout: '', output: `Failed to get unit file state for ${label}.timer: No such file or directory` });
+    assert.equal(gone.loaded({ platform: 'systemd', dir }, label), false);
+    const slow = platformScheduler(dir, 501, (_b, args) => {
+      if (args[0] === 'print') Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60);
+      return args[0] === 'print' ? { ok: true, status: 0, stdout: 'state = running', output: '' } : { ok: true, status: 0, stdout: '', output: '' };
+    }, 200);
+    const started = Date.now();
+    assert.throws(() => slow.unload(target, label), /still has/);
+    assert.ok(Date.now() - started < 450, `the unload deadline counts query time too (${String(Date.now() - started)}ms)`);
+    const systemd = platformScheduler(dir, 501, (_b, args) => args[1] === 'is-active' ? { ok: false, status: 3, stdout: 'inactive', output: 'inactive' } : { ok: true, status: 0, stdout: 'enabled', output: 'enabled' });
+    assert.equal(systemd.loaded({ platform: 'systemd', dir }, label), true, 'enabled but inactive is still there to remove');
+    assert.equal(systemd.firing({ platform: 'systemd', dir }, label), false, 'enabled but inactive never fires');
+  } finally {
+    fx.cleanup();
+  }
 });

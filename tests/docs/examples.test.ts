@@ -63,8 +63,8 @@ test('every documented construct command runs in a scratch project and exits as 
     const sandboxed = sandbox();
     // Documented timer commands run against a recorder under the sandbox HOME;
     // the real scheduler would refuse that HOME, and must never see it.
-    const quiet = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null };
-    const box = { ...sandboxed, ctx: { ...sandboxed.ctx, timers: { platform: 'darwin' as const, control: quiet, systemTimezone: 'Europe/Berlin' } } };
+    const quiet = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null, firing: () => null };
+    const box = { ...sandboxed, ctx: { ...sandboxed.ctx, timers: { platform: 'darwin' as const, control: quiet, systemTimezone: 'Europe/Berlin', launcher: process.execPath } } };
     try {
       mkdirSync(join(box.cwd, 'docs'), { recursive: true });
       writeFileSync(join(box.cwd, 'docs', 'design.md'), '# Design\n\n- Keep the kernel host-agnostic\n', 'utf8');
