@@ -17,22 +17,24 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
 - CHANGELOG `Unreleased` lists every breaking change since alpha.31.
 
 ## Current state
-- Local `main` is 50 commits ahead of `origin/main`; nothing is pushed.
-- Full gate green on the workflow-merge commit (lint, typecheck, tests, smoke, conformance 126 / 0).
-- In flight: Codex is splitting `work/service.ts` and `broker/tools.ts` (work-db112a00) in worktree
-  `../construct-split`, branch `codex/split`. The tools/list digest before the split is
-  2e0d9e9d…174a (46,109 bytes); it must match after.
+- Local `main` is ahead of `origin/main`; nothing is pushed.
+- The module split (work-db112a00) is merged as 006eb69b: tools/list is byte-identical
+  (2e0d9e9d…174a), npm test 1,298 pass / 0 fail, smoke and conformance 126 / 0.
+- Codex evals work again (8532ccb7): runs keep the code-mode host Codex 0.163 calls MCP tools
+  through, and use the signed-in eval home `~/.local/share/construct-evals/codex-home`. Preflight
+  passes there and still fails, as it should, under the real `~/.codex`.
+- Running: Codex smoke cells, candidate then baseline `v3.0.0-alpha.31` (worktree
+  `../construct-alpha31`), logs in the session scratchpad.
 
 ## Next step
-1. Two one-time sign-ins by Gerald unblock every live eval: `claude` then `/login` in a terminal
-   (the CLI is not signed in outside the desktop app), and
-   `mkdir -p ~/.local/share/construct-evals/codex-home` then `CODEX_HOME=~/.local/share/construct-evals/codex-home codex login`.
-2. Then run the smoke record with `CODEX_HOME` set to that home: preflight both hosts, the
-   candidate cells, and a baseline from `v3.0.0-alpha.31`; then `record --scope=smoke`.
-3. With the record: close work-225d1807, work-51bcd5b9, work-c3476f42; do the tool-description
-   change (work-4503dc02) with before/after runs; close work-ed80bdad.
-4. Release 3.0.0-alpha.32: bump, CHANGELOG heading, `release:live`, `release:check
-   --tier=experimental-alpha`. Push, tag and publish only on Gerald's word.
+1. Gerald signs in to the `claude` CLI (`claude`, then `/login`); the Claude Code smoke cell
+   (haiku, crowded) needs it.
+2. Run that cell for candidate and baseline, then `record --scope=smoke` and `check`.
+3. With the record: close work-225d1807, work-51bcd5b9, work-c3476f42, work-26313b45; do the
+   tool-description change (work-4503dc02) with before/after runs; close work-ed80bdad.
+4. Release 3.0.0-alpha.32: bump, CHANGELOG heading, `release:live` (run with
+   `env -u ANTHROPIC_BASE_URL`), `release:check --tier=experimental-alpha`. Push, tag and publish
+   only on Gerald's word.
 
 ## Open questions
 - Backlog after triage: about 40 genuine items (sources, standing outcomes, hook unification, live
@@ -41,4 +43,4 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
   dedicated CODEX_HOME would make it independent of the person's instructions too.
 
 ## Files owned / in-flight
-- `../construct-split`: src/kernel/work/, src/kernel/broker/ and their tests (work-db112a00).
+- `../construct-alpha31`: detached at v3.0.0-alpha.31 for the eval baseline; remove after the record.
