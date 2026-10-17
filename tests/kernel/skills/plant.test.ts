@@ -207,7 +207,7 @@ test('doctor gives the operational skill’s next step: init to connect the host
   });
 });
 
-test('doctor fails health for a stale personal copy of any shipped skill, in any host, and names the fix', async () => {
+test('doctor fails health for a stale personal copy of the operational skill, names the fix, and leaves method skills to the tool that owns them', async () => {
   await inProject(async (ctx, box) => {
     const inClaude = { ...ctx, env: { ...ctx.env, CLAUDECODE: '1' } };
     assert.equal((await capture(() => run(['init', '--client=claude-code'], ctx))).code, 0);
@@ -217,8 +217,12 @@ test('doctor fails health for a stale personal copy of any shipped skill, in any
     assert.equal(doctor.code, 1, 'a stale copy that loads in every repository is a failure, not a note');
     assert.match(
       doctor.out,
-      /FAIL personal-skills: 1 stale personal skill copy\(ies\), each loading in every repository: .*\.claude\/skills\/construct is an older release; `construct skill remove construct --client=claude --confirm`/,
+      /FAIL personal-skills: 1 stale personal copy\(ies\) of the construct skill, each loading in every repository: .*\.claude\/skills\/construct is an older release; `construct skill remove construct --client=claude --confirm`/,
     );
+    // A personal method-skill copy that differs belongs to another tool (ai-workflow-config, say), not to this release.
+    mkdirSync(join(personal, 'intake'), { recursive: true });
+    writeFileSync(join(personal, 'intake', 'SKILL.md'), '---\nname: intake\ndescription: a personal copy\n---\n\nBody.\n');
+    assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /intake is/);
     const removed = await capture(() => run(['skill', 'remove', 'construct', '--client=claude', '--confirm'], inClaude));
     assert.equal(removed.code, 0, removed.err);
     assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /personal-skills/);

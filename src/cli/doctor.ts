@@ -68,35 +68,35 @@ function userScopeConstruct(ctx: CliContext): string | null {
 }
 
 /**
- * Personal copies of the skills this release ships, in every host's personal
- * skills directory. A copy there loads in every repository the host opens and
- * outranks a project's own copy, so a stale one quietly replaces what this
- * release says: health fails until it is updated or removed.
+ * A personal copy of the operational skill, in any host's personal skills
+ * directory, loads in every repository and outranks the project's own copy,
+ * so a stale one quietly replaces what this release says: health fails until
+ * it is removed. Personal copies of the method skills are another tool's to
+ * manage (ai-workflow-config, or the person's own), and Construct's runs take
+ * method text from its registry, never from a host's personal directory, so
+ * they are not checked.
  */
 function personalSkillChecks(ctx: CliContext): Check[] {
   const stale: string[] = [];
   const seen = new Set<string>();
-  const shipped = listShippedSkills();
+  const operational = listShippedSkills().find((s) => s.name === OPERATIONAL_SKILL);
+  if (!operational) return [];
   for (const host of SKILLS_HOST_NAMES) {
     const dir = resolveHostSkillsDir(host, ctx.env);
     if (seen.has(dir) || !existsSync(dir)) continue;
     seen.add(dir);
-    for (const skill of shipped) {
-      const { state } = skillState(skill, dir);
-      if (state !== 'outdated' && state !== 'diverged') continue;
-      const fix =
-        skill.name === OPERATIONAL_SKILL
-          ? `\`construct skill remove ${skill.name} --client=${host} --confirm\` (the project copy is the one to use)`
-          : `\`construct skill install ${skill.name} --client=${host} --force\``;
-      stale.push(`${join(dir, skill.name)} is ${state === 'outdated' ? 'an older release' : 'not this release'}; ${fix}`);
-    }
+    const { state } = skillState(operational, dir);
+    if (state !== 'outdated' && state !== 'diverged') continue;
+    stale.push(
+      `${join(dir, operational.name)} is ${state === 'outdated' ? 'an older release' : 'not this release'}; \`construct skill remove ${operational.name} --client=${host} --confirm\` (the project copy is the one to use)`,
+    );
   }
   if (stale.length === 0) return [];
   return [
     {
       name: 'personal-skills',
       ok: false,
-      detail: `${String(stale.length)} stale personal skill copy(ies), each loading in every repository: ${stale.join('; ')}`,
+      detail: `${String(stale.length)} stale personal copy(ies) of the ${OPERATIONAL_SKILL} skill, each loading in every repository: ${stale.join('; ')}`,
     },
   ];
 }
