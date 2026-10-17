@@ -689,7 +689,7 @@ const INTAKE_SCHEMA: JsonSchema = {
     coordination: { type: 'string', description: 'Coordination.', enum: COORDINATION_ACTIONS },
     stakes: {
       type: 'object',
-      description: 'Consequence.',
+      description: 'Required for manage.',
       properties: {
         reversible: { type: 'boolean', description: 'Reversible.' },
         affects: { type: 'array', description: 'What it touches.', items: { type: 'string', enum: STAKE_AREAS } },

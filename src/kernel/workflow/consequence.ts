@@ -86,7 +86,10 @@ function stakesSignal(stakes: Stakes | null): Signal | null {
     return { kind: 'host_stakes', detail: 'the host did not report whether this can be undone or what it touches', raises: false };
   const hard = stakes.reversible === false;
   const areas = [...new Set(stakes.affects.filter((a) => a !== 'none'))].map((a) => a.replace(/_/g, ' '));
-  if (!hard && areas.length === 0) return null;
+  if (!hard && areas.length === 0)
+    return stakes.reversible === null
+      ? { kind: 'host_stakes', detail: 'the host could not tell whether this can be undone', raises: false }
+      : null;
   const touches = areas.length ? `touches ${areas.join(', ')}` : '';
   const detail =
     hard && touches

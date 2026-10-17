@@ -35,6 +35,7 @@
         "reading": {
           "words": "Create an architecture diagram of our system using the available sources and context: Jira/Confluence, Datadog, Slack, GitHub, Notion. Only cover 2026-07-01 to 2026-09-30.",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "architecture diagram of the system"},
           "period": {
             "semantics": "evidence_window",
@@ -90,6 +91,7 @@
         "reading": {
           "words": "I need an architecture diagram of the payments service as it stood last quarter, pulling from Confluence, Datadog, Slack and GitHub",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "architecture diagram of the payments service"},
           "scope": "the payments service",
           "period": {"semantics": "as_of", "relative": "last_quarter", "phrase": "as it stood last quarter"},
@@ -125,6 +127,7 @@
         "reading": {
           "words": "Can you put together an architecture diagram from what's in Notion and GitHub for Q3?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "architecture diagram"},
           "period": {"semantics": "as_of", "quarter": 3, "phrase": "for Q3"},
           "sources": [
@@ -164,6 +167,7 @@
         "reading": {
           "words": "Draw the architecture of our payments system",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "architecture diagram of the payments system"},
           "scope": "the payments system"
         },
@@ -187,6 +191,7 @@
         "reading": {
           "words": "we need a diagram of how checkout talks to payments and the ledger",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "diagram of how checkout talks to payments and the ledger"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -209,6 +214,7 @@
         "reading": {
           "words": "sketch how our services connect, nothing fancy",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a simple sketch of how the services connect"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -231,6 +237,7 @@
         "reading": {
           "words": "Could you map out our system for the new hires?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a map of the system for new hires"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -253,6 +260,7 @@
         "reading": {
           "words": "architecture diagram for Q3 please",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "architecture diagram"},
           "period": {"semantics": "as_of", "quarter": 3, "phrase": "for Q3"},
           "open": [
@@ -288,6 +296,7 @@
         "reading": {
           "words": "show me how payments flows through our stack",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a diagram of how payments flow through the stack"}
         },
         "accept": {
@@ -314,6 +323,7 @@
         "reading": {
           "words": "make me a C4 container view of the platform as of end of September",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a C4 container view of the platform"},
           "period": {"semantics": "as_of", "to": "2026-09-30", "phrase": "as of end of September"}
         },
@@ -337,6 +347,7 @@
         "reading": {
           "words": "Put together the business case for moving off Heroku",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/proposal", "describe": "the business case for moving off Heroku"},
           "open": [
             {
@@ -454,6 +465,7 @@
         "reading": {
           "words": "do this piece of work and hand it back",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the reconcile job fixed so reversed entries net to zero"},
           "target": "services/ledger/src/reconcile.ts"
         },
@@ -482,6 +494,7 @@
         "reading": {
           "words": "can you write up what changed in the auth service since July from the PRs and the incident channel",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a write-up of what changed in the auth service"},
           "scope": "the auth service",
           "period": {"semantics": "changed_during", "from": "2026-07-01", "to": "2026-10-08", "phrase": "since July"},
@@ -514,6 +527,7 @@
         "reading": {
           "words": "the on-call runbook for the queue is out of date, can you fix it",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "document/revision",
             "describe": "the on-call runbook for the queue, brought up to date"
@@ -548,6 +562,7 @@
         "reading": {
           "words": "Would you be able to pull together a summary of every Sev1 in Q3 from Datadog and Slack?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a summary of every Sev1 in Q3"},
           "period": {"semantics": "changed_during", "quarter": 3, "phrase": "in Q3"},
           "sources": [
@@ -579,6 +594,7 @@
         "reading": {
           "words": "I'd love a one-pager on why we picked Postgres over Dynamo",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a one-page record of why we picked Postgres over Dynamo"}
         },
         "accept": {
@@ -831,6 +847,7 @@
         "reading": {
           "words": "I think the diagram is missing the redis cache",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the diagram, revised to show the Redis cache"}
         },
         "accept": {
@@ -1090,6 +1107,7 @@
         "reading": {
           "words": "can you do something about the architecture docs",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/revision", "describe": "the architecture docs, improved"},
           "open": [
             {
@@ -1126,6 +1144,7 @@
         "reading": {
           "words": "diagram",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a diagram"},
           "open": [{"about": "deliverable", "question": "What should the diagram show?", "blocking": true}]
         },
@@ -1200,6 +1219,7 @@
         "reading": {
           "words": "make it better",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/revision", "describe": "the ledger paragraph, improved"},
           "open": [
             {
@@ -1236,6 +1256,7 @@
         "reading": {
           "words": "any chance you could draw up the payments architecture before Thursday's review?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the payments architecture diagram, ready for Thursday's review"},
           "open": [
             {
@@ -1266,6 +1287,7 @@
         "reading": {
           "words": "it'd be great to have a picture of the whole platform for the board deck",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a high-level picture of the whole platform for the board deck"},
           "open": [
             {
@@ -1320,6 +1342,7 @@
         "reading": {
           "words": "is it possible to get a diagram of the data flow between ingest and the warehouse?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a data-flow diagram from ingest to the warehouse"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -1342,6 +1365,7 @@
         "reading": {
           "words": "the guy who built the billing cron quit and I'm supposed to change it next sprint",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a map of what the billing cron does and what depends on it"}
         },
         "accept": {
@@ -1389,6 +1413,7 @@
         "reading": {
           "words": "we acquired a company and I need to understand their stack before the integration kickoff",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "other",
             "describe": "an overview of the acquired company's stack before the integration kickoff"
@@ -1420,6 +1445,7 @@
         "reading": {
           "words": "there's a spreadsheet, a lambda and a slack bot and nobody knows how they connect",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "other",
             "describe": "a map of how the spreadsheet, the lambda and the Slack bot connect"
@@ -1524,6 +1550,7 @@
         "reading": {
           "words": "rewrite in rust or keep patching the go service, I need to present this thursday",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a rewrite-or-patch decision brief for Thursday's presentation"}
         },
         "accept": {
@@ -1547,6 +1574,7 @@
         "reading": {
           "words": "users hit the wrong button constantly because the two look identical",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a design change that makes the two buttons distinct"},
           "open": [{"about": "scope", "question": "Which screen, and which two buttons?", "blocking": true}]
         },
@@ -1571,6 +1599,7 @@
         "reading": {
           "words": "our error messages are just 'something went wrong' everywhere",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "error messages that say what went wrong and what to do"}
         },
         "accept": {
@@ -1618,6 +1647,7 @@
         "reading": {
           "words": "people sign up and then never come back after the first screen",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "why new sign-ups do not come back after the first screen"}
         },
         "accept": {
@@ -1740,6 +1770,7 @@
         "reading": {
           "words": "long email chain from the client, three people asking for different things, figure out the actual request",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a short brief of what the client is actually asking for"},
           "open": [{"about": "sources", "question": "Can you paste or forward the email chain?", "blocking": true}]
         },
@@ -1790,6 +1821,7 @@
         "reading": {
           "words": "transcript of the discovery call attached, what did they commit to and what's still open",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "what the discovery call committed to and what is still open"},
           "open": [
             {
@@ -1820,6 +1852,7 @@
         "reading": {
           "words": "half a dozen sticky notes from the workshop, make sense of them",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a synthesis of the workshop sticky notes"},
           "open": [{"about": "sources", "question": "Can you share the notes, as photos or text?", "blocking": true}]
         },
@@ -1849,6 +1882,7 @@
         "reading": {
           "words": "a blog post says our competitor's outage lasted nine hours, confirm before I mention it in the deck",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "research/brief",
             "describe": "whether the competitor's outage really lasted nine hours"
@@ -1875,6 +1909,7 @@
         "reading": {
           "words": "the customer says we promised them a feature in 2024, did we",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "research/brief", "describe": "whether we promised the customer the feature"},
           "period": {"semantics": "evidence_window", "year": 2024, "phrase": "in 2024"}
         },
@@ -1899,6 +1934,7 @@
         "reading": {
           "words": "reconstruct who approved the vendor change and when from the ticket history",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a timeline of who approved the vendor change and when"},
           "sources": [{"name": "the ticket history", "id": "jira", "role": "read"}]
         },
@@ -1923,6 +1959,7 @@
         "reading": {
           "words": "an analyst report quotes a market size that seems made up, trace it",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "research/brief", "describe": "where the analyst report's market size comes from"}
         },
         "accept": {
@@ -2051,6 +2088,7 @@
         "reading": {
           "words": "we have forty feature requests and one team, help me pick",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a prioritized pick from the forty feature requests"},
           "open": [{"about": "sources", "question": "Where is the list of feature requests?", "blocking": true}]
         },
@@ -2101,6 +2139,7 @@
         "reading": {
           "words": "the go-live date was set before anyone estimated the work",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "review/delivery-plan",
             "describe": "whether the go-live date holds once the work is estimated"
@@ -2157,6 +2196,7 @@
         "reading": {
           "words": "what has to happen in what order for the data center move",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "an ordered plan for the data center move"}
         },
         "accept": {
@@ -2198,6 +2238,7 @@
         "reading": {
           "words": "QA asks how they're supposed to test 'improve search'",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "testable acceptance criteria for 'improve search'"}
         },
         "accept": {
@@ -2221,6 +2262,7 @@
         "reading": {
           "words": "we keep reopening this ticket because nobody agrees when it's finished",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "agreed done criteria for the ticket"},
           "open": [{"about": "scope", "question": "Which ticket?", "blocking": true}]
         },
@@ -2245,6 +2287,7 @@
         "reading": {
           "words": "write down what the export needs to do before the offshore team starts",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/prd", "describe": "what the export needs to do"}
         },
         "accept": {
@@ -2420,6 +2463,7 @@
         "reading": {
           "words": "review my changes to the payment retry code",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "review/implementation",
             "describe": "a review of the changes to the payment retry code"
@@ -2507,6 +2551,7 @@
         "reading": {
           "words": "are we resourced for what the annual plan promises",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "review/strategy-execution",
             "describe": "whether we are resourced for what the annual plan promises"
@@ -2571,6 +2616,7 @@
         "reading": {
           "words": "we have one queue for everything and it's becoming a problem",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a design for splitting the single queue"}
         },
         "accept": {
@@ -2613,6 +2659,7 @@
         "reading": {
           "words": "this release note is full of buzzwords, fix it",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the release note rewritten in plain words"},
           "open": [
             {"about": "sources", "question": "Which release note? Paste it or point me to the file.", "blocking": true}
@@ -2659,6 +2706,7 @@
         "reading": {
           "words": "the onboarding guide sounds like a legal contract",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/revision", "describe": "the onboarding guide in a plainer voice"}
         },
         "accept": {
@@ -2682,6 +2730,7 @@
         "reading": {
           "words": "shorten this exec summary to something people will actually read",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the exec summary, shortened"},
           "open": [
             {"about": "sources", "question": "Which exec summary? Paste it or point me to the file.", "blocking": true}
@@ -2708,6 +2757,7 @@
         "reading": {
           "words": "before the board sees this, tell me what they'll attack",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "review/challenge", "describe": "what the board will attack"},
           "open": [{"about": "sources", "question": "Which deck or document is going to the board?", "blocking": true}]
         },
@@ -2732,6 +2782,7 @@
         "reading": {
           "words": "steelman the case against our migration plan",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "review/challenge", "describe": "the strongest case against the migration plan"}
         },
         "accept": {
@@ -2755,6 +2806,7 @@
         "reading": {
           "words": "I'm sure this design is right, prove me wrong",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "review/challenge", "describe": "the case against the design"},
           "open": [{"about": "sources", "question": "Which design?", "blocking": true}]
         },
@@ -2779,6 +2831,7 @@
         "reading": {
           "words": "find the flaw in this pricing proposal",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "review/challenge", "describe": "the flaw in the pricing proposal"},
           "open": [{"about": "sources", "question": "Which pricing proposal?", "blocking": true}]
         },
@@ -2865,6 +2918,7 @@
         "reading": {
           "words": "run the security review on the new upload feature",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "review/security-privacy", "describe": "a security review of the new upload feature"},
           "target": "the new upload feature"
         },
@@ -4044,6 +4098,7 @@
         "reading": {
           "words": "open a GitHub issue for the rounding bug in money.ts",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a GitHub issue for the rounding bug"},
           "destination": {"kind": "registered_source", "name": "github", "ref": "acme/platform issues"}
         },
@@ -4210,6 +4265,7 @@
         "reading": {
           "words": "post a summary of this week's merged PRs to #payments-eng",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "publication",
             "describe": "a summary of this week's merged PRs, posted to #payments-eng"
@@ -4239,6 +4295,7 @@
         "reading": {
           "words": "comment on PAY-142 that the fix is deployed",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a comment on PAY-142 saying the fix is deployed"},
           "destination": {"kind": "registered_source", "name": "jira", "ref": "PAY-142"}
         },
@@ -5056,6 +5113,7 @@
         "reading": {
           "words": "ok write that up as a one-pager for new hires",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a one-page overview of the payments service for new hires"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -5162,6 +5220,7 @@
         "reading": {
           "words": "write up the options for the bus",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the options for the event bus, compared"}
         },
         "accept": {
@@ -5210,6 +5269,7 @@
         "reading": {
           "words": "and add a section on chargebacks",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "document/prd", "describe": "the partial refunds PRD, with a section on chargebacks"}
         },
         "accept": {
@@ -5254,6 +5314,7 @@
         "reading": {
           "words": "turn that into a status update for standup",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a standup status update from last week's PAY tickets"},
           "period": {"semantics": "changed_during", "relative": "last_week", "phrase": "last week"},
           "sources": [{"name": "PAY tickets", "id": "jira", "role": "read"}]
@@ -5282,6 +5343,7 @@
         "reading": {
           "words": "can you draw the architecture from GitHub and Confluence for the onboarding doc?",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "an architecture diagram for the onboarding doc"},
           "sources": [
             {"name": "GitHub", "id": "github", "role": "read"},
@@ -5308,6 +5370,7 @@
         "reading": {
           "words": "put that in the payments channel",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {
             "kind": "publication",
             "describe": "what changed in payments last month, posted to the payments channel"
@@ -5390,6 +5453,7 @@
         "reading": {
           "words": "if not, write one",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a runbook for processor outages"}
         },
         "accept": {"kinds": ["manage"], "deliverableKinds": ["other", "outcome/managed"], "periodSemantics": ["none"]},
@@ -5777,6 +5841,7 @@
         "reading": {
           "words": "Summarize the open PAY tickets in Jira for Friday's standup",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a summary of the open PAY tickets for Friday's standup"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -5801,6 +5866,7 @@
         "reading": {
           "words": "Read the event bus design page in Confluence and list its open questions",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the open questions on the event bus design page"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -5825,6 +5891,7 @@
         "reading": {
           "words": "Go through this sprint's Jira tickets and draft the sprint review notes",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "sprint review notes"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -5851,6 +5918,7 @@
         "reading": {
           "words": "Check the payments runbook in Confluence and write up which steps are out of date",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the out-of-date steps in the payments runbook"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -5877,6 +5945,7 @@
         "reading": {
           "words": "Pull the ledger tickets from Jira and write a status note for the ledger team",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a status note for the ledger team"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -5901,6 +5970,7 @@
         "reading": {
           "words": "Summarize the Q3 incident tickets in Jira into a short review",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a short review of the Q3 incident tickets"},
           "period": {"semantics": "changed_during", "quarter": 3, "phrase": "Q3"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
@@ -5930,6 +6000,7 @@
         "reading": {
           "words": "Turn the checkout redesign page in Confluence into a one-page brief",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a one-page brief of the checkout redesign"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -5954,6 +6025,7 @@
         "reading": {
           "words": "Write release notes for 2.5 from the Jira tickets marked done",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "release notes for 2.5"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -5978,6 +6050,7 @@
         "reading": {
           "words": "Read the refunds spec in Confluence and summarize the open risks",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a summary of the open risks in the refunds spec"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -6002,6 +6075,7 @@
         "reading": {
           "words": "Summarize last week's PAY tickets for my manager",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a summary of last week's PAY tickets for my manager"},
           "period": {"semantics": "changed_during", "relative": "last_week", "phrase": "last week"},
           "sources": [{"name": "PAY tickets", "id": "jira", "role": "read"}]
@@ -6031,6 +6105,7 @@
         "reading": {
           "words": "Draw the payments architecture from the Confluence design pages",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a diagram of the payments architecture"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -6055,6 +6130,7 @@
         "reading": {
           "words": "Compare the Jira backlog against the roadmap and list the gaps",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the gaps between the Jira backlog and the roadmap"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -6079,6 +6155,7 @@
         "reading": {
           "words": "Write a summary of the processor migration from its Confluence page",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a summary of the processor migration"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },
@@ -6103,6 +6180,7 @@
         "reading": {
           "words": "Go through the open Jira bugs for checkout and group them by cause",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "the open checkout bugs, grouped by cause"},
           "sources": [{"name": "Jira", "id": "jira", "role": "read"}]
         },
@@ -6132,6 +6210,7 @@
         "reading": {
           "words": "Read the on-call handbook in Confluence and draft a checklist for new on-call engineers",
           "kind": "manage",
+          "stakes": {"reversible": null, "affects": []},
           "deliverable": {"kind": "other", "describe": "a checklist for new on-call engineers"},
           "sources": [{"name": "Confluence", "id": "confluence", "role": "read"}]
         },

@@ -45,7 +45,7 @@ async function call(
 
 /** A host's reading of work it cannot name a workflow for: the general carrier takes it, and the stakes the host reports reach the judgment. */
 function work(words: string, stakes?: Record<string, unknown>): Record<string, unknown> {
-  return { words, kind: 'manage', deliverable: { kind: 'other', describe: words }, ...(stakes ? { stakes } : {}) };
+  return { words, kind: 'manage', deliverable: { kind: 'other', describe: words }, stakes: stakes ?? { reversible: null, affects: [] } };
 }
 
 test('1–2, 11–12: consequence, fresh session recovery, and scale via classify_request', async () => {
@@ -65,7 +65,7 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
     assert.equal(unreported.judgment.challenge, false, 'the words alone raise nothing');
     assert.ok(
       unreported.judgment.signals.some((s) => s.kind === 'host_stakes' && !s.raises),
-      'the missing stakes are said, not guessed',
+      'stakes the host could not tell are said, not guessed',
     );
 
     const trivial = (await call(fx, 'classify_request', work('Rename a private helper in the invoice formatter'))) as {

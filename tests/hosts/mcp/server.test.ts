@@ -175,6 +175,7 @@ test('wrong input comes back as a tool error naming the field and the values it 
     assert.deepEqual(reading.result.structuredContent.allowed, ['answer', 'remember', 'manage', 'maintain', 'coordinate']);
     assert.deepEqual(reading.result.structuredContent.example, {
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: '<what they want back>' },
     });
     const recovery = (reading.result.structuredContent as unknown as { recovery: { tool: string; inputSchema: unknown; next: string } })

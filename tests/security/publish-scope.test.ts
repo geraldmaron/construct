@@ -78,6 +78,7 @@ async function publishTo(fx: Fx, deliverable: string, page: string, audience: st
     intake: {
       words: 'Publish the risk brief to the wiki',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'publication' },
       destination: { kind: 'registered_source', name: 'confluence', ref: page },
     },
@@ -159,6 +160,7 @@ test('the approval names the destination, what the work rests on and what was wa
       intake: {
         words: 'Publish the risk brief to the leadership page',
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'publication' },
         destination: { kind: 'registered_source', name: 'confluence', ref: 'LEAD/Risk' },
       },

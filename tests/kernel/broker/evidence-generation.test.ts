@@ -20,6 +20,7 @@ const request = {
   workflowId: 'managed-outcome',
   intake: {
     kind: 'manage',
+    stakes: { reversible: true, affects: [] },
     words: 'Review current policy and save a brief.',
     deliverable: { kind: 'other', describe: 'policy brief' },
     destination: { kind: 'project_file', ref: 'brief.md' },

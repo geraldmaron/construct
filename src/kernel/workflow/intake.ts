@@ -290,7 +290,7 @@ export class IntakeError extends Error {
 /** A valid value for each top-level field, shown with an error on it or anything inside it. */
 const EXAMPLES: Readonly<Record<string, unknown>> = {
   words: { words: '<the person’s request, verbatim>' },
-  kind: { kind: 'manage', deliverable: { kind: OTHER_KIND, describe: '<what they want back>' } },
+  kind: { kind: 'manage', deliverable: { kind: OTHER_KIND, describe: '<what they want back>' }, stakes: { reversible: true, affects: [] } },
   deliverable: { deliverable: { kind: OTHER_KIND, describe: '<what they want back>' } },
   skill: { skill: 'system-architecture' },
   workflowId: { workflowId: GENERAL_CARRIER },
@@ -765,7 +765,21 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
       fail('stakes.reversible', `"stakes.reversible" is ${typeName(s.reversible)}; it is true, false, or null when the host cannot tell`);
     const affects = list(s.affects, 'stakes.affects').map((a, i) => oneOf(a, `stakes.affects[${String(i)}]`, STAKE_AREAS));
     stakes = { reversible: typeof s.reversible === 'boolean' ? s.reversible : null, affects: affects as StakeArea[] };
+    if (kind === 'manage' && !('reversible' in s))
+      fail(
+        'stakes.reversible',
+        '"stakes.reversible" is required with manage: true, false, or null when you cannot tell whether the work can be undone',
+      );
+    if (kind === 'manage' && !('affects' in s))
+      fail(
+        'stakes.affects',
+        '"stakes.affects" is required with manage: what the work touches, or [] when it touches nothing listed',
+        STAKE_AREAS,
+      );
   }
+  // Rigor never depends on the host volunteering its reading of the stakes, so managed work must carry one.
+  if (kind === 'manage' && stakes === null)
+    fail('stakes', '"stakes" is required with manage: whether the work can be undone and what it touches', STAKE_AREAS);
 
   // open: what the host could not settle from the conversation.
   const open: OpenItem[] = list(r.open, 'open').map((item, i) => {

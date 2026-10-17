@@ -161,6 +161,7 @@ test('the architecture diagram request runs end to end through the tools: period
     const read = await call(fx, 'classify_request', {
       words: request,
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: 'architecture diagram' },
       skill: 'system-architecture',
       period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' },

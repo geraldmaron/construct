@@ -27,7 +27,7 @@ export const INTERACTIVE_CONTRACT = [
   'Plain question: answer it, record nothing.',
   'Asked to keep something: remember.',
   'To hand work on: work handoff.',
-  'To produce or review work, even asked as a question: classify_request with kind=manage. For schedules use kind=maintain. Give your reading, settle its questions, then start_outcome; do each step here with claim_work and submit_work.',
+  'To produce or review work, even asked as a question: classify_request with kind=manage and its stakes. For schedules use kind=maintain. Give your reading, settle its questions, then start_outcome; do each step here with claim_work and submit_work.',
   UNTRUSTED_TEXT,
 ].join(' ');
 

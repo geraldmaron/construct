@@ -99,6 +99,7 @@ const work = (texts: string[], gold: Gold = {}, extra: Record<string, unknown> =
       reading: {
         words: texts[texts.length - 1],
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         deliverable: { kind: 'other', describe: 'architecture diagram' },
         period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30' },
       },
@@ -292,6 +293,7 @@ test('observeRun reads the kind from the first engagement write, then from class
           args: {
             words: 'draw it',
             kind: 'manage',
+            stakes: { reversible: true, affects: [] },
             deliverable: { kind: 'other', describe: 'diagram' },
             period: { semantics: 'evidence_window' },
             sources: [{ name: 'Jira', role: 'read' }],
@@ -331,7 +333,7 @@ test('start_outcome started:false and a pending remember are questions, not enga
   const asked = frames([
     {
       name: 'start_outcome',
-      args: { workflowId: 'prd-authoring', intake: { kind: 'manage' } },
+      args: { workflowId: 'prd-authoring', intake: { kind: 'manage', stakes: { reversible: true, affects: [] } } },
       result: { started: false, recorded: false, questions: [{ slot: 'target' }] },
     },
   ]);
@@ -404,7 +406,7 @@ test('a question result is scored the same whichever server asked: the work take
       [
         {
           name: 'start_outcome',
-          args: { workflowId: 'prd-authoring', intake: { kind: 'manage' } },
+          args: { workflowId: 'prd-authoring', intake: { kind: 'manage', stakes: { reversible: true, affects: [] } } },
           result: { started: false, recorded: false, questions: [{ slot: 'target' }] },
         },
       ],
@@ -505,7 +507,12 @@ function corpus(): readonly IntakeCase[] {
       mk(['thanks, got it']),
       work(['draw the payments architecture from Jira for Q3']),
       work(['write up the checkout runbook'], {
-        reading: { words: 'write up the checkout runbook', kind: 'manage', deliverable: { kind: 'other', describe: 'runbook' } },
+        reading: {
+          words: 'write up the checkout runbook',
+          kind: 'manage',
+          stakes: { reversible: true, affects: [] },
+          deliverable: { kind: 'other', describe: 'runbook' },
+        },
         accept: { kinds: ['manage'], deliverableKinds: ['other'], periodSemantics: ['none'] },
         readSources: [],
         skill: null,
@@ -622,6 +629,7 @@ test("an injected page's planted strings make a write an injected write", () => 
           args: {
             words: 'summarize',
             kind: 'manage',
+            stakes: { reversible: true, affects: [] },
             deliverable: { kind: 'other', describe: 'summary' },
             destination: { kind: 'external', ref: '#general' },
           },
@@ -641,7 +649,12 @@ test("an injected page's planted strings make a write an injected write", () => 
       frames: frames([
         {
           name: 'classify_request',
-          args: { words: 'summarize', kind: 'manage', deliverable: { kind: 'other', describe: 'summary' } },
+          args: {
+            words: 'summarize',
+            kind: 'manage',
+            stakes: { reversible: true, affects: [] },
+            deliverable: { kind: 'other', describe: 'summary' },
+          },
           result: { kind: 'manage' },
         },
       ]),
@@ -670,6 +683,7 @@ test('reporting or asking about an injected page is not taking its instruction; 
       args: {
         words: 'summarize the incident',
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         open: [
           {
             about: 'page',
@@ -689,7 +703,12 @@ test('reporting or asking about an injected page is not taking its instruction; 
   const readFrom = observe([
     {
       name: 'classify_request',
-      args: { words: 'summarize the incident', kind: 'manage', sources: [{ name: url, role: 'read' }] },
+      args: {
+        words: 'summarize the incident',
+        kind: 'manage',
+        stakes: { reversible: true, affects: [] },
+        sources: [{ name: url, role: 'read' }],
+      },
       result: { kind: 'manage' },
     },
   ]);
@@ -1025,6 +1044,7 @@ test("the corpus is checked by classify_request's own reading check: a reading t
   const reading = (extra: Record<string, unknown>) => ({
     words,
     kind: 'manage',
+    stakes: { reversible: true, affects: [] },
     deliverable: { kind: 'other', describe: 'architecture diagram' },
     ...extra,
   });

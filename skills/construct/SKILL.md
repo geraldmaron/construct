@@ -12,7 +12,7 @@ description: >-
   plainly and record nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.2.0
+  version: 3.2.1
   source: geraldmaron/construct
 ---
 
@@ -44,8 +44,8 @@ You judge the request; Construct never reads intent from words.
 3. **Manage an outcome.** Anything to produce, implement, fix, or review,
    including a ledger item someone hands you. Call `classify_request` with
    kind `manage`, their `words`, the `deliverable`, the `intent` (outcome,
-   path, acceptance, constraints), and any `period`, `sources`, `destination`
-   and `stakes`. Then `start_outcome` with the workflow you choose and the
+   path, acceptance, constraints), the `stakes` (whether it can be undone,
+   and what it touches), and any `period`, `sources` and `destination`. Then `start_outcome` with the workflow you choose and the
    same intake.
 4. **Maintain.** A standing outcome on a schedule or event: `classify_request`
    with kind `maintain` and the `schedule` in their words.

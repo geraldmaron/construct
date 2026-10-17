@@ -142,6 +142,7 @@ test('typed interpretation chooses each execution path while preserving lightwei
     ] as const) {
       const r = await call(f, 'classify_request', {
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         words: 'Please produce this outcome.',
         deliverable: { kind: 'other', describe: 'requested outcome' },
         intent: {
@@ -159,6 +160,7 @@ test('typed interpretation chooses each execution path while preserving lightwei
     await assert.rejects(
       call(f, 'classify_request', {
         kind: 'manage',
+        stakes: { reversible: true, affects: [] },
         words: 'Produce a result',
         deliverable: { kind: 'other', describe: 'a result' },
         intent: { path: 'persona', outcome: 'result' },
@@ -177,6 +179,7 @@ test('portable chat delivery completes without file or test capabilities and lab
     (f.broker.host as { available: ReadonlySet<string> }).available = available;
     const intake = {
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       words: 'Explain the architecture constraints with evidence.',
       deliverable: { kind: 'other', describe: 'architecture brief' },
       destination: { kind: 'chat' },

@@ -535,6 +535,7 @@ async function checkHost(host) {
         kind: 'manage',
         deliverable: { kind: 'review/design-conformance' },
         target: 'README.md',
+        stakes: { reversible: true, affects: [] },
       };
       const cls = await s.call('classify_request', reading);
       const listed = (await s.rpc('tools/list')).result.tools.find((t) => t.name === 'classify_request');
@@ -685,6 +686,7 @@ async function checkHost(host) {
         deliverable: { kind: 'other', describe: 'brief' },
         intent: { path: 'artifact', outcome: 'Explain the kernel boundary', acceptance: ['Ground the boundary in design.md'] },
         destination: { kind: 'chat' },
+        stakes: { reversible: true, affects: [] },
       });
       const portable = await s.call('start_outcome', { workflowId: 'guided-outcome', intake: portableIntake.intake });
       const po = {

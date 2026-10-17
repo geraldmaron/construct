@@ -189,6 +189,7 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     const rewrite = (await call(fx, 'classify_request', {
       words,
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'other', describe: 'rewritten document' },
     })) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
     assert.equal(rewrite.matches[0]!.workflowId, 'guided-outcome');
@@ -333,6 +334,7 @@ test('the interactive lifecycle: read, start, claim, submit, status, promote', a
     const cls = (await call(fx, 'classify_request', {
       words: 'Review this feature against the project’s design principles',
       kind: 'manage',
+      stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'review/design-conformance' },
     })) as { matches: { workflowId: string; missing: string[] }[] };
     assert.equal(cls.matches[0]!.workflowId, 'design-conformance');

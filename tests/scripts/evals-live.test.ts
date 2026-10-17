@@ -517,7 +517,7 @@ test('the e2e checkpoints pass only on what the run did', () => {
     answeredAt: 2,
   });
   const all = e2eCheckpoints([
-    ok('classify_request', { kind: 'manage' }, { kind: 'manage' }),
+    ok('classify_request', { kind: 'manage', stakes: { reversible: true, affects: [] } }, { kind: 'manage' }),
     ok('sources', { action: 'declare', id: 'jira' }, {}),
     ok('sources', { action: 'report', id: 'jira' }, {}),
     ok(

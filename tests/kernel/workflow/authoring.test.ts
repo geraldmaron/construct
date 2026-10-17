@@ -33,7 +33,12 @@ test('a reading that asks for a PRD, an RFC or a proposal matches its authoring 
       ],
     ];
     for (const [words, kind, skill, workflow] of cases) {
-      const c = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind } });
+      const c = await call(fx, 'classify_request', {
+        words,
+        kind: 'manage',
+        stakes: { reversible: true, affects: [] },
+        deliverable: { kind },
+      });
       assert.equal(c.matches[0].workflowId, workflow, words);
       assert.equal(c.matches[0].because, 'deliverable kind');
       assert.ok(c.matches[0].missing.includes('target'), `${workflow} asks for its target: ${JSON.stringify(c.matches[0].missing)}`);
