@@ -3859,3 +3859,33 @@ kind of duplicate copy that drifted before, with nothing that needs it.
 Verdict: **accepted**. Reopen it when someone who does not use
 ai-workflow-config asks for the method skills in a host.
 
+
+## 47. The native reviewer follows the Codex the person runs, requalified live per version (2026-10-17)
+
+The held-text reviewer was pinned to Codex CLI 0.145.0. This machine and the
+people Construct serves run 0.163.0, so every release needed a second Codex
+installed beside the one in use. The 0.163.0 app-server schema adds message
+deliveries (async, `partial_answer`, questions), fifteen notifications and
+`functionCallOutput`. A live run also sends two notices the schema diff did
+not flag as load-bearing: `account/updated` with the session's auth mode, and
+a `warning` that code mode fails closed because the review disables its host.
+
+**Decision.** Pin 0.163.0 as profile `codex-app-server-held-text-v2`. Every
+new delivery, notification and item type refuses the review. `account/updated`
+passes only when it reports subscription auth (`chatgpt`); any other mode
+refuses. The one admitted warning is the exact fail-closed code-mode message,
+recorded as `native.fail_closed_warning`; any other warning refuses. Runs
+frozen with the v1 profile stay unverified rather than review under a binary
+they did not freeze. Live qualification on 2026-10-17: the correct control
+succeeded, and the incorrect and injected controls were rejected and held;
+`release:check --tier=experimental-alpha` accepted the record.
+
+**Challenge.** Strongest failure mode: admitting a warning by its text lets a
+later Codex send the same words for a different condition. The match is
+anchored to the full fail-closed sentence, the pin is one exact version, and
+any version change refuses until it is requalified, so the text cannot drift
+under the pin. Best alternative: keep 0.145.0 side by side. Rejected: it
+qualifies a binary no one uses for real work, and it already drifted from the
+installed CLI once. Verdict: **accepted with controls**. The control is the
+per-version pin plus a live run of the three release controls before any
+release that changes the pin.
