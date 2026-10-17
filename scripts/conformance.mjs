@@ -610,7 +610,6 @@ async function checkHost(host) {
         }
         const r = await s.call('submit_work', {
           stepRunId: c.work.stepRunId,
-          owner: c.work.owner,
           token: c.work.token,
           output: outputs[c.work.step.id],
           evidence: [{ ref: 'docs/design.md' }],

@@ -3495,3 +3495,99 @@ hosts echo `owner` today, so it is a versioned change measured before and
 after. The strongest objection to all four is churn across every host for
 no user-visible gain; the case for them is that a contributor or host
 developer meets this surface first.
+
+## 41. The five changes §40 deferred, each decided (2026-10-17)
+
+§40 left five changes waiting for their own decision because each reaches
+every host. Under the 2026-08-25 rule each is decided here with its
+strongest failure mode, its best alternative and a verdict, and each is its
+own ledger item under outcome `work-bdb9137a`. The figures were read from
+the tree at this commit.
+
+**(1) One review workflow and one authoring workflow (`work-c3476f42`).**
+Of 24 workflow manifests, nine (architecture-decision, delivery-plan,
+experience, governance-issue-spotting, implementation, operational-readiness,
+product-requirements, security-privacy and strategy-execution review) run
+the same gather, checks, review, record steps, and four (prd, proposal and
+rfc authoring and research-brief) run gather, draft, challenge, record. They
+differ in the bound domain skill, its validators and its inputs, which the
+skill can carry. `workflows/remember` is never started: `start_outcome`
+refuses kind remember and the `remember` tool writes through the service
+without reading the manifest. Seven workflows have no test that names them.
+Failure mode: a merged manifest silently drops a validator one domain
+needed, and saved runs and host transcripts cite the old ids. Alternative:
+keep the manifests and generate them from one template at build time, which
+removes the copy drift without changing what hosts see; it keeps 13 ids the
+model must choose between, which is the cost the merge removes. Verdict:
+accepted with controls: every old id resolves to the merged workflow with
+its skill, validators are diffed per domain before any manifest is deleted,
+and the live intake evals pick the same domain skill before and after.
+
+**(2) One claim authority per artifact (`work-0a36e600`).** A managed step
+holds a step lease (the steps table's owner, nonce and expiry) and
+`claim_work` also reserves the requested artifact as
+`work-<run>-delivery` in the native ledger, with its own token and expiry.
+One piece of work is held twice, and recovery has to settle both.
+Failure mode: the lease and the ledger reservation are the multi-agent
+safety boundary; a merge that loses the path-overlap check or the
+dead-session recovery lets two writers edit one file, which is worse than
+the duplication. Alternative: keep both and make the ledger reservation a
+pure projection of the step lease, derived rather than stored; that keeps
+one source of truth without a state-format change, at the cost of a read
+path that joins two tables. Verdict: needs validation. A design note
+choosing between collapse and projection, reviewed adversarially, comes
+before code, and either way the existing lease and concurrency tests keep
+their intent.
+
+**(3) Split `work/service.ts` and `broker/tools.ts` (`work-db112a00`).**
+`work/service.ts` is 1,609 lines, mostly one closure; `broker/tools.ts` is
+2,978 lines holding 23 tool definitions and their helpers. Failure mode:
+pure churn that conflicts with every in-flight branch touching either file,
+and today one is (the worktree-evidence branch holds `tools.ts`).
+Alternative: leave the files and split only when a change needs to touch a
+section. Verdict: accepted with controls: the split is mechanical, lands
+only when no claimed work holds these paths, and is proven by a
+byte-identical MCP `tools/list` before and after plus the full gate.
+
+**(4) The MCP tool surface (`work-4503dc02`).** The 23 tools carry 11,725
+characters of description; `classify_request` and `work` each pass 1,700.
+`submit_work` and `heartbeat` declared an `owner` input whose own text said
+it was ignored, and `claim_work` and `claim_step` returned `owner` in the
+claim packet, which is why hosts echoed it back. `claim_work`, `claim_step`
+and `work` action claim are three claim verbs over two kinds of claim.
+Failure mode: descriptions are what host models read, and policy prose cut
+from them can drop behavior the live intake evals measure; removing an
+input breaks a host that still sends it. Alternative: leave the text and
+inputs until the claim-authority decision settles the verbs, so the surface
+changes once. Verdict, split in two. The ignored `owner` input is removed
+now: it does nothing, the claim packet stops returning it so nothing
+prompts the echo, and a host that still sends it gets a typed
+`ToolInputError` naming the allowed inputs, which the recovery contract
+already tells hosts to repair and retry. Accepted. The descriptions and
+the claim verbs change with (2), measured with live intake evals on every
+host that has them before and after. Needs validation.
+
+**(5) Typed host fields replace the prose verdicts (`work-51bcd5b9`).**
+`settled_not_contradicted` exempts any sentence containing a word from its
+acknowledgment list, `superseded_acknowledged` accepts any "superseded"
+near a document's name, `decision_ask_present` accepts a bare "by" when no
+date was given, and claim-support's proposition check parses assertions by
+regex. §40 tried narrower word lists and Codex found each wrong in both
+directions. The fix is fields the host fills (the settled statements it set
+aside, by id; the superseded references it relied on and what replaces
+them; the decision date), checked against the store as data. Failure mode:
+a host that does not fill a new field fails a step that passed before, and
+a host model can fill a field falsely as easily as it writes a sentence.
+Alternative: drop the three checks and leave the judgment to the semantic
+reviewer. That removes the false verdicts but also the only check that the
+cited statement or document exists. Verdict: accepted with controls: the
+fields ship optional and checked when present, the skills say what to fill,
+live runs on Claude Code and Codex fill them, and only then do they become
+required and the vocabulary checks go. A filled field still has to name a
+statement or reference that resolves, so a false entry is checkable where
+a false sentence is not.
+
+**Smallest and reversible.** The `owner` removal in (4) is the only one of
+the five that changes no state, no stored format and no tool description; it
+removes two schema entries and one packet field, and restoring them reverts
+it. It landed with this record; the rest of `work-4503dc02` stays open.

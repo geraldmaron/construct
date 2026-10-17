@@ -82,7 +82,7 @@ test('an RFC built from recorded connector reads passes the draft floor, and an 
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
     const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string; excerpt?: string }[]) =>
-      call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+      call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 
     const cited = [
       { ref: 'jira:PAY-1', excerpt: '1,240 duplicate charges' },

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- `submit_work` and `heartbeat` no longer declare an `owner` input, and the
+  `claim_work` and `claim_step` packets no longer return `owner`. The lease
+  holder was always the calling session and the input was ignored. A host
+  that still sends `owner` gets a typed input error naming the allowed
+  inputs; drop the field and retry.
+
 ## 3.0.0-alpha.31 — 2026-10-16 (experimental)
 
 A method report may cite a listed file by any spelling that resolves to it.
