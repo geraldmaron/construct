@@ -1,6 +1,0 @@
-#!/usr/bin/env sh
-# --- BEGIN CONSTRUCT COMMIT MSG STRIP ---
-# Managed by scripts/install-git-hooks.sh
-_construct_root="$(git rev-parse --show-toplevel)"
-node "$_construct_root/scripts/hooks/commit-trailers.mjs" strip "$1"
-# --- END CONSTRUCT COMMIT MSG STRIP ---

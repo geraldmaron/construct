@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A commit message carries no attribution trailer.
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/hooks/commit-trailers.mjs" check "$1" || exit 1

@@ -11,18 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const ABSOLUTE_HOME = /\/(Users|home)\/[a-zA-Z0-9._-]+/;
-const EXEMPT = [
-  /^tests\//,
-  /^dist\//,
-  /^node_modules\//,
-  /\.md$/,
-  // .beads/issues.jsonl carries a tracker-stamped `source_repo_path` field —
-  // third-party provenance metadata, not a path Construct's own code writes
-  // or depends on at runtime. Different category from the bug this lint
-  // targets (a host config file whose functional path breaks on another
-  // machine); it's informational and safe to vary per clone.
-  /^\.beads\//,
-];
+const EXEMPT = [/^tests\//, /^dist\//, /^node_modules\//, /\.md$/];
 
 function trackedFiles() {
   return execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean);
