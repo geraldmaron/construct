@@ -67,7 +67,7 @@ test('startup does not pin a workspace PATH script; a changed frozen executable 
     const bin = join(b.cwd, 'bin');
     mkdirSync(bin);
     const fake = join(bin, 'codex');
-    writeFileSync(fake, '#!/bin/sh\necho codex-cli 0.145.0\n', { mode: 0o755 });
+    writeFileSync(fake, '#!/bin/sh\necho codex-cli 0.163.0\n', { mode: 0o755 });
     assert.equal(pinSemanticReviewer('codex', { PATH: bin, HOME: b.home }, b.cwd), null);
     assert.equal(pinSemanticReviewer('cursor', { PATH: bin, HOME: b.home }, b.cwd), null);
     assert.match(
@@ -75,7 +75,7 @@ test('startup does not pin a workspace PATH script; a changed frozen executable 
         host: 'codex',
         binary: fake,
         digest: 'wrong',
-        version: 'codex-cli 0.145.0',
+        version: 'codex-cli 0.163.0',
         profile: 'codex-held-text-v1',
       }).join(),
       /changed/,

@@ -69,12 +69,12 @@ export function validateNativeCase(record, c, digest, now) {
     !i?.id ||
     !i.sessionId ||
     i.host !== 'codex' ||
-    i.hostVersion !== 'codex-cli 0.145.0' ||
+    i.hostVersion !== 'codex-cli 0.163.0' ||
     i.model !== 'gpt-6-astra' ||
     i.completed !== true ||
     i.exitStatus !== 0 ||
     i.timedOut !== false ||
-    !['codex-held-text-v1', 'codex-app-server-held-text-v1'].includes(e?.profile) ||
+    !['codex-held-text-v1', 'codex-app-server-held-text-v2'].includes(e?.profile) ||
     e?.modelSource !== 'requested'
   )
     fail('native invocation incomplete or unsupported');
@@ -98,8 +98,8 @@ export function validateNativeCase(record, c, digest, now) {
   const obs = e?.observations;
   if (!Array.isArray(obs) || reviewDigest(obs) !== i?.transcriptDigest) fail('public transcript digest mismatch');
   else {
-    const structural = obs.filter((o) => o.type !== 'native.metadata_warning');
-    const staged = e?.profile === 'codex-app-server-held-text-v1';
+    const structural = obs.filter((o) => o.type !== 'native.metadata_warning' && o.type !== 'native.fail_closed_warning');
+    const staged = e?.profile === 'codex-app-server-held-text-v2';
     const offset = staged ? 1 : 0;
     if (staged) {
       const prompt = b ? semanticReviewPrompt(b) : '';
