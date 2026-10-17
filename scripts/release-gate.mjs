@@ -190,7 +190,17 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
   for (const key of DISCLOSURES)
     if (typeof manifest?.limitations?.[key] !== 'string' || manifest.limitations[key].trim().length < 40)
       problems.push(`missing substantive ${key} disclosure`);
-  if (
+  // A release that ran no native review says so, why, and under which decision; it never passes by omission.
+  const unreviewed = manifest?.nativeReview !== undefined;
+  if (unreviewed) {
+    const n = manifest.nativeReview;
+    if (n?.status !== 'unavailable') problems.push('nativeReview may only record that no native review was available');
+    if (typeof n?.reason !== 'string' || n.reason.trim().length < 80) problems.push('nativeReview needs a substantive reason');
+    if (typeof n?.decision !== 'string' || !/§\d+/.test(n.decision))
+      problems.push('nativeReview must name the recorded decision that allows it');
+    if (!Array.isArray(manifest?.cases) || manifest.cases.length !== 0)
+      problems.push('a release without native review carries no review cases');
+  } else if (
     !Array.isArray(manifest?.cases) ||
     manifest.cases.length !== CASES.length ||
     new Set(manifest.cases.map((x) => x.id)).size !== CASES.length
@@ -199,7 +209,7 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
   const sessions = new Set();
   const entries = Array.isArray(manifest?.cases) ? manifest.cases : [];
   const fresh = Array.isArray(manifest?.freshUserObservations) ? manifest.freshUserObservations : [];
-  for (const c of CASES) {
+  for (const c of unreviewed ? [] : CASES) {
     const entry = entries.find((x) => x.id === c.id);
     try {
       const bytes = read(entry?.path);
@@ -223,7 +233,7 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
       problems.push(`fresh-user observation: ${e.message}`);
     }
   }
-  return { ok: problems.length === 0, problems, tier: 'experimental-alpha' };
+  return { ok: problems.length === 0, problems, tier: 'experimental-alpha', ...(unreviewed ? { nativeReview: 'unavailable' } : {}) };
 }
 export function checkRelease({ tier = 'qualified', root = ROOT, now = Date.now() } = {}) {
   if (tier === 'qualified') return checkRecord({ cut: true });

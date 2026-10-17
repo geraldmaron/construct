@@ -1043,7 +1043,7 @@ function checkOf(scope: string, cells: unknown[], opts: { cut?: boolean } = {}) 
   }
 }
 
-test('check requires the Claude Code and Codex cells of its scope, accepts smoke or full, and needs full scope for a cut', () => {
+test('check requires the gated Claude Code cells of its scope, gates no Codex cell, accepts smoke or full, and needs full scope for a cut', () => {
   const claudeGated = gatedCells('full', 'claude-code');
   assert.deepEqual(
     [...new Set(claudeGated.map((g) => g.requestedModel))],
@@ -1054,20 +1054,23 @@ test('check requires the Claude Code and Codex cells of its scope, accepts smoke
     claudeGated.some((g) => g.condition === 'no-tool-search'),
     'and crowded with tool search off',
   );
+  assert.deepEqual(gatedCells('full', 'codex'), [], 'Codex is out of use, so no scope gates a Codex cell');
+  assert.deepEqual(gatedCells('smoke', 'codex'), []);
   const claude = claudeGated.flatMap((g) => withBaselines(g.host, g.requestedModel, g.condition));
-  const noCodex = checkOf('full', claude);
-  assert.equal(noCodex.ok, false, 'a full record without Codex fails although Codex is listed as unmeasured');
+  const full = checkOf('full', claude, { cut: true });
   assert.deepEqual(
-    noCodex.problems.filter((p) => p.startsWith('no candidate cell')),
-    gatedCells('full', 'codex').map((g) => `no candidate cell for codex gpt-6-astra ${g.condition}`),
-    'each missing Codex cell is named; unmeasured Cursor is excused',
+    full,
+    { ok: true, problems: [], scope: 'full' },
+    'a full record of the Claude cells passes; unmeasured Cursor is excused',
   );
-  const codex = gatedCells('full', 'codex').flatMap((g) => withBaselines(g.host, g.requestedModel, g.condition));
-  const full = checkOf('full', [...claude, ...codex], { cut: true });
-  assert.deepEqual(full, { ok: true, problems: [], scope: 'full' });
+  const missingOne = checkOf(
+    'full',
+    claude.filter((c) => !(c.requestedModel === 'opus' && c.condition === 'injected')),
+  );
+  assert.equal(missingOne.ok, false, 'each gated Claude cell is required');
   const noClaude = checkOf('smoke', withBaselines('codex', 'gpt-6-astra', 'default'));
   assert.deepEqual(noClaude.problems, ['no candidate cell for claude-code haiku crowded']);
-  const smokeCells = [...withBaselines('claude-code', 'haiku', 'crowded'), ...withBaselines('codex', 'gpt-6-astra', 'default')];
+  const smokeCells = withBaselines('claude-code', 'haiku', 'crowded');
   assert.deepEqual(
     checkOf('smoke', smokeCells),
     { ok: true, problems: [], scope: 'smoke' },
@@ -1169,7 +1172,7 @@ test("check --cut fails a full record whose injected cells have no baseline, tho
   const r = checkOf('full', [...candidate, ...baselines], { cut: true });
   assert.equal(r.ok, false);
   assert.ok(r.problems.includes('no baseline:staging-79562bbc cell for claude-code haiku injected'), r.problems.join('\n'));
-  assert.ok(r.problems.includes('no baseline:alpha.25 cell for codex gpt-6-astra injected'));
+  assert.ok(r.problems.includes('no baseline:alpha.25 cell for claude-code opus injected'), r.problems.join('\n'));
   assert.ok(r.problems.includes('the verdict fails'));
 });
 
@@ -1187,7 +1190,7 @@ test('check needs three runs of every test case in every cell, and a run still i
     r.problems.join('\n'),
   );
   assert.ok(
-    r.problems.includes('codex|gpt-6-astra|default|baseline:alpha.25 holds 1 run(s) per case; the rule needs 3'),
+    r.problems.includes('claude-code|claude-haiku-4-5-20251001|crowded|baseline:alpha.25 holds 1 run(s) per case; the rule needs 3'),
     'a baseline cell keeps only its summary and still says how many runs it held',
   );
   const invalid = { ...OBSERVATION_DEFAULTS, x: true };

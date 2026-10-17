@@ -27,7 +27,16 @@ export function beginExperimentalAttempt(path, out) {
   // An interrupted or failed rerun must not leave the old success eligible.
   atomicJson(path, { format: 'construct-experimental-alpha-attempt-v1', status: 'running', startedAt: new Date().toISOString() });
 }
+/** The disclosed form of a release that ran no native semantic review, and the decision that allows it. */
+export const WITHOUT_NATIVE_REVIEW = {
+  status: 'unavailable',
+  decision: 'RESEARCH-DECISIONS §48',
+  reason:
+    'Gerald directed on 2026-10-17 that Construct stop using Codex and gpt-6-astra. The only qualified native semantic reviewer is the Codex held-text profile on that model, so this alpha ran no independent semantic review, and no deliverable it validates carries a semantic-review verdict.',
+};
+
 async function main() {
+  const withoutReview = process.argv.includes('--without-native-review');
   if (apiEnvironmentPresent(process.env)) throw Error('experimental controls use the existing subscription, not API credentials');
   const version = JSON.parse(readFileSync(join(ROOT, 'package.json'))).version;
   if (!/^\d+\.\d+\.\d+-alpha\.\d+$/.test(version)) throw Error('only numbered experimental alphas');
@@ -59,7 +68,11 @@ async function main() {
     },
     cases: [],
     freshUserObservations: [],
+    ...(withoutReview ? { nativeReview: WITHOUT_NATIVE_REVIEW } : {}),
   };
+  if (withoutReview)
+    manifest.limitations.hostSupport =
+      'No native semantic reviewer ran for this alpha: Codex is out of use, and no other host has a qualified held-text reviewer profile. Semantic correctness of managed deliverables is unreviewed; static wiring is not live parity.';
   // These observations are deliberately failures. They preserve the current product limitation.
   for (const [path, summary] of [
     [
@@ -72,7 +85,7 @@ async function main() {
     ],
   ])
     manifest.freshUserObservations.push({ path, sha256: sha256(readFileSync(join(ROOT, path))), summary });
-  for (const c of CASES) {
+  for (const c of withoutReview ? [] : CASES) {
     const fx = freshStore(),
       dir = tmp();
     try {

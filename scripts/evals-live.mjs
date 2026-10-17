@@ -124,6 +124,7 @@ export const MAY_GO_UNMEASURED = new Set(['cursor', 'vscode', 'opencode', 'bob',
  * Claude Code's alone; Cursor runs on the person's quota and stays at the
  * two conditions the live-eval spec names.
  */
+// Codex holds no gated cell: Gerald took Codex and gpt-6-astra out of use on 2026-10-17 (RESEARCH-DECISIONS §48).
 export const GATED_MATRIX = {
   full: [
     ...['haiku', 'sonnet', 'opus'].flatMap((m) =>
@@ -133,13 +134,9 @@ export const GATED_MATRIX = {
         condition,
       })),
     ),
-    ...['default', 'crowded', 'fresh-init', 'injected'].map((condition) => ({ host: 'codex', requestedModel: 'gpt-6-astra', condition })),
     ...['default', 'crowded'].map((condition) => ({ host: 'cursor', requestedModel: 'composer-2.5', condition })),
   ],
-  smoke: [
-    { host: 'claude-code', requestedModel: 'haiku', condition: 'crowded' },
-    { host: 'codex', requestedModel: 'gpt-6-astra', condition: 'default' },
-  ],
+  smoke: [{ host: 'claude-code', requestedModel: 'haiku', condition: 'crowded' }],
   baseline: [],
 };
 

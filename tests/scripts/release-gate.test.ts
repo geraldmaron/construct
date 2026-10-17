@@ -12,6 +12,7 @@ import {
   semanticJudgmentProblems,
 } from '../../src/kernel/workflow/semantic-review.ts';
 import { checkExperimental, checkRelease, repositoryFile, sha256 } from '../../scripts/release-gate.mjs';
+import { WITHOUT_NATIVE_REVIEW } from '../../scripts/experimental-live.mjs';
 import { CASES, REQUEST, DISCLOSURES } from '../../scripts/experimental-cases.mjs';
 import { beginExperimentalAttempt } from '../../scripts/experimental-live.mjs';
 const digest = 'test-surface',
@@ -129,6 +130,32 @@ function fixture() {
 }
 test('experimental records verify bounded controls without claiming qualification', () => {
   assert.equal(fixture().check().ok, true);
+});
+test('a release without native review passes only when it says so, why, and under which decision, with no review cases', () => {
+  const unreviewed = () => {
+    const f = fixture();
+    f.manifest.cases = [];
+    f.manifest.nativeReview = { ...WITHOUT_NATIVE_REVIEW };
+    return f;
+  };
+  const ok = unreviewed().check();
+  assert.equal(ok.ok, true, ok.problems.join('; '));
+  assert.equal(ok.nativeReview, 'unavailable');
+  const silent = fixture();
+  silent.manifest.cases = [];
+  assert.match(silent.check().problems.join('; '), /exactly three distinct bounded controls/);
+  const short = unreviewed();
+  short.manifest.nativeReview.reason = 'Codex is off.';
+  assert.match(short.check().problems.join('; '), /substantive reason/);
+  const undecided = unreviewed();
+  undecided.manifest.nativeReview.decision = 'Gerald said so';
+  assert.match(undecided.check().problems.join('; '), /recorded decision/);
+  const mixed = unreviewed();
+  mixed.freeze();
+  assert.match(mixed.check().problems.join('; '), /carries no review cases/);
+  const other = unreviewed();
+  other.manifest.nativeReview.status = 'waived';
+  assert.match(other.check().problems.join('; '), /only record that no native review was available/);
 });
 test('versioned packet canonicalization binds its contract and refuses unsupported formats', () => {
   const make = () => {
