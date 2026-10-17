@@ -167,10 +167,13 @@ function codexServer(name, server) {
 }
 
 /** Reuse the pinned reviewer capability boundary while retaining the local
- * shell and skill tools the evaluation actually measures. This does not
- * suppress CODEX_HOME/AGENTS.md or claim personal-instruction isolation. */
-export function codexEvaluationIsolationArgs(mcpNames = []) {
-  const retained = new Set(['shell_tool', 'unified_exec', 'skill_search']);
+ * shell and skill tools the evaluation actually measures. A run that measures
+ * MCP use also keeps code mode and its host, the path Codex 0.163 calls MCP
+ * tools through; without them the model sees no Construct tool at all. This
+ * does not suppress CODEX_HOME/AGENTS.md or claim personal-instruction
+ * isolation. */
+export function codexEvaluationIsolationArgs(mcpNames = [], { mcpTools = false } = {}) {
+  const retained = new Set(['shell_tool', 'unified_exec', 'skill_search', ...(mcpTools ? ['code_mode', 'code_mode_host'] : [])]);
   return [
     ...REVIEW_DISABLED_FEATURES.filter((name) => !retained.has(name)).flatMap((name) => ['--disable', name]),
     ...disableReviewMcp(mcpNames),
@@ -226,7 +229,7 @@ export function hostArgs(host, opts) {
       '--ephemeral',
       '--skip-git-repo-check',
       '--ignore-user-config',
-      ...codexEvaluationIsolationArgs(opts.disabledMcpNames ?? []),
+      ...codexEvaluationIsolationArgs(opts.disabledMcpNames ?? [], { mcpTools: true }),
       '-s',
       'read-only',
       '-m',

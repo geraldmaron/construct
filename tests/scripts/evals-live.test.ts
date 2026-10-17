@@ -253,6 +253,8 @@ test('evaluation MCP overrides disable foreign names before enabling only the ex
   assert.ok(args.indexOf('mcp_servers.construct.enabled=false') < args.indexOf('mcp_servers.construct.enabled=true'));
   assert.ok(args.includes('mcp_servers.notion.enabled=true'));
   assert.ok(!args.includes('mcp_servers.personal.enabled=true'));
+  assert.ok(!args.includes('code_mode_host'), 'a run keeps the code-mode host Codex calls MCP tools through');
+  assert.ok(codexEvaluationIsolationArgs().includes('code_mode_host'), 'a text-only call keeps it off');
   assert.throws(() => codexEvaluationIsolationArgs(['personal.with.dot']), /safely override/);
   assert.throws(
     () =>
@@ -311,13 +313,14 @@ test('each host is invoked with its isolation flags and the server command the r
       codex.includes('model_reasoning_effort="medium"'),
   );
   assert.equal(codex[codex.length - 1], 'hi');
-  for (const feature of REVIEW_DISABLED_FEATURES.filter((name) => !['shell_tool', 'unified_exec', 'skill_search'].includes(name))) {
+  const kept = ['shell_tool', 'unified_exec', 'skill_search', 'code_mode', 'code_mode_host'];
+  for (const feature of REVIEW_DISABLED_FEATURES.filter((name) => !kept.includes(name))) {
     assert.ok(
       codex.some((part, index) => part === '--disable' && codex[index + 1] === feature),
       `Codex evaluation disables unrelated ${feature}`,
     );
   }
-  for (const feature of ['shell_tool', 'unified_exec', 'skill_search']) {
+  for (const feature of kept) {
     assert.ok(
       !codex.some((part, index) => part === '--disable' && codex[index + 1] === feature),
       `Codex evaluation retains local ${feature}`,
