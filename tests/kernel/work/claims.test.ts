@@ -217,6 +217,20 @@ test('a holder cannot be taken over by its own name; a session’s main agent ma
       /do not hold it/,
       'the token alone does not settle it for another owner',
     );
+    assert.throws(
+      () => claimWork(fx.store, { id: 'w-1', owner: 'ses-a/lead', session: 'ses-a', agent: 'lead', until: t(60), now: t(2) }),
+      /held by an agent of this session, so this session's main agent can take it back with takeover/,
+      'another agent of the same session is told how to recover the work',
+    );
+    assert.throws(
+      () => claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', agent: 'main', until: t(60), now: t(2) }),
+      /so take it back with takeover and a reason/,
+    );
+    assert.throws(
+      () => claimWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', agent: 'main', until: t(60), now: t(2) }),
+      (e: Error) => !/agent of this session/.test(e.message),
+      'another session is not offered a recovery that is not its own',
+    );
     const back = takeoverWork(fx.store, {
       id: 'w-1',
       owner: 'ses-a/main',
