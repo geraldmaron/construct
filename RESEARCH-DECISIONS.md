@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 43 are
+Nothing in §§1–32 describes the current product. Sections 33 to 45 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3776,3 +3776,27 @@ creates a second managed-delivery claim. Broad tool-description changes
 remain outside this storage change. The review is disclosed self-review;
 native semantic verification was unavailable. The implementation item's
 acceptance remains outstanding.
+
+**Revised after independent review (2026-10-17): option A is rejected as
+written, and a smaller fix landed instead.** A separate reviewer checked the
+design against the code and refuted both of its decisive premises:
+- *Handoff holds.* No host can hand off a delivery item today. `claim_work`
+  never returns its token, `handoffWork` needs that token, and the `work`
+  tool has no delivery branch.
+- *Custody between steps.* That custody is incidental: the item stays
+  claimed only because the reservation copies the step's lease expiry and
+  MCP renewal keeps extending it, and no test asserts it.
+
+The observed defects needed neither a single stored record nor a format
+bump, so what landed is:
+- A run that fails or is cancelled ends its reservation in the same
+  transition, whoever cancels it. That covers the CLI, another session, and
+  replacement by a trigger. The reservation is cancelled, not released back
+  to open.
+- `work ready` never lists a delivery item, and the generic `work` tool
+  refuses to claim, hand off or settle one, naming `claim_work` instead.
+
+The single-record design waits for evidence: it is re-proposed only if
+execution and custody are seen to diverge after this fix. If it comes back,
+step nonces survive the migration and only work tokens are reissued.
+

@@ -304,7 +304,9 @@ function recoverPriorPreparation(
     });
     const cancelled = ctx.workflow.cancel({ runId: prior.id, by: 'kernel', reason });
     if (cancelled.state !== 'cancelled') throw new Error('abandoned preparation did not fully cancel; preserve its reservation');
-    cancelWork(ctx.store, { id: taken.id, actor: owner(ctx), token: taken.claimToken, at, reason });
+    // Cancelling the run ends its reservation too; settle it here only if that has not already happened.
+    if (getWork(ctx.store, taken.id)?.status === 'claimed')
+      cancelWork(ctx.store, { id: taken.id, actor: owner(ctx), token: taken.claimToken, at, reason });
     appendActivity(ctx.store, {
       at,
       kind: 'delivery.preparation_superseded',

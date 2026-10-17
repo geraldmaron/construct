@@ -1,4 +1,4 @@
-VERDICT: Accepted with controls
+VERDICT: Rejected as written after independent review (RESEARCH-DECISIONS §45, revision); a smaller fix landed instead
 
 # One claim authority for managed delivery
 
