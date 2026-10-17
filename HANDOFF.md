@@ -3,7 +3,7 @@
 Baton between Claude Code and Codex. Read at session start; update at session end.
 Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't log.
 
-**Control holder:** none (the clean-state audit session ended 2026-10-17).
+**Control holder:** none (the clean-state audit session ended 2026-10-17, after the merge into main).
 **Mode:** B (Claude implemented, Codex cross-reviewed every slice).
 
 ## What was done
@@ -17,16 +17,22 @@ Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't l
   and narrower prose validators.
 
 ## Current state
-- Full gate green at the last commit. Not pushed, not merged.
+- Merged into local `main` by fast-forward on 2026-10-17 (main checkout now on `main`); `origin/main` is
+  behind and nothing is pushed. Full gate green on `main` in the main checkout.
+- `bash scripts/install-git-hooks.sh` ran: the main checkout and every worktree carrying `.githooks` use it;
+  checkouts on older branches still resolve the untracked `.beads/hooks`, so that folder stays until they rebase.
+- Construct reaches the main checkout through the committed `.mcp.json` (approved in the gitignored
+  `.claude/settings.local.json`); the user-scope entry is removed. `construct doctor` there reports the
+  installation healthy. Backups: `~/.claude/backups/20261017-post-merge/`.
 - Personal skill copies on this Mac were refreshed from this branch (backups in
   `~/.claude/backups/20261017-skill-refresh/`).
 
 ## Next step
-1. Merge the branch, then in the main checkout: `bash scripts/install-git-hooks.sh` (moves every checkout
-   with `.githooks` off `.beads/hooks`), approve the project MCP server in Claude Code, then
-   `claude mcp remove construct -s user` and confirm `construct doctor` shows host-wiring and host-hooks ok.
-2. Complete the ledger items whose acceptance waited on the merge: `work-e34944dc`, `work-ceeac48f`,
-   `work-145a8ce5`, `work-8d7a730a`, `work-53a4a038`, `work-ed80bdad`.
+1. Push `main` (or open a PR from it) when the release side effects are wanted.
+2. Checkouts without the committed `.mcp.json` (construct-hermes-host, construct-tier1-residency, and the
+   intelligent-northcutt and quizzical-cannon worktrees) get no Construct in new sessions until they merge `main`.
+3. Branches waiting: `claude/quizzical-cannon-bb8975` (worktree evidence identity) and
+   `claude/elated-lamport-b176e0` (§41 decisions, owner input removed; carries `work-ed80bdad`).
 
 ## Open questions
 - Plugin distribution for the skills needs a skills-only package (§40).
