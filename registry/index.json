@@ -112,10 +112,10 @@
       "title": "Adversarial deliverable review",
       "interactionClass": "manage"
     },
-    "architecture-decision-review": {
-      "version": "1.1.2",
-      "digest": "sha256:b80e494374368195eb428b70463618e11e578bfc7a8bf922264b94e7e364c77a",
-      "title": "Architecture decision review",
+    "authoring": {
+      "version": "2.0.0",
+      "digest": "sha256:39348dff7957729d84d2815aa9dee623e820012da992eccd1198711b76b9ef02",
+      "title": "Author a deliverable",
       "interactionClass": "manage"
     },
     "decision-support": {
@@ -124,28 +124,10 @@
       "title": "Frame an evidence-backed decision",
       "interactionClass": "manage"
     },
-    "delivery-plan-review": {
-      "version": "1.0.3",
-      "digest": "sha256:d8a0f28287b39aa163f8a96bc9b1bae6d1628b1bf2a8f8fdd8ea7a1ebbb1b754",
-      "title": "Delivery plan review",
-      "interactionClass": "manage"
-    },
     "design-conformance": {
       "version": "2.0.3",
       "digest": "sha256:1cd54a6e733d04c943c95876583d610af74a93e5a550037a8490184f2b29bc9f",
       "title": "Design-principle conformance review",
-      "interactionClass": "manage"
-    },
-    "experience-review": {
-      "version": "1.0.3",
-      "digest": "sha256:06b69d3abfdc4ba5a75dbf1d1851bd38ae2829b64669e1d876bdb3bcd24822a7",
-      "title": "Experience review",
-      "interactionClass": "manage"
-    },
-    "governance-issue-spotting": {
-      "version": "1.0.3",
-      "digest": "sha256:889ca4eb6faa125984a0ac50513eb203b0284985ab7109f7e8f58d000ff3aad9",
-      "title": "Governance issue spotting",
       "interactionClass": "manage"
     },
     "guided-outcome": {
@@ -154,34 +136,10 @@
       "title": "Produce a grounded outcome",
       "interactionClass": "manage"
     },
-    "implementation-review": {
-      "version": "1.0.3",
-      "digest": "sha256:9b12ac1c989152fe153bf8a4f50c67f8d86b19806de687292e1e17a5a1a9992c",
-      "title": "Implementation review",
-      "interactionClass": "manage"
-    },
     "managed-outcome": {
       "version": "2.1.3",
       "digest": "sha256:864e85b42c341489a9c65a916a480f2c3078f48f7bb5e06ce94fbea7408e1d10",
       "title": "Managed outcome with verification",
-      "interactionClass": "manage"
-    },
-    "operational-readiness-review": {
-      "version": "1.0.3",
-      "digest": "sha256:eec8274b852da49849f7acf0cea9e6077f9731385a5ea246a1d4cf73f0f5edab",
-      "title": "Operational readiness review",
-      "interactionClass": "manage"
-    },
-    "prd-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:c49b325d848c77c971b46db136b673fb17a77b8ef467ca8149d1fddde630c06b",
-      "title": "Write a PRD",
-      "interactionClass": "manage"
-    },
-    "product-requirements-review": {
-      "version": "1.0.3",
-      "digest": "sha256:9b751de2397160610eab3923c0165da973b626dac7df3e8c70bee17a75899438",
-      "title": "Product requirements review",
       "interactionClass": "manage"
     },
     "project-bootstrap": {
@@ -190,46 +148,22 @@
       "title": "Project bootstrap and constitution review",
       "interactionClass": "manage"
     },
-    "proposal-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:736081837fae6d68f42f6b7e067f932a36646b42da1a8daecfa9410d2ebafaad",
-      "title": "Write a proposal",
-      "interactionClass": "manage"
-    },
     "publish-deliverable": {
       "version": "1.0.2",
       "digest": "sha256:e88c139bcbe9ee0b7c5a5dd3be26cb81faa08a9756fb2f47f79b66ec13445264",
       "title": "Publish a deliverable",
       "interactionClass": "manage"
     },
-    "remember": {
-      "version": "1.0.2",
-      "digest": "sha256:40ecd7c879282bdfa794937f8b02655f1083e7566a888e23e61d065ed5bc9f61",
-      "title": "Remember one thing",
-      "interactionClass": "remember"
-    },
-    "research-brief": {
-      "version": "1.3.2",
-      "digest": "sha256:f0f90df204580549a186e23207d6e7ac7cb9fb2b11e0410bbf5e594f97a80c8f",
-      "title": "Research a question",
+    "review": {
+      "version": "2.0.0",
+      "digest": "sha256:d700d32946ac2669c2bc45ba13fa84ceb77d2e93160579b76f7baa9cc35e3f3f",
+      "title": "Review a domain",
       "interactionClass": "manage"
     },
     "revise-deliverable": {
       "version": "1.0.3",
       "digest": "sha256:67e7ae4de94082a8e204fd6b27e70f0ec2c3f2281b1a506b1b76c9fb1098ffb8",
       "title": "Revise a deliverable",
-      "interactionClass": "manage"
-    },
-    "rfc-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:b537816a9d75522e4e908b80270f5e3c0726d5092c322209970753f358d2cd26",
-      "title": "Write an RFC",
-      "interactionClass": "manage"
-    },
-    "security-privacy-review": {
-      "version": "1.0.3",
-      "digest": "sha256:440aec249c90c445a3e84e4eedcce70a28bebde40a6180117baf68d6d4bdc2b8",
-      "title": "Security and privacy review",
       "interactionClass": "manage"
     },
     "source-drift-review": {
@@ -243,12 +177,6 @@
       "digest": "sha256:99effc29656ecfe787cf427d3a9a74c2302a4d14274f7d139472cfa4265bf34c",
       "title": "Standing review",
       "interactionClass": "maintain"
-    },
-    "strategy-execution-review": {
-      "version": "1.0.3",
-      "digest": "sha256:e1db8aa26015f34a4564e20edb454048be2ff115927fa7276a098bf7a428cb83",
-      "title": "Strategy-to-execution and capacity review",
-      "interactionClass": "manage"
     }
   }
 }

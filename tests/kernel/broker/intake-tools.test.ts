@@ -296,7 +296,7 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     assert.equal(elsewhere.field, 'workflowId');
     assert.deepEqual(
       elsewhere.allowed,
-      ['prd-authoring', 'proposal-authoring', 'revise-deliverable', 'rfc-authoring'],
+      ['authoring', 'authoring', 'revise-deliverable', 'authoring'],
       'the workflows this reading matched: its kind, then its family in registry order',
     );
     assert.equal((await refusal(fx, 'start_outcome', { workflowId: 'prd-authoring' })).field, 'intake');
@@ -349,7 +349,7 @@ test('without an intake a missing input starts nothing and an undeclared one is 
       input: { request: 'PRD for webhooks', target: 'docs/prd.md', dateRange: 'Q3' },
     });
     assert.equal(stray.field, 'input.dateRange');
-    assert.deepEqual(stray.allowed, ['request', 'target', 'template']);
+    assert.deepEqual(stray.allowed, ['request', 'target', 'template', 'domain']);
     const unknown = await refusal(fx, 'start_outcome', { workflowId: 'remember', input: {} });
     assert.equal(unknown.field, 'workflowId');
     assert.ok(!unknown.allowed?.includes('remember'));
@@ -544,7 +544,7 @@ for (const handling of ['investigate', 'carry_unknown']) {
       assert.deepEqual(reading.hostQuestions, []);
       assert.ok(!reading.assumptions.some((a: any) => a.by === 'host'));
       assert.equal(reading.intake.open[0].assumption, null);
-      assert.equal(reading.matches[0].workflowId, 'research-brief');
+      assert.equal(reading.matches[0].workflowId, 'authoring');
       const started = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: reading.intake });
       assert.equal(started.started, true);
       assert.equal(askedOf(getRun(fx.broker.store, started.run.id)!).intake!.open[0]!.handling, handling);
@@ -634,7 +634,7 @@ test('generic research and renamed requests expose registry alternatives before 
       });
       assert.equal(result.matches[0].workflowId, GENERAL_CARRIER);
       assert.equal(result.matches[0].verification.executionRequired, false);
-      const research = result.carrierAlternatives.find((w: any) => w.workflowId === 'research-brief');
+      const research = result.carrierAlternatives.find((w: any) => w.workflowId === 'authoring' && w.domain === 'investigative-research');
       assert.equal(research.deliverableKind, 'research/brief');
       assert.equal(research.verification.kind, 'evidence_and_model_challenge');
       assert.equal(research.verification.executionRequired, false);
@@ -651,7 +651,7 @@ test('generic research and renamed requests expose registry alternatives before 
       stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'research/brief' },
     });
-    assert.equal(reclassified.matches[0].workflowId, 'research-brief');
+    assert.equal(reclassified.matches[0].workflowId, 'authoring');
     assert.equal(reclassified.matches[0].verification.executionRequired, false);
     assert.equal(reclassified.carrierAlternatives, undefined);
   } finally {
@@ -665,6 +665,8 @@ test('alternative verification metadata follows actual registry steps including 
     const research = fx.broker.workflows.get('research-brief')!;
     const clone = {
       ...research,
+      canonicalId: undefined,
+      domain: undefined,
       manifest: {
         ...research.manifest,
         id: 'local-measurement-review',
@@ -713,7 +715,7 @@ test('standing alternatives obey all requested trigger requirements and retain t
       if (result.matches.length) assert.match(result.next, /separately provisioned clock and executor/);
       else assert.match(result.next, /No workflow here produces other on a schedule or an event/);
       assert.ok(
-        !result.carrierAlternatives.some((w: any) => w.workflowId === 'research-brief'),
+        !result.carrierAlternatives.some((w: any) => w.workflowId === 'authoring' && w.domain === 'investigative-research'),
         'manual-only research is not offered as an executing schedule',
       );
       for (const alternative of result.carrierAlternatives) {

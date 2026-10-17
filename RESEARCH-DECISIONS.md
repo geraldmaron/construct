@@ -3717,6 +3717,39 @@ Verdict: accepted with controls (roots trusted only inside
 `projectWorktrees()`; asked once, before any call; fall back to the
 process directory).
 
+## 44. Domain workflows share their graph and preserve their contracts (2026-10-17)
+
+Implemented §41(1): nine professional review manifests are `review`, and PRD,
+proposal, RFC and research-brief authoring are `authoring`, both version 2.0.0.
+The workflow's domain key is its bound skill id. Skills keep their small
+manifest contract; domain input schemas and step overrides live in the merged
+workflow. Binding adds the skill's required validators to the domain step.
+
+The alias tables preserve all 13 former ids. An alias supplies its domain and
+refuses a conflicting one; new runs record the canonical id and domain. Saved
+runs keep their frozen steps, including research's former `synthesize` step.
+Only the recorded pre-merge version/digest pair with frozen steps bypasses the
+ordinary changed-workflow re-resolution check. Triggers and host-transcript
+interpretation retain alias/domain resolution. Domain scopes deduplication and
+single-run concurrency.
+
+The [per-domain diff](docs/internal/workflow-domain-diff.md) was captured before
+deleting manifests and compares validators, required and optional inputs, step
+inputs, tiers and sources against each merged binding. No validator or required
+input was lost; the RFC draft additionally inherits its architecture skill's
+uncited-finding check. Preservation tests and lifecycle tests cover all domains,
+all remaining workflows and saved alias runs. The unused `workflows/remember`
+was removed after searching src, scripts, tests and docs: no production path
+loaded it; an old registry expectation now asserts absence. The remember tool
+continues to record directly. Fourteen old manifests were removed in total.
+
+Challenge: a generic graph could erase domain obligations, or an alias could
+select another domain. The alternative was generated duplicate manifests.
+Verdict: accepted with controls: explicit domain bindings, preservation baselines,
+closed alias/domain checks, version/digest-limited saved-run compatibility, and
+full-plan lifecycle coverage. Live intake comparison remains the lead's separate
+eval step; this implementation makes no live qualification claim.
+
 ## 45. Managed delivery has one stored claim authority, including custody between steps (2026-10-17)
 
 This resolves §41(2)'s design prerequisite for `work-0a36e600`, with the
