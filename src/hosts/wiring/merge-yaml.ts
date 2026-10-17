@@ -46,7 +46,13 @@ function parseKey(text: string): { readonly indent: number; readonly key: string
   const m = KEY_LINE.exec(text);
   if (!m) return null;
   const raw = m[2]!;
-  const key = raw.startsWith('"') ? (JSON.parse(raw) as string) : raw.startsWith("'") ? raw.slice(1, -1).replace(/''/g, "'") : raw;
+  let key: string;
+  try {
+    key = raw.startsWith('"') ? (JSON.parse(raw) as string) : raw.startsWith("'") ? raw.slice(1, -1).replace(/''/g, "'") : raw;
+  } catch {
+    // A YAML escape JSON does not share (\x20, \e): a form not read here.
+    return null;
+  }
   const rest = (m[3] ?? '').trim();
   return { indent: m[1]!.length, key, rest: rest.startsWith('#') ? '' : rest };
 }
@@ -56,7 +62,13 @@ const PLAIN_ITEM = /^[^\s"'[\]{},#&*!|>%@`-][^,[\]{}#]*$|^-[^\s,[\]{}#][^,[\]{}#
 /** One scalar, or undefined when it is written in a form this module does not read. */
 function parseScalar(raw: string): string | number | boolean | undefined {
   const quoted = /^("(?:[^"\\]|\\.)*")\s*(?:#.*)?$/.exec(raw);
-  if (quoted) return JSON.parse(quoted[1]!) as string;
+  if (quoted) {
+    try {
+      return JSON.parse(quoted[1]!) as string;
+    } catch {
+      return undefined;
+    }
+  }
   const single = /^'((?:[^']|'')*)'\s*(?:#.*)?$/.exec(raw);
   if (single) return single[1]!.replace(/''/g, "'");
   const plain = raw.replace(/\s+#.*$/, '').trim();
@@ -102,9 +114,10 @@ type Located =
   | { readonly kind: 'problem'; readonly problem: string };
 
 function locate(lines: readonly Line[]): Located {
+  if (lines[0]?.text.startsWith('\uFEFF')) return { kind: 'problem', problem: 'the file starts with a byte-order mark' };
   let documents = 0;
   for (const [i, l] of lines.entries()) {
-    if (/^\s*\t/.test(l.text) || /^ *\t/.test(l.text)) return { kind: 'problem', problem: 'the file indents with tabs' };
+    if (isContent(l.text) && l.text.includes('\t')) return { kind: 'problem', problem: 'the file uses tabs' };
     if (/^---(?:\s|$)/.test(l.text)) {
       documents += 1;
       if (documents > 1 || lines.slice(0, i).some((p) => isContent(p.text))) return { kind: 'problem', problem: 'the file holds more than one YAML document' };
@@ -112,6 +125,8 @@ function locate(lines: readonly Line[]): Located {
     if (/^\.\.\.(?:\s|$)/.test(l.text)) return { kind: 'problem', problem: 'the file holds more than one YAML document' };
   }
   const topLevel = lines.flatMap((l, i) => (isContent(l.text) && indentOf(l.text) === 0 && !/^---/.test(l.text) ? [i] : []));
+  // Every top-level line must be a plain `key:` this module reads; anything else (an explicit `?` key, a flow mapping) could be where the servers live.
+  if (topLevel.some((i) => parseKey(lines[i]!.text) === null)) return { kind: 'problem', problem: 'it has a top-level line this writer cannot read' };
   const servers = topLevel.filter((i) => parseKey(lines[i]!.text)?.key === SERVERS_KEY);
   if (servers.length > 1) return { kind: 'problem', problem: `${SERVERS_KEY} appears more than once` };
   if (servers.length === 0) return { kind: 'none' };

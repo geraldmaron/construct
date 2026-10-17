@@ -112,10 +112,20 @@ export function shownPath(w: ClientWiring, path: string): string {
   return w.scope === 'user' ? path : w.relativePath;
 }
 
-/** The project a user-level entry serves, read from its `--project=` argument, or null when it names none. */
-export function projectOfEntry(entry: Record<string, unknown>): string | null {
-  const arg = launchParts(entry).find((p) => p.startsWith('--project='));
-  return arg ? arg.slice('--project='.length) : null;
+/**
+ * Every project a user-level entry could serve: each `--project=<path>` and
+ * `--project <path>` argument, and its `cwd`. A binding is only this
+ * project's when every one of them names it.
+ */
+export function projectsOfEntry(entry: Record<string, unknown>): string[] {
+  const parts = launchParts(entry);
+  const named: string[] = [];
+  for (const [i, p] of parts.entries()) {
+    if (p.startsWith('--project=')) named.push(p.slice('--project='.length));
+    else if (p === '--project' && parts[i + 1] !== undefined) named.push(parts[i + 1]!);
+  }
+  if (typeof entry.cwd === 'string') named.push(entry.cwd);
+  return named;
 }
 
 function boundTo(client: WirableClient): (entry: Record<string, unknown>) => boolean {

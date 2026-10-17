@@ -6,7 +6,7 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import type { PathsEnv } from '../../kernel/paths.ts';
-import { clientWiring, configPathFor, launchFor, MCP_SERVER_NAME, projectOfEntry, shownPath, type ClientWiring, type WirableClient } from './clients.ts';
+import { clientWiring, configPathFor, launchFor, MCP_SERVER_NAME, projectsOfEntry, shownPath, type ClientWiring, type WirableClient } from './clients.ts';
 import { launchParts, mergeMcpServerEntry, readMcpServerEntry } from './merge-mcp.ts';
 import { mergeTomlServerTable, readTomlServerTable } from './merge-toml.ts';
 import { mergeYamlServerBlock, readYamlServerBlock } from './merge-yaml.ts';
@@ -35,18 +35,24 @@ function samePath(a: string, b: string): boolean {
   return real(a) === real(b);
 }
 
-/** For a user-level entry, the other project it already serves; null when it serves this one or names none. */
-function servesOtherProject(w: ClientWiring, entry: Record<string, unknown>, projectRoot: string): string | null {
+/**
+ * For a user-level entry, why it is not this project's: the other project it
+ * names, or that it names none (it would serve whatever directory the host
+ * starts in). Null when every project it names is this one.
+ */
+function foreignBinding(w: ClientWiring, entry: Record<string, unknown>, projectRoot: string): string | null {
   if (w.scope !== 'user') return null;
-  const project = projectOfEntry(entry);
-  return project !== null && !samePath(project, projectRoot) ? project : null;
+  const named = projectsOfEntry(entry);
+  if (named.length === 0) return `starts ${MCP_SERVER_NAME} without naming a project`;
+  const other = named.find((p) => !samePath(p, projectRoot));
+  return other === undefined ? null : `binds ${MCP_SERVER_NAME} to ${other}`;
 }
 
 /** The command and arguments the host file starts, or null when it has no construct entry with a command. */
 export function launchOf(client: WirableClient, projectRoot: string, env: PathsEnv): { command: string; args: string[] } | null {
   const w = clientWiring(client)!;
   const entry = readEntry(w, configPathFor(w, projectRoot, env));
-  if (!entry || servesOtherProject(w, entry, projectRoot) !== null) return null;
+  if (!entry || foreignBinding(w, entry, projectRoot) !== null) return null;
   const [command, ...rest] = Array.isArray(entry.command) ? entry.command.map(String) : typeof entry.command === 'string' ? [entry.command] : [];
   if (!command) return null;
   return { command, args: Array.isArray(entry.command) ? rest : Array.isArray(entry.args) ? entry.args.map(String) : [] };
@@ -64,8 +70,8 @@ export function inspectWiring(client: WirableClient, projectRoot: string, env: P
   const shown = shownPath(w, path);
   const entry = readEntry(w, path);
   if (!entry) return { client, path, status: 'absent', detail: `no ${MCP_SERVER_NAME} entry in ${shown}` };
-  const other = servesOtherProject(w, entry, projectRoot);
-  if (other !== null) return { client, path, status: 'absent', detail: `${shown} binds ${MCP_SERVER_NAME} to ${other}, not this project` };
+  const foreign = foreignBinding(w, entry, projectRoot);
+  if (foreign !== null) return { client, path, status: 'absent', detail: `${shown} ${foreign}, not this project` };
   if ((client === 'bob' && entry.disabled === true) || ((client === 'codex' || client === 'opencode' || client === 'hermes') && entry.enabled === false)) {
     return { client, path, status: 'broken', detail: `${shown} has construct disabled. Enable construct in ${w.label}'s MCP settings or this file, then restart the server.` };
   }
@@ -95,8 +101,8 @@ export function installWiring(client: WirableClient, projectRoot: string, env: P
       ? mergeYamlServerBlock(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), {
         // A user-level file serves one project; rebinding it would silently cut the other project off.
         conflict: (existing) => {
-          const other = servesOtherProject(w, existing, projectRoot);
-          return other === null ? null : `it already binds ${MCP_SERVER_NAME} to ${other}; one ${w.label} profile serves one Construct project, so run ${w.label} for this project with its own HERMES_HOME, or remove that entry first`;
+          const foreign = foreignBinding(w, existing, projectRoot);
+          return foreign === null ? null : `it already ${foreign}; one ${w.label} profile serves one Construct project, so run ${w.label} for this project with its own HERMES_HOME, or remove that entry first`;
         },
       })
       : mergeMcpServerEntry(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), { serversKey: w.serversKey });
