@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "product-management",
   "title": "Product management",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "capabilities": [
@@ -26,9 +26,5 @@
       "id": "decision-framing",
       "range": "^0.3.0"
     }
-  ],
-  "evals": [
-    "evals/fixtures.json",
-    "evals/behavior.json"
   ]
 }

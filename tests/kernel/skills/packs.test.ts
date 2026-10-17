@@ -1,7 +1,7 @@
 /**
  * tests/kernel/skills/packs.test.ts — every professional pack is a bundle of
- * obligations, doctrine with citations, procedure, templates, fixtures,
- * evals, limits, and one workflow that consumes it. Never a persona.
+ * obligations, doctrine with opened citations, procedure, templates, evals,
+ * limits, and one workflow that consumes it. Never a persona.
  */
 
 import { test } from 'node:test';
@@ -44,7 +44,7 @@ test('nine professional packs ship, each complete', () => {
     }
     assert.match(body, /[Ss]tand down/, `${id} says when to stand down`);
     assert.doesNotMatch(body, /\bpersona\b|you are a (senior|world-class|expert)|act as a/i, `${id} is not a persona prompt`);
-    for (const file of ['references/sources.md', 'references/obligations.md', 'evals/fixtures.json']) {
+    for (const file of ['references/sources.md', 'references/obligations.md', 'evals/evals.json', 'evals/trigger-queries.json']) {
       assert.ok(pack.files.includes(file), `${id} ships ${file}`);
     }
     assert.ok(
@@ -53,17 +53,13 @@ test('nine professional packs ship, each complete', () => {
     );
     const sources = text(id, 'references/sources.md');
     assert.ok((sources.match(/^- /gm) ?? []).length >= 4, `${id} cites at least four sources`);
-    assert.match(sources, /verified: not opened in this build/i, `${id} says plainly its citations were not re-opened`);
-    const fixtures = JSON.parse(text(id, 'evals/fixtures.json')) as {
-      cases: { kind: string; input: string; expect: Record<string, unknown> }[];
-    };
-    const kinds = new Set(fixtures.cases.map((c) => c.kind));
-    for (const k of ['positive', 'negative', 'edge', 'adversarial']) assert.ok(kinds.has(k), `${id} fixtures cover ${k}`);
+    for (const entry of sources.match(/^- .*$/gm) ?? []) {
+      assert.match(entry, /Opened \d{4}-\d{2}-\d{2}: /, `${id}: every cited source says when it was opened and what was confirmed`);
+    }
     assert.ok(pack.manifest.requiredValidators.length > 0, `${id} requires at least one validator wherever it is bound`);
     const consumer = workflows.list().find((w) => w.manifest.steps.some((s) => s.skill?.id === id));
     assert.ok(consumer, `${id} is consumed by a workflow`);
   }
-  assert.equal(skills.list().length, 17);
 });
 
 test('the governance pack never owns a licensed judgment and every pack refuses to invent doctrine', () => {

@@ -15,7 +15,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { safeEnvironment } from '../src/hosts/delegation/workspace.ts';
-import { PREREGISTRATION } from '../src/kernel/skills/live-evals.ts';
+import { PREREGISTRATION } from './live-evals.ts';
 import { codexProviderArgs } from '../src/hosts/codex-provider.ts';
 import { REVIEW_DISABLED_FEATURES, disableReviewMcp } from '../src/hosts/semantic-review.ts';
 export { CODEX_PROVIDER_KEYS, codexProvider, codexProviderFromConfig, codexProviderArgs } from '../src/hosts/codex-provider.ts';

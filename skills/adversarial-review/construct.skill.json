@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "adversarial-review",
   "title": "Adversarial review",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "category": "method",
   "owner": "geraldmaron/construct",
   "capabilities": [
@@ -15,8 +15,5 @@
     "citations_present",
     "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "evals": [
-    "evals/behavior.json"
-  ]
+  "skillDependencies": []
 }

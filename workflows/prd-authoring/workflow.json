@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "prd-authoring",
   "title": "Write a PRD",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "purpose": "Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -214,6 +214,5 @@
   },
   "proposes": [
     "lessons"
-  ],
-  "evals": []
+  ]
 }

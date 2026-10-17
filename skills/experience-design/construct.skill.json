@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "experience-design",
   "title": "Experience design",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "capabilities": [
@@ -17,9 +17,5 @@
     "no_uncited_material_findings",
     "deliverable_complete"
   ],
-  "skillDependencies": [],
-  "evals": [
-    "evals/fixtures.json",
-    "evals/behavior.json"
-  ]
+  "skillDependencies": []
 }

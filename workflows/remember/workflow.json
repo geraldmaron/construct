@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "remember",
   "title": "Remember one thing",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "purpose": "Record a decision, constraint, principle, note, or outcome in the person's own wording as one statement, with project binding, timestamp, and provenance. Nothing else is created.",
   "interactionClass": "remember",
   "inputSchema": {
@@ -60,6 +60,5 @@
     "schema": "statement/v1",
     "challenge": false
   },
-  "proposes": [],
-  "evals": []
+  "proposes": []
 }

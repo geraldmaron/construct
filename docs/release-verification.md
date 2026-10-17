@@ -115,7 +115,7 @@ The experimental-alpha exception below is a separate release tier, not a full
 record or a relaxation of these qualification standards. The
 record names each host, its version, the model, and the hosts left
 unmeasured. `check` passes a smoke or full record. It fails when
-`skills/evals/intake-live.json` is absent or is a baseline-scope record,
+`evals/intake/intake-live.json` is absent or is a baseline-scope record,
 when the corpus or the model-facing text changed since it was recorded, when
 a gated cell is missing, or when a verdict fails. Claude Code and Codex are
 always measured; only Cursor, VS Code, OpenCode, and Bob may be listed as
@@ -126,7 +126,7 @@ authorized host access on subscriptions only. No current full qualifying record
 exists. Diagnostic trials and finite experimental controls do not substitute
 for that matrix; `check --cut` fails until its required evidence is present.
 
-The corpus, `skills/evals/intake.json`, is committed, and the suite checks
+The corpus, `evals/intake/intake.json`, is committed, and the suite checks
 every gold reading with classify_request's own validator. Two model families
 labeled only its 48 cases from the typed-intake design work, which stay in
 the tune split. The routing cases and the authored cases carry Claude's
