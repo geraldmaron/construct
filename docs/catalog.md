@@ -11,23 +11,23 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 
 | Skill | Version | Category | When it applies |
 |---|---|---|---|
-| `adversarial-review` | 0.3.2 | method | Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. |
-| `construct` | 3.1.1 | operational | Construct is bound to this project. |
-| `context-mapping` | 0.4.2 | method | Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. |
-| `decision-framing` | 0.3.2 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
-| `experience-design` | 1.0.2 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |
-| `governance-risk` | 1.0.3 | professional | Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. |
-| `intake` | 0.3.1 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
-| `investigative-research` | 0.3.4 | method | Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. |
-| `operations-reliability` | 1.0.2 | professional | Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. |
-| `product-management` | 1.0.3 | professional | Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. |
-| `program-delivery` | 1.0.2 | professional | Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it. |
-| `requirements-structuring` | 0.5.2 | method | Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like. |
-| `security-privacy` | 1.0.2 | professional | Defensive review of threat model, access, secrets, data handling, and privacy, with fixes. |
-| `software-engineering` | 1.0.2 | professional | Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability. |
-| `strategy-research` | 1.0.2 | professional | Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs. |
-| `system-architecture` | 1.0.2 | professional | Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths. |
-| `written-voice` | 0.5.1 | method | One plain, direct house voice for prose: what it says, for whom, and nothing decorative. |
+| `adversarial-review` | 0.3.3 | method | Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. |
+| `construct` | 3.1.2 | operational | Construct is bound to this project. |
+| `context-mapping` | 0.4.3 | method | Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. |
+| `decision-framing` | 0.3.3 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
+| `experience-design` | 1.0.3 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |
+| `governance-risk` | 1.0.4 | professional | Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. |
+| `intake` | 0.3.2 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
+| `investigative-research` | 0.3.5 | method | Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. |
+| `operations-reliability` | 1.0.3 | professional | Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. |
+| `product-management` | 1.0.4 | professional | Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. |
+| `program-delivery` | 1.0.3 | professional | Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it. |
+| `requirements-structuring` | 0.5.3 | method | Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like. |
+| `security-privacy` | 1.0.3 | professional | Defensive review of threat model, access, secrets, data handling, and privacy, with fixes. |
+| `software-engineering` | 1.0.3 | professional | Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability. |
+| `strategy-research` | 1.0.3 | professional | Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs. |
+| `system-architecture` | 1.0.3 | professional | Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths. |
+| `written-voice` | 0.5.2 | method | One plain, direct house voice for prose: what it says, for whom, and nothing decorative. |
 
 ## Workflows
 
@@ -46,7 +46,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `operational-readiness-review` | 1.0.2 | manage | manual, schedule | gather → checks → review → record | Review a service or change for objectives, signals, on-call, runbooks, rollback, and capacity against the project's risk posture, citing configs and records; anything without a way to notice failure and a way back is reported as not ready. |
 | `prd-authoring` | 1.1.2 | manage | manual | gather → draft → challenge → record | Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back. |
 | `product-requirements-review` | 1.0.2 | manage | manual, schedule | gather → checks → review → record | Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person. |
-| `project-bootstrap` | 1.0.2 | manage | manual, schedule | discover → review → record | Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow. |
+| `project-bootstrap` | 1.0.3 | manage | manual, schedule | discover → review → record | Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow. |
 | `proposal-authoring` | 1.1.2 | manage | manual | gather → draft → challenge → record | Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back. |
 | `publish-deliverable` | 1.0.1 | manage | manual | prepare → publish → record | Put a finished deliverable where its readers are (a wiki page, a doc, a tracker), through the host's own connector, after the person approves the exact write and clears the material for its audience when it rests on confidential or restricted sources; record where it went. |
 | `remember` | 1.0.1 | remember | manual | record | Record a decision, constraint, principle, note, or outcome in the person's own wording as one statement, with project binding, timestamp, and provenance. Nothing else is created. |

@@ -10,7 +10,7 @@ description: >-
   whether to build it.
 license: Apache-2.0
 metadata:
-  version: 0.5.2
+  version: 0.5.3
   source: geraldmaron/construct
 ---
 

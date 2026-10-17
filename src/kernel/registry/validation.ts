@@ -4,7 +4,7 @@
  * and its Construct manifest.
  */
 
-import { ACTION_TIERS, type ActionTier } from '../state/steps.ts';
+import { ACTION_TIERS } from '../state/steps.ts';
 import { isRange, isVersion } from './semver.ts';
 import {
   INPUT_TYPES,
@@ -113,9 +113,8 @@ function capabilities(r: Record<string, unknown>, key: string, path: string): st
   return list;
 }
 
-function tiers(r: Record<string, unknown>, key: string, path: string): ActionTier[] {
-  return strList(r, key, path, { optional: true }).map((t) => oneOf(t, ACTION_TIERS, path, key));
-}
+/** Every field a skill manifest may carry: each is read by the resolver, the registry lock, or qualification. */
+export const SKILL_MANIFEST_KEYS = ['format', 'formatVersion', 'id', 'title', 'version', 'category', 'owner', 'capabilities', 'maxTier', 'requiredValidators', 'skillDependencies', 'evals'] as const;
 
 export function validateSkillManifest(raw: unknown, path: string): SkillManifest {
   const r = rec(raw, path, 'the manifest');
@@ -123,32 +122,14 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
     throw new ManifestError(path, `must carry format ${SKILL_MANIFEST_FORMAT} ${String(SKILL_MANIFEST_VERSION)}`);
   }
   refuseTriggerPhrases(r, path, 'the host model reads the SKILL.md description to judge when the skill applies');
+  // Only fields something enforces belong here; the method, its limits and what it produces are SKILL.md's to say.
+  for (const key of Object.keys(r)) {
+    if (!(SKILL_MANIFEST_KEYS as readonly string[]).includes(key)) throw new ManifestError(path, `"${key}" is not a skill manifest field; the fields are ${SKILL_MANIFEST_KEYS.join(', ')}, and anything else belongs in SKILL.md`);
+  }
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
   if (!isVersion(version)) throw new ManifestError(path, '"version" must be a semantic version');
-  const gates = (() => {
-    const v = r.qualityGates;
-    if (v === undefined) return [];
-    if (!Array.isArray(v)) throw new ManifestError(path, '"qualityGates" must be a list');
-    return v.map((g, i) => {
-      const gate = rec(g, path, `"qualityGates[${String(i)}]"`);
-      return { validator: str(gate, 'validator', path), appliesTo: str(gate, 'appliesTo', path), required: bool(gate, 'required', path, true) };
-    });
-  })();
-  const observed = (() => {
-    const v = r.observedOn;
-    if (v === undefined) return [];
-    if (!Array.isArray(v)) throw new ManifestError(path, '"observedOn" must be a list');
-    return v.map((o, i) => {
-      const ob = rec(o, path, `"observedOn[${String(i)}]"`);
-      const note = str(ob, 'note', path);
-      if (/\b(works|passes|succeeds|verified)\b/i.test(note) && !/\b(on|dated|run)\b/i.test(note)) {
-        throw new ManifestError(path, `"observedOn[${String(i)}].note" claims success without naming the run or date that showed it`);
-      }
-      return { host: str(ob, 'host', path), model: str(ob, 'model', path), note };
-    });
-  })();
   return {
     format: SKILL_MANIFEST_FORMAT,
     formatVersion: SKILL_MANIFEST_VERSION,
@@ -157,21 +138,10 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
     version,
     category: oneOf(str(r, 'category', path), ['method', 'operational', 'professional'] as const, path, 'category'),
     owner: str(r, 'owner', path),
-    interactionClasses: strList(r, 'interactionClasses', path, { nonEmpty: true }).map((c) => oneOf(c, INTERACTION_CLASSES, path, 'interactionClasses')),
-    outcomes: strList(r, 'outcomes', path, { optional: true }),
-    deliverableTypes: strList(r, 'deliverableTypes', path, { optional: true }),
-    inputs: strList(r, 'inputs', path, { optional: true }),
-    outputSchemas: strList(r, 'outputSchemas', path, { optional: true }),
-    requiredSourceTypes: strList(r, 'requiredSourceTypes', path, { optional: true }),
-    minimumEvidence: str(r, 'minimumEvidence', path, { optional: true }),
     capabilities: capabilities(r, 'capabilities', path),
-    actionTiers: tiers(r, 'actionTiers', path),
+    maxTier: oneOf(str(r, 'maxTier', path), ACTION_TIERS, path, 'maxTier'),
+    requiredValidators: strList(r, 'requiredValidators', path, { optional: true }),
     skillDependencies: deps(r, 'skillDependencies', path),
-    workflowDependencies: deps(r, 'workflowDependencies', path),
-    qualityGates: gates,
-    escalation: strList(r, 'escalation', path, { optional: true }),
-    licensedReviewBoundaries: strList(r, 'licensedReviewBoundaries', path, { optional: true }),
-    observedOn: observed,
     evals: strList(r, 'evals', path, { optional: true }),
   };
 }

@@ -3,59 +3,18 @@
   "formatVersion": 1,
   "id": "investigative-research",
   "title": "Investigative research",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "category": "method",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage"
-  ],
-  "outcomes": [
-    "a verified finding with sources classed and independence checked"
-  ],
-  "deliverableTypes": [
-    "report/research"
-  ],
-  "inputs": [
-    "the claim or question",
-    "the records and material provided or reachable through declared sources"
-  ],
-  "outputSchemas": [
-    "report/research/v1"
-  ],
-  "requiredSourceTypes": [
-    "docs",
-    "directory",
-    "github",
-    "jira",
-    "other"
-  ],
-  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
     "read_source",
     "read_project_context",
     "model_review"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "project_write",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings"
   ],
-  "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a load-bearing claim that cannot be cited is marked unverified, never asserted"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": []
+  "skillDependencies": []
 }

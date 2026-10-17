@@ -4,7 +4,7 @@
   "evals": [],
   "id": "project-bootstrap",
   "title": "Project bootstrap and constitution review",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "purpose": "Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -79,7 +79,8 @@
       ],
       "validators": [
         "constitution_shape",
-        "citations_present"
+        "citations_present",
+        "deliverable_complete"
       ],
       "loadBearing": true,
       "challenge": true,

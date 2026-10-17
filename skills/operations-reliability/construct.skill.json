@@ -3,65 +3,21 @@
   "formatVersion": 1,
   "id": "operations-reliability",
   "title": "Operations and reliability",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "an operational readiness review naming objectives, signals, on-call, runbooks, rollback, and capacity",
-    "a blameless postmortem with timeline, contributing factors, and actions with owners"
-  ],
-  "deliverableTypes": [
-    "review/operational-readiness",
-    "record/postmortem"
-  ],
-  "inputs": [
-    "the service, change, or incident under review",
-    "monitoring, alerting, and incident sources the project declares",
-    "the confirmed risk posture and review cadence"
-  ],
-  "outputSchemas": [
-    "operations-reliability/review/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every objective, alert, and capacity claim cites a dashboard, config, runbook, or incident record; a runbook nobody has run is marked untested",
   "capabilities": [
     "read_project_context",
     "read_source",
     "read_project_files"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "draft",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings",
+    "deliverable_complete"
   ],
   "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a change with no rollback and no way to notice failure is reported as not ready, whatever the launch date",
-    "an incident with a security or privacy dimension is handed to security-privacy before the postmortem is closed"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
   "evals": [
     "evals/fixtures.json",
     "evals/behavior.json"

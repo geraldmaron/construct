@@ -3,65 +3,21 @@
   "formatVersion": 1,
   "id": "system-architecture",
   "title": "System architecture",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "interactionClasses": [
-    "manage",
-    "maintain"
-  ],
-  "outcomes": [
-    "an architecture review naming boundaries, coupling, failure modes, and reversibility",
-    "an architecture decision record a later reader can audit"
-  ],
-  "deliverableTypes": [
-    "review/architecture",
-    "record/adr"
-  ],
-  "inputs": [
-    "the design, diagram, or decision under review",
-    "the confirmed architectural boundaries and invariants",
-    "the systems and data the design touches"
-  ],
-  "outputSchemas": [
-    "system-architecture/review/v1"
-  ],
-  "requiredSourceTypes": [],
-  "minimumEvidence": "every boundary, dependency, and data-ownership claim cites a document, diagram, or code component; a claimed property nobody measured is marked unmeasured",
   "capabilities": [
     "read_project_files",
     "read_project_context",
     "read_source"
   ],
-  "actionTiers": [
-    "observe",
-    "draft"
+  "maxTier": "project_write",
+  "requiredValidators": [
+    "citations_present",
+    "no_uncited_material_findings",
+    "deliverable_complete"
   ],
   "skillDependencies": [],
-  "workflowDependencies": [],
-  "qualityGates": [
-    {
-      "validator": "citations_present",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "no_uncited_material_findings",
-      "appliesTo": "deliverable",
-      "required": true
-    },
-    {
-      "validator": "deliverable_complete",
-      "appliesTo": "deliverable",
-      "required": true
-    }
-  ],
-  "escalation": [
-    "a design that changes who may reach what, or moves sensitive data, is handed to security-privacy",
-    "a decision whose reversal cost exceeds what the person has accepted is raised as a decision, not made"
-  ],
-  "licensedReviewBoundaries": [],
-  "observedOn": [],
   "evals": [
     "evals/fixtures.json",
     "evals/behavior.json"
