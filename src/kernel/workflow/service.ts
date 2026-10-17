@@ -3368,6 +3368,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (!run) throw new Error(`no run ${runId}`);
         const workflow = deps.workflows.get(run.workflowId);
         const immediate = workflow?.manifest.cancellation !== 'after_step';
+        // A lease that ran out is not a step in progress: its holder is gone, so nothing is waited for.
+        expireDeadLeases(store, at, runId);
         setCancelRequested(store, runId, at);
         for (const s of listSteps(store, runId)) {
           if (s.state === 'pending' || s.state === 'ready' || s.state === 'waiting_for_decision')
