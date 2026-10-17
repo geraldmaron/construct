@@ -2,7 +2,7 @@
  * tests/kernel/workflow/quality-validators.test.ts — the grounding and
  * quality floors: citations name real things, artifacts exist, figures come
  * from what was cited, templates are followed, conflicts and supersession are
- * said out loud, and a proposal ends in a decision someone owns.
+ * declared as data, and a proposal ends in a decision someone owns.
  */
 
 import { test } from 'node:test';
@@ -33,7 +33,6 @@ writeFileSync(
 writeFileSync(join(root, 'docs', 'fabricated.md'), '# PRD\nNorthwind is worth $2.4M ARR.\n');
 writeFileSync(join(root, 'docs', 'old.md'), 'old strategy');
 writeFileSync(join(root, 'docs', 'proposal.md'), '# Proposal\n## Decision needed\nSam Ortiz decides by Oct 15 whether to fund webhooks.\n');
-writeFileSync(join(root, 'docs', 'proposal-day-first.md'), '# Proposal\n## Decision\nSam Ortiz decides before 16 October.\n');
 writeFileSync(
   join(root, 'docker-compose.yml'),
   'services:\n  ledger:\n    image: postgres:16\n    ports:\n      - "5432:5432"\n  checkout:\n    ports:\n      - "8080:8080"\n',
@@ -174,7 +173,7 @@ test('excerpts must appear in what they cite; at least one citation must hold co
   assert.equal(recorded!.ok, false, 'an item recorded with empty text holds nothing to check');
 });
 
-test('conflicts cite both sides; a superseded document is named as superseded where it is used', () => {
+test('conflicts cite both sides; a superseded citation needs its typed replacement', () => {
   assert.equal(run(['conflicts_declared'], { output: {} }).conflicts_declared!.length, 1);
   assert.deepEqual(run(['conflicts_declared'], { output: { conflicts: [] } }).conflicts_declared, []);
   assert.equal(
@@ -182,37 +181,56 @@ test('conflicts cite both sides; a superseded document is named as superseded wh
       .length,
     1,
   );
-  const silent = run(['superseded_acknowledged'], { output: { summary: 'strategy says no webhooks' }, evidence: [{ ref: 'docs/old.md' }] });
+  const silent = run(['superseded_acknowledged'], {
+    output: { summary: 'old.md is superseded by new.md' },
+    evidence: [{ ref: 'docs/old.md' }],
+  });
   assert.equal(silent.superseded_acknowledged!.length, 1);
   const said = run(['superseded_acknowledged'], {
-    output: { summary: 'old.md is superseded by new.md' },
+    output: { summary: 'strategy history', superseded: [{ ref: 'docs/old.md', replacedBy: 'new.md' }] },
     evidence: [{ ref: 'docs/old.md' }],
   });
   assert.deepEqual(said.superseded_acknowledged, []);
 });
 
-test('a proposal ends in a decision that names who decides and by when', () => {
-  const ok = run(['decision_ask_present'], {
-    output: { artifact: 'docs/proposal.md' },
-    input: { audience: 'Sam Ortiz', decisionBy: 'Oct 15' },
-  });
-  assert.deepEqual(ok.decision_ask_present, []);
-  const wrong = run(['decision_ask_present'], { output: { artifact: 'docs/proposal.md' }, input: { audience: 'Dana Okafor' } });
-  assert.equal(wrong.decision_ask_present!.length, 1);
+test('a proposal needs a typed ask, decider and date, even when its artifact states a decision', () => {
+  const decision = { ask: 'Fund webhooks', decider: 'Sam Ortiz', by: '2026-10-15' };
+  const check = (output: unknown, input: unknown = {}) => run(['decision_ask_present'], { output, input }).decision_ask_present!;
+  assert.equal(check({ artifact: 'docs/proposal.md' }).length, 1, 'a prose decision does not supply the typed fields');
+  assert.deepEqual(check({ decision }), [], 'a complete decision needs no audience input');
+  assert.deepEqual(check({ decision }, { audience: 'sam ortiz' }), [], 'audience matching ignores case');
+  for (const field of ['ask', 'decider', 'by']) {
+    const incomplete: Record<string, unknown> = { ...decision };
+    delete incomplete[field];
+    assert.equal(check({ decision: incomplete }).length, 1, `missing ${field} fails`);
+    assert.equal(check({ decision: { ...decision, [field]: ' ' } }).length, 1, `blank ${field} fails`);
+  }
+  assert.match(check({ decision }, { audience: 'Dana Okafor' })[0]!, /decision.decider.*audience/);
 });
 
-test('a decisionBy given as a date is found however the decision section writes the day', () => {
-  const by = (artifact: string, decisionBy: string) =>
-    run(['decision_ask_present'], { output: { artifact }, input: { audience: 'Sam Ortiz', decisionBy } }).decision_ask_present;
-  assert.deepEqual(by('docs/proposal.md', '2026-10-15'), [], '"Oct 15" names 2026-10-15');
-  assert.deepEqual(by('docs/proposal-day-first.md', '2026-10-16'), [], '"16 October" names 2026-10-16');
-  assert.deepEqual(by('docs/proposal.md', '2026-10-01'), ['the decision section does not say by when'], '"Oct 15" does not name October 1');
-  assert.deepEqual(by('docs/proposal.md', '2026-11-15'), ['the decision section does not say by when'], 'another month is another day');
-  assert.deepEqual(
-    by('docs/proposal.md', 'next sprint'),
-    ['the decision section does not say by when'],
-    'a free-text deadline is matched as written',
-  );
+test('a typed decision date must be YYYY-MM-DD and match decisionBy when given', () => {
+  const by = (date: string, decisionBy?: string) =>
+    run(['decision_ask_present'], {
+      output: { decision: { ask: 'Fund webhooks', decider: 'Sam Ortiz', by: date } },
+      input: { audience: 'Sam Ortiz', ...(decisionBy ? { decisionBy } : {}) },
+    }).decision_ask_present!;
+  assert.deepEqual(by('2026-10-15', '2026-10-15'), []);
+  assert.deepEqual(by('2026-10-16', '2026-10-16'), []);
+  for (const date of ['Oct 15', '16 October', 'next sprint', '2026-13-15', '2026-10-15T00:00:00Z'])
+    assert.match(by(date)[0]!, /not a YYYY-MM-DD date/, date);
+  for (const due of ['2026-10-01', '2026-11-15']) assert.match(by('2026-10-15', due)[0]!, /decision.by.*decision is due/);
+});
+
+test('typed supersession rejects current documents and incorrect replacements', () => {
+  const check = (superseded: unknown) =>
+    run(['superseded_acknowledged'], {
+      output: { superseded },
+      evidence: [{ ref: 'docs/old.md' }],
+    }).superseded_acknowledged!;
+  assert.deepEqual(check([{ ref: 'docs/old.md', replacedBy: 'new.md' }]), []);
+  assert.match(check([{ ref: 'docs/old.md', replacedBy: 'other.md' }])[0]!, /it is replaced by new.md/);
+  assert.match(check([{ ref: 'docs/old.md' }])[0]!, /it is replaced by new.md/);
+  assert.ok(check([{ ref: 'docs/metrics.md', replacedBy: 'new.md' }]).some((p) => p.includes('not superseded here')));
 });
 
 test('a step that declares the files it changed may honestly change none; one that names none otherwise still fails', () => {

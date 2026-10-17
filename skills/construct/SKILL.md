@@ -12,7 +12,7 @@ description: >-
   plainly and record nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.2.1
+  version: 3.2.2
   source: geraldmaron/construct
 ---
 
@@ -56,7 +56,10 @@ Never promote a question into work, or a note into a run.
 
 After `start_outcome`, loop: `claim_work` for the next step and its method,
 do it here, then `submit_work` with the declared outputs and the evidence you
-read. A failed call completed nothing: repair the input from its recovery
+read. Some checks read typed fields the packet names: `setAside` (settled
+statements the work knowingly discusses), `superseded` (`{ref, replacedBy}`)
+and `decision` (`{ask, decider, by}`); fill them as data, never as prose,
+and pass `setAside` and `superseded` to `check_answer` too. A failed call completed nothing: repair the input from its recovery
 schema and retry before moving on. When `claim_work` returns a decision, put
 it to the person in plain words and relay their answer with `decide`.
 

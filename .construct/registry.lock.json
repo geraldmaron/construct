@@ -8,8 +8,8 @@
       "origin": "builtin"
     },
     "construct": {
-      "version": "3.2.1",
-      "digest": "sha256:37d4756dfb74aff9c4c7a5f87c39bbf6e48fd2c1e6f223a3a55a8e35cc210d8c",
+      "version": "3.2.2",
+      "digest": "sha256:80ae19ee796f67cbf4712052d0dd295e3390688b38d4e25ac0c954a7cd8cd605",
       "origin": "builtin"
     },
     "context-mapping": {

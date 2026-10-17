@@ -1,6 +1,6 @@
 /**
  * tests/kernel/workflow/contract.test.ts — every shipped step's declared
- * outputs satisfy the validators bound to it, so following the instructions
+ * outputs and typed validator fields satisfy the validators bound to it, so following the instructions
  * is enough to pass.
  */
 
@@ -12,8 +12,8 @@ import { satisfies } from '../../../src/kernel/registry/semver.ts';
 import { runValidators } from '../../../src/kernel/workflow/validators.ts';
 import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 
-/** Every cited file exists, Construct opened it, and it carries a decision section saying who decides by when. */
-const DESIGN = '# Design\n\n## Decision\nLeadership decides by Friday.\n';
+/** Every cited file exists and Construct opened it; decisions are submitted as typed fields. */
+const DESIGN = '# Design\n\nThe design under review.\n';
 const resolve: RefResolver = (ref) =>
   ref.startsWith('deliverable:')
     ? { ref, kind: 'deliverable', provenance: 'witnessed' }
@@ -40,12 +40,15 @@ const LIST_KEYS = new Set([
   'claims',
   'conflicts',
   'derivations',
+  'setAside',
+  'superseded',
 ]);
 
 function stub(keys: readonly string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of keys) {
     if (LIST_KEYS.has(k)) out[k] = [];
+    else if (k === 'decision') out[k] = { ask: 'Approve the design', decider: 'Leadership', by: '2026-10-15' };
     else if (k === 'verification') out[k] = { result: 'Inspected declared outputs against the cited design record.' };
     else if (k === 'passed' || k === 'noDrift') out[k] = true;
     else if (k === 'artifact') out[k] = 'docs/design.md';
@@ -56,7 +59,7 @@ function stub(keys: readonly string[]): Record<string, unknown> {
   return out;
 }
 
-test('submitting exactly the declared outputs of every shipped step passes its validators', () => {
+test('submitting every shipped step’s declared outputs with its typed validator fields passes', () => {
   const workflows = createWorkflowRegistry({ projectDir: null });
   // Two independent places, so a step that asks for more than one source can be satisfied by declared outputs alone.
   const evidence = [{ ref: 'docs/design.md' }, { ref: 'notes/review.md' }];
@@ -64,7 +67,14 @@ test('submitting exactly the declared outputs of every shipped step passes its v
   const misses: string[] = [];
   for (const w of workflows.list()) {
     for (const step of w.manifest.steps) {
-      const output = stub(step.outputs);
+      // Manifests are migrating separately; supply the typed fields each bound validator reads as well as every declared output.
+      const fields = [
+        ...step.outputs,
+        ...(step.validators.includes('decision_ask_present') ? ['decision'] : []),
+        ...(step.validators.includes('settled_not_contradicted') ? ['setAside'] : []),
+        ...(step.validators.includes('superseded_acknowledged') ? ['superseded'] : []),
+      ];
+      const output = stub(fields);
       const results = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs: refs, resolve });
       for (const r of results) {
         if (!r.ok) misses.push(`${w.manifest.id}.${step.id} ${r.validator}: ${r.problems.join('; ')}`);

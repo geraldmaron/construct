@@ -92,10 +92,6 @@ export function higherSensitivity(a: string | null | undefined, b: string | null
   return rank(a) >= rank(b) ? (a ?? null) : (b ?? null);
 }
 
-/** Words that, in the same sentence, mean a settled-against term is being discussed rather than asserted. */
-const ACKNOWLEDGED =
-  /supersed|no longer|reopen|re-open|conflict|contradict|instead of|rather than|rejected|replaced|previously|was decided against|not use|n't use|\bnot\b|\bnever\b/i;
-
 const YEAR = /^(?:19|20)\d\d$/;
 const NUMBER = /(?<![\w.\-/:#])[$€£]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|[kKmMbB]\b|ms\b|h\b|x\b))?(?![\w\-:])/g;
 
@@ -294,33 +290,6 @@ function realPath(path: string): string {
   } catch {
     return path;
   }
-}
-
-const MONTH_NAMES = [
-  'january',
-  'february',
-  'march',
-  'april',
-  'may',
-  'june',
-  'july',
-  'august',
-  'september',
-  'october',
-  'november',
-  'december',
-] as const;
-
-/** Whether text names the day asked for: a YYYY-MM-DD date as written, or as "October 16", "Oct 16" or "16 October"; anything else as written. */
-function namesDay(text: string, by: string): boolean {
-  if (text.toLowerCase().includes(by.toLowerCase())) return true;
-  const iso = /^\d{4}-(\d{2})-(\d{2})$/.exec(by);
-  const month = iso ? MONTH_NAMES[Number(iso[1]) - 1] : undefined;
-  const day = iso ? Number(iso[2]) : 0;
-  if (!month || day < 1 || day > 31) return false;
-  const name = `(?:${month}|${month.slice(0, 3)}${month === 'september' ? '|sept' : ''})`;
-  const date = `0?${String(day)}(?:st|nd|rd|th)?`;
-  return new RegExp(`\\b${name}\\.?\\s+${date}\\b|\\b${date}\\s+${name}\\b`, 'i').test(text);
 }
 
 function headings(text: string): string[] {
@@ -860,39 +829,41 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   },
   superseded_acknowledged: ({ output, evidence, resolve }) => {
     if (!resolve) return [];
-    const text = strings(output).join('\n').toLowerCase();
+    // The host lists each superseded document it relied on, with what replaces it, in "superseded": [{ref, replacedBy}].
+    const listed = isRecord(output) && Array.isArray(output.superseded) ? output.superseded.filter(isRecord) : [];
     const problems: string[] = [];
+    for (const entry of listed) {
+      const ref = typeof entry.ref === 'string' ? entry.ref : '';
+      const r = ref ? resolve(ref) : null;
+      if (!r?.supersededBy) problems.push(`"superseded" lists ${JSON.stringify(ref)}, which is not superseded here`);
+      else if (entry.replacedBy !== r.supersededBy)
+        problems.push(`"superseded" says ${ref} is replaced by ${JSON.stringify(entry.replacedBy)}; it is replaced by ${r.supersededBy}`);
+    }
     for (const e of evidence) {
       const r = resolve(e.ref);
-      if (!r?.supersededBy) continue;
-      const name = (r.itemRef ?? e.ref).toLowerCase();
-      const base = name.slice(name.lastIndexOf('/') + 1).replace(/\.[a-z]+$/, '');
-      // People name documents by their leading words: "ADR-004" for adr-004-retry-policy.md.
-      const parts = base.split(/[-_ ]/);
-      const names = [name, base, ...parts.map((_, i) => parts.slice(0, i + 1).join('-')).filter((p, i) => i >= 1 && p.length >= 5)];
-      const flagged = /supersed|replaced|outdated|obsolete|no longer (?:valid|current|applies)/.test(text);
-      if (!flagged || !names.some((n) => text.includes(n) || text.includes(n.replace(/-/g, ' ')))) {
-        problems.push(`"${e.ref}" is superseded by ${r.supersededBy}; say so where it is used, or cite the document that replaces it`);
-      }
+      if (!r?.supersededBy || listed.some((entry) => entry.ref === e.ref)) continue;
+      problems.push(
+        `"${e.ref}" is superseded by ${r.supersededBy}; list it in "superseded" as {ref, replacedBy}, or cite the document that replaces it`,
+      );
     }
     return problems;
   },
-  decision_ask_present: ({ output, input, resolve }) => {
-    const [artifact] = artifactPaths(output);
-    const text = artifact ? resolve?.(artifact, 'artifact')?.text : undefined;
-    if (!text) return ['the output names no readable artifact to check for the decision being asked'];
-    const lines = text.split('\n');
-    const start = lines.findIndex((l) => /^#{1,6}\s.*\bdecision\b/i.test(l));
-    if (start === -1) return ['the artifact has no section that states the decision being asked for'];
-    const end = lines.findIndex((l, i) => i > start && /^#{1,6}\s/.test(l));
-    const section = lines.slice(start, end === -1 ? undefined : end).join('\n');
+  decision_ask_present: ({ output, input }) => {
+    // The host states the ask as data in "decision": {ask, decider, by}, with by a YYYY-MM-DD date.
+    const d = isRecord(output) && isRecord(output.decision) ? output.decision : null;
+    if (!d) return ['the output has no "decision": {ask, decider, by} stating the decision being asked for, who decides and by when'];
     const problems: string[] = [];
+    if (typeof d.ask !== 'string' || !d.ask.trim()) problems.push('"decision.ask" is empty; state the decision being asked for');
     const audience = isRecord(input) && typeof input.audience === 'string' ? input.audience.trim() : '';
-    const by = isRecord(input) && typeof input.decisionBy === 'string' ? input.decisionBy.trim() : '';
-    if (audience && !section.toLowerCase().includes(audience.toLowerCase()))
-      problems.push(`the decision section does not name who decides (${audience})`);
-    if (by ? !namesDay(section, by) : !/\b(?:by|before|no later than)\b/i.test(section))
-      problems.push('the decision section does not say by when');
+    const decider = typeof d.decider === 'string' ? d.decider.trim() : '';
+    if (!decider) problems.push('"decision.decider" is empty; name who decides');
+    else if (audience && decider.toLowerCase() !== audience.toLowerCase())
+      problems.push(`"decision.decider" is ${JSON.stringify(decider)}, but this run's audience is ${JSON.stringify(audience)}`);
+    const by = typeof d.by === 'string' ? d.by.trim() : '';
+    const asked = isRecord(input) && typeof input.decisionBy === 'string' ? input.decisionBy.trim() : '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(by) || Number.isNaN(Date.parse(`${by}T00:00:00Z`)))
+      problems.push('"decision.by" is not a YYYY-MM-DD date');
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(asked) && by !== asked) problems.push(`"decision.by" is ${by}, but the decision is due ${asked}`);
     return problems;
   },
   sources_diverse: ({ evidence, resolve }) => {
@@ -932,24 +903,26 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   },
   settled_not_contradicted: ({ output, settled, resolve }) => {
     if (!settled || settled.length === 0) return [];
+    // The host lists the settled statements it knowingly sets aside or discusses, by id, in "setAside".
+    const setAside =
+      isRecord(output) && Array.isArray(output.setAside) ? output.setAside.filter((x): x is string => typeof x === 'string') : [];
+    const problems: string[] = [];
+    for (const id of setAside) {
+      if (!settled.some((s) => s.statementId === id))
+        problems.push(`"setAside" names ${JSON.stringify(id)}, which is not a statement settled for this run`);
+    }
     const texts = strings(output);
     for (const p of artifactPaths(output)) {
       const t = resolve?.(p, 'artifact')?.text;
       if (t) texts.push(t);
     }
-    const problems: string[] = [];
     for (const { term, statementId } of settled) {
+      if (setAside.includes(statementId)) continue;
       const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]')}\\b`, 'i');
-      for (const text of texts) {
-        const sentences = text.split(/(?<=[.!?\n])\s+/);
-        const hit = sentences.find((sn) => re.test(sn) && !ACKNOWLEDGED.test(sn) && !sn.includes(statementId));
-        if (hit) {
-          problems.push(
-            `"${term}" is stated as current, but the person settled against it (statement:${statementId}); say it was decided against, or name the conflict and cite the statement`,
-          );
-          break;
-        }
-      }
+      if (texts.some((t) => re.test(t)))
+        problems.push(
+          `"${term}" appears, and the person settled against it (statement:${statementId}); if the work knowingly sets that decision aside or discusses it, list ${statementId} in "setAside"; otherwise remove the term`,
+        );
     }
     return problems;
   },

@@ -10,7 +10,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { TOOLS } from '../../../src/kernel/broker/tools.ts';
+import { TOOLS, projectResolver } from '../../../src/kernel/broker/tools.ts';
+import { runValidators } from '../../../src/kernel/workflow/validators.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import { addSource } from '../../../src/kernel/state/sources.ts';
 import { listRuns } from '../../../src/kernel/state/runs.ts';
@@ -288,7 +289,23 @@ test('what the person settled governs: a document they confirm is outdated is en
       answer: 'ADR-004 said 3 retries within an hour, but it is superseded by INT-203.',
       citations: cite,
     });
-    assert.ok(!said.problems.some((p: { check: string }) => p.check === 'superseded_acknowledged'));
+    assert.ok(
+      said.problems.some((p: { check: string }) => p.check === 'superseded_acknowledged'),
+      'prose does not declare supersession',
+    );
+    const resolve = projectResolver(fx.broker);
+    const replacedBy = resolve(cite[0]!.ref)?.supersededBy;
+    assert.ok(replacedBy, 'the confirmed rule records what replaces the cited document');
+    const check = (replacement: string) =>
+      runValidators(['superseded_acknowledged'], {
+        output: { superseded: [{ ref: cite[0]!.ref, replacedBy: replacement }] },
+        expectedKeys: [],
+        evidence: cite,
+        resolvableRefs: new Set(),
+        resolve,
+      })[0]!;
+    assert.equal(check(replacedBy).ok, true, 'the typed replacement agrees with the confirmed store record');
+    assert.equal(check('another-decision').ok, false);
     const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
     const w = await step(fx, started.run.id);
     const settled = w.instructions.find((i: string) => i.startsWith('Settled by the person'));
