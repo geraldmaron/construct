@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * commit-trailers.mjs — strips and rejects git attribution trailers on commits.
- * Construct commit messages carry the bead id in the subject line only; no
- * Co-authored-by or similar trailers belong in this repository.
+ * No Co-authored-by or similar trailers belong in this repository; lineage
+ * lives in the ledger.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
