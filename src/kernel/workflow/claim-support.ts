@@ -45,18 +45,6 @@ export function claimChecks(value: unknown): ClaimCheck[] {
   });
 }
 const normalize = (s: string) => s.toLowerCase().replace(/[’]/g, "'").replace(/\s+/g, ' ').trim().replace(/[.!]$/, '');
-function proposition(text: string): { key: string; negative: boolean } | null {
-  // Deliberately narrow present-tense assertions. Questions, quotations, modality,
-  // attribution and conditional context cannot be certified by a matching substring.
-  const s = normalize(text.replace(/^[-*]\s+/, ''));
-  if (/[?"“”]/.test(s) || /\b(if|unless|may|might|could|would|allegedly|claims?|said|says|previously|formerly)\b/.test(s)) return null;
-  const hit = s.match(
-    /^((?:the |our )?[a-z][a-z -]{0,60}?) (does not |doesn't |never |does )?(store|stores|retain|retains|encrypt|encrypts|support|supports|require|requires|use|uses) ([a-z][a-z0-9 -]{0,100})$/,
-  );
-  if (!hit) return null;
-  const verb = hit[3]!.replace(/s$/, '');
-  return { key: `${hit[1]} ${verb} ${hit[4]}`, negative: ['does not ', "doesn't ", 'never '].includes(hit[2] ?? '') };
-}
 export function assessClaims(input: {
   answer: string;
   claims: readonly ClaimCheck[];
@@ -65,13 +53,8 @@ export function assessClaims(input: {
   store: StateStore;
   at: string;
 }) {
-  // Never sever a clause from discourse that may reject, quote or condition it.
-  // This finite check accepts only a whole-document, whole-answer assertion.
-  const automatic = proposition(input.answer) ? [{ claim: input.answer, refs: input.citations.map((c) => c.ref) }] : [];
-  const claims: ClaimCheck[] = [
-    ...input.claims,
-    ...automatic.filter((c) => !input.claims.some((explicit) => normalize(explicit.claim) === normalize(c.claim))),
-  ];
+  // Only a typed calculation decides support or contradiction; prose is never parsed into a verdict.
+  const claims: ClaimCheck[] = [...input.claims];
   const results = claims.map((c) => {
     const problems: string[] = [];
     const evidence = c.refs.map((ref) => {
@@ -138,22 +121,6 @@ export function assessClaims(input: {
           }
         }
       }
-    } else {
-      const target = proposition(c.claim);
-      if (target) {
-        if (normalize(c.claim) !== normalize(input.answer))
-          problems.push('claim occurs inside broader answer context; independent semantic assessment is required');
-        const observations = evidence.map((e) => proposition(e.text)).filter((p) => p?.key === target.key);
-        const support = observations.some((p) => p!.negative === target.negative);
-        const opposition = observations.some((p) => p!.negative !== target.negative);
-        if (support && opposition) {
-          basis = 'Cited observations disagree on this scoped proposition; preserve both or justify a resolution.';
-        } else if (support || opposition) {
-          status = support ? 'supported' : 'contradicted';
-          basis =
-            'Compared whole evidence documents that each contain only the same bounded assertion, preserving negation. Documents with additional discourse require independent semantic assessment.';
-        }
-      }
     }
     if (problems.length) status = 'unknown';
     return {
@@ -167,10 +134,10 @@ export function assessClaims(input: {
   });
   return {
     formatVersion: 1,
-    verifier: 'bounded-claim-checks/2',
+    verifier: 'bounded-claim-checks/3',
     answerDigest: createHash('sha256').update(input.answer).digest('hex'),
     checkedAt: input.at,
-    scope: 'typed calculations and standalone whole-document assertions only',
+    scope: 'typed calculations only',
     semanticSupportVerified: false,
     results,
     complete: false,
@@ -179,7 +146,6 @@ export function assessClaims(input: {
       : results.length && results.every((r) => r.status === 'supported')
         ? 'supported_within_checked_scope'
         : 'unknown',
-    limits:
-      'Evidence assertions are not guaranteed truth. Unrecognized paraphrases, omitted claims, authority, semantic scope and prose around calculations require independent review.',
+    limits: 'Only typed calculations are checked. Every other claim, and the prose around a calculation, needs independent review.',
   };
 }

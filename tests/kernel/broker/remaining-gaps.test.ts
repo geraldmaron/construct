@@ -10,9 +10,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { TOOLS, ownerFor } from '../../../src/kernel/broker/tools.ts';
+import { TOOLS, ownerFor, projectResolver } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import { addSource } from '../../../src/kernel/state/sources.ts';
+import { runValidators } from '../../../src/kernel/workflow/validators.ts';
+import { settledTerms } from '../../../src/kernel/project/governance.ts';
+import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { skillQuality } from '../../../src/kernel/state/quality.ts';
 import { brokerFixture, observedVerification } from './support.ts';
 
@@ -28,7 +31,7 @@ const submit = (
   evidence: { ref: string; excerpt?: string }[],
 ) => call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 
-test('a decision that rules terms out is enforced in answers and in work once the person confirms it, unless the text says it was decided against', async () => {
+test('a decision that rules terms out is enforced in answers and in work once the person confirms it, unless typed setAside names its settled statement', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.broker.root, 'docs', 'rfc.md'), 'Delivery guarantee: exactly-once.\n');
@@ -58,7 +61,42 @@ test('a decision that rules terms out is enforced in answers and in work once th
       answer: 'The old RFC said exactly-once, which was decided against; delivery is at-least-once.',
       citations: [{ ref: 'docs/rfc.md' }],
     });
-    assert.ok(!ok.problems.some((p: { check: string }) => p.check === 'settled_not_contradicted'), JSON.stringify(ok.problems));
+    assert.ok(
+      ok.problems.some((p: { check: string }) => p.check === 'settled_not_contradicted'),
+      'prose acknowledgment is insufficient',
+    );
+    const declared = await call(fx, 'check_answer', {
+      answer: 'The old RFC said exactly-once, which was decided against; delivery is at-least-once.',
+      citations: [{ ref: 'docs/rfc.md' }],
+      setAside: [r.remembered.id],
+    });
+    assert.ok(
+      !declared.problems.some((p: { check: string }) => p.check === 'settled_not_contradicted'),
+      'check_answer takes the typed setAside a plain answer declares',
+    );
+    const settled = settledTerms(listStatements(fx.broker.store, { kind: 'constraint', status: 'confirmed' }));
+    assert.deepEqual(settled, [{ term: 'exactly-once', statementId: r.remembered.id }]);
+    const check = (setAside: string[]) =>
+      runValidators(['settled_not_contradicted'], {
+        output: { summary: 'Webhooks guarantee exactly-once delivery.', setAside },
+        expectedKeys: [],
+        evidence: [],
+        resolvableRefs: new Set(),
+        settled,
+        resolve: projectResolver(fx.broker),
+      })[0]!;
+    assert.equal(check([]).ok, false);
+    assert.equal(check([r.remembered.id]).ok, true, 'the exact settled statement id permits discussing the term');
+    const unrelated = check(['unrelated-statement']);
+    assert.equal(unrelated.ok, false);
+    assert.ok(unrelated.problems.some((p) => p.includes('not a statement settled for this run')));
+    assert.ok(
+      unrelated.problems.some((p) => p.includes('exactly-once')),
+      'an unrelated id cannot exempt the term',
+    );
+    const extra = check([r.remembered.id, 'unrelated-statement']);
+    assert.equal(extra.ok, false, 'every setAside id must be settled for this run');
+    assert.equal(extra.problems.length, 1);
   } finally {
     fx.cleanup();
   }

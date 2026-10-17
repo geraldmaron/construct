@@ -2089,6 +2089,8 @@ interface CheckAnswerInput {
   period?: Record<string, unknown>;
   outsidePeriod?: { ref: string; why: string }[];
   historicalEvidence?: { ref: string; why: string }[];
+  superseded: { ref: string; replacedBy: string }[];
+  setAside: string[];
 }
 
 /** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
@@ -2105,7 +2107,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
   description:
-    'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are named as such, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
+    'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are listed with what replaces them, settled terms are not stated as current, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -2134,6 +2136,8 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
         description: 'Cited items updated after the period that belong in the answer anyway: {ref, why} entries.',
         items: { type: 'object' },
       },
+      superseded: { type: 'array', description: 'Superseded documents you cite: {ref, replacedBy} entries.', items: { type: 'object' } },
+      setAside: { type: 'array', description: 'Ids of settled statements the answer knowingly discusses.', items: { type: 'string' } },
     },
     required: ['answer'],
     additionalProperties: false,
@@ -2150,8 +2154,15 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       const r = record(e);
       return { ref: str(r, 'ref')!, why: str(r, 'why')! };
     });
+    const superseded = list(raw, 'superseded').map((e) => {
+      const r = record(e);
+      return { ref: typeof r.ref === 'string' ? r.ref : '', replacedBy: typeof r.replacedBy === 'string' ? r.replacedBy : '' };
+    });
+    const setAside = list(raw, 'setAside').filter((x): x is string => typeof x === 'string');
     return {
       historicalEvidence,
+      superseded,
+      setAside,
       answer: str(raw, 'answer')!,
       claims: claimChecks(raw.claims),
       citations,
@@ -2159,7 +2170,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       ...(outsidePeriod.length ? { outsidePeriod } : {}),
     };
   },
-  run(ctx, { answer, claims, citations, period: spec, outsidePeriod, historicalEvidence }) {
+  run(ctx, { answer, claims, citations, period: spec, outsidePeriod, historicalEvidence, superseded, setAside }) {
     // A period is checked and worked out at the moment of asking, before anything is recorded.
     let period: ResolvedPeriod | null = null;
     if (spec) {
@@ -2181,6 +2192,8 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       summary: answer,
       derivations: claimSupport.results.flatMap((r) => (r.derivation ? [r.derivation] : [])),
       ...(outsidePeriod ? { outsidePeriod } : {}),
+      ...(superseded.length ? { superseded } : {}),
+      ...(setAside.length ? { setAside } : {}),
     };
     const results = runValidators(checks, {
       output,

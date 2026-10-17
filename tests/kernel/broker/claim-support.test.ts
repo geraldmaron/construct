@@ -15,21 +15,21 @@ const cases = [
     name: 'polarity counterexample',
     source: 'The service does not store passwords.',
     answer: 'The service stores passwords.',
-    expected: 'contradicted',
+    expected: 'unknown',
   },
   {
     name: 'preserved negation paraphrase',
     source: 'The service does not store passwords.',
     answer: 'The service never stores passwords.',
-    expected: 'supported',
+    expected: 'unknown',
   },
   {
     name: 'contraction paraphrase',
     source: 'The service never stores passwords.',
     answer: "The service doesn't store passwords.",
-    expected: 'supported',
+    expected: 'unknown',
   },
-  { name: 'positive clause', source: 'The service encrypts passwords.', answer: 'The service encrypts passwords.', expected: 'supported' },
+  { name: 'positive clause', source: 'The service encrypts passwords.', answer: 'The service encrypts passwords.', expected: 'unknown' },
   {
     name: 'misleading quoted substring',
     source: 'The marketing claim "The service stores passwords" is false.',
@@ -62,7 +62,7 @@ for (const c of cases)
         claims: [{ claim: c.answer, refs: ['docs/evidence.md'] }],
       });
       assert.equal(r.claimSupport.results[0].status, c.expected);
-      assert.equal(r.ok, c.expected === 'supported');
+      assert.equal(r.ok, false, 'a non-calculation claim cannot certify an answer');
       assert.equal(r.semanticSupportVerified, false, 'bounded checks do not claim whole-answer semantic truth');
       assert.equal(r.claimSupport.complete, false);
       assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM workflow_runs').get()!.n, 0, 'Q&A starts no managed work');
@@ -72,7 +72,7 @@ for (const c of cases)
     }
   });
 
-test('ordinary answer without explicit claims still catches the known polarity failure', async () => {
+test('ordinary answer without explicit claims leaves polarity unknown', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.box.cwd, 'docs/security.md'), 'The service does not store passwords.');
@@ -80,14 +80,16 @@ test('ordinary answer without explicit claims still catches the known polarity f
       answer: 'The service stores passwords.',
       citations: [{ ref: 'docs/security.md', excerpt: 'The service does not store passwords.' }],
     });
-    assert.equal(r.ok, false);
-    assert.equal(r.claimSupport.status, 'contradicted');
+    assert.equal(r.ok, true, 'structural checks can pass without establishing semantic support');
+    assert.equal(r.semanticSupportVerified, false);
+    assert.equal(r.claimSupport.status, 'unknown');
+    assert.deepEqual(r.claimSupport.results, []);
   } finally {
     fx.cleanup();
   }
 });
 
-test('independent disagreement and changed source bytes stay visible instead of fabricated consensus', async () => {
+test('non-calculation claims stay unknown across disagreement and changed source bytes', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.box.cwd, 'docs/a.md'), 'The service stores passwords.');
@@ -101,11 +103,13 @@ test('independent disagreement and changed source bytes stay visible instead of 
       });
     const first = await check();
     assert.equal(first.claimSupport.results[0].status, 'unknown');
-    assert.match(first.claimSupport.results[0].basis, /disagree/);
+    assert.match(first.claimSupport.results[0].basis, /No bounded check establishes this claim/);
+    assert.equal(first.ok, false);
     const before = first.claimSupport.results[0].evidence[1].digest;
     writeFileSync(join(fx.box.cwd, 'docs/b.md'), 'The service stores passwords.');
     const second = await check();
-    assert.equal(second.claimSupport.results[0].status, 'supported');
+    assert.equal(second.claimSupport.results[0].status, 'unknown');
+    assert.equal(second.ok, false, 'matching prose still does not establish support');
     assert.notEqual(second.claimSupport.results[0].evidence[1].digest, before);
     assert.equal(second.claimSupport.results[0].evidence.length, 2);
     const forged = await call(fx, 'check_answer', {

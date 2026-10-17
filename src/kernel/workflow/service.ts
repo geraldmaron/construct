@@ -369,14 +369,15 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
     'within_period refuses a cited item whose recorded updatedAt falls after the period this run covers ends; an item that belongs anyway passes when the output lists it under "outsidePeriod" as {ref, why}. Items last updated before the period, items with no date, and project files pass and are counted in the deliverable.',
   named_sources_read:
     'named_sources_read needs, for each source this run names, a cited item, file or folder read from it (cite it as <source>:<item>; naming the whole source does not count); a named source you could not read passes when the output lists it under "unread" as {source, why}.',
-  superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
+  superseded_acknowledged:
+    'superseded_acknowledged needs each superseded document you cite listed in "superseded" as {ref, replacedBy}, with replacedBy the document that replaces it; or cite the replacement instead.',
   decision_ask_present:
-    'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
+    'decision_ask_present needs "decision": {ask, decider, by}: the decision being asked for, who decides (the audience input, when given) and the YYYY-MM-DD date it is due (the decisionBy input, when given).',
   sources_diverse:
     'sources_diverse needs citations from at least two independent places that hold content Construct can check (different files, recorded items, or web sites; pages of one site count once).',
   revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
   settled_not_contradicted:
-    'settled_not_contradicted rejects stating a term the person settled against as if it were current; say it was decided against or name the conflict.',
+    'settled_not_contradicted refuses a term the person settled against, unless the output lists that statement id in "setAside" because the work knowingly sets the decision aside or discusses it.',
   sensitivity_cleared:
     'sensitivity_cleared needs the person to clear confidential or restricted material for its audience (input clearedFor).',
   published_location: 'published_location needs "location": the URL or provider:id where it was published.',
