@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 35 are
+Nothing in §§1–32 describes the current product. Sections 33 to 36 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3173,3 +3173,64 @@ weak-tier kind accuracy without raising false engagement.
 **Adoption run.** Appended here, dated, when the full record lands, with
 per-host results, margins, end-to-end checkpoints and resolved model ids.
 Until then the change is not merged to staging or released.
+
+## 36. Tier 1 residency, restored from §29 (2026-10-17)
+
+Gerald, 2026-10-17: restore the §29 opt-in residency tiers in STRATEGY.md,
+scoped to Tier 1, a command that installs a launchd or systemd timer.
+
+**How the license was lost.** §29 (2026-08-25) admitted three opt-in tiers
+and STRATEGY carried them in its kill-list wording. The cutover rewrite of
+2026-09-02 restated commitment 3 as "no daemon" and marked §§1–32 as history
+without saying §29 was reversed. §33 lists no residency decision. The
+reversal was an omission, not a decision, so this section restores the part
+that is wanted now and says what stays closed.
+
+**Why Tier 1 and not more.** A saved standing trigger does not run after
+the session exits: `docs/recurring-operation.md` says the clock and executor
+stay unprovisioned, and `workflow recipe` prints a crontab line or a CI job
+for the person to install by hand. Every host now ships its own scheduler
+(Claude Code desktop scheduled tasks and routines, Codex scheduled
+automations, Cursor automations), and those stay valid clocks. None of them
+fires a Construct trigger on its own schedule with Construct's idempotency
+key, and a hand-installed crontab is the step people skip. A platform timer
+that starts one short-lived firing and exits closes that gap with nothing
+resident, no battery cost between firings, and catch-up after sleep owned by
+the OS. The `paths.ts` resolver for the per-user launchd and systemd
+directories already exists with no caller.
+
+**Challenge.** Strongest failure mode: the 2.x leak class returns through a
+new door. A test, a worktree, or a second checkout installs a second timer
+against the same store, or a firing runs with the wrong project or an
+expired host login and fails silently every week. Controls, each an
+acceptance criterion on the work:
+- Only the explicit command installs or removes a unit. Init, install,
+  library code, and the test harness cannot reach it, and the tests assert
+  the unit is written under the injected paths and never the real home.
+- One unit per trigger, named by project identity and trigger id, so a
+  repeated install replaces rather than duplicates; `status` and `doctor`
+  list installed units and flag one whose project or trigger is gone.
+- The unit fires the existing `workflow fire` path. Its key is the
+  schedule slot that was due, not the wall clock, so a late or coalesced
+  firing after sleep covers the window that was due and a repeat is
+  deduplicated.
+- No secret in the unit file or its environment; the firing resolves host
+  authentication at use time, and an unauthenticated host records a blocked
+  run with the reason rather than exiting quietly.
+- Without an explicit executor the command refuses to install, since a
+  firing with no model only records a blocked run.
+- macOS uses `StartCalendarInterval`, never `StartInterval`, because
+  interval firings that fall during sleep are lost; Linux uses `OnCalendar`
+  with `Persistent=true`. A cron expression launchd cannot express exactly
+  is refused, not approximated.
+
+Best alternative: keep "no daemon" and point people at their host's
+scheduler. Rejected as the only path, because a host scheduler runs a model
+session on its own schedule and cannot hand Construct a due-slot key. It
+stays documented as a valid clock. Verdict: **accepted with controls**.
+
+**Still closed.** §29's Tier 2 (an on-demand, idle-exiting process for
+sub-interval watches) and Tier 3 (a supervised always-on service) are not
+licensed. Construct reads only directories itself; every other source is
+read through a host's tools, so a resident Construct process could not watch
+most sources anyway. Either tier needs its own dated decision.
