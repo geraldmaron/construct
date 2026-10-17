@@ -43,8 +43,14 @@ rl.on('line',line=>{
   if(mode==='tool'){note('item/completed',{...params,item:{id:'tool',type:'commandExecution'}});return;}
   if(mode==='compaction'){note('thread/compacted',{...params});return;}
   if(mode==='unknown'){note('unexpected/operation',params);return;}
+  if(mode.startsWith('refuse:')){note(mode.slice(7),{...params,private:'DO_NOT_RETAIN_PRIVATE_REASONING'});return;}
+  if(mode==='function-output'){note('item/completed',{...params,item:{id:'function',type:'functionCallOutput',output:'DO_NOT_RETAIN_PRIVATE_REASONING'}});return;}
   if(mode==='unknown-private'){note('DO_NOT_RETAIN_PRIVATE_REASONING',{...params,item:{type:'DO_NOT_RETAIN_PRIVATE_REASONING'}});return;}
   if(mode==='skills-changed')note('skills/changed',{});
+  if(mode==='account-subscription')note('account/updated',{authMode:'chatgpt',planType:'pro'});
+  if(mode==='account-api'){note('account/updated',{authMode:'apikey',planType:null});return;}
+  if(mode==='warning-fail-closed')note('warning',{threadId:'review-session',message:'Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable the code-mode host.'});
+  if(mode==='warning-other'){note('warning',{threadId:'review-session',message:'DO_NOT_RETAIN_PRIVATE_REASONING'});return;}
   if(mode==='moderation')note('turn/moderationMetadata',{...params,metadata:{note:'DO_NOT_RETAIN_PRIVATE_REASONING'}});
   if(mode==='moderation-wrong-turn'){note('turn/moderationMetadata',{threadId:'review-session',turnId:'other-turn',metadata:{note:'DO_NOT_RETAIN_PRIVATE_REASONING'}});return;}
   if(mode==='moderation-wrong-thread'){note('turn/moderationMetadata',{threadId:'other-session',turnId:'review-turn',metadata:{}});return;}
@@ -59,8 +65,10 @@ rl.on('line',line=>{
   note('item/reasoning/textDelta',{...params,delta:'DO_NOT_RETAIN_PRIVATE_REASONING'});
   note('item/started',{...params,item:{id:'user',type:'userMessage',content:p.input}});
   note('item/completed',{...params,item:{id:'user',type:'userMessage',content:p.input}});
-  note('item/started',{...params,item:{id:'answer',type:'agentMessage',text:''}});
-  note('item/completed',{...params,item:{id:'answer',type:'agentMessage',text:'{"checks":[]}'}});
+  const extra=mode==='partial-answer'?{phase:'partial_answer'}:mode==='async-answer'?{delivery:'async'}:mode==='questions'?{questions:[{title:'DO_NOT_RETAIN_PRIVATE_REASONING'}]}:mode==='unknown-phase'?{phase:'DO_NOT_RETAIN_PRIVATE_REASONING'}:mode==='v2-sync'?{delivery:null,questions:null,phase:'final_answer'}:{};
+  note('item/started',{...params,item:{id:'answer',type:'agentMessage',text:'',...extra}});
+  note('item/completed',{...params,item:{id:'answer',type:'agentMessage',text:'{"checks":[]}',...extra,...(mode==='partial-completed'?{phase:'partial_answer'}:mode==='async-completed'?{delivery:'async'}:mode==='questions-completed'?{questions:[]}: {})}});
+  if(['turn-error','turn-interrupted','completed-error'].includes(mode)){note('turn/completed',{threadId:'review-session',turn:{id:'review-turn',status:mode==='turn-interrupted'?'interrupted':mode==='completed-error'?'completed':'failed',error:{message:'DO_NOT_RETAIN_PRIVATE_REASONING',codexErrorInfo:'misalignmentPolicyViolation',misalignment:{steer:{message:'DO_NOT_RETAIN_PRIVATE_REASONING'}}}}});return;}
   note('turn/completed',{threadId:'review-session',turn:{id:'review-turn',status:'completed',error:null}});
   if(mode==='duplicate-terminal')note('turn/completed',{threadId:'review-session',turn:{id:'review-turn',status:'completed',error:null}});
  }
@@ -211,4 +219,76 @@ test('turn moderation metadata is discarded unread, only for this review turn', 
     );
     assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
   }
+});
+
+test('0.163 synchronous final messages remain compatible; partial, async and question messages fail closed', async () => {
+  const allowed = await exercise('v2-sync');
+  assert.deepEqual(allowed.problems, []);
+  assert.equal(allowed.completed, true);
+  for (const mode of [
+    'partial-answer',
+    'async-answer',
+    'questions',
+    'unknown-phase',
+    'partial-completed',
+    'async-completed',
+    'questions-completed',
+  ]) {
+    const refused = await exercise(mode);
+    assert.equal(refused.completed, false, mode);
+    assert.match(refused.problems.join(), /unsupported agent message/, mode);
+    assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
+  }
+});
+
+test('0.163 new notifications, function output and expanded errors cannot supply review assurance', async () => {
+  for (const method of [
+    'account/gatewayOAuth/changed',
+    'autoApprovalReview/strictReviewRequired',
+    'mcpServer/event/stream/notification',
+    'modelProvider/authRecoveryCompleted',
+    'modelProvider/authRecoveryStarted',
+    'project/changed',
+    'thread/attachment/updated',
+    'thread/prediction/updated',
+    'thread/project/updated',
+    'thread/queue/changed',
+    'thread/readState/changed',
+    'thread/realtime/item/completed',
+    'thread/realtime/item/started',
+    'thread/realtime/item/transcript/delta',
+    'thread/reverted',
+    'error',
+  ]) {
+    const refused = await exercise('refuse:' + method);
+    assert.equal(refused.completed, false, method);
+    assert.ok(refused.problems.length, method);
+    assert.ok(
+      refused.observations.some((entry: any) => entry.type === 'native.protocol_refusal' && entry.method === method),
+      method,
+    );
+    assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, method);
+  }
+  for (const mode of ['function-output', 'turn-error', 'turn-interrupted', 'completed-error']) {
+    const refused = await exercise(mode);
+    assert.equal(refused.completed, false, mode);
+    assert.ok(refused.problems.length, mode);
+    assert.equal(JSON.stringify(refused).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false, mode);
+  }
+});
+
+test('0.163 account and code-mode notices pass only when they confirm the subscription and the fail-closed isolation', async () => {
+  const subscription = await exercise('account-subscription');
+  assert.deepEqual(subscription.problems, []);
+  assert.equal(subscription.completed, true);
+  const api = await exercise('account-api');
+  assert.equal(api.completed, false);
+  assert.ok(api.problems.includes('native app-server is not running on the subscription'));
+  const closed = await exercise('warning-fail-closed');
+  assert.deepEqual(closed.problems, []);
+  assert.ok(closed.observations.some((entry: any) => entry.type === 'native.fail_closed_warning'));
+  const other = await exercise('warning-other');
+  assert.equal(other.completed, false);
+  assert.ok(other.problems.includes('native app-server emitted an unqualified warning'));
+  assert.equal(JSON.stringify(other).includes('DO_NOT_RETAIN_PRIVATE_REASONING'), false);
 });

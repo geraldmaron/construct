@@ -47,7 +47,7 @@ async function main() {
       freshUser:
         'Fresh Codex and Cursor ordinary-prompt journeys are inconsistent: artifact correctness and managed completion remain unqualified; retained failures are not passes.',
       hostSupport:
-        'The native semantic reviewer is a finite Codex CLI 0.145.0 profile using the requested gpt-6-astra model. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.',
+        'The native semantic reviewer is a finite codex-app-server-held-text-v2 profile for Codex CLI 0.163.0 using the requested gpt-6-astra model. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.',
       sourceAdapters:
         'Production API/MCP traversal, unknown schemas, complete access-scope coverage and changed-source outcomes are not generally qualified by these local synthetic cases.',
       composition:
