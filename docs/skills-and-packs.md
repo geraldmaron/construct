@@ -70,7 +70,7 @@ runs take a method's text from the registry, never from a personal
 directory.
 
 Install others by name when a host needs files on disk: `--dir` names the
-directory, `--client=<claude|bob|opencode|cursor|codex|vscode>` names that
+directory, `--client=<claude|bob|opencode|cursor|codex|vscode|hermes>` names that
 host's personal skills directory under your home (a copy there loads in every
 repository the host opens), and with neither, the personal directory of the
 host you are running inside is used when Construct can tell which one that
