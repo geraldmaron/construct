@@ -6,15 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "src/**/*.ts",
-      "tests/**/*.ts",
-      "tests/**/*.mjs",
-      "scripts/**/*.mjs",
-      "scripts/**/*.ts",
-      "bin/**/*.mjs",
-      "!tests/fixtures/**"
-    ]
+    "includes": ["src/**/*.ts", "tests/**/*.ts", "tests/**/*.mjs", "scripts/**/*.mjs", "scripts/**/*.ts", "bin/**/*.mjs", "!tests/fixtures"]
   },
   "formatter": {
     "enabled": true,
