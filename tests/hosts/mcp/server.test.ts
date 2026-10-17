@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
 import { bindFailureFor } from '../../../src/cli/serve.ts';
+import { HostRequests } from '../../../src/hosts/mcp/outbound.ts';
 import {
   CONTRACT_PREFIX,
   HOST_TEXT_LIMIT,
@@ -483,6 +484,108 @@ test('a missing run execution error returns repair guidance, not only input-vali
     assert.match(body.recovery.next, /prerequisite before retrying/);
     assert.match(body.recovery.next, /bypass a permission refusal/);
     assert.equal(fx.broker.sources.list().length, 0);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** A host that answers the server's roots/list with `roots`, or never answers when `roots` is null. */
+function rootsHost(roots: readonly unknown[] | null): { requests: HostRequests; asked: () => number } {
+  const requests = new HostRequests();
+  let asked = 0;
+  requests.attach(async (message) => {
+    const m = message as { id: string; method: string };
+    if (m.method !== 'roots/list') return;
+    asked += 1;
+    if (roots !== null) queueMicrotask(() => requests.deliver({ jsonrpc: '2.0', id: m.id, result: { roots } }));
+  });
+  return { requests, asked: () => asked };
+}
+
+const ROOTS_INIT = { jsonrpc: '2.0' as const, id: 1, method: 'initialize', params: { capabilities: { roots: { listChanged: true } } } };
+
+test('a host that lists roots moves the session to the checkout the adapter finds there, before any call runs', async () => {
+  const fx = brokerFixture();
+  try {
+    const host = rootsHost([{ uri: 'file:///work/lane' }, { uri: 'https://example.invalid/not-a-directory' }, { name: 'no uri' }]);
+    const heard: string[][] = [];
+    const lane = { root: '/work/lane', checkout: '/work/lane', branch: 'lane-a', head: null };
+    const handle = createMcpHandler('interactive', fx.broker, {
+      hostRequests: host.requests,
+      sessionRoots: (dirs) => {
+        heard.push([...dirs]);
+        return { ...fx.broker, lane };
+      },
+    });
+    await handle(ROOTS_INIT);
+    assert.equal(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' }), null);
+    assert.deepEqual(heard, [['/work/lane']], 'only file roots reach the adapter, as local paths');
+    const boot = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as {
+      result: { structuredContent: { construct: { project: { lane: unknown } } } };
+    };
+    assert.deepEqual(boot.result.structuredContent.construct.project.lane, lane);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a host that declares no roots is never asked, and one that never answers keeps the session where it started', async () => {
+  const fx = brokerFixture();
+  try {
+    const quiet = rootsHost(null);
+    const handle = createMcpHandler('interactive', fx.broker, {
+      hostRequests: quiet.requests,
+      rootsWaitMs: 20,
+      sessionRoots: () => assert.fail('nothing was listed'),
+    });
+    await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { capabilities: {} } });
+    await handle({ jsonrpc: '2.0', method: 'notifications/initialized' });
+    assert.equal(quiet.asked(), 0, 'a host that did not declare roots is not asked for them');
+    const silent = rootsHost(null);
+    const waiting = createMcpHandler('interactive', fx.broker, {
+      hostRequests: silent.requests,
+      rootsWaitMs: 20,
+      sessionRoots: () => assert.fail('nothing was listed'),
+    });
+    await waiting(ROOTS_INIT);
+    await waiting({ jsonrpc: '2.0', method: 'notifications/initialized' });
+    assert.equal(silent.asked(), 1);
+    const boot = (await waiting({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as {
+      result: { structuredContent: { construct: { project: { lane: unknown } } } };
+    };
+    assert.equal(boot.result.structuredContent.construct.project.lane, null);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test("a lazy server hears the host's roots before it binds, so the project opens in that checkout", async () => {
+  const fx = brokerFixture();
+  try {
+    const host = rootsHost([{ uri: 'file:///work/lane' }]);
+    const heard: string[][] = [];
+    let openedAfter: number | null = null;
+    const handle = createLazyMcpHandler(
+      'interactive',
+      () => {
+        openedAfter = heard.length;
+        return fx.broker;
+      },
+      '0.0.0',
+      bindFailureFor,
+      {
+        hostRequests: host.requests,
+        sessionRoots: (dirs) => {
+          heard.push([...dirs]);
+          return null;
+        },
+      },
+    );
+    await handle(ROOTS_INIT);
+    await handle({ jsonrpc: '2.0', method: 'notifications/initialized' });
+    await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
+    assert.deepEqual(heard, [['/work/lane']]);
+    assert.equal(openedAfter, 1, 'the project opened after the roots were heard');
   } finally {
     fx.cleanup();
   }
