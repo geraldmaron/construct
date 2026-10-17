@@ -3889,3 +3889,26 @@ qualifies a binary no one uses for real work, and it already drifted from the
 installed CLI once. Verdict: **accepted with controls**. The control is the
 per-version pin plus a live run of the three release controls before any
 release that changes the pin.
+
+## 48. Releases are gated on Claude Code alone while Codex is out of use (2026-10-17)
+
+On 2026-10-17 Gerald directed that Construct stop using Codex and the gpt-6-astra model. Both were
+built into the release path: the gated live-eval matrix had Codex cells on gpt-6-astra, and the only
+qualified native semantic reviewer (§47) is the Codex held-text profile on that model. He chose to
+gate on Claude Code alone rather than hold the alpha.
+
+**Decision.** No live-eval scope gates a Codex cell; smoke is Claude Code haiku crowded, and full is
+the Claude Code matrix plus Cursor. An experimental alpha may ship without native semantic review,
+but only in an explicit form: its manifest carries `nativeReview` with status `unavailable`, a
+substantive reason and this decision's number, it holds no review cases, and its host-support
+disclosure says that semantic correctness of managed deliverables is unreviewed. `release:live
+--without-native-review` writes that form; `release:check --tier=experimental-alpha` refuses a
+manifest that drops the review cases without it. Codex stays a supported host: it is still wired,
+its conformance checks still run, and its Codex-home isolation fix stays.
+
+**Challenge.** Strongest failure mode: a release that validates deliverables with no independent
+semantic review reads as reviewed. The manifest, the gate result and the disclosure all say
+unreviewed, and the gate refuses a silent omission. Best alternative: hold alpha.32 until a
+Claude-based held-text reviewer exists. Rejected by Gerald for this alpha; that reviewer is filed as
+its own work. Verdict: **accepted with controls**: the explicit `nativeReview` form, and a gate
+test that refuses the omission.
