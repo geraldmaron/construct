@@ -177,9 +177,14 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
   }
 
   const plan: BoundStep[] = [];
-  // A required validator counts only where it checks the skill's own work: on the step that binds it, or on a step that consumes that step's output.
+  // A required validator counts only where it checks the skill's own work: on the step that binds it, or on a step whose inputs read that step's output (directly or through another such step). Ordering alone (needs) is not consumption.
   const consumers = new Map<string, string[]>();
-  for (const s of m.steps) for (const n of s.needs) consumers.set(n, [...(consumers.get(n) ?? []), s.id]);
+  for (const s of m.steps) {
+    for (const ref of Object.values(s.inputs)) {
+      const from = /^steps\.([^.]+)\./.exec(ref)?.[1];
+      if (from) consumers.set(from, [...(consumers.get(from) ?? []), s.id]);
+    }
+  }
   const checkedAtOrAfter = (stepId: string): Set<string> => {
     const seen = new Set<string>();
     const queue = [stepId];
