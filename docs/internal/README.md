@@ -9,6 +9,14 @@ RESEARCH-DECISIONS.md cites the directive: its sections 1 through 32 are the
 decision record of that earlier program and its section 33 records the
 architectural cutover. Current documentation is one level up, in docs/.
 
+Raw evidence is not kept in the tree. The `evidence/` folders these records
+cite (transcripts, logs, JSONL captures) were removed on 2026-10-17 and stay in
+git history: `git show bb5943f0:<path>` prints one file, and
+`git checkout bb5943f0 -- docs/internal/<program>/evidence` restores a folder.
+What a release check reads stays here: each `releases/<version>.json`
+manifest, its run folder, and the two fresh-user observations in
+`releases/observations/`.
+
 - `cutover-directive.md` — the execution directive, verbatim.
 - `construct-cutover/` — the 2026-09-20 records of the native-work cutover:
   the frozen mandate, baseline, findings, architecture, plan, source register,

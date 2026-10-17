@@ -1,1 +1,0 @@
-The year-end memo says 90% of all enrolled learners attended. The newspaper independently confirms this.

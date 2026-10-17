@@ -63,11 +63,11 @@ async function main() {
   // These observations are deliberately failures. They preserve the current product limitation.
   for (const [path, summary] of [
     [
-      'docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-cursor/semantic-assessment/assessment.json',
+      'docs/internal/releases/observations/fresh-cursor-semantic-assessment.json',
       'Latest bounded Cursor artifacts failed the frozen independent rubric and its managed lifecycle remained unfinished; phase-scoped support judgments have limited coverage.',
     ],
     [
-      'docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-codex/incomplete-observation.json',
+      'docs/internal/releases/observations/fresh-codex-incomplete-observation.json',
       'Latest Codex initial phase timed out without an artifact, and the changed phase had no result or completion receipt; no additional timeout or success is inferred.',
     ],
   ])
