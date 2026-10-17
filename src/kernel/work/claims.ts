@@ -30,6 +30,17 @@ import {
 /** How long a holder may go without any Construct call before its claim can be taken over. */
 export const CLAIM_QUIET_CAP_MS = 2 * 60 * 60_000;
 
+/** How the caller can recover work one of its own session's agents holds: the session's main agent takes it back. */
+function ownSessionRecovery(
+  row: { claim_session: string | null; claim_agent: string | null },
+  caller: { session?: string; agent?: string },
+): string {
+  if (!caller.session || row.claim_session !== caller.session || row.claim_agent === 'main') return '';
+  return caller.agent === 'main'
+    ? '; it is held by an agent of this session, so take it back with takeover and a reason'
+    : "; it is held by an agent of this session, so this session's main agent can take it back with takeover and a reason";
+}
+
 /**
  * Claim a work item. The claim is exclusive until it expires: another owner is
  * refused, and so is the same owner without the token its first claim
@@ -58,7 +69,7 @@ export function claimWork(
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
     if (liveClaim(row, input.now)) {
       if (row.claim_owner !== input.owner) {
-        throw new Error(`work ${input.id} is claimed by ${row.claim_owner} until ${row.claim_until}`);
+        throw new Error(`work ${input.id} is claimed by ${row.claim_owner} until ${row.claim_until}${ownSessionRecovery(row, input)}`);
       }
       if (input.token !== row.claim_token) {
         throw new Error(`you already hold ${input.id} until ${row.claim_until}; pass the token your claim returned to renew it`);
@@ -162,7 +173,7 @@ export function takeoverWork(
           holder !== undefined && (holder.ended_at !== null || processGone || quietSince > (input.quietCapMs ?? CLAIM_QUIET_CAP_MS));
         if (!gone) {
           throw new Error(
-            `work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}, and that session is still active; it cannot be taken over yet`,
+            `work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}, and that session is still active; it cannot be taken over yet${ownSessionRecovery(row, input)}`,
           );
         }
       }
