@@ -54,7 +54,7 @@ function fixture(supported = true, inherited = false) {
     host: 'codex',
     binary: 'synthetic-never-executed',
     digest: 'synthetic',
-    version: 'codex-cli 0.145.0',
+    version: 'codex-cli 0.163.0',
     profile: 'codex-held-text-v1',
   };
   let n = 0,
