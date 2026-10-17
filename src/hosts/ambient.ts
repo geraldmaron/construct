@@ -26,6 +26,11 @@
  *   integration is invisible to this module. No broader Bob session marker
  *   is documented anywhere IBM publishes; this is a known detection gap, not
  *   an oversight, and it is recorded rather than papered over with a guess.
+ * - `HERMES_AGENT=true` is exported by Hermes Agent into the shell its
+ *   terminal tool runs commands in (tools/environments/base_session_env.py,
+ *   checked 2026-10-17). Hermes strips its MCP servers' environment to a
+ *   short allowlist, so `construct serve` started by Hermes sees no marker
+ *   and names the host by `--client=hermes` instead.
  * - Codex CLI has no marker at all: a request to add one (`AGENT=codex`, the
  *   same convention Goose and Amp already follow) was filed against
  *   `openai/codex` and closed as not planned. There is nothing to key on, so
@@ -39,7 +44,7 @@
  *   no name.
  */
 
-export type AmbientHostName = 'claude' | 'cursor' | 'bob';
+export type AmbientHostName = 'claude' | 'cursor' | 'bob' | 'hermes';
 
 export interface AmbientDetection {
   /** The host this process is running inside, by the name its adapter (if any) uses. */
@@ -59,6 +64,7 @@ export const AMBIENT_ENV_KEYS = [
   'CURSOR_AGENT',
   'CURSOR_CLI',
   'BOB_SHELL_CLI_IDE_SERVER_PORT',
+  'HERMES_AGENT',
 ] as const;
 
 interface Detector {
@@ -94,6 +100,10 @@ const DETECTORS: readonly Detector[] = [
       if (env.BOB_SHELL_CLI_IDE_SERVER_PORT !== undefined) return 'BOB_SHELL_CLI_IDE_SERVER_PORT';
       return null;
     },
+  },
+  {
+    host: 'hermes',
+    check: (env) => (env.HERMES_AGENT === 'true' ? 'HERMES_AGENT' : null),
   },
 ];
 

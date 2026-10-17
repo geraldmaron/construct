@@ -23,6 +23,7 @@ export interface PathsEnv {
   HOME?: string;
   CLAUDE_CONFIG_DIR?: string;
   CODEX_HOME?: string;
+  HERMES_HOME?: string;
 }
 
 const APP = 'construct';
@@ -116,6 +117,8 @@ const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   codex: ['.agents', 'skills'],
   // https://code.visualstudio.com/docs/agent-customization/agent-skills — checked 2026-10-08
   vscode: ['.copilot', 'skills'],
+  // Hermes Agent website/docs/user-guide/features/skills.md — checked 2026-10-17; HERMES_HOME moves it (resolveHostSkillsDir)
+  hermes: ['.hermes', 'skills'],
 };
 
 /** Every host name `--host` accepts, `claude` included, in a stable order. */
@@ -133,6 +136,7 @@ export function resolveHostSkillsDir(
   home: string = xdgBase(env.HOME, homedir()),
 ): string {
   if (host === 'claude') return resolveSkillsDir(env, home);
+  if (host === 'hermes') return join(resolveHermesHome(env, home), 'skills');
   return join(home, ...OTHER_HOST_SKILLS_PATH[host]);
 }
 
@@ -149,16 +153,29 @@ export function resolveClaudeConfigDir(
   return configured && configured.trim() ? configured : join(home, '.claude');
 }
 
+/**
+ * Hermes Agent's data directory: HERMES_HOME when set, else `.hermes` under
+ * home. Hermes reads its MCP servers only from `config.yaml` here, never from
+ * a project file (Hermes Agent website/docs/user-guide/features/mcp.md and
+ * getting-started/installation.md, checked 2026-10-17).
+ */
+export function resolveHermesHome(
+  env: PathsEnv = process.env,
+  home: string = xdgBase(env.HOME, homedir()),
+): string {
+  return xdgBase(env.HERMES_HOME, join(home, '.hermes'));
+}
+
 /** The agent hosts whose per-user configuration directories `resolveHostConfigDirs` names. */
-export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob';
+export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob' | 'hermes';
 
 /**
  * Where each agent host keeps its per-user configuration. A directory that
  * exists is evidence the host has run on this machine, which is how setup
  * finds a host whose command is not on this shell's PATH (an editor started
  * from the desktop). Read here for the same reason as every home-rooted path.
- * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, and OpenCode
- * XDG_CONFIG_HOME.
+ * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, OpenCode
+ * XDG_CONFIG_HOME, and Hermes HERMES_HOME.
  */
 export function resolveHostConfigDirs(
   env: PathsEnv = process.env,
@@ -172,6 +189,7 @@ export function resolveHostConfigDirs(
     opencode: [join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'opencode')],
     codex: [codexHome && codexHome.trim() ? codexHome : join(home, '.codex')],
     bob: [join(home, '.bob')],
+    hermes: [resolveHermesHome(env, home)],
   };
 }
 
