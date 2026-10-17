@@ -111,7 +111,7 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     assert.equal(record.onboarding.state, 'confirmed');
     assert.equal(record.runs.active, 0);
     assert.equal(record.registry.skills, 17);
-    assert.equal(record.registry.workflows, 24);
+    assert.equal(record.registry.workflows, 12);
     assert.deepEqual(record.registry.skew, []);
     // A project no host is wired to is not healthy, and that is the only thing wrong with it.
     const unwired = await capture(() => run(['doctor', '--json'], ctx));
@@ -132,7 +132,7 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     const checks = JSON.parse(doctor.out);
     assert.equal(checks.healthy, true);
     assert.ok(checks.checks.some((c: { name: string }) => c.name === 'state'));
-    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /41\/41 current/);
+    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /29\/29 current/);
     // Break the state file: doctor fails and says why, status leads with the problem.
     writeFileSync(join(box.cwd, '.construct', 'state', 'construct.sqlite'), 'garbage', 'utf8');
     const broken = await capture(() => run(['doctor'], ctx));

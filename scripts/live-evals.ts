@@ -525,7 +525,17 @@ export interface RunTrace {
 
 /** What observeRun needs to know about the workflows a run could start. */
 export interface ObserveCatalog {
-  readonly workflows: Readonly<Record<string, { readonly interactionClass: string; readonly deliverableKind: string }>>;
+  readonly workflows: Readonly<
+    Record<
+      string,
+      {
+        readonly interactionClass: string;
+        readonly deliverableKind: string;
+        readonly aliases?: Readonly<Record<string, string>>;
+        readonly domains?: Readonly<Record<string, { readonly deliverableKind: string }>>;
+      }
+    >
+  >;
 }
 
 /**
@@ -626,10 +636,14 @@ export function observeRun(
     if (acted.name === 'remember') k = 'remember';
     else if (acted.name === 'start_outcome') {
       const workflowId = typeof acted.arguments.workflowId === 'string' ? acted.arguments.workflowId : '';
-      const known = catalog.workflows[workflowId];
+      const alias = Object.values(catalog.workflows).find((w) => w.aliases?.[workflowId]);
+      const known = catalog.workflows[workflowId] ?? alias;
+      const given = acted.arguments.input;
+      const suppliedDomain = given && typeof given === 'object' ? (given as Record<string, unknown>).domain : undefined;
+      const domain = alias?.aliases?.[workflowId] ?? (typeof suppliedDomain === 'string' ? suppliedDomain : null);
       // The host's own reading names the kind when it gave one: a standing outcome can run on a manage workflow.
       k = typeof reading?.kind === 'string' ? reading.kind : (known?.interactionClass ?? 'manage');
-      d = known?.deliverableKind ?? null;
+      d = (domain ? known?.domains?.[domain]?.deliverableKind : null) ?? known?.deliverableKind ?? null;
     } else if (acted.name === 'work' || acted.name === 'delegate')
       k = COORDINATE_ACTIONS.includes(actionOf(acted) ?? '') || acted.name === 'delegate' ? 'coordinate' : (ck ?? 'coordinate');
     else k = ck ?? 'manage';

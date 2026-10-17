@@ -597,7 +597,7 @@ test('the shipped skills and workflows load, agree with their frontmatter, and r
     workflows
       .list()
       .map((w) => w.manifest.id)
-      .includes('remember'),
+      .includes('review'),
   );
   const index = JSON.parse(readFileSync(new URL('../../../registry/index.json', import.meta.url), 'utf8'));
   for (const s of skills.list()) assert.equal(index.skills[s.manifest.id]?.digest, s.digest, `${s.manifest.id} index digest is current`);
@@ -643,7 +643,8 @@ test('the shipped skills and workflows load, agree with their frontmatter, and r
       store: fx.store,
       at: T,
     });
-    assert.equal(remember.status, 'runnable', remember.summary);
+    assert.equal(remember.status, 'blocked', remember.summary);
+    assert.equal(remember.reasons[0]?.code, 'missing_workflow');
     void writeFileSync;
   } finally {
     fx.cleanup();

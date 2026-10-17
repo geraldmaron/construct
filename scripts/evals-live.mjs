@@ -22,6 +22,7 @@
  * absolute paths stripped. The suite validates a record and recomputes its
  * verdicts; it never runs a host.
  */
+import { workflowCandidates } from '../src/kernel/registry/workflow-domains.ts';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import {
@@ -293,7 +294,7 @@ function builtins() {
 
 /** The deliverable kinds the built-in workflows declare, and the families they fall in, which a reading may give instead. */
 function deliverableVocabulary(workflows) {
-  const kinds = workflows.list().map((w) => w.manifest.deliverable.kind);
+  const kinds = workflowCandidates(workflows.list()).map((w) => w.manifest.deliverable.kind);
   return new Set([...kinds, ...kinds.filter((k) => k.includes('/')).map((k) => k.slice(0, k.indexOf('/')))]);
 }
 
@@ -355,7 +356,21 @@ export function workflowCatalog(server) {
     if (!existsSync(file)) continue;
     try {
       const m = JSON.parse(readFileSync(file, 'utf8'));
-      out[m.id] = { interactionClass: m.interactionClass, deliverableKind: m.deliverable?.kind ?? null };
+      out[m.id] = {
+        interactionClass: m.interactionClass,
+        deliverableKind: m.deliverable?.kind ?? null,
+        ...(m.domains
+          ? {
+              aliases: m.aliases,
+              domains: Object.fromEntries(
+                Object.entries(m.domains).map(([domain, binding]) => [
+                  domain,
+                  { deliverableKind: binding.deliverable?.kind ?? m.deliverable?.kind ?? null },
+                ]),
+              ),
+            }
+          : {}),
+      };
     } catch {
       // A manifest the server itself would refuse cannot be started either.
     }

@@ -1,3 +1,4 @@
+import { workflowCandidates } from '../../../src/kernel/registry/workflow-domains.ts';
 /**
  * tests/kernel/skills/intake-evals.test.ts — the held-out intake corpus
  * format, its deterministic split, and the pre-registered scoring of live
@@ -223,9 +224,10 @@ function frames(calls: Array<{ name: string; args?: Record<string, unknown>; res
 const workflows = createWorkflowRegistry({ projectDir: null });
 const catalog: ObserveCatalog = {
   workflows: Object.fromEntries(
-    workflows
-      .list()
-      .map((w) => [w.manifest.id, { interactionClass: w.manifest.interactionClass, deliverableKind: w.manifest.deliverable.kind }]),
+    workflowCandidates(workflows.list()).map((w) => [
+      w.manifest.id,
+      { interactionClass: w.manifest.interactionClass, deliverableKind: w.manifest.deliverable.kind },
+    ]),
   ),
 };
 const quiet = { endedWithQuestion: false, truncated: false, error: null };
@@ -1175,4 +1177,28 @@ test('the model-facing digest is stable and moves when one byte a host reads cha
   }
   assert.equal(modelFacingDigest('interactive', skills, workflows), first);
   assert.notEqual(modelFacingDigest('headless', skills, workflows), first, 'each surface has its own digest');
+});
+
+test('saved host transcripts keep their deliverable domain through canonical ids and legacy aliases', async () => {
+  const { workflowCatalog } = await import('../../../scripts/evals-live.mjs');
+  const canonical = workflowCatalog(fileURLToPath(new URL('../../../', import.meta.url))) as ObserveCatalog;
+  for (const w of workflows.list().filter((w) => w.manifest.domains)) {
+    for (const [alias, domain] of Object.entries(w.manifest.aliases!)) {
+      const kind = workflows.get(w.manifest.id, domain)!.manifest.deliverable.kind;
+      for (const args of [
+        { workflowId: alias, input: {} },
+        { workflowId: w.manifest.id, input: { domain } },
+      ]) {
+        const observation = observeRun(
+          {
+            frames: frames([{ name: 'start_outcome', args, result: { started: true, run: { id: 'run-saved' } } }]),
+            stubCalls: [],
+            host: quiet,
+          },
+          canonical,
+        );
+        assert.equal(observation.d, kind, `${alias} and its canonical domain describe the same deliverable`);
+      }
+    }
+  }
 });

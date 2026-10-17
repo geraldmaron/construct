@@ -1,3 +1,4 @@
+import { workflowCandidates } from '../../../src/kernel/registry/workflow-domains.ts';
 /**
  * tests/kernel/skills/packs.test.ts — every professional pack is a bundle of
  * obligations, doctrine with opened citations, procedure, templates, evals,
@@ -57,7 +58,7 @@ test('nine professional packs ship, each complete', () => {
       assert.match(entry, /Opened \d{4}-\d{2}-\d{2}: /, `${id}: every cited source says when it was opened and what was confirmed`);
     }
     assert.ok(pack.manifest.requiredValidators.length > 0, `${id} requires at least one validator wherever it is bound`);
-    const consumer = workflows.list().find((w) => w.manifest.steps.some((s) => s.skill?.id === id));
+    const consumer = workflowCandidates(workflows.list()).find((w) => w.manifest.steps.some((s) => s.skill?.id === id));
     assert.ok(consumer, `${id} is consumed by a workflow`);
   }
 });

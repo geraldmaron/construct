@@ -1,0 +1,482 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "review",
+  "title": "Review a domain",
+  "version": "2.0.0",
+  "purpose": "Apply the bound domain method, preserving its inputs, checks and evidence obligations.",
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string",
+    "domain": "string"
+  },
+  "requiredInputs": [
+    "target",
+    "domain"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "reference_coverage"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Compare stated boundaries with the code's imports and the data's owners",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Review the design against its obligations",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": null,
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target",
+    "domain"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/architecture",
+    "schema": "system-architecture/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "domainStep": "review",
+  "domains": {
+    "system-architecture": {
+      "skill": {
+        "id": "system-architecture",
+        "range": "^1.0.0"
+      },
+      "title": "Architecture decision review",
+      "purpose": "Review a system design or decision for boundaries, coupling, data ownership, failure modes, reversibility, and measured properties against the project's confirmed invariants, then record the findings and raise decisions that belong to the person.",
+      "execution": {
+        "path": "review",
+        "checkpoints": [
+          "Save the first useful artifact during the first authorized write step.",
+          "Preserve partial work and unknowns before gathering or repairs exhaust their budget."
+        ],
+        "evidenceObligations": [
+          "Support factual conclusions with admitted project evidence.",
+          "Inspect the actual result against the frozen acceptance criteria.",
+          "Render and inspect visual artifacts when the requested result has a visual surface."
+        ],
+        "maxGatherCalls": 12,
+        "stopWhen": [
+          "Budget exhausted: preserve partial work and remaining actions.",
+          "Required permission or essential intent is unresolved."
+        ],
+        "assurance": "structural"
+      }
+    },
+    "program-delivery": {
+      "skill": {
+        "id": "program-delivery",
+        "range": "^1.0.0"
+      },
+      "title": "Delivery plan review",
+      "purpose": "Review a plan or status for claims that cannot all hold, the critical path, capacity as a range with assumptions, risks with owners, and decisions needed; deterministic conflict checks run first, every finding is cited, and conflicts are raised to their owners.",
+      "deliverable": {
+        "kind": "review/delivery-plan",
+        "schema": "program-delivery/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "gather": {
+          "sources": [
+            {
+              "kind": "jira",
+              "freshness": "any",
+              "required": false
+            },
+            {
+              "kind": "docs",
+              "freshness": "any",
+              "required": false
+            }
+          ]
+        },
+        "checks": {
+          "title": "Run the deterministic conflict checks: dates against dependencies, double allocation, unstaffed dependencies"
+        },
+        "review": {
+          "title": "Review the plan against its obligations"
+        }
+      }
+    },
+    "experience-design": {
+      "skill": {
+        "id": "experience-design",
+        "range": "^1.0.0"
+      },
+      "title": "Experience review",
+      "purpose": "Review a screen or flow for task success, accessibility against WCAG 2.2, error states, consistency with the declared design system, and the evidence behind behavior claims; findings are recorded and unsupported claims are handed over as assumptions.",
+      "deliverable": {
+        "kind": "review/experience",
+        "schema": "experience-design/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "checks": {
+          "title": "Check criterion ids, evidence refs, and error-state coverage"
+        },
+        "review": {
+          "title": "Review the experience against its obligations"
+        }
+      }
+    },
+    "governance-risk": {
+      "skill": {
+        "id": "governance-risk",
+        "range": "^1.0.0"
+      },
+      "title": "Governance issue spotting",
+      "purpose": "Spot compliance, legal, and finance issues in a change, contract, data flow, or money flow: locate and quote the governing texts, state exposures and how they may apply as research, list expected controls and existing evidence, and prepare the questions and material a qualified reviewer needs; never advice or sign-off.",
+      "deliverable": {
+        "kind": "memo/issue-spotting",
+        "schema": "governance-risk/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "gather": {
+          "sources": [
+            {
+              "kind": "docs",
+              "freshness": "any",
+              "required": false
+            }
+          ]
+        },
+        "checks": {
+          "title": "Check that every exposure cites a text by section and the memo carries its label"
+        },
+        "review": {
+          "title": "Issue-spot against the governing texts and prepare the reviewer packet"
+        }
+      }
+    },
+    "software-engineering": {
+      "skill": {
+        "id": "software-engineering",
+        "range": "^1.0.0"
+      },
+      "title": "Implementation review",
+      "purpose": "Review a change, migration, or dependency proposal for correctness evidence, scope, reversibility, dependencies, and operability, cited against the project's confirmed principles; findings are recorded and anything that belongs to another pack or to the person is handed over.",
+      "deliverable": {
+        "kind": "review/implementation",
+        "schema": "software-engineering/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "checks": {
+          "title": "Run the project's own checks and record their results",
+          "capabilities": [
+            "run_validator",
+            "run_tests"
+          ]
+        },
+        "review": {
+          "title": "Review the implementation against its obligations"
+        }
+      }
+    },
+    "operations-reliability": {
+      "skill": {
+        "id": "operations-reliability",
+        "range": "^1.0.0"
+      },
+      "title": "Operational readiness review",
+      "purpose": "Review a service or change for objectives, signals, on-call, runbooks, rollback, and capacity against the project's risk posture, citing configs and records; anything without a way to notice failure and a way back is reported as not ready.",
+      "deliverable": {
+        "kind": "review/operational-readiness",
+        "schema": "operations-reliability/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "checks": {
+          "title": "Check that objectives, alerts, and runbooks cite configs and records"
+        },
+        "review": {
+          "title": "Review readiness against its obligations"
+        }
+      }
+    },
+    "product-management": {
+      "skill": {
+        "id": "product-management",
+        "range": "^1.0.0"
+      },
+      "title": "Product requirements review",
+      "purpose": "Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person.",
+      "deliverable": {
+        "kind": "review/product",
+        "schema": "product-management/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "gather": {
+          "sources": [
+            {
+              "kind": "docs",
+              "freshness": "any",
+              "required": false
+            }
+          ]
+        },
+        "checks": {
+          "title": "Check every claim for a declared source and every outcome for a measure"
+        },
+        "review": {
+          "title": "Review the document against its obligations"
+        }
+      }
+    },
+    "security-privacy": {
+      "skill": {
+        "id": "security-privacy",
+        "range": "^1.0.0"
+      },
+      "title": "Security and privacy review",
+      "purpose": "Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk.",
+      "deliverable": {
+        "kind": "review/security-privacy",
+        "schema": "security-privacy/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "checks": {
+          "title": "Check that every finding names a path, a control status, and a citation"
+        },
+        "review": {
+          "title": "Review the target against its security and privacy obligations"
+        }
+      }
+    },
+    "strategy-research": {
+      "skill": {
+        "id": "strategy-research",
+        "range": "^1.0.0"
+      },
+      "title": "Strategy-to-execution and capacity review",
+      "purpose": "Compare strategy documents to active work and capacity: normalize initiatives, owners, dates, dependencies, allocations, constraints, skills, operational load, and throughput history with each claim's source authority; run deterministic conflict checks first, then a cited semantic review; state capacity as ranges with assumptions; deliver conflicts, unlinked work, infeasible commitments, capacity ranges, and recommended decisions with freshness and assumptions shown.",
+      "deliverable": {
+        "kind": "review/strategy-execution",
+        "schema": "strategy-research/review/v1",
+        "challenge": true
+      },
+      "steps": {
+        "gather": {
+          "sources": [
+            {
+              "kind": "docs",
+              "freshness": "fresh",
+              "required": true
+            },
+            {
+              "kind": "jira",
+              "freshness": "fresh",
+              "required": false
+            },
+            {
+              "kind": "hris",
+              "freshness": "fresh",
+              "required": false
+            }
+          ]
+        },
+        "checks": {
+          "title": "Normalize the sources and run the deterministic conflict checks"
+        },
+        "review": {
+          "title": "Semantic review: incompatible commitments, cited to both texts"
+        }
+      }
+    }
+  },
+  "aliases": {
+    "architecture-decision-review": "system-architecture",
+    "delivery-plan-review": "program-delivery",
+    "experience-review": "experience-design",
+    "governance-issue-spotting": "governance-risk",
+    "implementation-review": "software-engineering",
+    "operational-readiness-review": "operations-reliability",
+    "product-requirements-review": "product-management",
+    "security-privacy-review": "security-privacy",
+    "strategy-execution-review": "strategy-research"
+  },
+  "legacyDigests": {
+    "architecture-decision-review": {
+      "version": "1.1.2",
+      "digest": "sha256:b80e494374368195eb428b70463618e11e578bfc7a8bf922264b94e7e364c77a"
+    },
+    "delivery-plan-review": {
+      "version": "1.0.3",
+      "digest": "sha256:d8a0f28287b39aa163f8a96bc9b1bae6d1628b1bf2a8f8fdd8ea7a1ebbb1b754"
+    },
+    "experience-review": {
+      "version": "1.0.3",
+      "digest": "sha256:06b69d3abfdc4ba5a75dbf1d1851bd38ae2829b64669e1d876bdb3bcd24822a7"
+    },
+    "governance-issue-spotting": {
+      "version": "1.0.3",
+      "digest": "sha256:889ca4eb6faa125984a0ac50513eb203b0284985ab7109f7e8f58d000ff3aad9"
+    },
+    "implementation-review": {
+      "version": "1.0.3",
+      "digest": "sha256:9b12ac1c989152fe153bf8a4f50c67f8d86b19806de687292e1e17a5a1a9992c"
+    },
+    "operational-readiness-review": {
+      "version": "1.0.3",
+      "digest": "sha256:eec8274b852da49849f7acf0cea9e6077f9731385a5ea246a1d4cf73f0f5edab"
+    },
+    "product-requirements-review": {
+      "version": "1.0.3",
+      "digest": "sha256:9b751de2397160610eab3923c0165da973b626dac7df3e8c70bee17a75899438"
+    },
+    "security-privacy-review": {
+      "version": "1.0.3",
+      "digest": "sha256:440aec249c90c445a3e84e4eedcce70a28bebde40a6180117baf68d6d4bdc2b8"
+    },
+    "strategy-execution-review": {
+      "version": "1.0.3",
+      "digest": "sha256:e1db8aa26015f34a4564e20edb454048be2ff115927fa7276a098bf7a428cb83"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { workflowCandidates, workflowDomainCatalog } from '../registry/workflow-domains.ts';
 import { isInside } from '../safety/containment.ts';
 import { contentReceipt } from '../workflow/verification.ts';
 import {
@@ -876,15 +877,16 @@ const classify = define<Record<string, unknown>, unknown>({
     const declared = declaredOf(intake);
     const found = matchWorkflows(intake, catalog);
     const checked = found.map((m, i) => {
-      const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId)!, {}, i === 0);
+      const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId, m.domain)!, {}, i === 0);
       const { preflight } = ctx.workflow.preflight(m.workflowId, input, { declared });
       return {
         match: {
           workflowId: m.workflowId,
+          ...(m.domain ? { domain: m.domain } : {}),
           title: m.title,
           deliverableKind: m.deliverableKind,
           because: m.because,
-          verification: workflowVerification(ctx.workflows.get(m.workflowId)!),
+          verification: workflowVerification(ctx.workflows.get(m.workflowId, m.domain)!),
           status: preflight.status,
           summary: preflight.summary,
           reasons: preflight.reasons,
@@ -908,10 +910,11 @@ const classify = define<Record<string, unknown>, unknown>({
       ...((intake.kind === 'manage' || intake.kind === 'maintain') &&
       (intake.deliverable?.kind === 'other' || found[0]?.workflowId === GENERAL_CARRIER)
         ? {
-            carrierAlternatives: catalog.workflows
+            carrierAlternatives: workflowCandidates(catalog.workflows)
               .filter((w) => w.manifest.id !== GENERAL_CARRIER && workflowCarries(w, intake.kind, intake.schedule))
               .map((w) => ({
-                workflowId: w.manifest.id,
+                workflowId: w.canonicalId ?? w.manifest.id,
+                ...(w.domain ? { domain: w.domain } : {}),
                 deliverableKind: w.manifest.deliverable.kind,
                 title: w.manifest.title,
                 verification: workflowVerification(w),
@@ -958,6 +961,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
     if (action === 'list')
       return ctx.workflows.list().map((w) => ({
         id: w.manifest.id,
+        ...workflowDomainCatalog(w),
         title: w.manifest.title,
         version: w.manifest.version,
         interactionClass: w.manifest.interactionClass,
@@ -967,7 +971,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
         triggers: w.manifest.triggers,
       }));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
-    const w = ctx.workflows.get(id);
+    const w = ctx.workflows.get(id, input?.domain);
     if (!w) throw new Error(`no workflow "${id}"; list shows the ones this project has`);
     if (action === 'show') return { ...w.manifest, origin: w.origin, digest: w.digest };
     return ctx.workflow.preflight(id, input ?? {}).preflight;
@@ -1065,7 +1069,14 @@ function startedResult(
   return {
     started: true,
     semanticReview: semanticReviewStatus(ctx.store, r.run, checkoutResolver(ctx.store, ctx), ctx.now()),
-    run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
+    run: {
+      id: r.run.id,
+      state: r.run.state,
+      workflow: r.run.workflowId,
+      ...(typeof (r.run.input as Record<string, unknown> | null)?.domain === 'string'
+        ? { domain: (r.run.input as Record<string, unknown>).domain }
+        : {}),
+    },
     created: r.created,
     preflight: r.preflight,
     differs: r.differs,
@@ -1115,13 +1126,19 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
       const catalog = intakeCatalog(ctx);
       const validated = fromIntake(() => validateIntake(intake, catalog, 'start'));
       const matches = matchWorkflows(validated.intake, catalog);
-      const match = matches.find((m) => m.workflowId === workflowId);
+      const requested = ctx.workflows.get(
+        workflowId,
+        explicit.domain ?? validated.intake.inputs.domain ?? validated.intake.skill ?? undefined,
+      );
+      const match = matches.find(
+        (m) => m.workflowId === (requested?.canonicalId ?? workflowId) && (!requested?.domain || m.domain === requested.domain),
+      );
       if (!match)
         throw new ToolInputError(`${workflowId} does not carry this reading; start one of the workflows it matched`, {
           field: 'workflowId',
           allowed: matches.map((m) => m.workflowId),
         });
-      const workflow = ctx.workflows.get(workflowId)!;
+      const workflow = ctx.workflows.get(workflowId, explicit.domain ?? match.domain)!;
       const { input: mapped } = mappedInput(validated.intake, workflow, explicit, true);
       refuseWrongInput(ctx, workflow, mapped);
       const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, match, catalog, explicit));
@@ -1148,7 +1165,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
       });
       return startedResult(ctx, r, validated.normalized, validated.assumptions);
     }
-    const workflow = ctx.workflows.get(workflowId);
+    const workflow = ctx.workflows.get(workflowId, explicit.domain);
     if (!workflow || !startable(workflow))
       throw new ToolInputError(`no workflow "${workflowId}" can be started here`, {
         field: 'workflowId',
