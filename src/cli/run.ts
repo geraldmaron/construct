@@ -9,6 +9,7 @@ import { listRuns, RUN_STATES, type RunState } from '../kernel/state/runs.ts';
 import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
 import { openBroker } from './broker-context.ts';
+import { recoverAbandonedSteps } from '../kernel/broker/managed-delivery.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 
 const group = 'Runs';
@@ -184,6 +185,8 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         return 0;
       }
       case 'cancel': {
+        // A step whose holder session is observed to have ended is not in progress; free it so the cancel settles now.
+        recoverAbandonedSteps(broker, args.positionals[0]!);
         const run = broker.workflow.cancel({
           runId: args.positionals[0]!,
           by: 'cli',
