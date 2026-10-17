@@ -211,7 +211,6 @@ Surface: both. Reads only: no.
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
 | `token` | string | yes | From claim_work: the lease’s secret. |
-| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
 | `evidence[].ref` | string | yes | Recorded item ref, source-qualified ref, file or complete HTTP(S) link. |
@@ -429,7 +428,6 @@ Surface: both. Reads only: no.
 |---|---|---|---|
 | `stepRunId` | string | yes | From the claim. |
 | `token` | string | yes | From the claim: the lease’s secret. |
-| `owner` | string | no | Ignored: the lease holder is the calling session. |
 
 ## Headless surface
 
@@ -461,7 +459,6 @@ Surface: both. Reads only: no.
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
 | `token` | string | yes | From claim_work: the lease’s secret. |
-| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
 | `evidence[].ref` | string | yes | Recorded item ref, source-qualified ref, file or complete HTTP(S) link. |
@@ -514,7 +511,6 @@ Surface: both. Reads only: no.
 |---|---|---|---|
 | `stepRunId` | string | yes | From the claim. |
 | `token` | string | yes | From the claim: the lease’s secret. |
-| `owner` | string | no | Ignored: the lease holder is the calling session. |
 
 ## Never on the headless surface
 

@@ -32,7 +32,7 @@ async function submit(
   output: Record<string, unknown>,
   evidence: { ref: string; excerpt?: string }[],
 ) {
-  return call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+  return call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 }
 
 test('a plain answer can be checked before it is given, and checking records nothing', async () => {

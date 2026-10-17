@@ -48,7 +48,7 @@ for (const mode of [
       const runId = started.run.id;
       const claim = async () => (await call('claim_work', { runId })).work;
       const submit = (work: any, output: unknown, evidence: unknown[] = []) =>
-        call('submit_work', { stepRunId: work.stepRunId, owner: work.owner, token: work.token, output, evidence });
+        call('submit_work', { stepRunId: work.stepRunId, token: work.token, output, evidence });
       const planned = await submit(await claim(), {
         plan: ['Read the design and write a note'],
         assumptions: [],

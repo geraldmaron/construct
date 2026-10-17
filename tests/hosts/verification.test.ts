@@ -97,7 +97,7 @@ for (const outcome of ['missing', 'failed', 'stale', 'wrong_attempt', 'passed'] 
       const runId = fired.runId!;
       const claim = async () => (await call('claim_work', { runId })).work;
       const submit = async (work: any, output: unknown, evidence: unknown[] = []) =>
-        call('submit_work', { stepRunId: work.stepRunId, owner: work.owner, token: work.token, output, evidence });
+        call('submit_work', { stepRunId: work.stepRunId, token: work.token, output, evidence });
       await submit(await claim(), { plan: ['Read design and write note'], assumptions: [], blockers: [] });
       writeFileSync(join(fx.box.cwd, 'note.md'), 'Keep the kernel host-agnostic.');
       const written = await submit(

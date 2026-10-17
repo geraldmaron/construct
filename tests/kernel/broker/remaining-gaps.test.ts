@@ -26,7 +26,7 @@ const submit = (
   w: any,
   output: Record<string, unknown>,
   evidence: { ref: string; excerpt?: string }[],
-) => call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+) => call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 
 test('a decision that rules terms out is enforced in answers and in work once the person confirms it, unless the text says it was decided against', async () => {
   const fx = brokerFixture();

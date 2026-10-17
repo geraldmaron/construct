@@ -44,7 +44,7 @@ test('a lease is proved by its secret and its session, never by the attempt numb
       input: { target: 'src/kernel/state' },
     })) as { run: { id: string } };
     const claimed = (await call(fx.broker, 'claim_work', { runId: started.run.id })) as {
-      work: { stepRunId: string; owner: string; token: string };
+      work: { stepRunId: string; token: string };
     };
     assert.match(claimed.work.token, /^[0-9a-f-]{36}$/, 'the token is a random secret');
     const attempt = String(getStep(fx.broker.store, claimed.work.stepRunId)!.attempts);
@@ -55,7 +55,7 @@ test('a lease is proved by its secret and its session, never by the attempt numb
 
     const other = secondSession(fx);
     await assert.rejects(
-      call(other, 'submit_work', { stepRunId: claimed.work.stepRunId, owner: claimed.work.owner, token: claimed.work.token, output: {} }),
+      call(other, 'submit_work', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, output: {} }),
       /not held by this session/,
       'a session that learned the token still cannot submit another session’s step',
     );

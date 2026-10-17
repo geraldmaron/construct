@@ -1226,7 +1226,6 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         semanticReview: p.semanticReview,
         delivery,
         stepRunId: p.leased.id,
-        owner: p.leased.leaseOwner,
         token: p.leased.nonce,
         leaseUntil: p.leased.leaseUntil,
         run: { id: p.run.id, workflow: p.run.workflowId },
@@ -1300,7 +1299,6 @@ const submitWork = define<SubmitInput, unknown>({
     properties: {
       stepRunId: { type: 'string', description: 'From claim_work.' },
       token: { type: 'string', description: 'From claim_work: the lease’s secret.' },
-      owner: { type: 'string', description: 'Ignored: the lease holder is the calling session.' },
       output: { type: 'object', description: 'The step’s result, with the keys it declared.' },
       evidence: { type: 'array', description: 'What was read: {ref, excerpt?} entries.', items: CITATION_ITEM },
       noData: { type: 'boolean', description: 'The step found nothing to work on.' },
@@ -2863,7 +2861,6 @@ const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
     properties: {
       stepRunId: { type: 'string', description: 'From the claim.' },
       token: { type: 'string', description: 'From the claim: the lease’s secret.' },
-      owner: { type: 'string', description: 'Ignored: the lease holder is the calling session.' },
     },
     required: ['stepRunId', 'token'],
     additionalProperties: false,
@@ -2910,7 +2907,6 @@ const claimStep = define<{ runId?: string }, unknown>({
       work: {
         semanticReview: p.semanticReview,
         stepRunId: p.leased.id,
-        owner: p.leased.leaseOwner,
         token: p.leased.nonce,
         leaseUntil: p.leased.leaseUntil,
         run: { id: p.run.id, workflow: p.run.workflowId },

@@ -350,24 +350,29 @@ test('the interactive lifecycle: read, start, claim, submit, status, promote', a
     assert.equal(started.created, true);
     assert.equal(started.run.state, 'ready');
     const claimed = (await call(fx, 'claim_work', { runId: started.run.id, includeSkillBody: true })) as {
-      work: { stepRunId: string; owner: string; token: number; step: { id: string }; skill: { id: string; body: string } };
+      work: { stepRunId: string; token: number; step: { id: string }; skill: { id: string; body: string } };
     };
     assert.equal(claimed.work.step.id, 'gather');
     assert.equal(claimed.work.skill.id, 'context-mapping');
     assert.match(claimed.work.skill.body, /^---\nname: context-mapping/);
+    assert.equal('owner' in claimed.work, false, 'the lease holder is the calling session, so the packet does not name one');
+    for (const [tool, input] of [
+      ['submit_work', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, owner: 'me', output: {} }],
+      ['heartbeat', { stepRunId: claimed.work.stepRunId, token: claimed.work.token, owner: 'me' }],
+    ] as const) {
+      await assert.rejects(call(fx, tool, input), /"owner" is not an input of this tool/, `${tool} refuses owner by name`);
+    }
     const bad = (await call(fx, 'submit_work', {
       stepRunId: claimed.work.stepRunId,
-      owner: claimed.work.owner,
       token: claimed.work.token,
       output: { principles: [] },
     })) as { step: { state: string }; validation: { ok: boolean }[] };
     assert.equal(bad.step.state, 'ready', 'no evidence: retried');
     const again = (await call(fx, 'claim_work', { runId: started.run.id })) as {
-      work: { stepRunId: string; owner: string; token: number };
+      work: { stepRunId: string; token: number };
     };
     const ok = (await call(fx, 'submit_work', {
       stepRunId: again.work.stepRunId,
-      owner: again.work.owner,
       token: again.work.token,
       output: { principles: ['keep the kernel host-agnostic'], targetSummary: 'the state module', unknownPrinciples: [] },
       evidence: [{ ref: 'docs/design.md' }],
@@ -376,7 +381,6 @@ test('the interactive lifecycle: read, start, claim, submit, status, promote', a
     assert.equal(
       await call(fx, 'submit_work', {
         stepRunId: again.work.stepRunId,
-        owner: again.work.owner,
         token: again.work.token,
         output: {},
       }).catch((e: Error) => e.message),

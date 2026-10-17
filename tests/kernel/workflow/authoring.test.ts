@@ -65,7 +65,7 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
     const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string; excerpt?: string }[]) =>
-      call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+      call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
 
     let w = await step();
     assert.equal(w.step.id, 'gather');
@@ -141,7 +141,7 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
     const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string }[]) =>
-      call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+      call(fx, 'submit_work', { stepRunId: w.stepRunId, token: w.token, output, evidence });
     await submit(await step(), { summary: 's', findings: ['f'], material: [], conflicts: [], unknowns: [] }, [{ ref: 'docs/notes.md' }]);
     const draft = { summary: 'draft', findings: ['cost'], artifact: 'docs/prd.md', derivations: [] };
     let r: Record<string, any> = {};
