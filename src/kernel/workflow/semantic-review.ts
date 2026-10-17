@@ -12,7 +12,7 @@ import { listRunDecisions } from '../state/decisions.ts';
 import { listStatements } from '../state/profile.ts';
 import { currentManifestRecord } from '../source/manifest.ts';
 import { readReferenceDispositions, type ReferenceDisposition } from '../source/research.ts';
-import type { RefResolver, ResolvedRef } from '../project/evidence.ts';
+import { textDigest, type ContentPin, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
 import { askedOf } from './asked.ts';
 import { artifactRefs, inheritedEvidence, requestedFileProblems, executionCheck } from './verification.ts';
 
@@ -425,6 +425,14 @@ function unreadableReviewProblem(payload: string): string {
     ? "The stored legacy review packet cannot be verified under this host's locale-dependent canonicalization or current bounds; its bytes remain preserved."
     : 'The stored review packet uses an unsupported representation or no longer verifies under its declared canonicalization and bounds.';
 }
+/** What reviewed content is, wherever it is read from: its absolute path, checkout and commit say only where. */
+const unlocated = (content: ResolvedRef | null): unknown =>
+  content && Object.fromEntries(Object.entries(content).filter(([key]) => key !== 'path' && key !== 'checkout' && key !== 'commit'));
+/** The bytes a reviewed item held, asked for wherever the project holds them. */
+const pinOf = (content: ResolvedRef | null): ContentPin | undefined => {
+  const digest = textDigest(content?.text);
+  return digest === null ? undefined : { digest, ...(content?.checkout ? { checkout: content.checkout } : {}) };
+};
 export function reviewFreshnessProblems(store: StateStore, prepared: PreparedReview, resolve?: RefResolver): string[] {
   const b = prepared.bundle,
     run = getRun(store, b.runId),
@@ -438,10 +446,14 @@ export function reviewFreshnessProblems(store: StateStore, prepared: PreparedRev
     [b.evidence, undefined],
   ] as const) {
     for (const item of items) {
-      if (reviewDigest(resolve?.(item.ref, use) ?? null) !== reviewDigest(item.content))
+      const pin = pinOf(item.content);
+      if (reviewDigest(unlocated(resolve?.(item.ref, use, pin) ?? null)) !== reviewDigest(unlocated(item.content)))
         problems.push(`${item.ref}: review content or provenance changed`);
       for (const alias of item.aliases ?? [])
-        if (heldIdentity(resolve?.(alias, use) ?? null) !== heldIdentity(item.content))
+        if (
+          heldIdentity(unlocated(resolve?.(alias, use, pin) ?? null) as ResolvedRef | null) !==
+          heldIdentity(unlocated(item.content) as ResolvedRef | null)
+        )
           problems.push(`${alias}: review alias content or provenance changed`);
     }
   }

@@ -16,7 +16,7 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import type { HostCapabilities } from '../kernel/registry/capability-registry.ts';
 import { createWorkflowService } from '../kernel/workflow/service.ts';
 import { createTriggerService } from '../kernel/workflow/triggers.ts';
-import { projectResolver } from '../kernel/source/resolver.ts';
+import { checkoutResolver } from '../kernel/source/resolver.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { hostReaders } from '../hosts/sources/readers.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
@@ -170,7 +170,12 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     sources: available,
     projectWritePolicy,
     semanticReviewer: pinSemanticReviewer(binding.client, ctx.env, project.root),
-    resolveEvidence: (ref, use) => projectResolver(project.store, project.root, null, { hostReads: policy.hostReads })(ref, use),
+    resolveEvidence: (ref, use, pin) =>
+      checkoutResolver(
+        project.store,
+        { root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root) },
+        { hostReads: policy.hostReads },
+      )(ref, use, pin),
     now: ctx.now,
     nextId: ctx.nextId,
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),

@@ -39,8 +39,15 @@
  * A path is judged by where it really lives: a symlink inside the project
  * that points outside it does not resolve, so citing it cannot make
  * Construct read a file the project does not hold.
+ *
+ * A path names a file in the checkout the resolver is bound to. Cited
+ * content is identified by its bytes, not its spelling: a check of earlier
+ * evidence passes a pin (the digest observed then, and the checkout it was
+ * read from), and the resolver answers with a file only when its bytes are
+ * those bytes.
  */
 
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ManifestEntry } from '../source/manifest.ts';
@@ -77,12 +84,28 @@ export interface ResolvedRef {
   readonly updatedAt?: string;
   /** Bytes on disk, for files. */
   readonly size?: number;
+  /** The project's directory in the git checkout a file was read from, when the resolver is bound to one. */
+  readonly checkout?: string;
+  /** That checkout's commit when the file was read; the bytes may be uncommitted, so the digest is their identity. */
+  readonly commit?: string | null;
   /** The document that says it replaces this one, when one does. */
   readonly supersededBy?: string;
 }
 
+/** Bytes observed earlier: a resolver returns a file for a pinned reference only when its bytes are these. */
+export interface ContentPin {
+  readonly digest: string;
+  /** The checkout the bytes were read from, consulted after the resolver's own. */
+  readonly checkout?: string;
+}
+
 /** Artifacts are literal project filenames; evidence retains citation grammar. */
-export type RefResolver = (ref: string, use?: 'artifact') => ResolvedRef | null;
+export type RefResolver = (ref: string, use?: 'artifact', pin?: ContentPin) => ResolvedRef | null;
+
+/** The identity of text Construct read: its SHA-256, or null when it holds no text. */
+export function textDigest(text: string | undefined): string | null {
+  return typeof text === 'string' ? createHash('sha256').update(text).digest('hex') : null;
+}
 
 export interface EvidenceSource {
   /** A revoked source stays identifiable for refusal, but supplies no current evidence. */
@@ -114,6 +137,8 @@ export interface ResolverInput {
    * accept: an unrecorded one resolves as unverified.
    */
   readonly hostReads?: 'require' | 'accept';
+  /** Set when root is the project's directory in a git checkout: files read inside it record it and this commit. */
+  readonly checkout?: { readonly commit: () => string | null };
 }
 
 /** Names of Construct's own surfaces a step may cite as what it consulted. They hold no text to check against. */
@@ -238,7 +263,8 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     };
     if (st.isDirectory()) return { ...common, kind: 'directory' };
     if (!st.isFile()) return null;
-    return { ...common, kind: 'file', size: st.size, text: readText(real) };
+    const where = input.checkout && inside(realRoot, real) ? { checkout: root, commit: input.checkout.commit() } : {};
+    return { ...common, kind: 'file', size: st.size, text: readText(real), ...where };
   };
   // An item a recorded read holds, with what the read kept. A manifest that does not say how it was obtained is
   // the host's report, never Construct's own reading.

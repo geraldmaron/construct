@@ -10,7 +10,7 @@ import { getStep, heldLease, listSteps } from '../kernel/state/steps.ts';
 import { getRun } from '../kernel/state/runs.ts';
 import type { StateStore } from '../kernel/state/open.ts';
 import type { RefResolver } from '../kernel/project/evidence.ts';
-import { artifactRefs, contentReceipt, type ContentReceipt } from '../kernel/workflow/verification.ts';
+import { artifactRefs, contentReceipt, currentReceipt, type ContentReceipt } from '../kernel/workflow/verification.ts';
 import { redact } from '../kernel/render/redact.ts';
 
 export interface CommandWitness {
@@ -156,7 +156,7 @@ export async function executeVerification(input: {
     outputDigest: hash.digest('hex'),
     outputExcerpt: redact(excerpt),
     subjects,
-    subjectsStable: subjects.every((s) => contentReceipt(s.ref, input.resolve, 'artifact').digest === s.digest),
+    subjectsStable: subjects.every((s) => currentReceipt(s, input.resolve, 'artifact').digest === s.digest),
     assurance: 'command_observed',
     intendedVerification: intended && intendedResult ? { digest: intended.digest, ...intendedResult } : null,
     semanticSupportVerified: false,

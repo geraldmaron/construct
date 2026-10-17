@@ -33,7 +33,7 @@ import { appendActivity } from '../../kernel/state/activity.ts';
 import { listOpenDecisions } from '../../kernel/state/decisions.ts';
 import { waitingOn } from '../../kernel/broker/tools.ts';
 import type { HostReportItem } from '../../kernel/source/service.ts';
-import { projectResolver } from '../../kernel/source/resolver.ts';
+import { checkoutResolver } from '../../kernel/source/resolver.ts';
 import { urlProblem } from '../../kernel/project/urls.ts';
 
 /**
@@ -351,7 +351,7 @@ export function projectFactsIn(ctx: BrokerContext, text: string): string[] {
   }
   // A file name is a project fact only when it names a file this project actually holds: "package.json" in
   // passing, or a dependency's README, is not.
-  const resolve = projectResolver(ctx.store, ctx.root);
+  const resolve = checkoutResolver(ctx.store, ctx);
   for (const m of text.matchAll(/\b[\w./-]+\.(?:md|markdown|txt|csv|json)\b/g)) {
     const r = resolve(m[0]);
     if (r?.kind === 'file' && r.sourceId) out.add(m[0]);

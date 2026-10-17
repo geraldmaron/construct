@@ -4,7 +4,7 @@ import { executeSemanticReview } from '../hosts/semantic-review.ts';
  */
 
 import { executeVerification } from '../hosts/verification.ts';
-import { projectResolver } from '../kernel/source/resolver.ts';
+import { checkoutResolver } from '../kernel/source/resolver.ts';
 import { listRuns, RUN_STATES, type RunState } from '../kernel/state/runs.ts';
 import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
@@ -97,10 +97,10 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
           preparedRef,
           host,
           model,
-          root: project.root,
+          root: broker.lane?.root ?? project.root,
           env: ctx.env,
           now: ctx.now,
-          resolve: (ref, use) => projectResolver(project.store, project.root)(ref, use),
+          resolve: checkoutResolver(project.store, broker),
           timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined,
         });
         writeJson(result);
@@ -123,10 +123,10 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
           token,
           argv,
           subjects,
-          root: project.root,
+          root: broker.lane?.root ?? project.root,
           env: ctx.env,
           now: ctx.now,
-          resolve: (ref, use) => projectResolver(project.store, project.root)(ref, use),
+          resolve: checkoutResolver(project.store, broker),
           timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined,
         });
         writeJson(result);
