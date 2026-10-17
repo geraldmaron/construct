@@ -87,6 +87,8 @@ test('recipes name the trigger, the project, and the firing key, for cron and CI
     assert.match(cron, /CRON_TZ=Europe\/Berlin/);
     assert.match(cron, /npx --no-install construct workflow fire 'monthly' --execute='codex'/);
     assert.match(cron, /Construct keeps the run ledger/);
+    assert.doesNotMatch(cron, /--key|date -u/, 'a cron tick names the slot that was due, not the wall clock');
+    assert.doesNotMatch(cron, /installs no clock/);
     const ci = fx.triggers.recipe('monthly', 'github-actions', 'codex');
     assert.match(ci, /cron: "0 9 1 \* \*"/);
     assert.match(ci, /--key "\$GITHUB_RUN_ID"/);
@@ -214,5 +216,59 @@ test('standing intents isolate identical keys, overlap, replacement and cancella
       fx.service.cancel({ runId: next.runId!, by: 'test owner', reason: 'done' });
       assert.equal(fx.service.status(west.runId!)!.run.state, 'succeeded');
     } finally { fx.cleanup(); }
+  }
+});
+
+test('a firing without a key names the schedule slot that was due, so a late or coalesced start covers it once and a repeat deduplicates', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    const lastWeek = { semantics: 'changed_during', relative: 'last_week' };
+    moveTo(fx, '2026-10-11T12:00:00.000Z');
+    fx.triggers.define({ id: 'weekly', workflowId: 'digest', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'queue', maxTier: 'draft', delivery: {}, input: { target: 'payments', period: lastWeek, sources: ['jira'] } });
+
+    // The timer starts the process half a minute after the slot.
+    moveTo(fx, '2026-10-12T07:00:31.000Z');
+    const first = fx.triggers.fire({ triggerId: 'weekly' });
+    assert.equal(first.outcome, 'started', first.reason);
+    assert.equal(first.firing?.idempotencyKey, 'weekly@2026-10-12T07:00:00.000Z');
+
+    // A second start a minute later, from a duplicate wake or a person, is the same slot.
+    moveTo(fx, '2026-10-12T07:01:45.000Z');
+    const repeat = fx.triggers.fire({ triggerId: 'weekly' });
+    assert.equal(repeat.outcome, 'deduplicated', repeat.reason);
+    assert.equal(repeat.runId, first.runId);
+    assert.match(repeat.reason, /weekly@2026-10-12T07:00:00.000Z was already handled/);
+
+    // The machine slept through two slots; launchd coalesces them into one start on wake.
+    moveTo(fx, '2026-10-27T10:30:00.000Z');
+    const woke = fx.triggers.fire({ triggerId: 'weekly' });
+    assert.equal(woke.outcome, 'started', woke.reason);
+    assert.equal(woke.firing?.idempotencyKey, 'weekly@2026-10-19T07:00:00.000Z', 'the key is the slot that was due, not the wall clock');
+    assert.deepEqual(askedOf(fx.service.status(woke.runId!)!.run).firing, { triggerId: 'weekly', dueAt: '2026-10-19T07:00:00.000Z' });
+    const again = fx.triggers.fire({ triggerId: 'weekly' });
+    assert.equal(again.outcome, 'deduplicated');
+    assert.equal(listFirings(fx.store, 'weekly').filter((f) => f.outcome === 'started').length, 2);
+
+    // An explicit key still wins.
+    assert.equal(fx.triggers.fire({ triggerId: 'weekly', firingKey: 'by-hand' }).firing?.idempotencyKey, 'by-hand');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a platform timer is written only for a schedule trigger with an explicit executor', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    fx.triggers.define({ id: 'monthly', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 1 * *', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
+    const facts = { projectId: 'proj-abc12345', node: '/n/node', launcher: '/c/construct.mjs', path: '/n:/usr/bin', logDir: '/s/timers', systemTimezone: 'Europe/Berlin' };
+    assert.throws(() => fx.triggers.timer('monthly', 'launchd', undefined, facts), /needs an explicit executor: without one a firing only records a tick/);
+    assert.throws(() => fx.triggers.timer('monthly', 'launchd', 'rm -rf', facts), /adapter id, not a shell command/);
+    const [plist] = fx.triggers.timer('monthly', 'launchd', 'codex', facts);
+    assert.match(plist!.content, /<key>WorkingDirectory<\/key><string>\/repo<\/string>/);
+    assert.equal(fx.triggers.recipe('monthly', 'launchd', 'codex', facts), `# ${plist!.name}\n${plist!.content}`, 'the recipe prints exactly what install-timer writes');
+    assert.match(fx.triggers.recipe('monthly', 'systemd', undefined, facts), /Unprovisioned/);
+    assert.throws(() => fx.triggers.timer('monthly', 'launchd', 'codex', { ...facts, systemTimezone: 'UTC' }), /launchd cannot express it exactly/);
+  } finally {
+    fx.cleanup();
   }
 });
