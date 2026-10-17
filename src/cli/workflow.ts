@@ -17,7 +17,7 @@ import { createContext, resolveRepository, type CliContext } from './context.ts'
 import { openBroker } from './broker-context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { runExecutionProblems } from '../kernel/workflow/verification.ts';
-import { projectResolver } from '../kernel/source/resolver.ts';
+import { checkoutResolver } from '../kernel/source/resolver.ts';
 import { differsFlag } from '../kernel/workflow/service.ts';
 import { transitionRun } from '../kernel/state/runs.ts';
 import { timerLabel, type TimerFacts } from '../kernel/workflow/timer-unit.ts';
@@ -436,7 +436,7 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
         const state = result.runId ? broker.workflow.status(result.runId)?.run.state : null;
         const verificationProblems =
           state === 'succeeded' && result.runId
-            ? runExecutionProblems(project.store, result.runId, projectResolver(project.store, project.root))
+            ? runExecutionProblems(project.store, result.runId, checkoutResolver(project.store, broker))
             : [];
         const complete = state === 'succeeded' && verificationProblems.length === 0;
         const disabled = result.outcome === 'disabled';

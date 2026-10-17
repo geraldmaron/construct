@@ -17,7 +17,7 @@ import { expireDeadLeases, listSteps } from '../state/steps.ts';
 import { createWork, getWork, claimWork, takeoverWork, associateRun, completeWork, releaseWork, cancelWork } from '../work/service.ts';
 import { findOverlaps, MAIN_LANE, normalizeLeasePath } from '../work/leases.ts';
 import { contentReceipt } from '../workflow/verification.ts';
-import { projectResolver } from '../source/resolver.ts';
+import { checkoutResolver } from '../source/resolver.ts';
 
 const identity = (runId: string) => `work-${runId}-delivery`;
 const owner = (ctx: BrokerContext) => (ctx.sessionId ? `${ctx.sessionId}/main` : ctx.actor);
@@ -188,7 +188,7 @@ function recoverPriorPreparation(
     if (!item || !prior || scope?.kind !== 'managed_delivery' || identity(prior.id) !== item.id) continue; // ordinary reservations retain their existing conflict contract
     const reasons: string[] = [],
       state = holderState(ctx, item.claimSession);
-    const checkpoint = contentReceipt(path, projectResolver(ctx.store, ctx.root), 'artifact');
+    const checkpoint = contentReceipt(path, checkoutResolver(ctx.store, ctx), 'artifact');
     const creation = (id: string) =>
       (
         ctx.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'run.created' AND run_id = ? ORDER BY id LIMIT 1").get(id) as
@@ -406,7 +406,7 @@ export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
     recoveredPreparation,
     owner: claimant,
     claimUntil: held.claimUntil,
-    checkpoint: contentReceipt(path, projectResolver(ctx.store, ctx.root), 'artifact'),
+    checkpoint: contentReceipt(path, checkoutResolver(ctx.store, ctx), 'artifact'),
     next: `${reservedPath === path ? '' : `The containing repository scope ${JSON.stringify(reservedPath)} is reserved conservatively for this filename. `}This run already reserves the requested file. Do not create a second outcome, remember a new commitment, or repeat work claim for this path. Write/checkpoint the artifact during the first allowed project-write step, then submit its reference. A reservation does not widen the step tier or accept the result.`,
   };
 }
@@ -419,14 +419,14 @@ export function settleManagedDelivery(ctx: BrokerContext, runId: string, state: 
   if (scope?.kind !== 'managed_delivery' || scope.runId !== runId) return;
   const token = reservationToken(ctx, item.id);
   if (!token) throw new Error('managed delivery reservation lost its claim secret');
-  if (state === 'succeeded' && runExecutionProblems(ctx.store, runId, projectResolver(ctx.store, ctx.root)).length) return;
+  if (state === 'succeeded' && runExecutionProblems(ctx.store, runId, checkoutResolver(ctx.store, ctx)).length) return;
   if (state === 'succeeded')
     completeWork(ctx.store, {
       id: item.id,
       owner: item.claimOwner,
       token,
       at: ctx.now(),
-      resolveEvidence: projectResolver(ctx.store, ctx.root),
+      resolveEvidence: checkoutResolver(ctx.store, ctx),
       reason:
         'The managed run completed its required checks and requested artifact. This records delivery, not human acceptance or universal semantic verification.',
     });

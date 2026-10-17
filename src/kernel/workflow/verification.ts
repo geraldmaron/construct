@@ -5,15 +5,24 @@ import type { WorkflowStep } from '../registry/models.ts';
 import { getRun } from '../state/runs.ts';
 import { listSteps, type StepRun } from '../state/steps.ts';
 /** Kernel content receipts separate byte identity and deterministic checks from host-reported execution. */
-import { createHash } from 'node:crypto';
-import type { RefResolver } from '../project/evidence.ts';
+import { textDigest, type RefResolver } from '../project/evidence.ts';
 
+/**
+ * What a cited reference held when it was observed. Its identity is the
+ * reference and the digest of those bytes; the checkout and commit say where
+ * they were read. A later check asks for those bytes (currentReceipt), so the
+ * same receipt is never satisfied by different content in another checkout.
+ */
 export interface ContentReceipt {
   readonly historical?: boolean;
   readonly snapshotId?: string;
   readonly ref: string;
   readonly digest: string | null;
   readonly provenance: string;
+  /** The project's directory in the checkout a file was read from. */
+  readonly checkout?: string;
+  /** That checkout's commit when it was read. */
+  readonly commit?: string | null;
 }
 export interface VerificationReceipt {
   readonly formatVersion: 1;
@@ -32,12 +41,22 @@ export interface VerificationReceipt {
 }
 
 export function contentReceipt(ref: string, resolve?: RefResolver, use?: 'artifact'): ContentReceipt {
-  const hit = resolve?.(ref, use);
+  return receiptOf(ref, resolve?.(ref, use));
+}
+
+/** What an earlier receipt's reference holds now, looked up by the bytes it observed wherever the project holds them. */
+export function currentReceipt(prior: ContentReceipt, resolve?: RefResolver, use?: 'artifact'): ContentReceipt {
+  const pin = prior.digest === null ? undefined : { digest: prior.digest, ...(prior.checkout ? { checkout: prior.checkout } : {}) };
+  return receiptOf(prior.ref, resolve?.(prior.ref, use, pin));
+}
+
+function receiptOf(ref: string, hit: ReturnType<RefResolver> | undefined): ContentReceipt {
   return {
     ...(hit?.snapshotId ? { snapshotId: hit.snapshotId, historical: hit.historical } : {}),
     ref,
-    digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null,
+    digest: textDigest(hit?.text),
     provenance: hit?.provenance ?? 'unresolved',
+    ...(hit?.checkout ? { checkout: hit.checkout, commit: hit.commit ?? null } : {}),
   };
 }
 export function namedArtifactPath(value: unknown): string | null {
@@ -124,7 +143,7 @@ export function stalePriorEvidence(prior: readonly ContentReceipt[], subjects: r
       prior
         .filter((entry) => {
           if (entry.digest === null || sameProducedFile(entry.ref, subjects, resolve)) return false;
-          const current = contentReceipt(entry.ref, resolve);
+          const current = currentReceipt(entry, resolve);
           return (
             current.digest !== entry.digest ||
             current.provenance !== entry.provenance ||
@@ -139,7 +158,7 @@ export function stalePriorEvidence(prior: readonly ContentReceipt[], subjects: r
 /** Missing or changed content cannot inherit a receipt for previously observed bytes. */
 export function staleReceiptSubjects(receipt: VerificationReceipt, resolve: RefResolver): string[] {
   const stale = (subject: ContentReceipt, use?: 'artifact') => {
-    const current = contentReceipt(subject.ref, resolve, use);
+    const current = currentReceipt(subject, resolve, use);
     return (
       subject.digest === null ||
       current.digest !== subject.digest ||
@@ -213,11 +232,7 @@ export function executionCheck(
   if (!receipt.subjectsStable) problems.push('verification subject changed while the command ran');
   if (input.subjects.some((ref) => !receipt.subjects.some((s) => s.ref === ref)))
     problems.push('execution receipt does not cover every current artifact');
-  if (
-    receipt.subjects.some(
-      (s) => s.digest === null || !input.resolve || contentReceipt(s.ref, input.resolve, 'artifact').digest !== s.digest,
-    )
-  )
+  if (receipt.subjects.some((s) => s.digest === null || !input.resolve || currentReceipt(s, input.resolve, 'artifact').digest !== s.digest))
     problems.push('execution receipt is stale or its subject no longer resolves');
   return {
     ok: problems.length === 0,

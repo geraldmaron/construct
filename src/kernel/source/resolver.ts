@@ -5,6 +5,12 @@ import { getWork } from '../work/service.ts';
  * stands: its root, its active sources and their manifests, its deliverables,
  * and the records Construct keeps. One place, so the broker and the source
  * service resolve a reference the same way.
+ *
+ * A session's resolver is bound to the checkout it works in (checkoutResolver):
+ * submission, verification, review and delivery settlement all build it the
+ * same way. A pinned reference is answered by the bytes it was observed as,
+ * looked for in this checkout and then in the checkout the pin names, when
+ * that is one of the project's own.
  */
 
 import type { StateStore } from '../state/open.ts';
@@ -16,7 +22,9 @@ import { getClaim, getEntity } from '../state/graph.ts';
 import { getDecision } from '../state/decisions.ts';
 import { getRun } from '../state/runs.ts';
 import { getDriftFinding } from '../state/drift.ts';
-import { createEvidenceResolver, type RecordKind, type RefResolver } from '../project/evidence.ts';
+import { realpathSync } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
+import { createEvidenceResolver, textDigest, type RecordKind, type RefResolver, type ResolverInput } from '../project/evidence.ts';
 import { currentManifestRecord, snapshotManifestRecord, type ManifestEntry } from './manifest.ts';
 
 /** The statement that says a document is no longer current, as the reader sees it: its kind and its words, cut to 160 characters. */
@@ -27,6 +35,45 @@ function sayingSo(store: StateStore, statementId: string): string | null {
   return `${s.kind} "${text.length > 160 ? `${text.slice(0, 159)}…` : text}"`;
 }
 
+/** One git checkout of the project: its project directory there, and the commit it has checked out. */
+export interface Checkout {
+  readonly root: string;
+  readonly head: string | null;
+}
+
+/** Where a session works: the project's main directory, its own worktree when it is in one, and the project's checkouts as the adapter reads them. */
+export interface CheckoutBinding {
+  readonly root: string;
+  readonly lane: Checkout | null;
+  readonly worktrees?: () => readonly Checkout[];
+}
+
+/** A path as the file system resolves it, so two spellings of one checkout compare equal. */
+function canonical(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolvePath(path);
+  }
+}
+
+/** The resolver for a session's own checkout, which every surface that checks evidence uses. */
+export function checkoutResolver(
+  store: StateStore,
+  where: CheckoutBinding,
+  options?: { readonly hostReads?: 'require' | 'accept' },
+): RefResolver {
+  let listed: readonly Checkout[] | undefined;
+  const checkouts = (): readonly Checkout[] => (listed ??= where.worktrees?.() ?? []);
+  const own = where.lane?.root ?? where.root;
+  const fallback = where.lane ? where.lane.head : null;
+  return projectResolver(store, where.root, null, {
+    hostReads: options?.hostReads,
+    checkout: { root: own, head: () => checkouts().find((c) => canonical(c.root) === canonical(own))?.head ?? fallback },
+    checkouts,
+  });
+}
+
 export function projectResolver(
   store: StateStore,
   root: string,
@@ -35,7 +82,13 @@ export function projectResolver(
     readonly manifest: readonly ManifestEntry[] | null;
     readonly provenance?: 'witnessed' | 'reported';
   } | null,
-  options?: { readonly hostReads?: 'require' | 'accept' },
+  options?: {
+    readonly hostReads?: 'require' | 'accept';
+    /** The checkout paths resolve in, when it is not the main one or should be recorded on what resolves. */
+    readonly checkout?: { readonly root: string; readonly head: () => string | null };
+    /** The project's checkouts a pin may name. */
+    readonly checkouts?: () => readonly Checkout[];
+  },
 ): RefResolver {
   const knows = (kind: RecordKind, id: string): boolean => {
     switch (kind) {
@@ -55,8 +108,7 @@ export function projectResolver(
         return getDriftFinding(store, id) !== null;
     }
   };
-  const current = createEvidenceResolver({
-    root,
+  const base: Omit<ResolverInput, 'root' | 'checkout'> = {
     sources: listSources(store, { status: 'active' }).map((s) => {
       const rec = currentManifestRecord(store, s.id);
       const overridden = override && override.sourceId === s.id;
@@ -75,8 +127,36 @@ export function projectResolver(
     hostReads: options?.hostReads ?? 'require',
     deliverableIds: new Set(listLiveDeliverables(store).map((d) => d.id)),
     knows,
-  });
-  return (ref, use) => {
+  };
+  const at = (dir: string, head: () => string | null): RefResolver => {
+    let commit: string | null | undefined;
+    return createEvidenceResolver({
+      ...base,
+      root: dir,
+      ...(options?.checkout ? { checkout: { commit: () => (commit === undefined ? (commit = head()) : commit) } } : {}),
+    });
+  };
+  const here = options?.checkout?.root ?? root;
+  const current = at(here, options?.checkout?.head ?? (() => null));
+  const elsewhere = new Map<string, RefResolver | null>();
+  // Only a checkout of this project is consulted for a pin; a path a receipt names that is not one resolves nothing.
+  const checkoutAt = (named: string): RefResolver | null => {
+    const key = canonical(named);
+    if (key === canonical(here)) return null;
+    if (!elsewhere.has(key)) {
+      const listed = options?.checkouts?.().find((c) => canonical(c.root) === key);
+      const known = listed ?? (canonical(root) === key ? { root, head: null } : undefined);
+      elsewhere.set(key, known ? at(known.root, () => known.head) : null);
+    }
+    return elsewhere.get(key)!;
+  };
+  return (ref, use, pin) => {
+    const hit = resolveHere(ref, use);
+    if (!pin || textDigest(hit?.text) === pin.digest || !pin.checkout) return hit;
+    const there = checkoutAt(pin.checkout)?.(ref, use);
+    return there?.kind === 'file' && textDigest(there.text) === pin.digest ? there : hit;
+  };
+  function resolveHere(ref: string, use?: 'artifact'): ReturnType<RefResolver> {
     if (use === 'artifact') return current(ref, use);
     const raw = ref.trim();
     const match = /^snapshot:([^:]+):(.+)$/.exec(raw);
@@ -142,5 +222,5 @@ export function projectResolver(
       ...(entry.truncated ? { truncated: true } : {}),
       ...(entry.supersededBy ? { supersededBy: entry.supersededBy } : {}),
     };
-  };
+  }
 }

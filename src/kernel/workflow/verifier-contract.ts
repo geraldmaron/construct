@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { listSteps } from '../state/steps.ts';
 import type { RefResolver } from '../project/evidence.ts';
-import { contentReceipt, artifactRefs, type ContentReceipt } from './verification.ts';
+import { contentReceipt, currentReceipt, artifactRefs, type ContentReceipt } from './verification.ts';
 
 export interface VerifierContract {
   readonly id: string;
@@ -66,7 +66,7 @@ export function verifierProblems(
       : JSON.stringify(frozen.contract.argv) !== JSON.stringify(argv)
   )
     problems.push('command differs from the intended verification contract');
-  if (frozen.files.some((f) => !resolve || f.digest === null || contentReceipt(f.ref, resolve).digest !== f.digest))
+  if (frozen.files.some((f) => !resolve || f.digest === null || currentReceipt(f, resolve).digest !== f.digest))
     problems.push('intended verifier code or rubric changed after the contract was frozen');
   return problems;
 }

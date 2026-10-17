@@ -123,7 +123,7 @@ import { inRuleForm, RULE_FORM_REFUSAL, settledTerms } from '../project/governan
 import { listLiveDeliverables } from '../state/deliverables.ts';
 import { appendActivity } from '../state/activity.ts';
 import { skillQuality } from '../state/quality.ts';
-import { projectResolver as resolverFor } from '../source/resolver.ts';
+import { checkoutResolver } from '../source/resolver.ts';
 import { ensureSourceEntities } from '../source/entities.ts';
 import { locatorProblem } from '../source/locators.ts';
 import { getSource } from '../state/sources.ts';
@@ -133,9 +133,9 @@ import { redact } from '../render/redact.ts';
 import { quoteHost } from '../render/person-prompt.ts';
 import { REPORTED_TEXT_CAP, SOURCE_READ_OUTCOMES, type SourceReadOutcome } from '../source/service.ts';
 
-/** What a step may cite in this project, as it stands now. */
+/** What a step may cite in this project, as it stands now in the checkout this session works in. */
 export function projectResolver(ctx: BrokerContext): RefResolver {
-  return resolverFor(ctx.store, ctx.root, null, { hostReads: ctx.policy?.hostReads ?? 'require' });
+  return checkoutResolver(ctx.store, ctx, { hostReads: ctx.policy?.hostReads ?? 'require' });
 }
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
@@ -1063,7 +1063,7 @@ function startedResult(
 ): Record<string, unknown> {
   return {
     started: true,
-    semanticReview: semanticReviewStatus(ctx.store, r.run, resolverFor(ctx.store, ctx.root), ctx.now()),
+    semanticReview: semanticReviewStatus(ctx.store, r.run, checkoutResolver(ctx.store, ctx), ctx.now()),
     run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
     created: r.created,
     preflight: r.preflight,

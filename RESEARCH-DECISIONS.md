@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 39 are
+Nothing in §§1–32 describes the current product. Sections 33 to 42 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3591,3 +3591,67 @@ a false sentence is not.
 the five that changes no state, no stored format and no tool description; it
 removes two schema entries and one packet field, and restoring them reverts
 it. It landed with this record; the rest of `work-4503dc02` stays open.
+
+## 42. Evidence is identified by its bytes; the checkout is where they were read (2026-10-17)
+
+**Question.** A managed step submitted from a linked git worktree could not
+cite a file that exists only on that worktree's branch: every reference
+resolved against the main checkout. Resolving the session's own checkout
+first was built and reverted. Its receipts kept the bare reference as their
+identity, so the same reference meant different bytes depending on which
+checkout resolved it, and submission (in the worktree), `construct run
+verify` and delivery settlement (both against the main checkout) disagreed
+about whether the evidence was current. Construct's rule is that a model
+cannot manufacture a source, so one recorded identity may never stand for
+two contents.
+
+**Decision.**
+1. A bare reference names a file in the checkout the session works in:
+   its worktree when it runs in one, otherwise the main checkout. That is
+   what the session read and wrote.
+2. The identity Construct records for cited content is the reference plus
+   the SHA-256 of the bytes it read (the receipt `digest` that already
+   existed). The receipt also names the checkout the file was read from and
+   that checkout's commit, as provenance, never as identity.
+3. Every later comparison of a receipt (prior evidence going stale,
+   acceptance, the execution witness, delivery settlement, qualification,
+   the frozen verifier contract, semantic review freshness, which compares
+   what an item is and not the absolute path, checkout or commit it was
+   read at) asks the resolver for the receipt's bytes,
+   not for whatever the reference names here. The resolver looks in its own
+   checkout first, then in the checkout the receipt names, and returns a
+   file only when its digest matches. When neither holds those bytes it
+   returns what its own checkout holds, which does not match, so the
+   receipt is stale. A receipt's checkout is honored only when it is one of
+   the project's checkouts as the adapter reads them from the repository;
+   nothing a model writes names one.
+4. Submission, `construct run verify`, `construct run review`, delivery
+   settlement and the broker tools build their resolver through one
+   function bound to the session's checkout. A verification command runs in
+   that checkout, so its subjects are the files the command read.
+
+**Challenge.** The strongest failure: two sessions citing `docs/a.md` from
+different checkouts ground their work in different bytes under the same
+spelling, and a person reading the deliverable may open the main
+checkout's copy, which is not what grounded it. Controls: the receipt
+records the digest, checkout and commit, so the two are distinguishable,
+and no receipt can be satisfied by bytes other than its own from any
+checkout. A worktree removed before verification leaves its receipts
+unreachable, so they read as stale, failing closed; after a merge the main
+checkout holds the same bytes and they are current again. Files over the
+1 MiB text cap carry no digest and, as before, cannot be inherited. A
+worktree gives a model no new authority: it can write and cite a file in its
+own checkout exactly as it can in the main one, and the self-citation guard
+in `numbers_grounded` compares the file it wrote by where it really lives.
+
+The best alternative was an explicit citation grammar (`<path>@sha256:…`
+or `worktree:<branch>:<path>`) with bare references always meaning the main
+checkout. Rejected: a model would have to spell digests or branch names, a
+bare path from a worktree would still fail (the defect itself), and the
+check underneath would be the same digest comparison. Resolving through
+git (`<commit>:<path>`) was rejected because worktree sessions cite
+uncommitted work and the kernel never runs git.
+
+Verdict: accepted with controls (digest-pinned comparison everywhere a
+receipt is checked; checkouts only from the repository's own worktree list;
+fail closed when the bytes are gone).
