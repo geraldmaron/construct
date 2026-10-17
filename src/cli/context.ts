@@ -20,6 +20,13 @@ import { StoreProjectError, bindStoreToProject } from '../kernel/state/identity.
 import type { ProjectWorktree } from '../kernel/work/lanes.ts';
 import { OperationError } from './output.ts';
 import type { TerminalFacts } from './person-channel.ts';
+import type { SchedulerControl } from '../hosts/timer.ts';
+
+export interface TimerSeam {
+  readonly platform: NodeJS.Platform;
+  readonly control: SchedulerControl;
+  readonly systemTimezone: string;
+}
 
 export interface CliContext {
   readonly cwd: string;
@@ -45,6 +52,14 @@ export interface CliContext {
    * read from, supplied only by tests. Production reads process.stdin.
    */
   readonly input?: NodeJS.ReadableStream;
+  /**
+   * The platform scheduler a timer command talks to, supplied only by tests:
+   * which platform to write for, a recorder in place of launchctl or
+   * systemctl, and the machine timezone. Production uses this process's
+   * platform and the real scheduler, which loads only from the account's own
+   * scheduler directory.
+   */
+  readonly timers?: TimerSeam;
   now(): string;
   nextId(prefix: string): string;
 }

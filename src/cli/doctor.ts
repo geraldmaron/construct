@@ -30,6 +30,8 @@ import { findOnPath, presentHosts } from '../hosts/presence.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { bindProject, createContext, gitRootOf, resolveRepository, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
 import { esc, say, shellWord, writeJson } from './output.ts';
+import { describeTimer, timerRows } from './timers.ts';
+import type { StateStore } from '../kernel/state/open.ts';
 
 export const DOCTOR_SPEC: CommandSpec = {
   path: ['doctor'],
@@ -47,6 +49,22 @@ interface Check {
 }
 
 const NODE_FLOOR = [22, 18] as const;
+
+/**
+ * The platform timers on this machine that fire Construct triggers. One that
+ * names a project or trigger that is gone fires into nothing every slot, the
+ * shape the earlier resident daemons leaked in, so it fails health.
+ */
+function timerCheck(ctx: CliContext, projectId: string | null, root: string, store: StateStore): Check {
+  const rows = timerRows(ctx, { id: projectId, root, store });
+  const broken = rows.filter((t) => t.problem);
+  const here = rows.filter((t) => t.here);
+  if (rows.length === 0) return { name: 'timers', ok: true, detail: 'no platform timer fires a Construct trigger on this machine' };
+  const parts = [`${String(here.length)} here, ${String(rows.length - here.length)} for other projects`];
+  for (const t of here) if (!t.problem) parts.push(describeTimer(t));
+  for (const t of broken) parts.push(describeTimer(t));
+  return { name: 'timers', ok: broken.length === 0, detail: parts.join('; ') };
+}
 
 function sameFile(a: string, b: string): boolean {
   try {
@@ -229,6 +247,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
           const fixtures = ctx.env.CONSTRUCT_JIRA_FIXTURES;
           if (fixtures) parts.push(`jira sources read test fixtures from ${fixtures} (CONSTRUCT_JIRA_FIXTURES), not a live tracker`);
           checks.push({ name: 'sources', ok: true, detail: parts.join('; ') + (unreachable.length || neverRead.length ? '; work that needs them will be blocked or flagged' : '') });
+          checks.push(timerCheck(ctx, configId, root, store));
         } finally {
           store.close();
         }

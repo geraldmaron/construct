@@ -1,7 +1,7 @@
 /**
  * cli/status.ts — where this project stands: completeness, work in flight,
  * decisions waiting, source health, registry lock, drift, and the sessions
- * present. One state universe.
+ * present, and the platform timers that fire its triggers. One state universe.
  */
 
 import { listActiveRuns } from '../kernel/state/runs.ts';
@@ -19,6 +19,7 @@ import { createContext, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
 import { presentSessions } from '../kernel/coord/awareness.ts';
 import { MAIN_LANE } from '../kernel/work/leases.ts';
+import { timerRows } from './timers.ts';
 
 export const STATUS_SPEC: CommandSpec = {
   path: ['status'],
@@ -52,6 +53,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       drift: { open: drift.length },
       sessions: present.map((p) => ({ id: p.id, host: p.host, client: p.client, lane: p.lane, branch: p.branch, lastSeenAt: p.lastSeenAt, agents: p.agents, holds: p.holds })),
       habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
+      timers: timerRows(ctx, { id: files.config?.id ?? null, root, store }).filter((t) => t.here).map((t) => ({ label: t.label, triggerId: t.triggerId, executor: t.executor, loaded: t.loaded, problem: t.problem })),
     };
     if (args.json) {
       writeJson(record);
@@ -70,6 +72,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     say(`  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`);
     say(`  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`);
     say(`  drift: ${drift.length === 0 ? 'nothing open' : `${String(drift.length)} finding(s) open`}`);
+    say(`  timers: ${record.timers.length === 0 ? 'none installed' : record.timers.map((t) => `${esc(t.triggerId)}${t.loaded === false ? ' (not loaded)' : ''}${t.problem ? ` (${esc(t.problem)})` : ''}`).join(', ')}`);
     say();
     say('Sessions');
     say(`  sessions: ${present.length === 0 ? 'none present' : `${String(present.length)} present`}`);

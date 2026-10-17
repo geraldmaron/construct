@@ -352,12 +352,34 @@ Reads only: no.
 
 ### `construct workflow recipe <trigger-id>`
 
-print the cron line or CI job that fires a trigger
+print the cron line, CI job, or platform timer that fires a trigger
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
-| `--clock` | yes | cron or github-actions (default cron) |
+| `--clock` | yes | cron, github-actions, launchd, or systemd (default cron) |
 | `--executor` | yes | explicit host adapter for the recipe; without one it remains unprovisioned |
+
+Reads only: yes.
+
+### `construct workflow install-timer <trigger-id>`
+
+install the per-user launchd or systemd timer that fires a schedule trigger; reinstalling replaces it
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--executor` | yes | the unattended host adapter each firing hands the run to (required; workflow executors lists them) |
+
+Reads only: no.
+
+### `construct workflow remove-timer <trigger-id-or-label>`
+
+unload and remove the platform timer for a trigger, or for a unit label doctor named
+
+Reads only: no.
+
+### `construct workflow timers`
+
+the platform timers on this machine that fire Construct triggers, and any that would fire into nothing
 
 Reads only: yes.
 

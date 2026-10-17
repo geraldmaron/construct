@@ -2,14 +2,18 @@
 
 [Documentation index](README.md) · [Project README](../README.md)
 
-Construct owns what happens on a firing; an external clock owns time. There
-is no daemon.
+Construct owns what happens on a firing; the platform owns time. There is
+no daemon. The one clock Construct writes is a per-user launchd agent or
+systemd user timer, and only when you run `workflow install-timer` for a
+trigger. Nothing else (init, install, any library call, the test suite)
+writes or loads one.
 
 ## Defining a standing outcome
 
 ```bash
 construct workflow schedule standing-review --cron="0 9 1 * *" --timezone=Europe/Berlin --max-tier=project_write --trigger-id=monthly
 construct workflow triggers
+construct workflow install-timer monthly --executor=codex
 construct workflow recipe monthly --executor=codex
 construct workflow recipe monthly --clock=github-actions --executor=codex
 ```
@@ -17,8 +21,10 @@ construct workflow recipe monthly --clock=github-actions --executor=codex
 A trigger names the workflow, the schedule expression and timezone (or an
 event name), the adapter that fires it (cron, CI, a host's own scheduler, or
 manual), an overlap policy (skip, queue, replace), a permission boundary no
-step may exceed, input, and delivery. `recipe` prints the crontab line or
-the CI job that fires it only after an explicit executor is selected. The generated recipe requires a persistent project state and an authenticated host. A fresh checkout contains neither the ignored trigger database nor a running agent.
+step may exceed, input, and delivery. `install-timer` installs the platform
+timer that fires it; `recipe` prints the crontab line, the CI job, or (with
+`--clock=launchd` or `--clock=systemd`) the exact unit `install-timer`
+writes. Each needs an explicit executor. The generated recipe requires a persistent project state and an authenticated host. A fresh checkout contains neither the ignored trigger database nor a running agent.
 
 From chat, the host reports a request to keep something up as a
 `classify_request` reading of kind `maintain`, with its schedule: a
@@ -27,6 +33,50 @@ question blocks, `start_outcome` saves an idempotent trigger with the mapped
 inputs and original intake, without starting an immediate run. The clock and
 executor remain unprovisioned; the person must configure them before it can run
 after the session exits. The CLI is an alternative definition and inspection path.
+
+## A platform timer
+
+```bash
+construct workflow install-timer monthly --executor=codex
+construct workflow timers
+construct workflow remove-timer monthly
+```
+
+`install-timer` writes one unit per project and trigger, named
+`construct.<project-id>.<trigger-id>`, into `~/Library/LaunchAgents` on macOS
+or `~/.config/systemd/user` on Linux, and loads it with `launchctl bootstrap`
+or `systemctl --user enable --now`. Installing again replaces the unit. The
+unit starts `construct workflow fire <trigger> --execute=<executor>` in the
+project's main checkout and exits; it is never kept alive.
+
+- macOS fires on `StartCalendarInterval`, never `StartInterval`. launchd
+  evaluates a calendar in the Mac's own timezone, so a trigger in another
+  timezone is refused rather than shifted. A schedule needing more than 512
+  calendar entries is refused too. A day and a weekday both restricted fire
+  on either, as in cron.
+- Linux fires on `OnCalendar` in the trigger's own timezone with
+  `Persistent=true`, so a slot missed while the machine was off runs once on
+  return.
+- The unit carries only `PATH` (Node's directory, the executor's directory,
+  and the system directories) and `CODEX_HOME` when you set it. No other
+  variable from your shell, and no credential, goes into the unit. The
+  executor uses its own login.
+- Without `--executor`, the install is refused: a tick alone performs no
+  model work.
+- An install whose `HOME` or `XDG_CONFIG_HOME` is not this account's own is
+  refused before anything is written, because the real scheduler would never
+  read a unit written there.
+
+`workflow timers`, `status` and `doctor` list the installed units. Doctor
+fails health for a unit whose project directory is gone or now holds another
+project, and for one whose trigger was removed or disabled; `workflow
+remove-timer <label>` removes a unit by the label doctor names, from any
+directory.
+
+When the executor's login has expired, the firing still records the slot
+and leaves a blocked run whose reason names the problem, so a missed week
+shows up in `status` and the inbox instead of passing silently. Logs from
+launchd go to `timers/` under Construct's state directory.
 
 ## Firing
 
@@ -39,7 +89,12 @@ construct workflow enable monthly
 ```
 
 Every firing is recorded under the clock's key: the same key twice starts
-one run and reports the second as deduplicated. A firing while a run is
+one run and reports the second as deduplicated. A schedule trigger fired
+without `--key`, as a platform timer or the cron line fires it, is keyed by
+the schedule slot that was due, not the wall clock. A start that comes late,
+or one start on wake standing for the slots missed while the machine slept,
+covers the earliest slot that was due; a repeat after that slot was handled
+names it again and is deduplicated. A firing while a run is
 still active follows the overlap policy and says so. Stale or missing data
 follows the workflow's declared policy: a standing review blocks at start
 when a source it reads is stale or unread, and a step that finds nothing
