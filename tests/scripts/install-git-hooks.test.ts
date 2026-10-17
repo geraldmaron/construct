@@ -42,7 +42,11 @@ test('the installer points each checkout at its own .githooks, per worktree, and
   const s = scratch();
   try {
     assert.equal(s.git('config', '--worktree', '--get', 'core.hooksPath').trim(), '.githooks');
-    assert.equal(spawnSync('git', ['-C', s.root, 'config', '--local', '--get', 'core.hooksPath'], { env: s.env }).status, 1, 'never repository-wide');
+    assert.equal(
+      spawnSync('git', ['-C', s.root, 'config', '--local', '--get', 'core.hooksPath'], { env: s.env }).status,
+      1,
+      'never repository-wide',
+    );
     assert.equal(s.git('rev-parse', '--git-path', 'hooks').trim(), '.githooks');
   } finally {
     s.cleanup();
@@ -63,7 +67,10 @@ test('an existing per-worktree hooks path is replaced, and a checkout without .g
     const report = s.install();
     assert.equal(s.git('rev-parse', '--git-path', 'hooks').trim(), '.githooks', 'the stale override is gone');
     assert.match(report, /kept: .*-old has no \.githooks yet; it still resolves \/main\/checkout\/\.beads\/hooks/);
-    assert.equal(execFileSync('git', ['-C', old, 'config', '--get', 'core.hooksPath'], { env: s.env, encoding: 'utf8' }).trim(), '/main/checkout/.beads/hooks');
+    assert.equal(
+      execFileSync('git', ['-C', old, 'config', '--get', 'core.hooksPath'], { env: s.env, encoding: 'utf8' }).trim(),
+      '/main/checkout/.beads/hooks',
+    );
   } finally {
     rmSync(old, { recursive: true, force: true });
     s.cleanup();
