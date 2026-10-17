@@ -437,6 +437,35 @@ export function requalifyWork(
   });
 }
 
+/** The reservation a managed run holds for its requested artifact. It is the run's to settle, never a host's to claim. */
+export function isRunDelivery(work: Pick<WorkItem, 'scope'>): boolean {
+  return (work.scope as { kind?: unknown } | null)?.kind === 'managed_delivery';
+}
+
+/**
+ * A run that failed or was cancelled can never deliver its artifact, so its
+ * delivery reservation is cancelled with it, whoever holds the reservation:
+ * the run's end is the authority, not a session's token.
+ */
+export function endRunDelivery(
+  store: StateStore,
+  input: { readonly runId: string; readonly state: 'failed' | 'cancelled'; readonly at: string },
+): void {
+  const row = rowOf(store, `work-${input.runId}-delivery`);
+  if (!row) return;
+  const work = toWork(row);
+  if (TERMINAL.includes(work.status) || !isRunDelivery(work) || (work.scope as { runId?: unknown }).runId !== input.runId) return;
+  const live = liveClaim(row, input.at);
+  setTerminal(store, {
+    id: work.id,
+    owner: live ? row.claim_owner! : 'kernel',
+    token: live ? row.claim_token! : undefined,
+    at: input.at,
+    reason: `its run ${input.runId} was ${input.state}, so it can never deliver`,
+    status: 'cancelled',
+  });
+}
+
 export function listReady(store: StateStore, at: string, limit = 50): WorkItem[] {
   const rows = store.db
     .prepare(
@@ -450,6 +479,7 @@ export function listReady(store: StateStore, at: string, limit = 50): WorkItem[]
   for (const row of rows) {
     const w = toWork(row);
     if (w.claimOwner && w.claimUntil && w.claimUntil > at) continue;
+    if (isRunDelivery(w)) continue;
     if (readinessOf(store, w, at).ready) out.push(w);
     if (out.length >= limit) break;
   }

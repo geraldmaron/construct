@@ -60,6 +60,7 @@ import {
   listOffers,
   getWork,
   getWorkByLegacyId,
+  isRunDelivery,
   listReady,
   queryWork,
   readinessOf,
@@ -2806,6 +2807,15 @@ const work = define<WorkToolInput, unknown>({
     if (action === 'link')
       return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
+    if (isRunDelivery(item) && ['claim', 'takeover', 'handoff', 'accept', 'complete', 'release'].includes(action)) {
+      const runId = (item.scope as { runId?: string }).runId ?? 'its run';
+      throw new ToolInputError(
+        `${item.id} is the reservation run ${runId} holds for its requested file; the run settles it, so claim_work with that runId instead`,
+        {
+          field: 'id',
+        },
+      );
+    }
     const renewing =
       action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
     const who = claimantFor(ctx, agent, at, renewing ?? where);

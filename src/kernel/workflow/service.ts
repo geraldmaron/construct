@@ -51,9 +51,17 @@ import {
   getRunByKey,
   listActiveRuns,
   setCancelRequested,
-  transitionRun,
+  transitionRun as transitionRunState,
   type WorkflowRun,
 } from '../state/runs.ts';
+import { endRunDelivery } from '../work/service.ts';
+
+/** Every run transition goes through here: a run that fails or is cancelled can never deliver, so its delivery reservation ends with it. */
+function transitionRun(store: StateStore, input: Parameters<typeof transitionRunState>[1]): WorkflowRun {
+  const run = transitionRunState(store, input);
+  if (input.to === 'failed' || input.to === 'cancelled') endRunDelivery(store, { runId: input.id, state: input.to, at: input.at });
+  return run;
+}
 import {
   addStep,
   claimStep,

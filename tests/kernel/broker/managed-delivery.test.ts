@@ -720,3 +720,28 @@ for (const kind of ['symbolic', 'hard'] as const)
       fx.cleanup();
     }
   });
+
+test('a run that is cancelled ends its delivery reservation, whoever cancels it, and a host can never claim the reservation', async () => {
+  const fx = brokerFixture();
+  try {
+    const run = await start(fx.broker);
+    const held = await claim(fx.broker, run.run.id);
+    const id = held.delivery.workId;
+    assert.equal(getWork(fx.broker.store, id)!.status, 'claimed');
+    // The generic work tool cannot take, hand off or settle a run's reservation.
+    for (const action of ['claim', 'release', 'complete'] as const) {
+      await assert.rejects(call(fx.broker, 'work', { action, id, token: 'x', reason: 'r' }), /claim_work with that runId/, action);
+    }
+    assert.ok(!(await call(fx.broker, 'work', { action: 'ready' })).some((w: { id: string }) => w.id === id), 'never listed as ready');
+    // Another session cancels the run directly through the service, as `construct run cancel` does; the step in progress finishes first.
+    peer(fx).workflow.cancel({ runId: run.run.id, by: 'person', reason: 'no longer needed' });
+    assert.equal(getWork(fx.broker.store, id)!.status, 'claimed', 'held while the step in progress finishes');
+    await submit(fx.broker, held, plan);
+    const ended = getWork(fx.broker.store, id)!;
+    assert.equal(ended.status, 'cancelled', 'the reservation ends with its run');
+    assert.match(ended.reason ?? '', /was cancelled, so it can never deliver/);
+    assert.deepEqual(listLiveLeases(fx.broker.store, fx.ctx.now()), [], 'its path is free');
+  } finally {
+    fx.cleanup();
+  }
+});
