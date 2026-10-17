@@ -3371,8 +3371,10 @@ resolver now enforces:
 - `maxTier`, a ceiling that replaces the tier list: a step above it does
   not resolve.
 - `requiredValidators`, a flat list that replaces gates whose `appliesTo`
-  and `required` never varied: a workflow whose steps name none of them
-  does not resolve.
+  and `required` never varied. Each must be named on the step that binds
+  the skill, or on a step that consumes that step's output; a check on
+  unrelated earlier work does not count, and the workflow does not resolve
+  without one.
 
 Every other key is refused with the allowed list, so dead fields cannot
 return. The prose fields were checked skill by skill against the
@@ -3387,7 +3389,20 @@ reviewed workflow designs: each writes a project document, and writing a
 document is what `project_write` means. The ceiling still stops any new
 step from applying them outward or destructively. A project-authored skill
 using a removed field stops loading until its author deletes the field;
-the refusal names the field and the allowed ones. Best alternative: keep
-the fields and add readers for each. Rejected because deliverable types
-have no consistent target and the prose fields restate the body. Verdict:
-**accepted with controls**.
+the refusal names the field and the allowed ones. Another option was to split
+each such step into a draft step within the old ceiling and a separate
+write step. Rejected as churn for its own sake: the step that drafts the
+document is the one whose output is the file. Best alternative: keep the
+fields and add readers for each. Rejected because deliverable types have no
+consistent target and the prose fields restate the body.
+
+**Independent review (Codex, 2026-10-17).** Codex found three defects, and
+each is fixed with a test:
+- A required validator satisfied by any step anywhere could be met by an
+  unrelated earlier step. Codex reproduced a run that reached `validated`
+  that way.
+- Dependency entries accepted unknown nested keys.
+- Intake's evidence rule existed only in the deleted field. Its body now
+  states it.
+
+Verdict: **accepted with controls**.

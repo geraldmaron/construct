@@ -96,6 +96,9 @@ function deps(r: Record<string, unknown>, key: string, path: string): VersionedD
   if (!Array.isArray(v)) throw new ManifestError(path, `"${key}" must be a list`);
   return v.map((item, i) => {
     const d = rec(item, path, `"${key}[${String(i)}]"`);
+    for (const k of Object.keys(d)) {
+      if (k !== 'id' && k !== 'range') throw new ManifestError(path, `"${key}[${String(i)}].${k}" is not read; a dependency carries only id and range`);
+    }
     const id = str(d, 'id', path);
     const range = str(d, 'range', path);
     if (!ID.test(id)) throw new ManifestError(path, `"${key}[${String(i)}].id" must be a kebab-case id`);

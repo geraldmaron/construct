@@ -39,8 +39,8 @@
       "title": "Governance and risk"
     },
     "intake": {
-      "version": "0.3.2",
-      "digest": "sha256:de77a6c96155e25890de7355cdbe87978a612b4d2c16b22de337177cea0e5a07",
+      "version": "0.3.3",
+      "digest": "sha256:8741e5a57eebb8c8f979745161e6728a5200ee91834962f2276d6ace955b4f18",
       "category": "method",
       "title": "Intake"
     },
