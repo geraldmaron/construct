@@ -18,8 +18,8 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
   await inProject(async (ctx, box) => {
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
-    assert.match(list.out, /^design-conformance\s+2\.0\.1\s+builtin\s+manage/m);
-    assert.match(list.out, /^remember\s+1\.0\.0\s+builtin\s+remember/m);
+    assert.match(list.out, /^design-conformance\s+2\.0\.2\s+builtin\s+manage/m);
+    assert.match(list.out, /^remember\s+1\.0\.1\s+builtin\s+remember/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
     assert.match(show.out, /gather\s+observe\s+context-mapping/);
@@ -52,7 +52,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.match(again.out, /already running: run /);
 
     const runs = await capture(() => run(['run', 'list'], ctx));
-    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.1\\s+ready\\s+manual`, 'm'));
+    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.2\\s+ready\\s+manual`, 'm'));
     const filtered = await capture(() => run(['run', 'list', '--state=succeeded', '--json'], ctx));
     assert.deepEqual(JSON.parse(filtered.out), []);
     const badState = await capture(() => run(['run', 'list', '--state=done'], ctx));
@@ -251,7 +251,7 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const dir = join(box.cwd, '.construct', 'skills', 'house-style');
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'SKILL.md'), '---\nname: house-style\ndescription: our style\nlicense: Apache-2.0\nmetadata:\n  version: 0.1.0\n---\n\n# House style\n', 'utf8');
-    writeFileSync(join(dir, 'construct.skill.json'), JSON.stringify({ format: 'construct-skill', formatVersion: 1, id: 'house-style', title: 'House style', version: '0.1.0', category: 'method', owner: 'us', activation: ['when writing'], standDown: ['otherwise'], interactionClasses: ['manage'], capabilities: [], actionTiers: ['draft'] }), 'utf8');
+    writeFileSync(join(dir, 'construct.skill.json'), JSON.stringify({ format: 'construct-skill', formatVersion: 1, id: 'house-style', title: 'House style', version: '0.1.0', category: 'method', owner: 'us', interactionClasses: ['manage'], capabilities: [], actionTiers: ['draft'] }), 'utf8');
     const locked = await capture(() => run(['skill', 'update'], ctx));
     assert.match(locked.out, /updated: skill:house-style/);
     const lock = JSON.parse(readFileSync(join(box.cwd, '.construct', 'registry.lock.json'), 'utf8'));

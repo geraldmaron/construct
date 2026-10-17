@@ -48,6 +48,18 @@ function str(r: Record<string, unknown>, key: string, path: string, opts: { read
   return v;
 }
 
+/**
+ * Phrase lists that once said when a bundle engages. Nothing reads them: the
+ * host model judges whether a skill applies from its SKILL.md description, and
+ * a workflow is matched by the deliverable it declares. A manifest that still
+ * carries one is refused so the dead vocabulary cannot grow back.
+ */
+function refuseTriggerPhrases(r: Record<string, unknown>, path: string, where: string): void {
+  for (const key of ['activation', 'standDown']) {
+    if (r[key] !== undefined) throw new ManifestError(path, `"${key}" is not read; ${where}, so remove it`);
+  }
+}
+
 function strList(r: Record<string, unknown>, key: string, path: string, opts: { readonly optional?: boolean; readonly nonEmpty?: boolean } = {}): string[] {
   const v = r[key];
   if (v === undefined) {
@@ -110,6 +122,7 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
   if (r.format !== SKILL_MANIFEST_FORMAT || r.formatVersion !== SKILL_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${SKILL_MANIFEST_FORMAT} ${String(SKILL_MANIFEST_VERSION)}`);
   }
+  refuseTriggerPhrases(r, path, 'the host model reads the SKILL.md description to judge when the skill applies');
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
@@ -144,8 +157,6 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
     version,
     category: oneOf(str(r, 'category', path), ['method', 'operational', 'professional'] as const, path, 'category'),
     owner: str(r, 'owner', path),
-    activation: strList(r, 'activation', path, { nonEmpty: true }),
-    standDown: strList(r, 'standDown', path, { nonEmpty: true }),
     interactionClasses: strList(r, 'interactionClasses', path, { nonEmpty: true }).map((c) => oneOf(c, INTERACTION_CLASSES, path, 'interactionClasses')),
     outcomes: strList(r, 'outcomes', path, { optional: true }),
     deliverableTypes: strList(r, 'deliverableTypes', path, { optional: true }),
@@ -234,6 +245,7 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
   if (r.format !== WORKFLOW_MANIFEST_FORMAT || r.formatVersion !== WORKFLOW_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${WORKFLOW_MANIFEST_FORMAT} ${String(WORKFLOW_MANIFEST_VERSION)}`);
   }
+  refuseTriggerPhrases(r, path, 'a workflow is matched by the deliverable it declares');
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
@@ -302,8 +314,6 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     title: str(r, 'title', path),
     version,
     purpose: str(r, 'purpose', path),
-    activation: strList(r, 'activation', path, { nonEmpty: true }),
-    standDown: strList(r, 'standDown', path, { nonEmpty: true }),
     interactionClass: oneOf(str(r, 'interactionClass', path), INTERACTION_CLASSES, path, 'interactionClass') as InteractionClass,
     inputSchema,
     requiredInputs,

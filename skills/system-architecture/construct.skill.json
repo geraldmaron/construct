@@ -3,28 +3,9 @@
   "formatVersion": 1,
   "id": "system-architecture",
   "title": "System architecture",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "two teams keep writing to the same table",
-    "should this service own its own database",
-    "we are splitting the monolith, where do the seams go",
-    "every request goes through four hops, is that necessary",
-    "how should these pieces talk to each other",
-    "is this design going to hold up",
-    "review the architecture, the system design, the service boundaries",
-    "write or review the architecture decision record for this choice",
-    "what does this design make hard to undo, where is the coupling, who owns the data",
-    "should we split this service, introduce this queue, adopt this platform"
-  ],
-  "standDown": [
-    "review a diff or an implementation detail",
-    "a question about how a tool works",
-    "product scope or priority with no design in view",
-    "how does this library, this ORM, handle transactions",
-    "which feature should we prioritize next quarter"
-  ],
   "interactionClasses": [
     "manage",
     "maintain"
@@ -82,7 +63,6 @@
   "licensedReviewBoundaries": [],
   "observedOn": [],
   "evals": [
-    "evals/activation.json",
     "evals/fixtures.json",
     "evals/behavior.json"
   ]

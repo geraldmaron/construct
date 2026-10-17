@@ -32,20 +32,21 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, unknown>;
 }
 
-/** A host's reading of work it cannot name a workflow for: the general carrier takes it, and the words reach the judgment. */
-function work(words: string): Record<string, unknown> {
-  return { words, kind: 'manage', deliverable: { kind: 'other', describe: words } };
+/** A host's reading of work it cannot name a workflow for: the general carrier takes it, and the stakes the host reports reach the judgment. */
+function work(words: string, stakes?: Record<string, unknown>): Record<string, unknown> {
+  return { words, kind: 'manage', deliverable: { kind: 'other', describe: words }, ...(stakes ? { stakes } : {}) };
 }
 
 test('1–2, 11–12: consequence, fresh session recovery, and scale via classify_request', async () => {
   const fx = brokerFixture();
   try {
-    const arch = (await call(fx, 'classify_request', work('Introduce a shared database for billing and identity'))) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
+    const arch = (await call(fx, 'classify_request', work('Introduce a shared database for billing and identity', { reversible: false, affects: ['shared_data'] }))) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
     assert.equal(arch.matches[0]!.workflowId, 'guided-outcome');
-    assert.equal(arch.judgment.challenge, true, 'architecture is challenged without magic words');
+    assert.equal(arch.judgment.challenge, true, 'the stakes the host reported challenge it');
 
-    const unusual = (await call(fx, 'classify_request', work('Put identity and billing on the same postgres'))) as { judgment: { challenge: boolean } };
-    assert.equal(unusual.judgment.challenge, true, 'unusual phrasing of a shared store still challenges');
+    const unreported = (await call(fx, 'classify_request', work('Put identity and billing on the same postgres'))) as { judgment: { challenge: boolean; signals: { kind: string; raises: boolean }[] } };
+    assert.equal(unreported.judgment.challenge, false, 'the words alone raise nothing');
+    assert.ok(unreported.judgment.signals.some((s) => s.kind === 'host_stakes' && !s.raises), 'the missing stakes are said, not guessed');
 
     const trivial = (await call(fx, 'classify_request', work('Rename a private helper in the invoice formatter'))) as { judgment: { challenge: boolean; depth: string; signals: { kind: string }[] } };
     assert.equal(trivial.judgment.challenge, false);
@@ -83,8 +84,8 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
     assert.equal(org.judgment.challenge, false);
     assert.equal(org.judgment.depth, 'standard');
     for (const text of ['Introduce a shared database for billing and identity', 'Put identity and billing on the same postgres']) {
-      const always = (await call(fx, 'classify_request', work(text))) as { judgment: { challenge: boolean } };
-      assert.equal(always.judgment.challenge, true, `${text} is still challenged at organization`);
+      const always = (await call(fx, 'classify_request', work(text, { reversible: true, affects: ['shared_data'] }))) as { judgment: { challenge: boolean } };
+      assert.equal(always.judgment.challenge, true, `${text} is still challenged at organization when the host says it touches shared data`);
     }
   } finally {
     fx.cleanup();

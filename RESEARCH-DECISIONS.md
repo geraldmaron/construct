@@ -7,7 +7,7 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product. Sections 33 to 36 are
+Nothing in §§1–32 describes the current product. Sections 33 to 38 are
 the dated decisions behind it, and a later section or release supersedes an
 earlier item where they differ (§33's state format item and §34's ranked
 skill list, for example); the pages in docs/ state what is true now, and
@@ -3234,3 +3234,114 @@ sub-interval watches) and Tier 3 (a supervised always-on service) are not
 licensed. Construct reads only directories itself; every other source is
 read through a host's tools, so a resident Construct process could not watch
 most sources anyway. Either tier needs its own dated decision.
+
+## 37. Hermes Agent is a host, never the substrate (2026-10-17)
+
+Gerald, 2026-10-17: determine the changes needed for the pattern in which
+Hermes Agent calls Construct, and use Codex to validate that it works, for
+the next alpha.
+
+**What Hermes is, from its own repository and docs (v0.22.2, read
+2026-10-17).** An MIT-licensed personal agent with a long-running gateway
+(terminal and messaging apps), natural-language cron, agent-written skills
+and memory, and an MCP client. It reads MCP servers only from
+`config.yaml` under `HERMES_HOME` (`~/.hermes`); it reads project skills
+from `.agents/skills` once the person runs `hermes skills trust`, and
+`AGENTS.md` from the project. Its MCP children get a stripped environment
+with no Hermes marker; its terminal exports `HERMES_AGENT=true`. A server
+marked `trust: untrusted` asks before every tool without `readOnlyHint`.
+Its client accepts a server answering `initialize` with `2025-06-18`.
+
+**Decision.** Hermes is the seventh wirable host. `init --client=hermes`
+writes one `mcp_servers.construct` block, naming the project by
+`--project=` and `cwd` and marking the server untrusted. A narrow YAML block
+writer edits only that block, keeps an unchanged file byte-identical, and
+refuses forms it cannot read. Hermes's self-written skills and memory stay
+Hermes's; nothing Construct records comes from them, so commitments 1 and 9
+hold.
+
+**Challenge.** Strongest failure mode: Construct now writes a file in the
+person's home. A bad edit corrupts a large hand-kept YAML file, a second
+project silently takes over the first project's binding, or a test reaches
+the real home. The last one happened while building this: a wiring test
+called the writer without an environment and created `~/.hermes/config.yaml`
+on the development machine. It was removed, and the wiring entry points
+now require the environment as an argument, so a caller that forgets it
+fails to compile rather than reaching the real home. Other controls: the
+block writer refuses tabs, several documents, inline servers, anchors, and
+nested settings, and is covered by its own tests. An entry bound to another
+project is refused with the `HERMES_HOME` remedy. Conformance checks the
+user-level contract and starts the entry from home to prove the binding.
+Best alternative: print `hermes mcp add` and write nothing. Rejected
+because that command does not document `cwd` or `trust`, so the deterministic
+approval gate (untrusted) could not be set. Verdict: **accepted with
+controls**.
+
+**Not decided here.** Running Hermes always-on (its gateway) is Tier 3
+residency by another name and stays outside §36; a person may run it, and
+Construct's gate still applies to what it asks. Hermes's model-judged
+`smart` approvals and its agent-written skills are not trusted for anything
+Construct records.
+
+## 38. Nothing in Construct matches a person's words (2026-10-17)
+
+Gerald, 2026-10-17: skills and other files hard-code exact trigger words,
+which is rigid and fragile; validate, challenge, and reconcile it, and weed
+out weak patterns and their proliferation.
+
+**What the audit found.** Trigger phrases lived in five places per skill:
+the manifest's `activation` and `standDown`, the `SKILL.md` description,
+`evals/activation.json`, and two frozen router fixtures. Workflows carried a
+sixth copy. Almost none of it decided anything:
+- The BM25 router that read the phrases had no runtime caller. Only tests
+  used it, with CI floors and one exact-phrase pin.
+- Workflow phrase lists were checked for being non-empty and never read.
+- The skill phrase lists reached the host only as a duplicate of the
+  description.
+- `evals/activation.json` gated "qualified" by its presence, not its content.
+
+One runtime reader of the person's words remained: the consequence module's
+lexical floor. It was a regex, two weighted term clusters, and points
+hard-coded by skill id, and it could force a challenge that blocks
+acceptance. It was raise-only and labeled, which commitment-era wording
+allowed. A measurement on 2026-10-08 (not re-run here) put the lexical skill
+router at 27 of 74 top-1 against a model judge's 74 of 74. The floor's own
+vocabulary misses plain paraphrase ("remove the users table" matches no term)
+and fires on unrelated senses ("vendor this dependency" matches "vendor").
+
+**Decision.** Removed:
+- the `activation` and `standDown` fields, which validation now refuses so
+  the vocabulary cannot grow back;
+- `evals/activation.json` and its qualification gate;
+- the router, its fixtures, floors and pin;
+- the router-based behavior kinds;
+- the lexical floor and the per-skill points.
+
+The consequence judgment now reads structure (the workflow's challenge flag,
+step tiers, contradictions) and the stakes the host reports. When the host
+reports none, a non-raising signal says so instead of guessing. The
+live-eval harness moved out of the router file into `live-evals.ts`. Every
+changed bundle carries a bumped version.
+
+**Kept, and why.**
+- `SKILL.md` descriptions keep a few examples of how people ask. They are
+  read by the host model as the Agent Skills format intends, they are not
+  matched, and editing them changes model-facing text that the live record
+  gates.
+- The intake check that a system the host says the person named appears in
+  their words stays. It validates the host's typed reading, is labeled, and
+  never blocks.
+- The authority-override and forbids-invention checks stay. They read
+  authored skill text, not the person.
+
+**Challenge.** Strongest failure mode: a host that omits stakes on
+hard-to-reverse work that stays inside the project now gets standard rigor
+where the floor would have challenged it. Runs in flight recompute their
+judgment, so one raised only by words drops to standard. Controls: outward,
+destructive, and licensed steps still raise by tier; the person alone
+accepts a deliverable; the missing stakes are shown in the judgment.
+Best alternative: keep the floor only as a fallback when stakes are absent.
+Rejected because it keeps the same fragile vocabulary on exactly the path
+where nothing checks it. Verdict: **accepted with controls**. The remaining
+gap, a required `stakes` field on managed readings, changes model-facing
+schema and waits for the live record (work filed).

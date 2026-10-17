@@ -10,7 +10,7 @@ description: >-
   true to ship by then. Not for whether the strategy is right.
 license: Apache-2.0
 metadata:
-  version: 1.0.1
+  version: 1.0.2
   source: geraldmaron/construct
 ---
 # Program delivery

@@ -3,28 +3,9 @@
   "formatVersion": 1,
   "id": "security-privacy",
   "title": "Security and privacy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "our logs contain customer emails and go to a third party",
-    "a contractor still has production access after leaving",
-    "someone pasted an API key in Slack",
-    "we want to add SSO, what can go wrong",
-    "is this endpoint safe",
-    "who can see this data and should they",
-    "review this for security, threat model it, who can reach what",
-    "are secrets handled safely, is this data classified, how long do we keep it",
-    "privacy review, personal data, consent, retention, data flow across a boundary",
-    "is this dependency vulnerable, what does this change expose"
-  ],
-  "standDown": [
-    "write an exploit, bypass a control, evade detection",
-    "a plain question about a protocol with no system in view",
-    "feature scope with no boundary or data change",
-    "explain how the protocol, the handshake, works",
-    "should we build the feature first"
-  ],
   "interactionClasses": [
     "manage",
     "maintain"
@@ -82,7 +63,6 @@
   ],
   "observedOn": [],
   "evals": [
-    "evals/activation.json",
     "evals/fixtures.json",
     "evals/behavior.json"
   ]

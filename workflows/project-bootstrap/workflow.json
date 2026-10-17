@@ -4,18 +4,8 @@
   "evals": [],
   "id": "project-bootstrap",
   "title": "Project bootstrap and constitution review",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "purpose": "Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow.",
-  "activation": [
-    "set up construct here",
-    "bootstrap the project",
-    "review the constitution",
-    "what does construct know about this project"
-  ],
-  "standDown": [
-    "the person asked a question about the code",
-    "setup is complete and nothing changed"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "target": "string"

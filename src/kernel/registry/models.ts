@@ -48,8 +48,6 @@ export interface SkillManifest {
   readonly version: string;
   readonly category: 'method' | 'operational' | 'professional';
   readonly owner: string;
-  readonly activation: readonly string[];
-  readonly standDown: readonly string[];
   readonly interactionClasses: readonly InteractionClass[];
   readonly outcomes: readonly string[];
   readonly deliverableTypes: readonly string[];
@@ -101,8 +99,6 @@ export interface WorkflowManifest {
   readonly title: string;
   readonly version: string;
   readonly purpose: string;
-  readonly activation: readonly string[];
-  readonly standDown: readonly string[];
   readonly interactionClass: InteractionClass;
   readonly inputSchema: Readonly<Record<string, InputType>>;
   readonly requiredInputs: readonly string[];
@@ -134,8 +130,6 @@ export interface RegisteredSkill {
   readonly description: string;
   /** Files by relative path, so a selected body loads on demand. */
   readonly files: readonly string[];
-  /** Requests the skill's eval file labels as activating it; the router retrieves over them. */
-  readonly examples: readonly string[];
 }
 
 export interface RegisteredWorkflow {

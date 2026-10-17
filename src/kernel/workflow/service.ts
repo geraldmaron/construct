@@ -42,7 +42,7 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { canonicalDestination, INTAKE_FIELDS, OPEN_ABOUT, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
-import { assessConsequence, judgmentRequired, wordsOf, type Judgment } from './consequence.ts';
+import { assessConsequence, judgmentRequired, type Judgment } from './consequence.ts';
 import { askedFrom, askedOf, type AskedReading, type AskedSources, type Assumption, type Declared, type Firing } from './asked.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { listSources, SENSITIVITIES, type Sensitivity } from '../state/sources.ts';
@@ -148,7 +148,7 @@ export interface WorkPacket {
   /** The run's reading, when it started from one. */
   readonly intake: WorkIntake | null;
   /** For a step that binds no skill, the method the reading chose, when it is registered. */
-  readonly methodCatalog: readonly { readonly id: string; readonly title: string; readonly activation: readonly string[]; readonly standDown: readonly string[] }[];
+  readonly methodCatalog: readonly { readonly id: string; readonly title: string }[];
   readonly method: { readonly id: string; readonly version: string; readonly title: string } | null;
 }
 
@@ -966,17 +966,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     };
   }
 
-  /** Structure sets the floor; declared stakes, the chosen skill and the words only raise it. */
+  /** Structure sets the floor; the stakes the host declared only raise it. */
   function judgmentFor(workflow: RegisteredWorkflow | null, steps: readonly WorkflowStep[], input: Readonly<Record<string, unknown>>, declared?: Declared | null): Judgment {
     return assessConsequence({
       scale: getProfile(store)?.scale ?? null,
       workflowChallenge: workflow?.manifest.deliverable.challenge ?? false,
       stepTiers: steps.map((s) => s.tier),
-      boundSkills: steps.flatMap((s) => (s.skill ? [s.skill.id] : [])),
-      chosenSkill: declared?.chosenSkill ?? null,
       activeContradictions: activeContradictionCount(store),
       stakes: declared?.stakes ?? null,
-      words: wordsOf(input, declared?.words ?? undefined),
     });
   }
 
@@ -1504,7 +1501,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       judgment,
       intake: workIntakeOf(askedOf(run)),
       method,
-      methodCatalog: deps.skills.list().filter((s) => s.manifest.category === 'method').map((s) => ({ id: s.manifest.id, title: s.manifest.title, activation: s.manifest.activation, standDown: s.manifest.standDown })),
+      methodCatalog: deps.skills.list().filter((s) => s.manifest.category === 'method').map((s) => ({ id: s.manifest.id, title: s.manifest.title })),
     };
   }
 

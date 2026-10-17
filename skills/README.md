@@ -3,10 +3,10 @@
 Portable skills for AI agents in the Agent Skills format: a `SKILL.md` per
 skill, optionally with `references/`, `scripts/`, and `assets/` for long
 templates, helpers, and examples. Beside it, `construct.skill.json` is
-Construct's manifest (id, version, category, activation and stand-down
-phrases, deliverable types), and `evals/` holds the labeled cases for when
-the skill should load and how it should behave. A host that reads only
-`SKILL.md` ignores both.
+Construct's manifest (id, version, category, deliverable types, capabilities
+and gates), and `evals/` holds checks of the skill's own text. When a skill
+applies is said once, in the `SKILL.md` description, and the host model
+judges it. A host that reads only `SKILL.md` ignores both.
 
 ## What's here
 
@@ -141,8 +141,8 @@ requires executed evidence bound to the exact digest, host, model and scope.
 
 ## Status
 
-Experimental and actively developed. Shipped activation cases and any behavior
-fixtures are checked by the test suite; filenames and a matching lock alone do
+Experimental and actively developed. Shipped behavior checks and fixtures are
+checked by the test suite; filenames and a matching lock alone do
 not qualify a method. In a project, `construct skill impact` reports how each
 version's steps did against their checks. These receipts do not establish causal
 method benefit. See [qualification](../docs/skills-and-packs.md#qualification-and-skill-impact)

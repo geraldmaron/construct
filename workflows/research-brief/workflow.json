@@ -3,18 +3,8 @@
   "formatVersion": 1,
   "id": "research-brief",
   "title": "Research a question",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "purpose": "Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back.",
-  "activation": [
-    "research this and tell me what holds up",
-    "what does the evidence say about",
-    "find out whether this is true and cite it",
-    "compare what the sources say about"
-  ],
-  "standDown": [
-    "a plain question I already know the answer to",
-    "just give me your opinion"
-  ],
   "interactionClass": "manage",
   "inputSchema": {
     "question": "string",

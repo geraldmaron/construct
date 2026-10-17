@@ -86,8 +86,6 @@ This one is saved as
   "title": "Weekly digest",
   "version": "1.0.0",
   "purpose": "Summarize what changed in the project over a period.",
-  "activation": ["every Monday, what changed last week"],
-  "standDown": ["a one-off question about the project"],
   "interactionClass": "maintain",
   "inputSchema": { "period": "period" },
   "requiredInputs": ["period"],

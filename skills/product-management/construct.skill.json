@@ -3,29 +3,9 @@
   "formatVersion": 1,
   "id": "product-management",
   "title": "Product management",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "category": "professional",
   "owner": "geraldmaron/construct",
-  "activation": [
-    "everyone loves this idea but nobody can say what it changes for the customer",
-    "sanity check this spec before engineering starts",
-    "which of these asks actually matter this quarter",
-    "did last quarter's launch do anything",
-    "what should we build next",
-    "is this feature worth building",
-    "review this PRD, this product requirements document, this opportunity assessment",
-    "what problem does this solve, for whom, and how would we know it worked",
-    "should we build this feature, prioritize this, cut this from scope",
-    "write the product brief, the working-backwards press release",
-    "should we prioritize this over that this quarter"
-  ],
-  "standDown": [
-    "how to build it, which library, which architecture",
-    "a plain question about what the product does",
-    "a finished decision that needs execution, not framing",
-    "what does the settings page do",
-    "the roadmap is decided, write the sprint tickets"
-  ],
   "interactionClasses": [
     "manage",
     "maintain"
@@ -93,7 +73,6 @@
   "licensedReviewBoundaries": [],
   "observedOn": [],
   "evals": [
-    "evals/activation.json",
     "evals/fixtures.json",
     "evals/behavior.json"
   ]
