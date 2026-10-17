@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# The repository's commit gate. secret-scan blocks; repo-gate only warns.
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/hooks/secret-scan.mjs" || exit 1
+node "$root/scripts/hooks/repo-gate.mjs" || true

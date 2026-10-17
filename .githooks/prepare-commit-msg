@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Strips attribution trailers a tool pre-fills, before the author sees the message.
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/hooks/commit-trailers.mjs" strip "$1"

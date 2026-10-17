@@ -9,7 +9,7 @@
  * and keep their dated lineage; this lint covers code: src, tests, scripts.
  *
  * Excluded by name: the scripts whose subject IS the frozen tracker export
- * (repo-gate, lint-doc-bead-refs and its test), which handle bead ids as data,
+ * (repo-gate), which handle bead ids as data,
  * and the labeling kit, whose ids are study identifiers and, in one case, a
  * deterministic shuffle seed whose bytes decide which outcomes were drawn:
  * rewording it would silently re-randomize a finished study.
@@ -36,7 +36,7 @@ const files = execSync("git ls-files 'src/' 'tests/' 'scripts/' 'skills/'", { en
   .split('\n')
   .filter(Boolean)
   .filter((f) => EXTENSIONS.some((ext) => f.endsWith(ext)))
-  .filter((f) => !f.includes('repo-gate') && !f.includes('labeling-kit') && !f.includes('lint-doc-bead-refs'))
+  .filter((f) => !f.includes('repo-gate') && !f.includes('labeling-kit'))
   // git ls-files still lists a path after a working-tree delete until the
   // deletion is staged; skip those so a mid-edit tree does not crash the lint.
   .filter((f) => existsSync(f));
