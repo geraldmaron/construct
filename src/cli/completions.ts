@@ -9,7 +9,11 @@ import { GLOBAL_FLAGS, type CommandSpec } from './commands.ts';
 export const SHELLS = ['bash', 'zsh', 'fish'] as const;
 export type Shell = (typeof SHELLS)[number];
 
-function words(commands: readonly CommandSpec[]): { readonly first: string[]; readonly second: Record<string, string[]>; readonly flags: Record<string, string[]> } {
+function words(commands: readonly CommandSpec[]): {
+  readonly first: string[];
+  readonly second: Record<string, string[]>;
+  readonly flags: Record<string, string[]>;
+} {
   const first = [...new Set(commands.map((c) => c.path[0]!))].sort();
   const second: Record<string, string[]> = {};
   const flags: Record<string, string[]> = {};
@@ -24,7 +28,9 @@ function words(commands: readonly CommandSpec[]): { readonly first: string[]; re
 export function completionScript(shell: Shell, commands: readonly CommandSpec[]): string {
   const w = words(commands);
   if (shell === 'bash') {
-    const cases = Object.entries(w.second).map(([verb, subs]) => `      ${verb}) COMPREPLY=( $(compgen -W "${subs.join(' ')}" -- "$cur") ); return;;`).join('\n');
+    const cases = Object.entries(w.second)
+      .map(([verb, subs]) => `      ${verb}) COMPREPLY=( $(compgen -W "${subs.join(' ')}" -- "$cur") ); return;;`)
+      .join('\n');
     return [
       '_construct() {',
       '  local cur prev',
@@ -45,7 +51,9 @@ export function completionScript(shell: Shell, commands: readonly CommandSpec[])
     ].join('\n');
   }
   if (shell === 'zsh') {
-    const subs = Object.entries(w.second).map(([verb, s]) => `    ${verb}) _values 'subcommand' ${s.join(' ')};;`).join('\n');
+    const subs = Object.entries(w.second)
+      .map(([verb, s]) => `    ${verb}) _values 'subcommand' ${s.join(' ')};;`)
+      .join('\n');
     return [
       '#compdef construct',
       '_construct() {',

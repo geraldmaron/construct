@@ -52,7 +52,8 @@ const dist = new URL('../dist/cli/index.js', import.meta.url);
 const src = new URL('../src/cli/index.ts', import.meta.url);
 const target = existsSync(fileURLToPath(src)) ? src : dist;
 
-let main, hookExit = null;
+let main,
+  hookExit = null;
 try {
   // Installed coordination hooks need the existing bounded handler, not the
   // general CLI graph. Its own spec/parser still decides the accepted operands.

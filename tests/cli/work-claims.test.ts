@@ -37,7 +37,7 @@ test('only the person claims or takes over work from the command line, and a cla
 });
 
 test('CLI validates requested expiry before applying its ceiling and normalizes timezone offsets', async () => {
-  await inProject(async ctx => {
+  await inProject(async (ctx) => {
     const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
     const added = await capture(() => run(['work', 'add', 'expiry check', '--json'], person));
     const id = JSON.parse(added.out.trim().split('\n').pop()!).id;

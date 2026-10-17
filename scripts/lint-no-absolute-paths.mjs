@@ -25,9 +25,7 @@ const EXEMPT = [
 ];
 
 function trackedFiles() {
-  return execFileSync('git', ['ls-files'], { encoding: 'utf8' })
-    .split('\n')
-    .filter(Boolean);
+  return execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean);
 }
 
 let violations = 0;

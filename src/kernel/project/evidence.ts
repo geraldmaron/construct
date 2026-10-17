@@ -121,7 +121,10 @@ const SURFACES = new Set(['sources', 'constitution', 'project_context', 'inbox']
 
 /** Narrow a file path: drop a trailing #anchor or :line / :line-line locator. Applied only to paths, never to items. */
 export function stripLocator(ref: string): string {
-  return ref.trim().replace(/#.*$/, '').replace(/:(\d+)(?:-\d+)?$/, '');
+  return ref
+    .trim()
+    .replace(/#.*$/, '')
+    .replace(/:(\d+)(?:-\d+)?$/, '');
 }
 
 /** The item a reference names inside one source (`<id>:<item>` or `source:<id>:<item>`), exactly as written, or null. */
@@ -136,7 +139,11 @@ export function sourceItemOf(ref: string, sourceId: string): string | null {
 
 /** Whether a resolved reference holds content Construct can check: a file, or an item whose text a recorded read holds. Empty recorded text holds nothing. */
 export function holdsContent(r: ResolvedRef | null | undefined): boolean {
-  return r !== null && r !== undefined && (r.kind === 'file' || ((r.kind === 'item' || r.kind === 'record') && typeof r.text === 'string' && r.text.trim() !== ''));
+  return (
+    r !== null &&
+    r !== undefined &&
+    (r.kind === 'file' || ((r.kind === 'item' || r.kind === 'record') && typeof r.text === 'string' && r.text.trim() !== ''))
+  );
 }
 
 function inside(parent: string, child: string): boolean {
@@ -189,8 +196,20 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     return text;
   };
   const sourceFor = (abs: string) => dirSources.find((d) => inside(d.abs, abs));
-  const realRoot = (() => { try { return realpathSync(root); } catch { return root; } })();
-  const realDirs = dirSources.map((d) => { try { return realpathSync(d.abs); } catch { return d.abs; } });
+  const realRoot = (() => {
+    try {
+      return realpathSync(root);
+    } catch {
+      return root;
+    }
+  })();
+  const realDirs = dirSources.map((d) => {
+    try {
+      return realpathSync(d.abs);
+    } catch {
+      return d.abs;
+    }
+  });
   const asPath = (raw: string, original: string, base = root, artifact = false): ResolvedRef | null => {
     // An empty path after narrowing (a bare "#anchor" or ":12") names no file, not the folder it would land on.
     if (raw.trim() === '') return null;
@@ -210,31 +229,49 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const st = statSync(abs);
     const itemRef = ds ? relative(ds.abs, abs).split(sep).join('/') : undefined;
     const supersededBy = ds && itemRef ? ds.entries.get(itemRef)?.supersededBy : undefined;
-    const common = { ref: original, path: abs, provenance: 'witnessed' as const, ...(ds ? { sourceId: ds.id, itemRef } : {}), ...(supersededBy ? { supersededBy } : {}) };
+    const common = {
+      ref: original,
+      path: abs,
+      provenance: 'witnessed' as const,
+      ...(ds ? { sourceId: ds.id, itemRef } : {}),
+      ...(supersededBy ? { supersededBy } : {}),
+    };
     if (st.isDirectory()) return { ...common, kind: 'directory' };
     if (!st.isFile()) return null;
     return { ...common, kind: 'file', size: st.size, text: readText(real) };
   };
   // An item a recorded read holds, with what the read kept. A manifest that does not say how it was obtained is
   // the host's report, never Construct's own reading.
-  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef | null => source.canRead === false || urlCarriesCredentials(entry.ref) || (entry.url !== undefined && urlCarriesCredentials(entry.url)) ? null : ({
-    ref: original,
-    kind: 'item',
-    provenance: source.provenance ?? 'reported',
-    sourceId: source.id,
-    itemRef: entry.ref,
-    ...(entry.url ? { url: entry.url } : {}),
-    ...(entry.text !== undefined ? { text: entry.text } : {}),
-    ...(entry.truncated ? { truncated: true } : {}),
-    ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
-    ...(entry.supersededBy ? { supersededBy: entry.supersededBy } : {}),
-  });
+  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef | null =>
+    source.canRead === false || urlCarriesCredentials(entry.ref) || (entry.url !== undefined && urlCarriesCredentials(entry.url))
+      ? null
+      : {
+          ref: original,
+          kind: 'item',
+          provenance: source.provenance ?? 'reported',
+          sourceId: source.id,
+          itemRef: entry.ref,
+          ...(entry.url ? { url: entry.url } : {}),
+          ...(entry.text !== undefined ? { text: entry.text } : {}),
+          ...(entry.truncated ? { truncated: true } : {}),
+          ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
+          ...(entry.supersededBy ? { supersededBy: entry.supersededBy } : {}),
+        };
   // Something only the host can read that no recorded read holds: the host's word alone, admitted only under accept.
-  const unrecorded = (r: Omit<ResolvedRef, 'provenance'>): ResolvedRef | null => (input.hostReads === 'accept' ? { ...r, provenance: 'unverified' } : null);
+  const unrecorded = (r: Omit<ResolvedRef, 'provenance'>): ResolvedRef | null =>
+    input.hostReads === 'accept' ? { ...r, provenance: 'unverified' } : null;
   const sourceLevel = (original: string, s: EvidenceSource): ResolvedRef | null => {
     if (s.canRead === false) return null;
-    if (s.kind === 'directory') return { ref: original, kind: 'source', sourceId: s.id, provenance: 'witnessed', ...(s.locator ? { path: resolve(root, s.locator) } : {}) };
-    if (s.manifest !== null || !s.neverRead) return { ref: original, kind: 'source', sourceId: s.id, provenance: s.provenance ?? 'reported' };
+    if (s.kind === 'directory')
+      return {
+        ref: original,
+        kind: 'source',
+        sourceId: s.id,
+        provenance: 'witnessed',
+        ...(s.locator ? { path: resolve(root, s.locator) } : {}),
+      };
+    if (s.manifest !== null || !s.neverRead)
+      return { ref: original, kind: 'source', sourceId: s.id, provenance: s.provenance ?? 'reported' };
     return unrecorded({ ref: original, kind: 'source', sourceId: s.id });
   };
 
@@ -244,7 +281,8 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const hit = supersessionFor([r.itemRef ?? '', r.path ?? '', stripLocator(r.ref)].filter(Boolean), declared);
     return hit ? { ...r, supersededBy: `${hit.by} (statement:${hit.statementId})` } : r;
   };
-  return (original: string, use): ResolvedRef | null => govern(use === 'artifact' ? asPath(original, original, root, true) : resolveRaw(original));
+  return (original: string, use): ResolvedRef | null =>
+    govern(use === 'artifact' ? asPath(original, original, root, true) : resolveRaw(original));
   // One parser, in order; nothing is stripped before Construct knows what the reference is.
   function resolveRaw(original: string): ResolvedRef | null {
     if (typeof original !== 'string') return null;
@@ -263,7 +301,8 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const colon = raw.indexOf(':');
     const head = colon > 0 ? raw.slice(0, colon) : '';
     const rest = colon > 0 ? raw.slice(colon + 1) : '';
-    if (head === 'deliverable') return input.deliverableIds?.has(rest) ? { ref: original, kind: 'deliverable', provenance: 'witnessed' } : null;
+    if (head === 'deliverable')
+      return input.deliverableIds?.has(rest) ? { ref: original, kind: 'deliverable', provenance: 'witnessed' } : null;
     if ((RECORD_PREFIXES as readonly string[]).includes(head) && !byId.has(head)) {
       return rest && input.knows?.(head as RecordKind, rest) ? { ref: original, kind: 'record', provenance: 'witnessed' } : null;
     }
@@ -291,7 +330,10 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
 }
 
 /** How much of a step's evidence Construct opened itself, a recorded read holds, rests on the host's word alone, or names nothing. */
-export function provenanceOf(evidence: readonly { readonly ref: string }[], resolve: RefResolver): { witnessed: number; reported: number; unverified: number; unresolved: number } {
+export function provenanceOf(
+  evidence: readonly { readonly ref: string }[],
+  resolve: RefResolver,
+): { witnessed: number; reported: number; unverified: number; unresolved: number } {
   const out = { witnessed: 0, reported: 0, unverified: 0, unresolved: 0 };
   for (const e of evidence) {
     const r = resolve(e.ref);
@@ -303,5 +345,11 @@ export function provenanceOf(evidence: readonly { readonly ref: string }[], reso
 
 /** Text compared for quotation: case and whitespace do not matter, typographic quotes and dashes fold. */
 export function normalizeQuote(text: string): string {
-  return text.toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, '-').replace(/\s+/g, ' ').trim();
+  return text
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

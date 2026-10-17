@@ -25,22 +25,53 @@ export interface SkillQuality {
 }
 
 export function skillQuality(store: StateStore, filter: { readonly skill?: string } = {}): SkillQuality[] {
-  const steps = store.db.prepare(`SELECT id, state, attempts, input_json, output_json FROM step_runs WHERE input_json LIKE '%"skill"%'`).all() as unknown as { id: string; state: string; attempts: number; input_json: string | null; output_json: string | null }[];
-  const failures = store.db.prepare(`SELECT step_run_id, payload_json FROM activity_events WHERE kind = 'step.validation_failed'`).all() as unknown as { step_run_id: string | null; payload_json: string }[];
+  const steps = store.db
+    .prepare(`SELECT id, state, attempts, input_json, output_json FROM step_runs WHERE input_json LIKE '%"skill"%'`)
+    .all() as unknown as { id: string; state: string; attempts: number; input_json: string | null; output_json: string | null }[];
+  const failures = store.db
+    .prepare(`SELECT step_run_id, payload_json FROM activity_events WHERE kind = 'step.validation_failed'`)
+    .all() as unknown as { step_run_id: string | null; payload_json: string }[];
   const failingByStep = new Map<string, string[]>();
   for (const f of failures) {
     if (!f.step_run_id) continue;
     const names = (parseJson(f.payload_json) as { failures?: unknown } | null)?.failures;
-    if (Array.isArray(names)) failingByStep.set(f.step_run_id, [...(failingByStep.get(f.step_run_id) ?? []), ...names.filter((n): n is string => typeof n === 'string')]);
+    if (Array.isArray(names))
+      failingByStep.set(f.step_run_id, [
+        ...(failingByStep.get(f.step_run_id) ?? []),
+        ...names.filter((n): n is string => typeof n === 'string'),
+      ]);
   }
-  const groups = new Map<string, { skill: string; version: string; steps: number; succeeded: number; firstPass: number; attempts: number; waived: number; failed: number; checks: Map<string, number> }>();
+  const groups = new Map<
+    string,
+    {
+      skill: string;
+      version: string;
+      steps: number;
+      succeeded: number;
+      firstPass: number;
+      attempts: number;
+      waived: number;
+      failed: number;
+      checks: Map<string, number>;
+    }
+  >();
   for (const st of steps) {
     const skill = (parseJson(st.input_json) as { skill?: { id?: unknown; version?: unknown } | null } | null)?.skill;
     if (!skill || typeof skill.id !== 'string' || typeof skill.version !== 'string') continue;
     if (filter.skill && skill.id !== filter.skill) continue;
     if (st.state === 'pending' || st.state === 'ready') continue;
     const key = `${skill.id}@${skill.version}`;
-    const g = groups.get(key) ?? { skill: skill.id, version: skill.version, steps: 0, succeeded: 0, firstPass: 0, attempts: 0, waived: 0, failed: 0, checks: new Map() };
+    const g = groups.get(key) ?? {
+      skill: skill.id,
+      version: skill.version,
+      steps: 0,
+      succeeded: 0,
+      firstPass: 0,
+      attempts: 0,
+      waived: 0,
+      failed: 0,
+      checks: new Map(),
+    };
     const waived = Array.isArray((parseJson(st.output_json) as { waived?: unknown } | null)?.waived);
     g.steps += 1;
     g.attempts += st.attempts;

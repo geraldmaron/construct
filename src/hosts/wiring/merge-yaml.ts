@@ -94,7 +94,13 @@ function parseInline(raw: string): YamlValue | undefined {
       items.push(v);
     }
     // Every comma-separated piece must have been consumed; a stray quote or bracket means a form not read here.
-    if (inner.replace(/"(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^,]+/g, '').replace(/,/g, '').trim() !== '') return undefined;
+    if (
+      inner
+        .replace(/"(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^,]+/g, '')
+        .replace(/,/g, '')
+        .trim() !== ''
+    )
+      return undefined;
     return items;
   }
   if (/^[{&*!|>]/.test(raw)) return undefined;
@@ -110,7 +116,13 @@ interface Child {
 type Located =
   | { readonly kind: 'none' }
   | { readonly kind: 'inline'; readonly line: number }
-  | { readonly kind: 'block'; readonly line: number; readonly end: number; readonly childIndent: number | null; readonly children: readonly Child[] }
+  | {
+      readonly kind: 'block';
+      readonly line: number;
+      readonly end: number;
+      readonly childIndent: number | null;
+      readonly children: readonly Child[];
+    }
   | { readonly kind: 'problem'; readonly problem: string };
 
 function locate(lines: readonly Line[]): Located {
@@ -120,7 +132,8 @@ function locate(lines: readonly Line[]): Located {
     if (isContent(l.text) && l.text.includes('\t')) return { kind: 'problem', problem: 'the file uses tabs' };
     if (/^---(?:\s|$)/.test(l.text)) {
       documents += 1;
-      if (documents > 1 || lines.slice(0, i).some((p) => isContent(p.text))) return { kind: 'problem', problem: 'the file holds more than one YAML document' };
+      if (documents > 1 || lines.slice(0, i).some((p) => isContent(p.text)))
+        return { kind: 'problem', problem: 'the file holds more than one YAML document' };
     }
     if (/^\.\.\.(?:\s|$)/.test(l.text)) return { kind: 'problem', problem: 'the file holds more than one YAML document' };
   }
@@ -128,7 +141,8 @@ function locate(lines: readonly Line[]): Located {
   if (firstContent && indentOf(firstContent.text) > 0) return { kind: 'problem', problem: 'its top level is indented' };
   const topLevel = lines.flatMap((l, i) => (isContent(l.text) && indentOf(l.text) === 0 && !/^---/.test(l.text) ? [i] : []));
   // Every top-level line must be a plain `key:` this module reads; anything else (an explicit `?` key, a flow mapping) could be where the servers live.
-  if (topLevel.some((i) => parseKey(lines[i]!.text) === null)) return { kind: 'problem', problem: 'it has a top-level line this writer cannot read' };
+  if (topLevel.some((i) => parseKey(lines[i]!.text) === null))
+    return { kind: 'problem', problem: 'it has a top-level line this writer cannot read' };
   const servers = topLevel.filter((i) => parseKey(lines[i]!.text)?.key === SERVERS_KEY);
   if (servers.length > 1) return { kind: 'problem', problem: `${SERVERS_KEY} appears more than once` };
   if (servers.length === 0) return { kind: 'none' };
@@ -203,7 +217,9 @@ function parseServer(lines: readonly Line[], child: Child): ParsedServer {
       k += 1;
     }
     const itemIndent = body.length > 0 ? indentOf(body[0]!) : -1;
-    const items = body.map((t) => (indentOf(t) === itemIndent ? /^ *- (.*)$/.exec(t)?.[1] : undefined)).map((raw) => (raw === undefined ? undefined : parseScalar(raw.trim())));
+    const items = body
+      .map((t) => (indentOf(t) === itemIndent ? /^ *- (.*)$/.exec(t)?.[1] : undefined))
+      .map((raw) => (raw === undefined ? undefined : parseScalar(raw.trim())));
     if (body.length === 0 || items.some((v) => typeof v !== 'string')) unreadable.push(key.key);
     else values[key.key] = items as string[];
   }
@@ -232,7 +248,12 @@ export interface YamlMergeOptions {
   readonly conflict?: (existing: Readonly<Record<string, YamlValue>>) => string | null;
 }
 
-export function mergeYamlServerBlock(path: string, name: string, entry: Readonly<Record<string, YamlValue>>, opts: YamlMergeOptions = {}): MergeResult {
+export function mergeYamlServerBlock(
+  path: string,
+  name: string,
+  entry: Readonly<Record<string, YamlValue>>,
+  opts: YamlMergeOptions = {},
+): MergeResult {
   const created = !existsSync(path);
   const read = created ? [] : readLines(path);
   if (!Array.isArray(read)) return { ok: false, reason: read.problem, path };
@@ -255,7 +276,11 @@ export function mergeYamlServerBlock(path: string, name: string, entry: Readonly
     if (child) {
       const parsed = parseServer(lines, child);
       if (parsed.unreadable.length > 0) {
-        return { ok: false, reason: `its ${SERVERS_KEY}.${name} entry has settings this writer cannot read safely (${parsed.unreadable.join(', ')}); edit or remove that entry by hand`, path };
+        return {
+          ok: false,
+          reason: `its ${SERVERS_KEY}.${name} entry has settings this writer cannot read safely (${parsed.unreadable.join(', ')}); edit or remove that entry by hand`,
+          path,
+        };
       }
       if (isDeepStrictEqual(parsed.values, { ...entry })) return { ok: true, created: false, path, replaced: [] };
       const conflict = opts.conflict?.(parsed.values) ?? null;

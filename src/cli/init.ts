@@ -16,13 +16,28 @@ import { detectAmbientHost } from '../hosts/ambient.ts';
 import { emptySourcesFile, validateSourcesFile } from '../kernel/project/sources-file.ts';
 import { initializeProject } from '../kernel/project/initialize.ts';
 import { draftFromMaterial, SCALE_CHOICES } from '../kernel/project/discovery.ts';
-import { applyDiscoveryDraft, applyOnboardingAnswers, composeConstitution, onboardingStatus, scaleFromAnswer, SIDE_PROJECT_NEEDS_PERSON } from '../kernel/project/onboarding.ts';
+import {
+  applyDiscoveryDraft,
+  applyOnboardingAnswers,
+  composeConstitution,
+  onboardingStatus,
+  scaleFromAnswer,
+  SIDE_PROJECT_NEEDS_PERSON,
+} from '../kernel/project/onboarding.ts';
 import { saveConstitution } from '../kernel/project/constitution.ts';
 import { listStatements, type ProjectScale } from '../kernel/state/profile.ts';
 import { isPersonChannel } from '../kernel/policy/channels.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities } from '../kernel/source/entities.ts';
-import { listShippedSkills, readShippedSkill, plantSkill, skillState, OPERATIONAL_SKILL, type PlantResult, type ShippedSkill } from '../kernel/skills/bundle.ts';
+import {
+  listShippedSkills,
+  readShippedSkill,
+  plantSkill,
+  skillState,
+  OPERATIONAL_SKILL,
+  type PlantResult,
+  type ShippedSkill,
+} from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { updateLock } from '../kernel/registry/lockfile.ts';
@@ -31,7 +46,16 @@ import { inspectWiring, installWiring, type WiringState } from '../hosts/wiring/
 import { HOOK_SETTINGS_PATH, inspectHooks, installHooks, type HookWiringState } from '../hosts/wiring/hooks.ts';
 import { inspectStartup, installStartup, type StartupState } from '../hosts/wiring/startup.ts';
 import { projectStateDir } from '../kernel/project/layout.ts';
-import { clientWiring, launchFor, normalizeClient, parseClients, projectSkillsDirFor, shownPath, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
+import {
+  clientWiring,
+  launchFor,
+  normalizeClient,
+  parseClients,
+  projectSkillsDirFor,
+  shownPath,
+  WIRABLE_CLIENTS,
+  type WirableClient,
+} from '../hosts/wiring/clients.ts';
 import { presentHosts, type PresentHost } from '../hosts/presence.ts';
 import { resolveHostConfigDirs } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
@@ -49,10 +73,19 @@ export const INIT_SPEC: CommandSpec = {
   flags: [
     { name: 'name', gloss: 'the project’s name (default: the directory or package name)', takesValue: true },
     { name: 'purpose', gloss: 'what the project is for, in a sentence', takesValue: true },
-    { name: 'scale', gloss: `what this project is to you: ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one`, takesValue: true },
+    {
+      name: 'scale',
+      gloss: `what this project is to you: ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one`,
+      takesValue: true,
+    },
     { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
     { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
-    { name: 'client', gloss: `the agent host you use here: ${WIRABLE_CLIENTS.join(' | ')} (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine`, takesValue: true, repeatable: true },
+    {
+      name: 'client',
+      gloss: `the agent host you use here: ${WIRABLE_CLIENTS.join(' | ')} (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine`,
+      takesValue: true,
+      repeatable: true,
+    },
     { name: 'no-wire', gloss: 'do not write the hosts’ MCP configuration, hooks or startup rules', takesValue: false },
     { name: 'skills-dir', gloss: 'also plant a personal copy of the operational skill in this directory', takesValue: true },
     { name: 'dry-run', gloss: 'say what would happen and write nothing', takesValue: false },
@@ -67,7 +100,9 @@ function scaleFlag(args: ParsedArgs): ProjectScale | undefined {
   try {
     return scaleFromAnswer(scale);
   } catch {
-    throw new UsageError(`--scale must be one of ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one: ${SCALE_CHOICES.map((c) => c.label).join(' | ')}`);
+    throw new UsageError(
+      `--scale must be one of ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one: ${SCALE_CHOICES.map((c) => c.label).join(' | ')}`,
+    );
   }
 }
 
@@ -87,7 +122,10 @@ function flagAnswers(args: ParsedArgs): {
   };
 }
 
-function unansweredUnknowns(unknowns: readonly string[], answers: { readonly purpose?: string; readonly primaryOutcome?: string }): readonly string[] {
+function unansweredUnknowns(
+  unknowns: readonly string[],
+  answers: { readonly purpose?: string; readonly primaryOutcome?: string },
+): readonly string[] {
   return unknowns.filter((u) => {
     if (u === 'purpose' && answers.purpose) return false;
     if (u === 'primary outcome' && answers.primaryOutcome) return false;
@@ -148,7 +186,10 @@ function askLine(question: string, input: NodeJS.ReadableStream): Promise<string
 
 /** The hosts an answer to the numbered list names: numbers or host names; empty means all. Null when it names something not listed. */
 function pickedFrom(answer: string, found: readonly PresentHost[]): WirableClient[] | null {
-  const tokens = answer.trim().split(/[\s,]+/).filter(Boolean);
+  const tokens = answer
+    .trim()
+    .split(/[\s,]+/)
+    .filter(Boolean);
   if (tokens.length === 0) return found.map((f) => f.client);
   const picked: WirableClient[] = [];
   for (const token of tokens) {
@@ -177,19 +218,30 @@ async function hostsFor(args: ParsedArgs, ctx: CliContext, root: string, mayAsk:
   }
   const ambient = detectAmbientHost(ctx.env);
   const inside = normalizeClient(ambient?.host);
-  if (ambient && inside !== 'unknown') return { hosts: [{ client: inside, how: `detected ${ambient.host} (${ambient.marker})` }], found: [], none: '', wouldAsk: false };
+  if (ambient && inside !== 'unknown')
+    return { hosts: [{ client: inside, how: `detected ${ambient.host} (${ambient.marker})` }], found: [], none: '', wouldAsk: false };
   if (boolFlag(args, 'no-wire')) return { hosts: [], found: [], none: '', wouldAsk: false };
   const already = WIRABLE_CLIENTS.filter((c) => inspectWiring(c, root, ctx.env).status !== 'absent');
-  if (already.length > 0) return { hosts: already.map((client) => ({ client, how: 'already wired in this project' })), found: [], none: '', wouldAsk: false };
+  if (already.length > 0)
+    return { hosts: already.map((client) => ({ client, how: 'already wired in this project' })), found: [], none: '', wouldAsk: false };
   const found = presentHosts(ctx.env, resolveHostConfigDirs(ctx.env));
-  if (found.length === 1) return { hosts: [{ client: found[0]!.client, how: `the only agent host found on this machine: ${found[0]!.evidence}` }], found, none: '', wouldAsk: false };
+  if (found.length === 1)
+    return {
+      hosts: [{ client: found[0]!.client, how: `the only agent host found on this machine: ${found[0]!.evidence}` }],
+      found,
+      none: '',
+      wouldAsk: false,
+    };
   const unnamed = 'No agent host was named or detected here.';
   if (found.length === 0) return { hosts: [], found, none: unnamed, wouldAsk: false };
   const facts = ctx.terminal ?? terminalFacts();
   const atTerminal = facts.interactive && channelFor(ctx.env, facts) === 'tty_cli';
   if (!atTerminal || !mayAsk) return { hosts: [], found, none: unnamed, wouldAsk: atTerminal };
   const list = found.map((f, i) => `  ${String(i + 1)}) ${f.client} (${esc(f.evidence)})`).join('\n');
-  const answer = await askLine(`Which agent hosts do you use in this project?\n${list}\nEnter numbers, or press Enter for all: `, ctx.input ?? process.stdin);
+  const answer = await askLine(
+    `Which agent hosts do you use in this project?\n${list}\nEnter numbers, or press Enter for all: `,
+    ctx.input ?? process.stdin,
+  );
   if (answer === null) return { hosts: [], found, none: 'No host was picked.', wouldAsk: false };
   const picked = pickedFrom(answer, found);
   if (picked === null) return { hosts: [], found, none: `"${esc(answer.trim())}" names none of the hosts listed.`, wouldAsk: false };
@@ -222,9 +274,10 @@ function plannedHooks(now: HookWiringState): HookWiringState {
 
 /** The steps that leave a wired host able to reach Construct: its one-time steps, then the person's request. */
 function nextSteps(client: WirableClient, setupQuestions: number): string[] {
-  const ask = setupQuestions > 0
-    ? `Ask for what you want in your own words. It will ask the ${String(setupQuestions)} setup question(s) when they change the work.`
-    : 'Ask for what you want in your own words.';
+  const ask =
+    setupQuestions > 0
+      ? `Ask for what you want in your own words. It will ask the ${String(setupQuestions)} setup question(s) when they change the work.`
+      : 'Ask for what you want in your own words.';
   return [...clientWiring(client)!.firstRun, ask];
 }
 
@@ -233,7 +286,8 @@ function wiredBesides(root: string, chosen: readonly WirableClient[], env: NodeJ
   return WIRABLE_CLIENTS.filter((c) => !chosen.includes(c) && inspectWiring(c, root, env).status !== 'absent');
 }
 
-const NO_WIRE_NEXT = 'Next: run `construct init --client=<host>` without --no-wire for the host you use here; until then no agent session can reach Construct.';
+const NO_WIRE_NEXT =
+  'Next: run `construct init --client=<host>` without --no-wire for the host you use here; until then no agent session can reach Construct.';
 
 /** The "nothing is connected" lines, ending with the command that connects a host. */
 function notConnected(pick: HostPick): string[] {
@@ -293,7 +347,14 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       return {
         client,
         how,
-        mcp: noWire ? null : { path: current.path, status: current.status, detail: `would write ${shownPath(w, current.path)} to start \`${launchText(root)} serve\``, launch: launchText(root) },
+        mcp: noWire
+          ? null
+          : {
+              path: current.path,
+              status: current.status,
+              detail: `would write ${shownPath(w, current.path)} to start \`${launchText(root)} serve\``,
+              launch: launchText(root),
+            },
         skill: shipped ? { dir, outcome: 'planned', why: `would plant; now ${skillState(shipped, dir).state}` } : null,
         hooks: client === 'claude-code' && !noWire ? plannedHooks(inspectHooks(root, { checkout, stateDir: projectStateDir(root) })) : null,
         startup: noWire ? null : inspectStartup(client, root),
@@ -302,7 +363,13 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     });
     const record = {
       root,
-      wouldWrite: ['.construct/project.json', '.construct/constitution.json', '.construct/sources.json', '.construct/registry.lock.json', '.construct/state/construct.sqlite'],
+      wouldWrite: [
+        '.construct/project.json',
+        '.construct/constitution.json',
+        '.construct/sources.json',
+        '.construct/registry.lock.json',
+        '.construct/state/construct.sqlite',
+      ],
       extractedStatements: extracted,
       unansweredFields: unanswered,
       questions: draft.questions.map((q) => q.id),
@@ -319,14 +386,20 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     for (const line of describeAdmission(extracted, unanswered).map((l) => l.replace('read from the project:', 'would record:'))) say(line);
     say(`  would ask: ${record.questions.join(', ')}`);
     for (const h of hosts) {
-      say(`  host: would ${noWire ? 'set up' : 'wire'} ${h.client} (${h.mcp ? `${esc(h.mcp.detail)}; ` : 'no MCP configuration (--no-wire); '}${esc(h.how)})`);
+      say(
+        `  host: would ${noWire ? 'set up' : 'wire'} ${h.client} (${h.mcp ? `${esc(h.mcp.detail)}; ` : 'no MCP configuration (--no-wire); '}${esc(h.how)})`,
+      );
       if (h.skill) say(`    skill: would plant in ${esc(h.skill.dir)}`);
       if (h.hooks) say(`    hooks: ${esc(h.hooks.detail)}`);
       if (h.startup) say(`    startup: would install if absent (${esc(h.startup.detail)})`);
     }
     if (hosts.length === 0) {
       say(`  host: would wire none. ${pick.wouldAsk ? 'Several agent hosts are installed; init would ask which you use.' : pick.none}`);
-      say(pick.found.length > 0 ? `    found on this machine: ${pick.found.map((f) => `${f.client} (${esc(f.evidence)})`).join(', ')}` : '    no agent host found on this machine');
+      say(
+        pick.found.length > 0
+          ? `    found on this machine: ${pick.found.map((f) => `${f.client} (${esc(f.evidence)})`).join(', ')}`
+          : '    no agent host found on this machine',
+      );
     }
     if (personalDir) say(`  operational skill: would plant a personal copy in ${esc(personalDir)} (--skills-dir)`);
     say('Nothing was written.');
@@ -348,7 +421,10 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     saveConstitution(result.layout.constitutionFile, composeConstitution(result.store, result.constitution));
     const sources = createSourceService(result.store, { readers: new Map() });
     const synced = result.store.transaction(() => {
-      const sync = sources.syncDeclarations(() => readJsonFile(root, result.layout.sourcesFile, validateSourcesFile) ?? emptySourcesFile(), at);
+      const sync = sources.syncDeclarations(
+        () => readJsonFile(root, result.layout.sourcesFile, validateSourcesFile) ?? emptySourcesFile(),
+        at,
+      );
       ensureSourceEntities(result.store, at, ctx.nextId);
       return sync;
     });
@@ -368,13 +444,15 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       planted.set(dir, { result, by });
       return result;
     };
-    const replaceHint = (p: PlantResult, dir: string): string => (p.outcome === 'refused' && p.found === 'diverged'
-      ? `; \`construct skill install ${OPERATIONAL_SKILL} --force --dir=${shellWord(dir)}\` replaces it, and any edits in it are lost`
-      : '');
+    const replaceHint = (p: PlantResult, dir: string): string =>
+      p.outcome === 'refused' && p.found === 'diverged'
+        ? `; \`construct skill install ${OPERATIONAL_SKILL} --force --dir=${shellWord(dir)}\` replaces it, and any edits in it are lost`
+        : '';
     const hosts: HostRecord[] = pick.hosts.map(({ client, how }) => {
       const mcp = noWire ? null : installWiring(client, root, ctx.env);
       // Hooks make reporting reads and checking answers automatic where the host supports them.
-      const hooks = client === 'claude-code' && !noWire ? installHooks(root, { checkout, stateDir: result.layout.stateDir, env: ctx.env, at }) : null;
+      const hooks =
+        client === 'claude-code' && !noWire ? installHooks(root, { checkout, stateDir: result.layout.stateDir, env: ctx.env, at }) : null;
       const dir = skillDirOf(client);
       const skill = plantIn(dir, client);
       return {
@@ -411,7 +489,11 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       sources: synced,
       hosts,
       hostChoices: pick.found.map((f) => ({ client: f.client, evidence: f.evidence })),
-      registry: { locked: Object.keys(locked.lock.skills).length + Object.keys(locked.lock.workflows).length, updated: locked.changed.length, awaitingConfirmation: locked.needsConfirmation },
+      registry: {
+        locked: Object.keys(locked.lock.skills).length + Object.keys(locked.lock.workflows).length,
+        updated: locked.changed.length,
+        awaitingConfirmation: locked.needsConfirmation,
+      },
       personalSkill: personalLine,
     };
     if (args.json) {
@@ -420,10 +502,13 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     }
     const fresh = Object.values(result.created).some(Boolean);
     say(`${fresh ? 'Initialized' : 'Reconciled'} Construct project "${esc(String(answers.profile.name))}" at ${esc(root)}`);
-    say(`  files: .construct/{project,constitution,sources,registry.lock}.json${result.gitignoreUpdated ? '; .gitignore now ignores .construct/state/' : ''}`);
+    say(
+      `  files: .construct/{project,constitution,sources,registry.lock}.json${result.gitignoreUpdated ? '; .gitignore now ignores .construct/state/' : ''}`,
+    );
     say(`  state: ${result.created.state ? 'created' : 'opened'} .construct/state/construct.sqlite`);
     // On a re-run nothing is new; the earlier proposals still waiting are counted the way the first run counted them, unknowns aside.
-    const already = extractedApplied === 0 ? listStatements(result.store, { status: 'proposed' }).filter((st) => st.kind !== 'unknown').length : 0;
+    const already =
+      extractedApplied === 0 ? listStatements(result.store, { status: 'proposed' }).filter((st) => st.kind !== 'unknown').length : 0;
     for (const line of describeAdmission(extractedApplied, remainingUnknowns, already)) say(line);
     if (status.openQuestions.length > 0) {
       say(`  still to answer (${String(status.openQuestions.length)}):`);
@@ -431,7 +516,9 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     } else {
       say('  onboarding: confirmed');
     }
-    say(`  registry: ${String(Object.keys(locked.lock.skills).length)} skill(s), ${String(Object.keys(locked.lock.workflows).length)} workflow(s) locked${locked.needsConfirmation.length ? `; ${String(locked.needsConfirmation.length)} project bundle(s) changed and await confirmation` : ''}`);
+    say(
+      `  registry: ${String(Object.keys(locked.lock.skills).length)} skill(s), ${String(Object.keys(locked.lock.workflows).length)} workflow(s) locked${locked.needsConfirmation.length ? `; ${String(locked.needsConfirmation.length)} project bundle(s) changed and await confirmation` : ''}`,
+    );
     if (personalLine) {
       say(`  operational skill: ${esc(personalLine)}`);
       if (personal?.outcome === 'refused') say('  (the skill was not planted; see above)');
@@ -440,23 +527,33 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       const w = clientWiring(h.client)!;
       if (!h.mcp) {
         const now = inspectWiring(h.client, root, ctx.env);
-        say(now.status === 'installed'
-          ? `  host: ${h.client} wired earlier (${esc(now.detail)}); no MCP configuration written (--no-wire)`
-          : `  host: ${h.client} not connected: no MCP configuration written (--no-wire)`);
+        say(
+          now.status === 'installed'
+            ? `  host: ${h.client} wired earlier (${esc(now.detail)}); no MCP configuration written (--no-wire)`
+            : `  host: ${h.client} not connected: no MCP configuration written (--no-wire)`,
+        );
       } else if (h.mcp.status === 'installed') {
         const replaced = /; (replaced duplicate .*)$/.exec(h.mcp.detail)?.[1];
-        say(`  host: ${h.client} wired (${shownPath(w, h.mcp.path)} starts \`${h.mcp.launch} serve\`; ${esc(h.how)}${replaced ? `; ${esc(replaced)}` : ''})`);
+        say(
+          `  host: ${h.client} wired (${shownPath(w, h.mcp.path)} starts \`${h.mcp.launch} serve\`; ${esc(h.how)}${replaced ? `; ${esc(replaced)}` : ''})`,
+        );
       } else {
         say(`  host: ${h.client} not connected: ${esc(h.mcp.detail)}`);
       }
-      say(h.skill ? `    skill: ${esc(`${h.skill.outcome} at ${join(h.skill.dir, OPERATIONAL_SKILL)} (${h.skill.why})`)}` : `    skill: skipped: this install ships no ${OPERATIONAL_SKILL} skill`);
+      say(
+        h.skill
+          ? `    skill: ${esc(`${h.skill.outcome} at ${join(h.skill.dir, OPERATIONAL_SKILL)} (${h.skill.why})`)}`
+          : `    skill: skipped: this install ships no ${OPERATIONAL_SKILL} skill`,
+      );
       if (h.hooks) say(`    hooks: ${h.hooks.status} (${esc(h.hooks.detail)})`);
       if (h.startup) say(`    startup: ${h.startup.status} (${esc(h.startup.detail)})`);
       if (h.next.length > 0) {
         say(`Next, in ${w.label}:`);
         h.next.forEach((step, i) => say(`  ${String(i + 1)}. ${step}`));
       } else if (h.mcp && h.mcp.status !== 'installed') {
-        say(`Next: fix ${shownPath(w, h.mcp.path)} as above, then run \`construct init --client=${h.client}\` again; until then ${w.label} cannot reach Construct.`);
+        say(
+          `Next: fix ${shownPath(w, h.mcp.path)} as above, then run \`construct init --client=${h.client}\` again; until then ${w.label} cannot reach Construct.`,
+        );
       }
     }
     if (noWire) {

@@ -78,14 +78,10 @@ export function upsertDraft(
     const existing = getDeliverable(store, input.id);
     if (existing) {
       if (existing.trustState !== 'draft' && existing.trustState !== 'rejected') {
-        throw new Error(
-          `deliverable ${input.id} is ${existing.trustState}; only a draft or rejected deliverable can be redrafted`,
-        );
+        throw new Error(`deliverable ${input.id} is ${existing.trustState}; only a draft or rejected deliverable can be redrafted`);
       }
       store.db
-        .prepare(
-          `UPDATE deliverables SET body_json = ?, trust_state = 'draft', verification_json = NULL, updated_at = ? WHERE id = ?`,
-        )
+        .prepare(`UPDATE deliverables SET body_json = ?, trust_state = 'draft', verification_json = NULL, updated_at = ? WHERE id = ?`)
         .run(toJson(input.body), input.at, input.id);
     } else {
       store.db
@@ -112,9 +108,7 @@ export function getDeliverable(store: StateStore, id: string): Deliverable | nul
 }
 
 export function listDeliverables(store: StateStore, runId: string): Deliverable[] {
-  const rows = store.db
-    .prepare('SELECT * FROM deliverables WHERE run_id = ? ORDER BY created_at, id')
-    .all(runId) as unknown as Row[];
+  const rows = store.db.prepare('SELECT * FROM deliverables WHERE run_id = ? ORDER BY created_at, id').all(runId) as unknown as Row[];
   return rows.map(toDeliverable);
 }
 
@@ -149,15 +143,8 @@ export function setTrustState(
     if (!current) throw new Error(`no deliverable ${input.id}`);
     assertTransition(TRUST_TRANSITIONS, `deliverable ${input.id}`, current.trustState, input.trustState);
     store.db
-      .prepare(
-        `UPDATE deliverables SET trust_state = ?, verification_json = COALESCE(?, verification_json), updated_at = ? WHERE id = ?`,
-      )
-      .run(
-        input.trustState,
-        input.verification === undefined ? null : toJson(input.verification),
-        input.at,
-        input.id,
-      );
+      .prepare(`UPDATE deliverables SET trust_state = ?, verification_json = COALESCE(?, verification_json), updated_at = ? WHERE id = ?`)
+      .run(input.trustState, input.verification === undefined ? null : toJson(input.verification), input.at, input.id);
     appendActivity(store, {
       at: input.at,
       kind: 'deliverable.trust',

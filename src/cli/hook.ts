@@ -31,12 +31,17 @@ import type { openBroker } from './broker-context.ts';
 
 export const HOOK_SPEC: CommandSpec = {
   path: ['hook'],
-  gloss: 'run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, exits 0 once its command line parses',
+  gloss:
+    'run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, exits 0 once its command line parses',
   group: 'Host',
   positionals: ['<host-or-event>', '[event]'],
   flags: [
     { name: 'client', gloss: 'grounding hooks: which host sent the event (default: claude-code)', takesValue: true },
-    { name: 'project', gloss: 'grounding hooks: the project root (default: the event\'s cwd, then the working directory)', takesValue: true },
+    {
+      name: 'project',
+      gloss: "grounding hooks: the project root (default: the event's cwd, then the working directory)",
+      takesValue: true,
+    },
   ],
   readOnly: false,
 };
@@ -70,14 +75,17 @@ function context(event: HookEvent, text: string): string {
 /** Cut `text` so the whole hook output fits the budget. */
 function bounded(event: HookEvent, text: string): string {
   let t = text;
-  while (t.length > 0 && Buffer.byteLength(context(event, t)) > HOOK_OUTPUT_BUDGET) t = `${t.slice(0, Math.max(0, t.length - 20)).trimEnd()}…`;
+  while (t.length > 0 && Buffer.byteLength(context(event, t)) > HOOK_OUTPUT_BUDGET)
+    t = `${t.slice(0, Math.max(0, t.length - 20)).trimEnd()}…`;
   return context(event, t);
 }
 
 /** The Construct session serving this host session, when one registered under the host's id. */
 function sessionOf(store: StateStore, hostSessionId: string | null): string | null {
   if (!hostSessionId) return null;
-  const row = store.db.prepare('SELECT id FROM sessions WHERE host_session_id = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1').get(hostSessionId) as { id: string } | undefined;
+  const row = store.db
+    .prepare('SELECT id FROM sessions WHERE host_session_id = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1')
+    .get(hostSessionId) as { id: string } | undefined;
   return row?.id ?? null;
 }
 
@@ -86,7 +94,9 @@ function sessionStart(store: StateStore, sessionId: string | null, lane: string 
   if (c.others === 0 && c.held.length === 0 && c.offers === 0) return '';
   const held = c.held.map((h) => `${h.work} by ${h.by}${h.paths.length ? ` (${h.paths.join(', ')})` : ''}`).join('; ');
   // Without its own session's id, the hook cannot leave itself out of the count.
-  const counted = sessionId ? `${String(c.others)} other session(s) here, ${String(c.sameCheckout)} in this checkout.` : `${String(c.others)} session(s) here, ${String(c.sameCheckout)} in this checkout, possibly including this one.`;
+  const counted = sessionId
+    ? `${String(c.others)} other session(s) here, ${String(c.sameCheckout)} in this checkout.`
+    : `${String(c.others)} session(s) here, ${String(c.sameCheckout)} in this checkout, possibly including this one.`;
   const parts = [
     `Construct: ${counted}`,
     held ? `Held: ${held}${c.more ? ` and ${String(c.more)} more` : ''}.` : '',
@@ -113,7 +123,9 @@ function editedPath(payload: Payload): string | null {
  */
 function possiblyOwn(store: StateStore, workId: string, sessionId: string | null): boolean {
   const row = store.db
-    .prepare('SELECT w.claim_session AS session, s.host AS host FROM work_items w LEFT JOIN sessions s ON s.id = w.claim_session WHERE w.id = ?')
+    .prepare(
+      'SELECT w.claim_session AS session, s.host AS host FROM work_items w LEFT JOIN sessions s ON s.id = w.claim_session WHERE w.id = ?',
+    )
     .get(workId) as { session: string | null; host: string | null } | undefined;
   if (!row?.session) return false;
   if (sessionId) return row.session === sessionId;
@@ -134,7 +146,14 @@ function realpathOr(path: string): string {
  * be another worktree than the one the session runs in, so an edit made in a
  * worktree is judged against the claims recorded for that worktree.
  */
-function postToolUse(store: StateStore, payload: Payload, cwd: string, located: ProjectLocation, sessionId: string | null, now: string): string {
+function postToolUse(
+  store: StateStore,
+  payload: Payload,
+  cwd: string,
+  located: ProjectLocation,
+  sessionId: string | null,
+  now: string,
+): string {
   const path = editedPath(payload);
   if (!path) return '';
   const held = worktreeHolding(located.root, isAbsolute(path) ? path : resolve(cwd, path));
@@ -142,8 +161,9 @@ function postToolUse(store: StateStore, payload: Payload, cwd: string, located: 
   const { worktree } = held;
   const here = located.lane === null ? worktree.main : !worktree.main && realpathOr(located.lane.checkout) === worktree.checkout;
   const lane = worktree.main ? MAIN_LANE : here ? located.lane!.root : worktree.root;
-  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(held.path, 'check')], laneRoot: lane, now })
-    .filter((o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId));
+  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(held.path, 'check')], laneRoot: lane, now }).filter(
+    (o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId),
+  );
   if (overlaps.length === 0) return '';
   const o = overlaps[0]!;
   const reserved = `Construct: ${o.path} is reserved by ${o.holder} for ${o.workId} until ${o.until}`;
@@ -171,7 +191,13 @@ function respond(event: HookEvent, payload: Payload, ctx: CliContext): { readonl
     store = openStateStore(dbPath, { readOnly: true, busyTimeoutMs: HOOK_LOCK_WAIT_MS });
     const sessionId = sessionOf(store, typeof payload.session_id === 'string' ? payload.session_id : null);
     const now = ctx.now();
-    return { text: event === 'session-start' ? sessionStart(store, sessionId, located.lane?.root ?? null, now) : postToolUse(store, payload, cwd, located, sessionId, now), failed: false };
+    return {
+      text:
+        event === 'session-start'
+          ? sessionStart(store, sessionId, located.lane?.root ?? null, now)
+          : postToolUse(store, payload, cwd, located, sessionId, now),
+      failed: false,
+    };
   } catch (error) {
     // No project where the host is working is an ordinary quiet run; anything else failed.
     return { text: '', failed: !(error instanceof NoProjectError) };
@@ -195,7 +221,12 @@ export function recordHookHealth(stateDir: string, event: string, outcome: 'said
       health = {};
     }
     const h = health[event] ?? { runs: 0, said: 0, failed: 0, lastAt: at };
-    health[event] = { runs: h.runs + 1, said: h.said + (outcome === 'said' ? 1 : 0), failed: h.failed + (outcome === 'failed' ? 1 : 0), lastAt: at };
+    health[event] = {
+      runs: h.runs + 1,
+      said: h.said + (outcome === 'said' ? 1 : 0),
+      failed: h.failed + (outcome === 'failed' ? 1 : 0),
+      lastAt: at,
+    };
     mkdirSync(stateDir, { recursive: true, mode: 0o700 });
     const tmp = `${file}.${String(process.pid)}.tmp`;
     writeFileSync(tmp, `${JSON.stringify(health, null, 2)}\n`, { mode: 0o600 });
@@ -228,7 +259,8 @@ async function coordinationHook(args: ParsedArgs, ctx: CliContext): Promise<numb
   const timer = setTimeout(() => process.exit(0), Math.max(50, HOOK_BUDGET_MS - process.uptime() * 1000));
   timer.unref();
   const [host, event] = args.positionals;
-  if (!(HOOK_HOSTS as readonly string[]).includes(host ?? '') || !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(event ?? '')) return 0;
+  if (!(HOOK_HOSTS as readonly string[]).includes(host ?? '') || !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(event ?? ''))
+    return 0;
   let payload: Payload = {};
   try {
     const parsed = JSON.parse((await readStdin()) || '{}') as unknown;
@@ -249,7 +281,6 @@ async function coordinationHook(args: ParsedArgs, ctx: CliContext): Promise<numb
 }
 export const GROUNDING_HOOK_EVENTS = ['post-tool', 'stop', 'session-start'] as const;
 
-
 async function readAllStdin(): Promise<string> {
   if (process.stdin.isTTY) return '';
   const chunks: Buffer[] = [];
@@ -259,7 +290,8 @@ async function readAllStdin(): Promise<string> {
 
 async function groundingHook(args: ParsedArgs, ctx: CliContext, stdin: () => Promise<string>): Promise<number> {
   const event = args.positionals[0];
-  if (!event || !(GROUNDING_HOOK_EVENTS as readonly string[]).includes(event)) throw new UsageError(`event must be one of ${GROUNDING_HOOK_EVENTS.join(' | ')}`);
+  if (!event || !(GROUNDING_HOOK_EVENTS as readonly string[]).includes(event))
+    throw new UsageError(`event must be one of ${GROUNDING_HOOK_EVENTS.join(' | ')}`);
   let input: Record<string, unknown> = {};
   try {
     const raw = await stdin();
@@ -298,15 +330,23 @@ async function groundingHook(args: ParsedArgs, ctx: CliContext, stdin: () => Pro
  * Run the hook a host called. The first word names a host for the
  * coordination pack and an event for the grounding pack.
  */
-export async function hook(args: ParsedArgs, ctx: CliContext = createContext(), stdin: () => Promise<string> = readAllStdin): Promise<number> {
+export async function hook(
+  args: ParsedArgs,
+  ctx: CliContext = createContext(),
+  stdin: () => Promise<string> = readAllStdin,
+): Promise<number> {
   if ((HOOK_HOSTS as readonly string[]).includes(args.positionals[0] ?? '')) return coordinationHook(args, ctx);
   return groundingHook(args, ctx, stdin);
 }
 
-
 /** The installed pack has exactly these operands. Other invocations retain
  * the ordinary registry's help, global flags and usage-error behavior. */
 export async function installedCoordinationHook(argv: readonly string[]): Promise<number | null> {
-  if (argv.length !== 2 || !(HOOK_HOSTS as readonly string[]).includes(argv[0] ?? '') || !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(argv[1] ?? '')) return null;
+  if (
+    argv.length !== 2 ||
+    !(HOOK_HOSTS as readonly string[]).includes(argv[0] ?? '') ||
+    !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(argv[1] ?? '')
+  )
+    return null;
   return hook(parseArgs(HOOK_SPEC, argv));
 }

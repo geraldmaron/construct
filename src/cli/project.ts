@@ -19,9 +19,23 @@ import { basename } from 'node:path';
 const group = 'Inspect';
 
 export const PROJECT_SPECS: readonly CommandSpec[] = [
-  { path: ['project', 'show'], gloss: 'the project’s identity, constitution, and what is still unanswered', group, positionals: [], flags: [], readOnly: true },
+  {
+    path: ['project', 'show'],
+    gloss: 'the project’s identity, constitution, and what is still unanswered',
+    group,
+    positionals: [],
+    flags: [],
+    readOnly: true,
+  },
   { path: ['project', 'validate'], gloss: 'check every committed .construct file', group, positionals: [], flags: [], readOnly: true },
-  { path: ['project', 'refresh'], gloss: 're-read the project’s own files and propose updates; confirms nothing', group: 'Setup', positionals: [], flags: [], readOnly: false },
+  {
+    path: ['project', 'refresh'],
+    gloss: 're-read the project’s own files and propose updates; confirms nothing',
+    group: 'Setup',
+    positionals: [],
+    flags: [],
+    readOnly: false,
+  },
 ];
 
 /**
@@ -55,18 +69,33 @@ export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = 
         const c = files.constitution;
         const completeness = c ? constitutionCompleteness(c) : { complete: false, missing: ['constitution file'] };
         const proposed = listStatements(store, { status: 'proposed' });
-        const record = { root, config: files.config, constitution: c, completeness, proposedStatements: proposed.length, onboarding: onboardingStatus(store).state };
+        const record = {
+          root,
+          config: files.config,
+          constitution: c,
+          completeness,
+          proposedStatements: proposed.length,
+          onboarding: onboardingStatus(store).state,
+        };
         if (args.json) {
           writeJson(record);
           return 0;
         }
         say(`${esc(files.config?.name ?? 'project')} (${esc(files.config?.id ?? 'no id')}) at ${esc(root)}`);
         say(`  purpose: ${c?.purpose ? esc(c.purpose) : 'not yet stated'}`);
-        say(`  scale: ${c?.scale ?? 'not yet answered'}; primary outcome: ${c?.primaryOutcome ? esc(c.primaryOutcome) : 'not yet answered'}`);
-        say(`  principles: ${String(c?.principles.length ?? 0)}; constraints: ${String(c?.constraints.length ?? 0)}; success measures: ${String(c?.successMeasures.length ?? 0)}; glossary: ${String(c?.glossary.length ?? 0)}`);
-        say(`  canonical artifacts: ${c && c.canonicalArtifacts.length ? c.canonicalArtifacts.map((a) => `${esc(a.path)} (${esc(a.role)})`).join(', ') : 'none confirmed'}`);
+        say(
+          `  scale: ${c?.scale ?? 'not yet answered'}; primary outcome: ${c?.primaryOutcome ? esc(c.primaryOutcome) : 'not yet answered'}`,
+        );
+        say(
+          `  principles: ${String(c?.principles.length ?? 0)}; constraints: ${String(c?.constraints.length ?? 0)}; success measures: ${String(c?.successMeasures.length ?? 0)}; glossary: ${String(c?.glossary.length ?? 0)}`,
+        );
+        say(
+          `  canonical artifacts: ${c && c.canonicalArtifacts.length ? c.canonicalArtifacts.map((a) => `${esc(a.path)} (${esc(a.role)})`).join(', ') : 'none confirmed'}`,
+        );
         say(`  unknowns: ${c && c.unknowns.length ? c.unknowns.map(esc).join('; ') : 'none declared'}`);
-        say(`  ${completeness.complete ? 'complete' : `incomplete: ${completeness.missing.join(', ')}`}; ${String(proposed.length)} proposal(s) awaiting review`);
+        say(
+          `  ${completeness.complete ? 'complete' : `incomplete: ${completeness.missing.join(', ')}`}; ${String(proposed.length)} proposal(s) awaiting review`,
+        );
         return 0;
       });
     case 'validate': {
@@ -80,12 +109,15 @@ export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = 
         problems.push((error as Error).message);
       }
       const differing = lane ? differingInWorktree(root, lane.root) : [];
-      if (args.json) writeJson({ root, ok: problems.length === 0, problems, worktree: lane?.checkout ?? null, differentInWorktree: differing });
+      if (args.json)
+        writeJson({ root, ok: problems.length === 0, problems, worktree: lane?.checkout ?? null, differentInWorktree: differing });
       else {
         if (problems.length === 0) say(`every .construct file under ${esc(root)} validates`);
         else for (const p of problems) say(`problem: ${esc(p)}`);
         if (lane && differing.length > 0) {
-          say(`note: this worktree's committed ${differing.join(', ')} ${differing.length === 1 ? 'differs' : 'differ'} from the main checkout's; every command reads the main checkout's, under ${esc(root)}`);
+          say(
+            `note: this worktree's committed ${differing.join(', ')} ${differing.length === 1 ? 'differs' : 'differ'} from the main checkout's; every command reads the main checkout's, under ${esc(root)}`,
+          );
         }
       }
       return problems.length === 0 ? 0 : 1;
@@ -99,10 +131,17 @@ export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = 
         const applied = applyDiscoveryDraft(store, { draft, at, nextId: ctx.nextId });
         saveConstitution(layout.constitutionFile, composeConstitution(store, files.constitution ?? emptyConstitution()));
         const status = onboardingStatus(store);
-        const record = { root, newProposals: applied.proposedStatements.length, openQuestions: status.openQuestions.length, proposalsAwaitingReview: status.proposalsAwaitingReview };
+        const record = {
+          root,
+          newProposals: applied.proposedStatements.length,
+          openQuestions: status.openQuestions.length,
+          proposalsAwaitingReview: status.proposalsAwaitingReview,
+        };
         if (args.json) writeJson(record);
         else {
-          say(`re-read ${esc(root)}: ${String(applied.proposedStatements.length)} new proposal(s), ${String(status.proposalsAwaitingReview)} awaiting review, ${String(status.openQuestions.length)} question(s) open`);
+          say(
+            `re-read ${esc(root)}: ${String(applied.proposedStatements.length)} new proposal(s), ${String(status.proposalsAwaitingReview)} awaiting review, ${String(status.openQuestions.length)} question(s) open`,
+          );
           say('Nothing was confirmed; review proposals in your agent session.');
         }
         return 0;

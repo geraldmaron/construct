@@ -39,7 +39,10 @@ test('a peer’s claim reaches the other session on its next call, and a quiet c
       const heard = await b.ok('work', { action: 'list' });
       const peers = heard.construct_peers as { events: { kind: string; work: string; by: string; paths?: string[] }[] };
       const holder = `${String((bootA.session as { session: string }).session)}/main`;
-      assert.deepEqual(peers.events.map((e) => [e.kind, e.work, e.by, e.paths]), [['claimed', added.id, holder, ['src/parser/']]]);
+      assert.deepEqual(
+        peers.events.map((e) => [e.kind, e.work, e.by, e.paths]),
+        [['claimed', added.id, holder, ['src/parser/']]],
+      );
       assert.ok(JSON.stringify(peers).length <= 600);
 
       const again = await b.ok('work', { action: 'list' });

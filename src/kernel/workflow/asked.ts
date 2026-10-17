@@ -88,7 +88,9 @@ function stringOrNull(x: unknown): string | null {
 function stakesFrom(x: unknown): Stakes | null {
   if (!isRecord(x)) return null;
   const reversible = typeof x.reversible === 'boolean' ? x.reversible : null;
-  const affects = Array.isArray(x.affects) ? [...new Set(x.affects.filter((a): a is StakeArea => typeof a === 'string' && AREAS.has(a)))] : [];
+  const affects = Array.isArray(x.affects)
+    ? [...new Set(x.affects.filter((a): a is StakeArea => typeof a === 'string' && AREAS.has(a)))]
+    : [];
   return { reversible, affects };
 }
 
@@ -104,7 +106,11 @@ function judgedByFrom(x: unknown): JudgedBy | null {
 
 function assumptionsFrom(x: unknown): Assumption[] {
   if (!Array.isArray(x)) return [];
-  return x.filter((a): a is Assumption => isRecord(a) && typeof a.about === 'string' && typeof a.text === 'string' && typeof a.by === 'string' && ASSUMED_BY.has(a.by))
+  return x
+    .filter(
+      (a): a is Assumption =>
+        isRecord(a) && typeof a.about === 'string' && typeof a.text === 'string' && typeof a.by === 'string' && ASSUMED_BY.has(a.by),
+    )
     .map((a) => ({ about: a.about, text: a.text, by: a.by }));
 }
 
@@ -113,7 +119,13 @@ function numberOrAbsent(x: unknown): number | undefined {
 }
 
 /** The optional period fields both shapes share, kept only when of the right type. */
-function periodExtras(x: Record<string, unknown>): { relative?: ResolvedPeriod['relative']; n?: number; quarter?: number; year?: number; phrase?: string } {
+function periodExtras(x: Record<string, unknown>): {
+  relative?: ResolvedPeriod['relative'];
+  n?: number;
+  quarter?: number;
+  year?: number;
+  phrase?: string;
+} {
   const relative = typeof x.relative === 'string' && RELATIVES.has(x.relative) ? (x.relative as ResolvedPeriod['relative']) : undefined;
   const [n, quarter, year] = [numberOrAbsent(x.n), numberOrAbsent(x.quarter), numberOrAbsent(x.year)];
   return {
@@ -126,8 +138,18 @@ function periodExtras(x: Record<string, unknown>): { relative?: ResolvedPeriod['
 }
 
 function periodFrom(x: unknown): ResolvedPeriod | null {
-  if (!isRecord(x) || typeof x.semantics !== 'string' || !SEMANTICS.has(x.semantics) || typeof x.to !== 'string' || typeof x.timezone !== 'string'
-    || typeof x.how !== 'string' || !HOWS.has(x.how) || typeof x.resolvedAt !== 'string' || !(x.from === null || typeof x.from === 'string')) return null;
+  if (
+    !isRecord(x) ||
+    typeof x.semantics !== 'string' ||
+    !SEMANTICS.has(x.semantics) ||
+    typeof x.to !== 'string' ||
+    typeof x.timezone !== 'string' ||
+    typeof x.how !== 'string' ||
+    !HOWS.has(x.how) ||
+    typeof x.resolvedAt !== 'string' ||
+    !(x.from === null || typeof x.from === 'string')
+  )
+    return null;
   return {
     semantics: x.semantics as ResolvedPeriod['semantics'],
     from: x.from,
@@ -156,8 +178,9 @@ function sourcesFrom(x: unknown): AskedSources | null {
   if (!isRecord(x)) return null;
   const registered = Array.isArray(x.registered) ? x.registered.filter((id): id is string => typeof id === 'string') : [];
   const named = Array.isArray(x.named)
-    ? x.named.filter((n): n is Record<string, unknown> => isRecord(n) && typeof n.name === 'string')
-      .map((n) => ({ name: n.name as string, id: stringOrNull(n.id), registered: n.registered === true }))
+    ? x.named
+        .filter((n): n is Record<string, unknown> => isRecord(n) && typeof n.name === 'string')
+        .map((n) => ({ name: n.name as string, id: stringOrNull(n.id), registered: n.registered === true }))
     : [];
   return { registered, named };
 }
@@ -167,9 +190,12 @@ function intakeFrom(x: unknown): Intake | null {
   if (!isRecord(x) || typeof x.words !== 'string' || typeof x.kind !== 'string') return null;
   const objectOrNull = (v: unknown): boolean => v === null || isRecord(v);
   const textOrNull = (v: unknown): boolean => v === null || typeof v === 'string';
-  const shaped = [x.deliverable, x.period, x.destination, x.schedule, x.stakes].every(objectOrNull)
-    && [x.skill, x.workflowId, x.target, x.scope, x.coordination].every(textOrNull)
-    && Array.isArray(x.sources) && Array.isArray(x.open) && isRecord(x.inputs);
+  const shaped =
+    [x.deliverable, x.period, x.destination, x.schedule, x.stakes].every(objectOrNull) &&
+    [x.skill, x.workflowId, x.target, x.scope, x.coordination].every(textOrNull) &&
+    Array.isArray(x.sources) &&
+    Array.isArray(x.open) &&
+    isRecord(x.inputs);
   return shaped ? (x as unknown as Intake) : null;
 }
 
@@ -181,8 +207,14 @@ function firingFrom(x: unknown): Firing | null {
 export function askedFrom(raw: unknown): AskedReading {
   if (!isRecord(raw)) return {};
   const out: {
-    intake?: Intake | null; declared?: Declared | null; judgedBy?: JudgedBy | null; assumptions?: readonly Assumption[];
-    period?: ResolvedPeriod | null; periodSpec?: PeriodSpec | null; sources?: AskedSources | null; firing?: Firing | null;
+    intake?: Intake | null;
+    declared?: Declared | null;
+    judgedBy?: JudgedBy | null;
+    assumptions?: readonly Assumption[];
+    period?: ResolvedPeriod | null;
+    periodSpec?: PeriodSpec | null;
+    sources?: AskedSources | null;
+    firing?: Firing | null;
   } = {};
   if ('intake' in raw) out.intake = intakeFrom(raw.intake);
   if ('declared' in raw) out.declared = declaredFrom(raw.declared);

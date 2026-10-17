@@ -11,14 +11,7 @@
 
 import { join } from 'node:path';
 import type { Paths } from '../paths.ts';
-import {
-  ProjectFileError,
-  expectFormat,
-  expectRecord,
-  expectString,
-  isRecord,
-  refuseForbiddenKeys,
-} from './files.ts';
+import { ProjectFileError, expectFormat, expectRecord, expectString, isRecord, refuseForbiddenKeys } from './files.ts';
 
 export const PROJECT_CONFIG_FORMAT = 'construct-project';
 export const PROJECT_CONFIG_VERSION = 2;
@@ -27,13 +20,7 @@ export const USER_DEFAULTS_FORMAT = 'construct-user-defaults';
 export const USER_DEFAULTS_VERSION = 1;
 export const USER_DEFAULTS_FILE_NAME = 'config.json';
 
-export const CONFIG_TIERS = [
-  'built-in default',
-  'user defaults',
-  'project config',
-  'environment',
-  'flag',
-] as const;
+export const CONFIG_TIERS = ['built-in default', 'user defaults', 'project config', 'environment', 'flag'] as const;
 export type ConfigTier = (typeof CONFIG_TIERS)[number];
 
 export interface ConfigKeySpec {
@@ -93,7 +80,8 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
   },
   {
     key: 'headless.executor',
-    description: 'Reserved preferred adapter id for unattended work; configuration alone does not launch or verify it. workflow fire --execute explicitly invokes a supported adapter.',
+    description:
+      'Reserved preferred adapter id for unattended work; configuration alone does not launch or verify it. workflow fire --execute explicitly invokes a supported adapter.',
     settableBy: ['project config', 'environment', 'flag'],
     envVar: 'CONSTRUCT_HEADLESS_EXECUTOR',
     flag: '--executor',
@@ -115,7 +103,8 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
   },
   {
     key: 'policy.answerCheck',
-    description: 'What a host hook does when an answer states project facts without check_answer: nudge (send the host back once to check) or off.',
+    description:
+      'What a host hook does when an answer states project facts without check_answer: nudge (send the host back once to check) or off.',
     settableBy: ['project config', 'environment'],
     envVar: 'CONSTRUCT_ANSWER_CHECK',
     fallback: 'nudge',
@@ -123,7 +112,8 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
   },
   {
     key: 'policy.hostReads',
-    description: 'Citing what only the host can read (a tracker, a wiki, a web page): require that a read of that item was recorded (sources report) before it can be cited, or accept an unrecorded citation on the host\'s word, counted as unverified.',
+    description:
+      "Citing what only the host can read (a tracker, a wiki, a web page): require that a read of that item was recorded (sources report) before it can be cited, or accept an unrecorded citation on the host's word, counted as unverified.",
     settableBy: ['project config', 'environment'],
     envVar: 'CONSTRUCT_HOST_READS',
     fallback: 'require',
@@ -174,11 +164,7 @@ export function newProjectConfig(input: { readonly id: string; readonly name: st
   };
 }
 
-function validateBehavior(
-  raw: unknown,
-  path: string,
-  tier: 'user defaults' | 'project config',
-): Record<string, unknown> {
+function validateBehavior(raw: unknown, path: string, tier: 'user defaults' | 'project config'): Record<string, unknown> {
   if (raw === undefined) return {};
   const record = expectRecord(raw, path, tier === 'project config' ? '"behavior"' : '"values"');
   refuseForbiddenKeys(record, path);
@@ -259,15 +245,16 @@ export interface ConfigCandidate {
 }
 
 /** Every tier's offer for one key, lowest first, and which one wins. */
-export function explainConfig(input: ResolveConfigInput, key: string): {
+export function explainConfig(
+  input: ResolveConfigInput,
+  key: string,
+): {
   readonly effective: ResolvedConfigValue;
   readonly candidates: readonly ConfigCandidate[];
 } {
   const spec = configKey(key);
   if (!spec) throw new Error(`unknown configuration key "${key}"; known keys: ${CONFIG_KEY_NAMES.join(', ')}`);
-  const candidates: ConfigCandidate[] = [
-    { source: 'built-in default', origin: 'built-in', value: spec.fallback, applies: true },
-  ];
+  const candidates: ConfigCandidate[] = [{ source: 'built-in default', origin: 'built-in', value: spec.fallback, applies: true }];
   const user = input.userDefaults;
   if (user && key in user.values && spec.settableBy.includes('user defaults')) {
     candidates.push({ source: 'user defaults', origin: user.path, value: user.values[key], applies: true });

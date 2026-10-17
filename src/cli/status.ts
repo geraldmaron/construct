@@ -40,20 +40,44 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     const drift = listDriftFindings(store, { status: 'open' });
     const present = presentSessions(store, { now: at });
     const lock = files.lock;
-    const rows = lockStatus(lock ?? emptyLock(), createSkillRegistry({ projectDir: layout.skillsDir }).list(), createWorkflowRegistry({ projectDir: layout.workflowsDir }).list());
+    const rows = lockStatus(
+      lock ?? emptyLock(),
+      createSkillRegistry({ projectDir: layout.skillsDir }).list(),
+      createWorkflowRegistry({ projectDir: layout.workflowsDir }).list(),
+    );
     const skew = rows.filter((r) => r.state !== 'current');
     const record = {
       root,
       project: files.config ? { id: files.config.id, name: files.config.name } : null,
-      onboarding: { state: onboarding.state, missing: onboarding.missing, openQuestions: onboarding.openQuestions.length, proposalsAwaitingReview: onboarding.proposalsAwaitingReview },
+      onboarding: {
+        state: onboarding.state,
+        missing: onboarding.missing,
+        openQuestions: onboarding.openQuestions.length,
+        proposalsAwaitingReview: onboarding.proposalsAwaitingReview,
+      },
       runs: { active: runs.length, byState: Object.fromEntries(runs.map((r) => [r.id, r.state])) },
       decisions: { open: decisions.length },
       sources,
-      registry: { skills: lock ? Object.keys(lock.skills).length : 0, workflows: lock ? Object.keys(lock.workflows).length : 0, skew: skew.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) },
+      registry: {
+        skills: lock ? Object.keys(lock.skills).length : 0,
+        workflows: lock ? Object.keys(lock.workflows).length : 0,
+        skew: skew.map((r) => ({ kind: r.kind, id: r.id, state: r.state })),
+      },
       drift: { open: drift.length },
-      sessions: present.map((p) => ({ id: p.id, host: p.host, client: p.client, lane: p.lane, branch: p.branch, lastSeenAt: p.lastSeenAt, agents: p.agents, holds: p.holds })),
+      sessions: present.map((p) => ({
+        id: p.id,
+        host: p.host,
+        client: p.client,
+        lane: p.lane,
+        branch: p.branch,
+        lastSeenAt: p.lastSeenAt,
+        agents: p.agents,
+        holds: p.holds,
+      })),
       habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
-      timers: timerRows(ctx, { id: files.config?.id ?? null, root, store }).filter((t) => t.here).map((t) => ({ label: t.label, triggerId: t.triggerId, executor: t.executor, firing: t.firing, problem: t.problem })),
+      timers: timerRows(ctx, { id: files.config?.id ?? null, root, store })
+        .filter((t) => t.here)
+        .map((t) => ({ label: t.label, triggerId: t.triggerId, executor: t.executor, firing: t.firing, problem: t.problem })),
     };
     if (args.json) {
       writeJson(record);
@@ -62,29 +86,42 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     say(`${esc(files.config?.name ?? 'project')} at ${esc(root)}`);
     say();
     say('Setup');
-    say(`  setup: ${onboarding.state}${onboarding.missing.length ? ` (missing ${onboarding.missing.join(', ')})` : ''}; ${String(onboarding.openQuestions.length)} question(s) open; ${String(onboarding.proposalsAwaitingReview)} proposal(s) to review`);
+    say(
+      `  setup: ${onboarding.state}${onboarding.missing.length ? ` (missing ${onboarding.missing.join(', ')})` : ''}; ${String(onboarding.openQuestions.length)} question(s) open; ${String(onboarding.proposalsAwaitingReview)} proposal(s) to review`,
+    );
     say();
     say('Work and decisions');
     say(`  work: ${runs.length === 0 ? 'nothing in flight' : runs.map((r) => `${r.workflowId} ${r.state}`).join(', ')}`);
     say(`  decisions: ${decisions.length === 0 ? 'none waiting on you' : `${String(decisions.length)} waiting on you`}`);
     say();
     say('Sources and registry');
-    say(`  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`);
-    say(`  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`);
+    say(
+      `  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`,
+    );
+    say(
+      `  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`,
+    );
     say(`  drift: ${drift.length === 0 ? 'nothing open' : `${String(drift.length)} finding(s) open`}`);
-    say(`  timers: ${record.timers.length === 0 ? 'none installed' : record.timers.map((t) => `${esc(t.triggerId)}${t.firing === false ? ' (not firing)' : ''}${t.problem ? ` (${esc(t.problem)})` : ''}`).join(', ')}`);
+    say(
+      `  timers: ${record.timers.length === 0 ? 'none installed' : record.timers.map((t) => `${esc(t.triggerId)}${t.firing === false ? ' (not firing)' : ''}${t.problem ? ` (${esc(t.problem)})` : ''}`).join(', ')}`,
+    );
     say();
     say('Sessions');
     say(`  sessions: ${present.length === 0 ? 'none present' : `${String(present.length)} present`}`);
     for (const p of present) {
       const where = p.lane === MAIN_LANE ? 'main checkout' : esc(p.lane);
-      say(`    ${esc(p.id)}  ${esc(p.client ?? p.host)}  ${where}${p.branch ? ` on ${esc(p.branch)}` : ''}  ${String(p.holds)} claim(s)  seen ${p.lastSeenAt}`);
+      say(
+        `    ${esc(p.id)}  ${esc(p.client ?? p.host)}  ${where}${p.branch ? ` on ${esc(p.branch)}` : ''}  ${String(p.holds)} claim(s)  seen ${p.lastSeenAt}`,
+      );
     }
     const h = record.habits;
     say();
     say('Recent activity');
-    say(`  last 7 days: ${String(h.answersChecked)} answer(s) checked (${String(h.answersClean)} clean), ${String(h.uncheckedCaught)} unchecked answer(s) caught, ${String(h.readsRecorded)} host read(s) recorded, ${String(h.checksWaived)} check(s) waived`);
-    if (decisions.length || onboarding.openQuestions.length || onboarding.proposalsAwaitingReview) say('Next: construct inbox list shows what needs your answer.');
+    say(
+      `  last 7 days: ${String(h.answersChecked)} answer(s) checked (${String(h.answersClean)} clean), ${String(h.uncheckedCaught)} unchecked answer(s) caught, ${String(h.readsRecorded)} host read(s) recorded, ${String(h.checksWaived)} check(s) waived`,
+    );
+    if (decisions.length || onboarding.openQuestions.length || onboarding.proposalsAwaitingReview)
+      say('Next: construct inbox list shows what needs your answer.');
     else if (sources.unreachable || sources.stale) say('Next: construct source list shows sources that need attention.');
     else if (skew.length) say('Next: construct doctor explains registry checks.');
     return 0;

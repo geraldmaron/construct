@@ -27,7 +27,11 @@ export const EVAL_HOSTS = ['claude-code', 'codex', 'cursor'];
 export const HOST_BINARY = { 'claude-code': 'claude', codex: 'codex', cursor: 'cursor-agent' };
 
 /** Where each host reads project skills; the operational skill is planted there, as production init plants it. */
-export const PROJECT_SKILLS_DIR = { 'claude-code': join('.claude', 'skills'), codex: join('.agents', 'skills'), cursor: join('.agents', 'skills') };
+export const PROJECT_SKILLS_DIR = {
+  'claude-code': join('.claude', 'skills'),
+  codex: join('.agents', 'skills'),
+  cursor: join('.agents', 'skills'),
+};
 
 export const TAP = fileURLToPath(new URL('./evals-live-tap.mjs', import.meta.url));
 export const STUB = fileURLToPath(new URL('./evals-live-stub.mjs', import.meta.url));
@@ -102,11 +106,12 @@ export function toml(value) {
   if (Array.isArray(value)) return `[${value.map(toml).join(', ')}]`;
   if (value && typeof value === 'object') {
     const key = (k) => (/^[A-Za-z0-9_-]+$/.test(k) ? k : JSON.stringify(k));
-    return `{ ${Object.entries(value).map(([k, v]) => `${key(k)} = ${toml(v)}`).join(', ')} }`;
+    return `{ ${Object.entries(value)
+      .map(([k, v]) => `${key(k)} = ${toml(v)}`)
+      .join(', ')} }`;
   }
   throw new Error(`no TOML form for ${String(value)}`);
 }
-
 
 const quote = (s) => (/^[\w./:@=+-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`);
 
@@ -119,12 +124,19 @@ const quote = (s) => (/^[\w./:@=+-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`
 export function pinHookEnvironment(path, env) {
   if (!existsSync(path)) return false;
   const settings = JSON.parse(readFileSync(path, 'utf8'));
-  const prefix = `env ${Object.entries(env).map(([k, v]) => `${k}=${quote(v)}`).join(' ')} `;
+  const prefix = `env ${Object.entries(env)
+    .map(([k, v]) => `${k}=${quote(v)}`)
+    .join(' ')} `;
   let changed = false;
   for (const groups of Object.values(settings.hooks ?? {})) {
     for (const group of Array.isArray(groups) ? groups : []) {
       for (const hook of Array.isArray(group?.hooks) ? group.hooks : []) {
-        if (typeof hook?.command === 'string' && / hook /.test(hook.command) && hook.command.includes('construct') && !hook.command.startsWith('env ')) {
+        if (
+          typeof hook?.command === 'string' &&
+          / hook /.test(hook.command) &&
+          hook.command.includes('construct') &&
+          !hook.command.startsWith('env ')
+        ) {
           hook.command = prefix + hook.command;
           changed = true;
         }
@@ -141,11 +153,15 @@ function codexServer(name, server) {
   disableReviewMcp([name]);
   const key = `mcp_servers.${name}`;
   return [
-    '-c', `${key}.enabled=true`,
-    '-c', `${key}.command=${toml(server.command[0])}`,
-    '-c', `${key}.args=${toml(server.command.slice(1))}`,
+    '-c',
+    `${key}.enabled=true`,
+    '-c',
+    `${key}.command=${toml(server.command[0])}`,
+    '-c',
+    `${key}.args=${toml(server.command.slice(1))}`,
     ...(server.env ? ['-c', `${key}.env=${toml(server.env)}`] : []),
-    '-c', `${key}.default_tools_approval_mode="approve"`,
+    '-c',
+    `${key}.default_tools_approval_mode="approve"`,
   ];
 }
 
@@ -182,23 +198,38 @@ export function hostArgs(host, opts) {
     if (!multiTurn && typeof prompt !== 'string') throw new Error('a one-turn run needs its prompt');
     return [
       ...(multiTurn ? ['-p', '--input-format', 'stream-json'] : ['-p', prompt]),
-      '--output-format', 'stream-json', '--verbose',
-      '--model', model,
-      '--strict-mcp-config', '--mcp-config', opts.mcpConfig,
-      '--setting-sources', 'project,local',
+      '--output-format',
+      'stream-json',
+      '--verbose',
+      '--model',
+      model,
+      '--strict-mcp-config',
+      '--mcp-config',
+      opts.mcpConfig,
+      '--setting-sources',
+      'project,local',
       '--no-session-persistence',
-      '--max-turns', String(PREREGISTRATION.maxTurns),
-      '--max-budget-usd', String(PREREGISTRATION.claudeBudgetUsd),
-      '--allowedTools', allowed.join(' '),
+      '--max-turns',
+      String(PREREGISTRATION.maxTurns),
+      '--max-budget-usd',
+      String(PREREGISTRATION.claudeBudgetUsd),
+      '--allowedTools',
+      allowed.join(' '),
     ];
   }
   if (typeof prompt !== 'string') throw new Error(`${host} runs take one prompt`);
   if (host === 'codex') {
     return [
-      'exec', '--json', '--ephemeral', '--skip-git-repo-check', '--ignore-user-config',
+      'exec',
+      '--json',
+      '--ephemeral',
+      '--skip-git-repo-check',
+      '--ignore-user-config',
       ...codexEvaluationIsolationArgs(opts.disabledMcpNames ?? []),
-      '-s', 'read-only',
-      '-m', model,
+      '-s',
+      'read-only',
+      '-m',
+      model,
       ...(effort ? ['-c', `model_reasoning_effort=${toml(effort)}`] : []),
       ...codexProviderArgs(opts.provider ?? null),
       ...codexServer('construct', opts.server),
@@ -213,13 +244,20 @@ export function hostArgs(host, opts) {
 export function promptFor(turns) {
   const last = turns[turns.length - 1].text;
   if (turns.length === 1) return last;
-  return `Earlier in this conversation I said:\n${turns.slice(0, -1).map((t) => `- ${t.text}`).join('\n')}\n\n${last}`;
+  return `Earlier in this conversation I said:\n${turns
+    .slice(0, -1)
+    .map((t) => `- ${t.text}`)
+    .join('\n')}\n\n${last}`;
 }
 
 /** True when a reply's last paragraph asks the person something: a sentence in it ends with a question mark. */
 export function endedWithQuestion(text) {
   if (typeof text !== 'string') return false;
-  const paragraphs = text.trim().split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = text
+    .trim()
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
   const last = paragraphs[paragraphs.length - 1] ?? '';
   return /\?(?=[)"'*`_]*(?:\s|$))/.test(last);
 }
@@ -249,13 +287,30 @@ function events(lines) {
  */
 export function parseHostStream(host, lines) {
   known(host);
-  const out = { modelId: null, modelSource: 'requested', hostVersion: null, toolUses: [], skillLoads: [], toolSearch: { available: null, calls: 0 }, finalText: null, endedWithQuestion: false, turns: 0, usage: null, error: null, truncated: false, mcpServers: [] };
+  const out = {
+    modelId: null,
+    modelSource: 'requested',
+    hostVersion: null,
+    toolUses: [],
+    skillLoads: [],
+    toolSearch: { available: null, calls: 0 },
+    finalText: null,
+    endedWithQuestion: false,
+    turns: 0,
+    usage: null,
+    error: null,
+    truncated: false,
+    mcpServers: [],
+  };
   const list = events(lines);
   if (host === 'claude-code') {
     let results = 0;
     for (const e of list) {
       if (e.type === 'system' && e.subtype === 'init') {
-        if (typeof e.model === 'string') { out.modelId = e.model; out.modelSource = 'reported'; }
+        if (typeof e.model === 'string') {
+          out.modelId = e.model;
+          out.modelSource = 'reported';
+        }
         if (typeof e.claude_code_version === 'string') out.hostVersion = e.claude_code_version;
         if (Array.isArray(e.tools)) out.toolSearch.available = e.tools.includes('ToolSearch');
         if (Array.isArray(e.mcp_servers)) out.mcpServers = e.mcp_servers.map((s) => ({ name: s.name, status: s.status }));
@@ -275,7 +330,11 @@ export function parseHostStream(host, lines) {
         results += 1;
         out.turns += typeof e.num_turns === 'number' ? e.num_turns : 0;
         if (typeof e.result === 'string') out.finalText = e.result;
-        out.usage = { costUsd: e.total_cost_usd ?? null, inputTokens: e.usage?.input_tokens ?? null, outputTokens: e.usage?.output_tokens ?? null };
+        out.usage = {
+          costUsd: e.total_cost_usd ?? null,
+          inputTokens: e.usage?.input_tokens ?? null,
+          outputTokens: e.usage?.output_tokens ?? null,
+        };
         const limited = /max_turns|max_budget/.test(String(e.subtype)) || /max_turns|max_budget/.test(String(e.terminal_reason));
         if (limited) out.truncated = true;
         else if (e.is_error === true) out.error = String(e.subtype ?? 'error');
@@ -286,7 +345,8 @@ export function parseHostStream(host, lines) {
     let completed = false;
     for (const e of list) {
       const item = e.item;
-      if (e.type === 'item.completed' && item?.type === 'mcp_tool_call') out.toolUses.push({ name: `mcp__${item.server}__${item.tool}`, input: item.arguments ?? {} });
+      if (e.type === 'item.completed' && item?.type === 'mcp_tool_call')
+        out.toolUses.push({ name: `mcp__${item.server}__${item.tool}`, input: item.arguments ?? {} });
       if (e.type === 'item.completed' && item?.type === 'command_execution') {
         out.toolUses.push({ name: 'shell', input: { command: item.command } });
         const m = typeof item.command === 'string' ? item.command.match(SKILL_FILE) : null;
@@ -296,7 +356,11 @@ export function parseHostStream(host, lines) {
       if (e.type === 'turn.completed') {
         completed = true;
         out.turns += 1;
-        out.usage = { inputTokens: e.usage?.input_tokens ?? null, cachedInputTokens: e.usage?.cached_input_tokens ?? null, outputTokens: e.usage?.output_tokens ?? null };
+        out.usage = {
+          inputTokens: e.usage?.input_tokens ?? null,
+          cachedInputTokens: e.usage?.cached_input_tokens ?? null,
+          outputTokens: e.usage?.output_tokens ?? null,
+        };
       }
       if (e.type === 'turn.failed' || e.type === 'error') out.error = String(e.error?.message ?? e.message ?? e.type);
     }
@@ -304,7 +368,10 @@ export function parseHostStream(host, lines) {
   } else {
     let result = false;
     for (const e of list) {
-      if (e.type === 'system' && e.subtype === 'init' && typeof e.model === 'string') { out.modelId = e.model; out.modelSource = 'reported'; }
+      if (e.type === 'system' && e.subtype === 'init' && typeof e.model === 'string') {
+        out.modelId = e.model;
+        out.modelSource = 'reported';
+      }
       if (e.type === 'tool_call' && e.subtype === 'completed') {
         const call = e.tool_call ?? {};
         if (call.mcpToolCall) {

@@ -77,18 +77,20 @@ export const SCALE_OPTIONS: readonly ProjectScale[] = ['solo', 'side_project', '
  * the phrase the question uses for it, and any shorter form of that phrase.
  * An answer is understood only when it is one of these, as written.
  */
-export const SCALE_CHOICES: readonly { readonly id: ProjectScale; readonly label: string; readonly also: readonly string[] }[] = Object.freeze([
-  { id: 'side_project', label: 'a side project', also: [] },
-  { id: 'solo', label: 'your primary product, just you', also: ['your primary product'] },
-  { id: 'team', label: 'a team project', also: [] },
-  { id: 'multi_team', label: "several teams' work", also: [] },
-  { id: 'organization', label: 'an organization-wide system', also: [] },
-]);
+export const SCALE_CHOICES: readonly { readonly id: ProjectScale; readonly label: string; readonly also: readonly string[] }[] =
+  Object.freeze([
+    { id: 'side_project', label: 'a side project', also: [] },
+    { id: 'solo', label: 'your primary product, just you', also: ['your primary product'] },
+    { id: 'team', label: 'a team project', also: [] },
+    { id: 'multi_team', label: "several teams' work", also: [] },
+    { id: 'organization', label: 'an organization-wide system', also: [] },
+  ]);
 
 export const ONBOARDING_QUESTIONS: readonly OnboardingQuestion[] = Object.freeze([
   {
     id: 'scale',
-    question: "What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?",
+    question:
+      "What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?",
     options: SCALE_OPTIONS,
   },
   { id: 'primary_outcome', question: 'What result matters most right now?' },
@@ -138,7 +140,11 @@ function firstHeading(file: MaterialFile): { text: string; line: number } | null
 function firstParagraph(file: MaterialFile, afterLine: number): { text: string; line: number } | null {
   const ls = lines(file);
   let i = afterLine;
-  while (i < ls.length && (ls[i]!.trim() === '' || ls[i]!.trim().startsWith('#') || ls[i]!.trim().startsWith('[![') || ls[i]!.trim().startsWith('<'))) i += 1;
+  while (
+    i < ls.length &&
+    (ls[i]!.trim() === '' || ls[i]!.trim().startsWith('#') || ls[i]!.trim().startsWith('[![') || ls[i]!.trim().startsWith('<'))
+  )
+    i += 1;
   if (i >= ls.length) return null;
   const start = i;
   const buf: string[] = [];
@@ -243,7 +249,10 @@ function coverage(kind: string, kept: number, omitted: number): KindCoverage {
     kind,
     kept,
     omitted,
-    continuation: omitted > 0 ? `${String(omitted)} further ${kind} statement(s) were not admitted; raise the cap or name the source to continue` : null,
+    continuation:
+      omitted > 0
+        ? `${String(omitted)} further ${kind} statement(s) were not admitted; raise the cap or name the source to continue`
+        : null,
   };
 }
 
@@ -256,10 +265,20 @@ export function draftFromMaterial(material: ProjectMaterial): DiscoveryDraft {
 
   const m = material.manifest;
   if (m?.name) {
-    profile.push({ field: 'name', value: m.name.replace(/^@[^/]+\//, ''), confidence: 0.9, provenance: { path: m.path, line: null, excerpt: `"name": "${m.name}"` } });
+    profile.push({
+      field: 'name',
+      value: m.name.replace(/^@[^/]+\//, ''),
+      confidence: 0.9,
+      provenance: { path: m.path, line: null, excerpt: `"name": "${m.name}"` },
+    });
   }
   if (m?.description) {
-    profile.push({ field: 'purpose', value: m.description, confidence: 0.8, provenance: { path: m.path, line: null, excerpt: excerpt(m.description) } });
+    profile.push({
+      field: 'purpose',
+      value: m.description,
+      confidence: 0.8,
+      provenance: { path: m.path, line: null, excerpt: excerpt(m.description) },
+    });
   }
   const readme = material.readme;
   if (readme) {
@@ -292,10 +311,20 @@ export function draftFromMaterial(material: ProjectMaterial): DiscoveryDraft {
       if (statements.some((s) => s.text === p.text)) continue;
       statements.push({ kind: 'constraint', text: p.text, confidence: 0.5, provenance: prov(doc, p.line, p.text) });
     }
-    cover.push(coverage(`constraint:${doc.path}`, proh.items.filter((p) => !p.quoted).length, proh.omitted + proh.items.filter((p) => p.quoted).length));
+    cover.push(
+      coverage(
+        `constraint:${doc.path}`,
+        proh.items.filter((p) => !p.quoted).length,
+        proh.omitted + proh.items.filter((p) => p.quoted).length,
+      ),
+    );
   }
   if (material.contributing) {
-    canonical.push({ path: material.contributing.path, role: 'contribution rules', provenance: prov(material.contributing, 1, material.contributing.path) });
+    canonical.push({
+      path: material.contributing.path,
+      role: 'contribution rules',
+      provenance: prov(material.contributing, 1, material.contributing.path),
+    });
   }
   for (const doc of material.architectureDocs) {
     canonical.push({ path: doc.path, role: 'architecture', provenance: prov(doc, 1, lines(doc)[0] ?? doc.path) });
@@ -320,21 +349,50 @@ export function draftFromMaterial(material: ProjectMaterial): DiscoveryDraft {
   if (material.glossary) {
     canonical.push({ path: material.glossary.path, role: 'glossary', provenance: prov(material.glossary, 1, material.glossary.path) });
     for (const row of glossaryRows(material.glossary)) {
-      statements.push({ kind: 'glossary_entry', term: row.term, text: row.meaning, confidence: 0.8, provenance: prov(material.glossary, row.line, `${row.term}: ${row.meaning}`) });
+      statements.push({
+        kind: 'glossary_entry',
+        term: row.term,
+        text: row.meaning,
+        confidence: 0.8,
+        provenance: prov(material.glossary, row.line, `${row.term}: ${row.meaning}`),
+      });
     }
   }
   if (material.codeowners) {
-    canonical.push({ path: material.codeowners.path, role: 'ownership', provenance: prov(material.codeowners, 1, material.codeowners.path) });
+    canonical.push({
+      path: material.codeowners.path,
+      role: 'ownership',
+      provenance: prov(material.codeowners, 1, material.codeowners.path),
+    });
     for (const row of codeownersRows(material.codeowners)) {
-      ownership.push({ pattern: row.pattern, owners: row.owners, confidence: 0.6, provenance: prov(material.codeowners, row.line, `${row.pattern} ${row.owners.join(' ')}`) });
+      ownership.push({
+        pattern: row.pattern,
+        owners: row.owners,
+        confidence: 0.6,
+        provenance: prov(material.codeowners, row.line, `${row.pattern} ${row.owners.join(' ')}`),
+      });
     }
   }
 
   const distinctOwners = new Set(ownership.flatMap((o) => o.owners));
   if (distinctOwners.size >= 3 || (m?.workspaces && distinctOwners.size >= 2)) {
-    profile.push({ field: 'scale', value: 'multi_team', confidence: 0.3, provenance: { path: material.codeowners?.path ?? m?.path ?? '.', line: null, excerpt: `${String(distinctOwners.size)} distinct owners${m?.workspaces ? ', workspaces' : ''}` } });
+    profile.push({
+      field: 'scale',
+      value: 'multi_team',
+      confidence: 0.3,
+      provenance: {
+        path: material.codeowners?.path ?? m?.path ?? '.',
+        line: null,
+        excerpt: `${String(distinctOwners.size)} distinct owners${m?.workspaces ? ', workspaces' : ''}`,
+      },
+    });
   } else if (distinctOwners.size >= 1) {
-    profile.push({ field: 'scale', value: 'team', confidence: 0.3, provenance: { path: material.codeowners!.path, line: null, excerpt: `${String(distinctOwners.size)} owner(s) declared` } });
+    profile.push({
+      field: 'scale',
+      value: 'team',
+      confidence: 0.3,
+      provenance: { path: material.codeowners!.path, line: null, excerpt: `${String(distinctOwners.size)} owner(s) declared` },
+    });
   }
 
   const unknowns: string[] = [];
@@ -345,8 +403,10 @@ export function draftFromMaterial(material: ProjectMaterial): DiscoveryDraft {
   const deferred: string[] = [];
   if (ownership.length > 0) deferred.push('Confirm the ownership lines read from CODEOWNERS before Construct treats anyone as an owner.');
   if (material.docFiles.length > 0) deferred.push('Which documents under docs/ are authoritative, and for what?');
-  if (material.coverage.unread.length > 0) deferred.push(`${String(material.coverage.unread.length)} documentation file(s) were listed but not read into this draft.`);
-  if (material.coverage.truncated.length > 0) deferred.push(`${String(material.coverage.truncated.length)} file(s) were truncated at the read cap.`);
+  if (material.coverage.unread.length > 0)
+    deferred.push(`${String(material.coverage.unread.length)} documentation file(s) were listed but not read into this draft.`);
+  if (material.coverage.truncated.length > 0)
+    deferred.push(`${String(material.coverage.truncated.length)} file(s) were truncated at the read cap.`);
 
   return {
     profile,

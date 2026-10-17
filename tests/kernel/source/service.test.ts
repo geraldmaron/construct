@@ -10,7 +10,12 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { createSourceService, REPORTED_TEXT_CAP } from '../../../src/kernel/source/service.ts';
 import { locatorProblem, parseDocsLocator } from '../../../src/kernel/source/locators.ts';
-import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS, type SourceReader } from '../../../src/kernel/source/connector.ts';
+import {
+  describeConnector,
+  connectorDeclaration,
+  BUILTIN_CONNECTOR_DECLARATIONS,
+  type SourceReader,
+} from '../../../src/kernel/source/connector.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
 import { getSource, listSources, authorityOf, freshnessOf, retireSource, updateSource } from '../../../src/kernel/state/sources.ts';
 import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
@@ -21,8 +26,27 @@ import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
 const file = (sources: unknown[]) => validateSourcesFile({ format: 'construct-sources', formatVersion: 2, sources }, 'sources.json');
-const jira = { id: 'jira', kind: 'jira', purpose: 'work tracking', locator: 'PROJ', authorityLevel: 'authoritative', authoritativeFor: ['work_item', 'status'], notAuthoritativeFor: ['capacity'], sensitivity: 'internal', capabilities: { read: true, write: true } };
-const docs = { id: 'docs', kind: 'docs', purpose: 'design docs', locator: 'confluence:space:ENG', authorityLevel: 'authoritative', authoritativeFor: ['requirement'], sensitivity: 'internal', freshnessHours: 24 };
+const jira = {
+  id: 'jira',
+  kind: 'jira',
+  purpose: 'work tracking',
+  locator: 'PROJ',
+  authorityLevel: 'authoritative',
+  authoritativeFor: ['work_item', 'status'],
+  notAuthoritativeFor: ['capacity'],
+  sensitivity: 'internal',
+  capabilities: { read: true, write: true },
+};
+const docs = {
+  id: 'docs',
+  kind: 'docs',
+  purpose: 'design docs',
+  locator: 'confluence:space:ENG',
+  authorityLevel: 'authoritative',
+  authoritativeFor: ['requirement'],
+  sensitivity: 'internal',
+  freshnessHours: 24,
+};
 
 test('locators are checked by kind with a sentence that says the expected shape', () => {
   assert.equal(locatorProblem('github', 'acme/ledger'), null);
@@ -59,7 +83,20 @@ test('declarations sync into state: add, update, retire, and leave local sources
   try {
     const at = clock();
     const svc = createSourceService(fx.store, { readers: new Map() });
-    svc.addLocal({ id: 'scratch', kind: 'directory', purpose: 'local notes', locator: '/tmp/notes', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at());
+    svc.addLocal(
+      {
+        id: 'scratch',
+        kind: 'directory',
+        purpose: 'local notes',
+        locator: '/tmp/notes',
+        authorityLevel: 'informative',
+        authoritativeFor: [],
+        notAuthoritativeFor: [],
+        freshnessHours: null,
+        sensitivity: 'confidential',
+      },
+      at(),
+    );
 
     const first = svc.syncDeclarations(file([jira, docs]), at());
     assert.deepEqual(first, { added: ['jira', 'docs'], updated: [], retired: [] });
@@ -69,7 +106,10 @@ test('declarations sync into state: add, update, retire, and leave local sources
     const again = svc.syncDeclarations(file([jira, docs]), at());
     assert.deepEqual(again, { added: [], updated: [], retired: [] });
 
-    const changed = svc.syncDeclarations(file([{ ...jira, authoritativeFor: ['work_item'], notAuthoritativeFor: ['capacity', 'status'], purpose: 'tickets' }]), at());
+    const changed = svc.syncDeclarations(
+      file([{ ...jira, authoritativeFor: ['work_item'], notAuthoritativeFor: ['capacity', 'status'], purpose: 'tickets' }]),
+      at(),
+    );
     assert.deepEqual(changed, { added: [], updated: ['jira'], retired: ['docs'] });
     assert.deepEqual(authorityOf(fx.store, 'jira'), { authoritativeFor: ['work_item'], notAuthoritativeFor: ['capacity', 'status'] });
     assert.equal(getSource(fx.store, 'jira')?.purpose, 'tickets');
@@ -77,7 +117,10 @@ test('declarations sync into state: add, update, retire, and leave local sources
     assert.equal(getSource(fx.store, 'scratch')?.status, 'active');
     assert.equal(listSources(fx.store, { status: 'active' }).length, 2);
 
-    assert.throws(() => svc.syncDeclarations(file([{ ...jira, id: 'scratch' }]), at()), /scratch exists on this machine as a directory source; declare the jira one under a new id/);
+    assert.throws(
+      () => svc.syncDeclarations(file([{ ...jira, id: 'scratch' }]), at()),
+      /scratch exists on this machine as a directory source; declare the jira one under a new id/,
+    );
     assert.equal(getSource(fx.store, 'scratch')?.origin, 'local', 'a refused sync changes nothing');
     assert.throws(() => svc.syncDeclarations(file([docs]), at()), /was retired; declare it under a new id/);
     assert.throws(() => svc.syncDeclarations(file([{ ...jira, locator: 'bad key' }]), at()), /project key/);
@@ -91,9 +134,27 @@ test('committing a local source under its own id and kind makes it declared and 
   try {
     const at = clock();
     const svc = createSourceService(fx.store, { readers: new Map() });
-    svc.addLocal({ id: 'jira', kind: 'jira', purpose: 'named by the person', locator: 'PROJ', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at());
+    svc.addLocal(
+      {
+        id: 'jira',
+        kind: 'jira',
+        purpose: 'named by the person',
+        locator: 'PROJ',
+        authorityLevel: 'informative',
+        authoritativeFor: [],
+        notAuthoritativeFor: [],
+        freshnessHours: null,
+        sensitivity: 'confidential',
+      },
+      at(),
+    );
     let n = 0;
-    svc.reportRead('jira', { items: [{ ref: 'PROJ-1', title: 'Retry policy', updatedAt: '2026-09-01', text: 'retries back off over 24h' }] }, at(), () => `snap-${String((n += 1))}`);
+    svc.reportRead(
+      'jira',
+      { items: [{ ref: 'PROJ-1', title: 'Retry policy', updatedAt: '2026-09-01', text: 'retries back off over 24h' }] },
+      at(),
+      () => `snap-${String((n += 1))}`,
+    );
     const synced = svc.syncDeclarations(file([{ ...jira, locator: undefined }]), at());
     assert.deepEqual(synced, { added: [], updated: ['jira'], retired: [] });
     const s = getSource(fx.store, 'jira')!;
@@ -101,12 +162,29 @@ test('committing a local source under its own id and kind makes it declared and 
     assert.equal(s.authorityLevel, 'authoritative', 'the committed declaration governs');
     assert.equal(s.sensitivity, 'internal');
     assert.equal(s.locator, 'PROJ', 'a local locator stays when the committed file names none');
-    assert.deepEqual(currentManifest(fx.store, 'jira')?.map((e) => e.ref), ['PROJ-1'], 'the read recorded before it was committed carries over');
+    assert.deepEqual(
+      currentManifest(fx.store, 'jira')?.map((e) => e.ref),
+      ['PROJ-1'],
+      'the read recorded before it was committed carries over',
+    );
     assert.deepEqual(svc.syncDeclarations(file([]), at()).retired, ['jira'], 'once committed, it follows the file');
 
-    const scratch = { id: 'scratch', kind: 'other', purpose: 'notes', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' } as const;
+    const scratch = {
+      id: 'scratch',
+      kind: 'other',
+      purpose: 'notes',
+      authorityLevel: 'informative',
+      authoritativeFor: [],
+      notAuthoritativeFor: [],
+      freshnessHours: null,
+      sensitivity: 'confidential',
+    } as const;
     svc.addLocal({ ...scratch, locator: null }, at());
-    assert.deepEqual(svc.syncDeclarations(file([scratch]), at()).updated, ['scratch'], 'a local source committed exactly as it stands is reported, because it is now declared');
+    assert.deepEqual(
+      svc.syncDeclarations(file([scratch]), at()).updated,
+      ['scratch'],
+      'a local source committed exactly as it stands is reported, because it is now declared',
+    );
     assert.equal(getSource(fx.store, 'scratch')?.origin, 'declared');
   } finally {
     fx.cleanup();
@@ -140,7 +218,15 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     let fail = false;
     const reader: SourceReader = async ({ locator }) => {
       if (fail) throw new Error('401 from Jira');
-      return { outcome: 'read', report: { digest, summary: `read ${locator ?? ''}`, evidence: 'witnessed', items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship', attributes: { fingerprint: digest } }] } };
+      return {
+        outcome: 'read',
+        report: {
+          digest,
+          summary: `read ${locator ?? ''}`,
+          evidence: 'witnessed',
+          items: [{ externalRef: 'PROJ-1', kind: 'work_item', name: 'Ship', attributes: { fingerprint: digest } }],
+        },
+      };
     };
     const svc = createSourceService(fx.store, { readers: new Map([['jira', reader]]) });
     svc.syncDeclarations(file([jira, docs]), at());
@@ -151,7 +237,11 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     const claimsAfterFirst = listClaims(fx.store, { sourceId: 'jira' }).length;
     const second = await svc.refresh('jira', at(), nextId);
     assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst, 'unchanged reads keep one evidence revision');
-    assert.equal(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.access').length, 2, 'each read still records access');
+    assert.equal(
+      listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.access').length,
+      2,
+      'each read still records access',
+    );
     assert.equal(second.outcome, 'unchanged');
     assert.equal(second.snapshot?.id, first.snapshot?.id);
     digest = 'bbb';
@@ -161,7 +251,12 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     digest = 'aaa';
     assert.equal((await svc.refresh('jira', at(), nextId)).outcome, 'changed', 'returning to an earlier revision remains a change');
     assert.equal(listClaims(fx.store, { sourceId: 'jira' }).length, claimsAfterFirst + 2);
-    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed', 'source.changed']);
+    assert.deepEqual(
+      listObservations(fx.store, { sourceId: 'jira' })
+        .filter((o) => o.kind === 'source.changed')
+        .map((o) => o.kind),
+      ['source.changed', 'source.changed', 'source.changed'],
+    );
 
     fail = true;
     const down = await svc.refresh('jira', at(), nextId);
@@ -192,7 +287,20 @@ function wikiService() {
   let n = 0;
   const nextId = () => `id-${String(++n)}`;
   const svc = createSourceService(fx.store, { readers: new Map() });
-  svc.addLocal({ id: 'wiki', kind: 'docs', purpose: 'design pages', locator: 'confluence:space:ENG', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at());
+  svc.addLocal(
+    {
+      id: 'wiki',
+      kind: 'docs',
+      purpose: 'design pages',
+      locator: 'confluence:space:ENG',
+      authorityLevel: 'informative',
+      authoritativeFor: [],
+      notAuthoritativeFor: [],
+      freshnessHours: null,
+      sensitivity: 'confidential',
+    },
+    at(),
+  );
   const entry = (ref: string) => currentManifest(fx.store, 'wiki')!.find((e) => e.ref === ref);
   return { fx, at, nextId, svc, entry };
 }
@@ -201,14 +309,36 @@ test('a reported item keeps its address, and a later report that omits it keeps 
   const { fx, at, nextId, svc, entry } = wikiService();
   try {
     const url = 'https://acme.atlassian.net/wiki/spaces/ENG/pages/98765';
-    svc.reportRead('wiki', { items: [{ ref: '98765', title: 'Architecture', url, updatedAt: '2026-09-01T00:00:00Z', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
+    svc.reportRead(
+      'wiki',
+      {
+        items: [{ ref: '98765', title: 'Architecture', url, updatedAt: '2026-09-01T00:00:00Z', text: 'The gateway fronts every service.' }],
+        partial: true,
+      },
+      at(),
+      nextId,
+    );
     assert.equal(entry('98765')?.url, url);
-    svc.reportRead('wiki', { items: [{ ref: '98765', updatedAt: '2026-09-02T00:00:00Z', text: 'The gateway fronts every service but billing.' }], partial: true }, at(), nextId);
+    svc.reportRead(
+      'wiki',
+      {
+        items: [{ ref: '98765', updatedAt: '2026-09-02T00:00:00Z', text: 'The gateway fronts every service but billing.' }],
+        partial: true,
+      },
+      at(),
+      nextId,
+    );
     assert.equal(entry('98765')?.url, url, 'a newer version reported without its address keeps the address');
     svc.reportRead('wiki', { items: [{ ref: '11111', text: 'Other page.' }], partial: true }, at(), nextId);
     assert.equal(entry('98765')?.url, url, 'an item a partial read did not name keeps its address');
-    assert.throws(() => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'ftp://files.example/x' }] }, at(), nextId), /not an http\(s\) address/);
-    assert.throws(() => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'https://me:hunter2@wiki.example/x' }] }, at(), nextId), /carries credentials/);
+    assert.throws(
+      () => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'ftp://files.example/x' }] }, at(), nextId),
+      /not an http\(s\) address/,
+    );
+    assert.throws(
+      () => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'https://me:hunter2@wiki.example/x' }] }, at(), nextId),
+      /carries credentials/,
+    );
   } finally {
     fx.cleanup();
   }
@@ -219,7 +349,12 @@ test('an address gained on a re-read of the same text is recorded, and is not ca
   try {
     svc.reportRead('wiki', { items: [{ ref: '98765', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
     assert.equal(entry('98765')?.url, undefined);
-    const again = svc.reportRead('wiki', { items: [{ ref: '98765', url: 'https://wiki.example/pages/98765', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
+    const again = svc.reportRead(
+      'wiki',
+      { items: [{ ref: '98765', url: 'https://wiki.example/pages/98765', text: 'The gateway fronts every service.' }], partial: true },
+      at(),
+      nextId,
+    );
     assert.equal(again.outcome, 'changed', 'the read is recorded, not dismissed as unchanged');
     assert.deepEqual(again.changes?.modified ?? [], [], 'the item itself did not change');
     assert.equal(entry('98765')?.url, 'https://wiki.example/pages/98765');
@@ -232,12 +367,32 @@ test('text past the cap is cut, the item is marked, and the report names it', ()
   const { fx, at, nextId, svc, entry } = wikiService();
   try {
     const long = `Intro. ${'word '.repeat(REPORTED_TEXT_CAP / 4)}The end.`;
-    const r = svc.reportRead('wiki', { items: [{ ref: 'long', text: long }, { ref: 'short', text: 'Short page.' }] }, at(), nextId);
+    const r = svc.reportRead(
+      'wiki',
+      {
+        items: [
+          { ref: 'long', text: long },
+          { ref: 'short', text: 'Short page.' },
+        ],
+      },
+      at(),
+      nextId,
+    );
     assert.deepEqual(r.truncated, ['long']);
     assert.equal(entry('long')?.truncated, true);
     assert.equal(entry('long')?.text?.length, REPORTED_TEXT_CAP);
     assert.equal(entry('short')?.truncated, undefined);
-    const thin = svc.reportRead('wiki', { items: [{ ref: 'long', text: long.slice(0, 100) }, { ref: 'short', text: 'Short page.' }] }, at(), nextId);
+    const thin = svc.reportRead(
+      'wiki',
+      {
+        items: [
+          { ref: 'long', text: long.slice(0, 100) },
+          { ref: 'short', text: 'Short page.' },
+        ],
+      },
+      at(),
+      nextId,
+    );
     assert.deepEqual(thin.truncated, ['long'], 'a shorter observation cannot silently erase a known remainder');
   } finally {
     fx.cleanup();
@@ -251,7 +406,11 @@ test('source capture retains ordinary documents and enforces UTF-8 rather than c
     svc.reportRead('wiki', { items: [{ ref: 'normal', text: normal }] }, at(), nextId);
     assert.equal(entry('normal')?.text, normal);
     assert.equal(entry('normal')?.truncated, undefined);
-    for (const [ref, text] of [['unicode', '界'.repeat(REPORTED_TEXT_CAP)], ['surrogate', 'a'.repeat(REPORTED_TEXT_CAP - 1) + '😀'], ['exact', 'é'.repeat(REPORTED_TEXT_CAP / 2)]] as const) {
+    for (const [ref, text] of [
+      ['unicode', '界'.repeat(REPORTED_TEXT_CAP)],
+      ['surrogate', 'a'.repeat(REPORTED_TEXT_CAP - 1) + '😀'],
+      ['exact', 'é'.repeat(REPORTED_TEXT_CAP / 2)],
+    ] as const) {
       svc.reportRead('wiki', { partial: true, items: [{ ref, text }] }, at(), nextId);
       const captured = entry(ref)!;
       assert.ok(Buffer.byteLength(captured.text!) <= REPORTED_TEXT_CAP);
@@ -259,7 +418,9 @@ test('source capture retains ordinary documents and enforces UTF-8 rather than c
       assert.ok(text.startsWith(captured.text!));
       assert.equal(captured.truncated === true, ref !== 'exact');
     }
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('reported partial captures stay partial through unchanged and weak sightings until an explicit complete capture', () => {
@@ -275,7 +436,9 @@ test('reported partial captures stay partial through unchanged and weak sighting
     assert.equal(entry('policy')?.truncated, true);
     svc.reportRead('wiki', { items: [{ ref: 'policy', text: 'Now the complete revised document.', truncated: false }] }, at(), nextId);
     assert.equal(entry('policy')?.truncated, undefined);
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('stored text and titles have credentials removed, while the version is still judged on what was read', () => {
@@ -291,9 +454,16 @@ test('stored text and titles have credentials removed, while the version is stil
     assert.equal(e.fingerprint, createHash('sha256').update(text).digest('hex'), 'the fingerprint is of what was read, unredacted');
     const same = svc.reportRead('wiki', { items: [{ ref: 'runbook', text }] }, at(), nextId);
     assert.equal(same.outcome, 'unchanged', 'the same text read again is the same version');
-    const rotated = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: text.replace(secret, `ghp_${BODY.split('').reverse().join('')}0000`) }] }, at(), nextId);
+    const rotated = svc.reportRead(
+      'wiki',
+      { items: [{ ref: 'runbook', text: text.replace(secret, `ghp_${BODY.split('').reverse().join('')}0000`) }] },
+      at(),
+      nextId,
+    );
     assert.deepEqual(rotated.changes?.modified, ['runbook'], 'a rotated secret is still a change to the page');
-    const tables = (fx.store.db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map((t) => t.name);
+    const tables = (fx.store.db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map(
+      (t) => t.name,
+    );
     for (const table of tables) {
       const rows = JSON.stringify(fx.store.db.prepare(`SELECT * FROM "${table}"`).all());
       assert.ok(!rows.includes(secret), `no row of ${table} holds the token`);
@@ -312,13 +482,37 @@ test('text recorded with a credential in it is kept without it whenever a later 
     const other = `Rotate ${secret} every quarter.`;
     const sha = (t: string) => createHash('sha256').update(t).digest('hex');
     // A manifest whose text was kept exactly as read, credentials and all.
-    recordObservation(fx.store, { id: 'planted', sourceId: 'wiki', kind: 'source.changed', summary: 'wiki changed', evidence: { digest: 'sha256:planted', evidence: 'reported', items: 2, partial: true, manifest: [{ ref: 'other', kind: 'item', fingerprint: sha(other), text: other }, { ref: 'runbook', kind: 'item', fingerprint: sha(runbook), text: runbook }] }, at: at() });
+    recordObservation(fx.store, {
+      id: 'planted',
+      sourceId: 'wiki',
+      kind: 'source.changed',
+      summary: 'wiki changed',
+      evidence: {
+        digest: 'sha256:planted',
+        evidence: 'reported',
+        items: 2,
+        partial: true,
+        manifest: [
+          { ref: 'other', kind: 'item', fingerprint: sha(other), text: other },
+          { ref: 'runbook', kind: 'item', fingerprint: sha(runbook), text: runbook },
+        ],
+      },
+      at: at(),
+    });
     assert.ok(entry('runbook')!.text!.includes(secret));
 
     const again = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: runbook }], partial: true }, at(), nextId);
     assert.deepEqual(again.changes?.modified ?? [], [], 'the same version read again is not a change to the item');
-    assert.equal(entry('runbook')!.text, 'Deploy with GITHUB_TOKEN=[redacted] from the runbook.', 'the item read again keeps its text without the token');
-    assert.equal(entry('other')!.text, 'Rotate [redacted] every quarter.', 'an item the partial read did not name is carried forward without the token');
+    assert.equal(
+      entry('runbook')!.text,
+      'Deploy with GITHUB_TOKEN=[redacted] from the runbook.',
+      'the item read again keeps its text without the token',
+    );
+    assert.equal(
+      entry('other')!.text,
+      'Rotate [redacted] every quarter.',
+      'an item the partial read did not name is carried forward without the token',
+    );
     const settled = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: runbook }], partial: true }, at(), nextId);
     assert.equal(settled.outcome, 'unchanged', 'once cleaned, carrying the text forward changes nothing');
   } finally {
@@ -343,14 +537,25 @@ test('unchanged provider versions cannot conceal corrected content, including be
   }
 });
 
-
 test('read revocation refuses refresh, reports, peeks and cached evidence without deleting audit history', async () => {
   const fx = freshStore();
   try {
-    let calls = 0, n = 0;
+    let calls = 0,
+      n = 0;
     const at = clock();
     const next = () => `permission-${++n}`;
-    const reader: SourceReader = async () => { calls += 1; return { outcome: 'read', report: { digest: 'one', evidence: 'witnessed', summary: 'one', items: [{ externalRef: 'SAME-1', kind: 'item', name: 'read', attributes: { text: 'private source text', fingerprint: 'one' } }] } }; };
+    const reader: SourceReader = async () => {
+      calls += 1;
+      return {
+        outcome: 'read',
+        report: {
+          digest: 'one',
+          evidence: 'witnessed',
+          summary: 'one',
+          items: [{ externalRef: 'SAME-1', kind: 'item', name: 'read', attributes: { text: 'private source text', fingerprint: 'one' } }],
+        },
+      };
+    };
     const read = createSourceService(fx.store, { readers: new Map([['jira', reader]]) });
     const reported = createSourceService(fx.store, { readers: new Map() });
     read.syncDeclarations(file([jira]), at());
@@ -358,14 +563,19 @@ test('read revocation refuses refresh, reports, peeks and cached evidence withou
     assert.equal(projectResolver(fx.store, fx.root)('jira:SAME-1')?.text, 'private source text');
     read.syncDeclarations(file([{ ...jira, capabilities: { read: false, write: false } }]), at());
     await assert.rejects(read.refresh('jira', at(), next), /read permission is disabled/);
-    assert.throws(() => reported.reportRead('jira', { items: [{ ref: 'SAME-1', text: 'new' }] }, at(), next), /read permission is disabled/);
+    assert.throws(
+      () => reported.reportRead('jira', { items: [{ ref: 'SAME-1', text: 'new' }] }, at(), next),
+      /read permission is disabled/,
+    );
     assert.equal(await read.peek('jira'), null);
     assert.equal(read.canRead('jira'), false);
     assert.equal(calls, 1);
     assert.equal(projectResolver(fx.store, fx.root)('jira:SAME-1'), null);
     assert.equal(projectResolver(fx.store, fx.root, null, { hostReads: 'accept' })('SAME-1'), null);
     assert.ok(currentManifest(fx.store, 'jira')?.length, 'history remains available to an explicit audit');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('observed artifacts in different sources retain different identities for the same item ref', async () => {
@@ -373,88 +583,196 @@ test('observed artifacts in different sources retain different identities for th
   try {
     let n = 0;
     const at = clock();
-    const svc = createSourceService(fx.store, { readers: new Map([['jira', async () => ({ outcome: 'read', report: { digest: 'same', summary: 'same id', evidence: 'witnessed', items: [{ externalRef: 'SAME-1', kind: 'item', name: 'item' }] } })]]) });
+    const svc = createSourceService(fx.store, {
+      readers: new Map([
+        [
+          'jira',
+          async () => ({
+            outcome: 'read',
+            report: {
+              digest: 'same',
+              summary: 'same id',
+              evidence: 'witnessed',
+              items: [{ externalRef: 'SAME-1', kind: 'item', name: 'item' }],
+            },
+          }),
+        ],
+      ]),
+    });
     svc.syncDeclarations(file([jira, { ...jira, id: 'second' }]), at());
     await svc.refresh('jira', at(), () => `identity-${++n}`);
     await svc.refresh('second', at(), () => `identity-${++n}`);
-    assert.deepEqual(listEntities(fx.store, { kind: 'artifact' }).map((e) => e.externalRef).sort(), ['source:jira:SAME-1', 'source:second:SAME-1']);
-  } finally { fx.cleanup(); }
+    assert.deepEqual(
+      listEntities(fx.store, { kind: 'artifact' })
+        .map((e) => e.externalRef)
+        .sort(),
+      ['source:jira:SAME-1', 'source:second:SAME-1'],
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('empty queries and distinct access failures preserve previous evidence and scoped provenance', () => {
   const fx = freshStore();
   try {
-    const at = clock(); let n = 0;
+    const at = clock();
+    let n = 0;
     const next = () => `observation-${++n}`;
     const svc = createSourceService(fx.store, { readers: new Map() });
     svc.syncDeclarations(file([jira]), at());
     const original = svc.reportRead('jira', { items: [{ ref: '42', text: 'Known previous fact' }] }, at(), next);
     for (const outcome of ['no_results', 'permission_denied', 'auth_required', 'unsupported', 'unreachable'] as const) {
-      const report = svc.reportRead('jira', { outcome, items: [], reason: 'Actual connector response', scope: 'query: the requested topic', sessionId: 'session-a', coverage: { complete: false } }, at(), next);
+      const report = svc.reportRead(
+        'jira',
+        {
+          outcome,
+          items: [],
+          reason: 'Actual connector response',
+          scope: 'query: the requested topic',
+          sessionId: 'session-a',
+          coverage: { complete: false },
+        },
+        at(),
+        next,
+      );
       assert.equal(report.outcome, outcome);
       assert.equal(report.snapshot, null);
       assert.equal(svc.status('jira', at()).lastSnapshot?.id, original.snapshot?.id);
       assert.equal(currentManifest(fx.store, 'jira')?.[0]?.text, 'Known previous fact');
-      assert.deepEqual(svc.status('jira', at()).access?.evidence, { operation: '*', mode: 'read', applicability: 'scope', provenance: 'reported', scope: 'query: the requested topic', reason: 'Actual connector response', sessionId: 'session-a', coverage: { complete: false }, outcome });
+      assert.deepEqual(svc.status('jira', at()).access?.evidence, {
+        operation: '*',
+        mode: 'read',
+        applicability: 'scope',
+        provenance: 'reported',
+        scope: 'query: the requested topic',
+        reason: 'Actual connector response',
+        sessionId: 'session-a',
+        coverage: { complete: false },
+        outcome,
+      });
     }
     assert.throws(() => svc.reportRead('jira', { outcome: 'no_results', items: [] }, at(), next), /scope and reason/);
-    assert.throws(() => svc.reportRead('jira', { outcome: 'permission_denied', items: [{ ref: '42' }], reason: 'denied', scope: '42' }, at(), next), /cannot contain read items/);
-  } finally { fx.cleanup(); }
+    assert.throws(
+      () => svc.reportRead('jira', { outcome: 'permission_denied', items: [{ ref: '42' }], reason: 'denied', scope: '42' }, at(), next),
+      /cannot contain read items/,
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('schema and units are content identity, independent of metadata ordering and provider timestamp', () => {
   const fx = freshStore();
   try {
-    const at = clock(); let n = 0; const next = () => `schema-${++n}`;
+    const at = clock();
+    let n = 0;
+    const next = () => `schema-${++n}`;
     const svc = createSourceService(fx.store, { readers: new Map() });
     svc.syncDeclarations(file([jira]), at());
     const item = { ref: 'metric', updatedAt: '2026-10-01', text: 'value: 1.0' };
-    svc.reportRead('jira', { items: [{ ...item, schema: { version: 'v1', fields: { value: 'number' }, units: { value: 'percent' } } }] }, at(), next);
-    const reordered = svc.reportRead('jira', { items: [{ ...item, schema: { units: { value: 'percent' }, fields: { value: 'number' }, version: 'v1' } }] }, at(), next);
+    svc.reportRead(
+      'jira',
+      { items: [{ ...item, schema: { version: 'v1', fields: { value: 'number' }, units: { value: 'percent' } } }] },
+      at(),
+      next,
+    );
+    const reordered = svc.reportRead(
+      'jira',
+      { items: [{ ...item, schema: { units: { value: 'percent' }, fields: { value: 'number' }, version: 'v1' } }] },
+      at(),
+      next,
+    );
     assert.equal(reordered.outcome, 'unchanged');
-    const changed = svc.reportRead('jira', { items: [{ ...item, schema: { version: 'v2', fields: { value: 'number' }, units: { value: 'basis_points' } } }] }, at(), next);
+    const changed = svc.reportRead(
+      'jira',
+      { items: [{ ...item, schema: { version: 'v2', fields: { value: 'number' }, units: { value: 'basis_points' } } }] },
+      at(),
+      next,
+    );
     assert.deepEqual(changed.changes?.modified, ['metric']);
-    assert.deepEqual(currentManifest(fx.store, 'jira')?.[0]?.schema, { version: 'v2', fields: { value: 'number' }, units: { value: 'basis_points' } });
-  } finally { fx.cleanup(); }
+    assert.deepEqual(currentManifest(fx.store, 'jira')?.[0]?.schema, {
+      version: 'v2',
+      fields: { value: 'number' },
+      units: { value: 'basis_points' },
+    });
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('complete and partial weak sightings preserve stronger explicitly observed items', () => {
   for (const partial of [true, false]) {
     const fx = freshStore();
     try {
-      let n = 0; const next = () => `weak-${++n}`;
+      let n = 0;
+      const next = () => `weak-${++n}`;
       const svc = createSourceService(fx.store, { readers: new Map() });
       svc.syncDeclarations(file([jira]), '2026-10-01T00:00:00Z');
-      svc.reportRead('jira', { items: [{ ref: 'alpha', text: 'Strong original body', updatedAt: '2026-10-01' }] }, '2026-10-01T00:00:00Z', next);
-      const result = svc.reportRead('jira', { partial, items: [{ ref: 'alpha', weak: true, title: 'A search sighting' }] }, '2026-10-09T00:00:00Z', next);
+      svc.reportRead(
+        'jira',
+        { items: [{ ref: 'alpha', text: 'Strong original body', updatedAt: '2026-10-01' }] },
+        '2026-10-01T00:00:00Z',
+        next,
+      );
+      const result = svc.reportRead(
+        'jira',
+        { partial, items: [{ ref: 'alpha', weak: true, title: 'A search sighting' }] },
+        '2026-10-09T00:00:00Z',
+        next,
+      );
       assert.equal(result.outcome, 'unchanged');
       assert.equal(currentManifest(fx.store, 'jira')?.[0]?.text, 'Strong original body');
-    } finally { fx.cleanup(); }
+    } finally {
+      fx.cleanup();
+    }
   }
 });
 
 test('one refreshed item cannot freshen an unread or weakly observed item', () => {
   const fx = freshStore();
   try {
-    let n = 0; const next = () => `fresh-${++n}`;
+    let n = 0;
+    const next = () => `fresh-${++n}`;
     const svc = createSourceService(fx.store, { readers: new Map() });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
-    svc.reportRead('docs', { items: [{ ref: 'a', text: 'First' }, { ref: 'b', text: 'Second' }] }, '2026-10-01T00:00:00Z', next);
-    svc.reportRead('docs', { partial: true, items: [{ ref: 'a', text: 'Corrected first' }, { ref: 'b', weak: true }] }, '2026-10-09T00:00:00Z', next);
+    svc.reportRead(
+      'docs',
+      {
+        items: [
+          { ref: 'a', text: 'First' },
+          { ref: 'b', text: 'Second' },
+        ],
+      },
+      '2026-10-01T00:00:00Z',
+      next,
+    );
+    svc.reportRead(
+      'docs',
+      {
+        partial: true,
+        items: [
+          { ref: 'a', text: 'Corrected first' },
+          { ref: 'b', weak: true },
+        ],
+      },
+      '2026-10-09T00:00:00Z',
+      next,
+    );
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z'), 'stale');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z', ['a']), 'fresh');
     svc.reportRead('docs', { partial: true, items: [{ ref: 'b', text: 'Second' }] }, '2026-10-09T00:00:00Z', next);
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z'), 'fresh');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('freshness follows successful item observations across unchanged and A-B-A content', () => {
   const fx = freshStore();
   try {
-    let n = 0; const next = () => `reread-${++n}`;
+    let n = 0;
+    const next = () => `reread-${++n}`;
     const svc = createSourceService(fx.store, { readers: new Map() });
     svc.syncDeclarations(file([{ ...docs, freshnessHours: 1 }]), '2026-10-01T00:00:00Z');
     const report = (text: string, at: string) => svc.reportRead('docs', { items: [{ ref: 'policy', text }] }, at, next);
@@ -462,62 +780,98 @@ test('freshness follows successful item observations across unchanged and A-B-A 
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
     assert.equal(report('A', '2026-10-01T02:00:00Z').outcome, 'unchanged');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
-    report('B', '2026-10-01T04:00:00Z'); report('A', '2026-10-01T06:00:00Z');
+    report('B', '2026-10-01T04:00:00Z');
+    report('A', '2026-10-01T06:00:00Z');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T06:00:00Z'), 'fresh');
     svc.reportRead('docs', { partial: true, items: [{ ref: 'policy', weak: true }] }, '2026-10-01T08:00:00Z', next);
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T08:00:00Z'), 'stale');
-    svc.reportRead('docs', { outcome: 'no_results', scope: 'other query', reason: 'empty search', items: [] }, '2026-10-01T08:00:00Z', next);
+    svc.reportRead(
+      'docs',
+      { outcome: 'no_results', scope: 'other query', reason: 'empty search', items: [] },
+      '2026-10-01T08:00:00Z',
+      next,
+    );
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T08:00:00Z'), 'stale');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('witnessed unchanged local rereads renew observation freshness without inventing a content change', async () => {
   const fx = freshStore();
   try {
-    let n = 0; const next = () => `local-reread-${++n}`;
-    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'unchanged', evidence: 'witnessed', summary: 'read', items: [{ externalRef: 'facts.csv', kind: 'file', name: 'facts', attributes: { text: 'a,b', fingerprint: 'same' } }] } });
+    let n = 0;
+    const next = () => `local-reread-${++n}`;
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: 'unchanged',
+        evidence: 'witnessed',
+        summary: 'read',
+        items: [{ externalRef: 'facts.csv', kind: 'file', name: 'facts', attributes: { text: 'a,b', fingerprint: 'same' } }],
+      },
+    });
     const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     svc.syncDeclarations(file([{ ...docs, freshnessHours: 1 }]), '2026-10-01T00:00:00Z');
     await svc.refresh('docs', '2026-10-01T00:00:00Z', next);
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
     assert.equal((await svc.refresh('docs', '2026-10-01T02:00:00Z', next)).outcome, 'unchanged');
     assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('declared source kind is immutable and a refused reconciliation is atomic', () => {
   const fx = freshStore();
   try {
     const svc = createSourceService(fx.store, { readers: new Map() });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
-    assert.throws(() => svc.syncDeclarations(file([jira, { ...jira, id: 'docs' }]), '2026-10-02T00:00:00Z'), /docs exists on this machine as a docs source/);
+    assert.throws(
+      () => svc.syncDeclarations(file([jira, { ...jira, id: 'docs' }]), '2026-10-02T00:00:00Z'),
+      /docs exists on this machine as a docs source/,
+    );
     assert.equal(getSource(fx.store, 'jira'), null, 'earlier declarations in the failed batch roll back');
     assert.equal(getSource(fx.store, 'docs')?.kind, 'docs');
     assert.equal(getSource(fx.store, 'docs')?.locator, docs.locator);
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('a changed collection records only changed items and an earlier item revision returning is new evidence', async () => {
   const fx = freshStore();
   try {
-    let revision = 'A'; let n = 0;
-    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: revision, summary: 'two documents', evidence: 'witnessed', items: [
-      { externalRef: 'stable.md', kind: 'document', name: 'Stable', attributes: { fingerprint: 'stable', text: 'unchanged' } },
-      { externalRef: 'edited.md', kind: 'document', name: 'Edited', attributes: { fingerprint: revision, text: revision } },
-    ] } });
+    let revision = 'A';
+    let n = 0;
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: revision,
+        summary: 'two documents',
+        evidence: 'witnessed',
+        items: [
+          { externalRef: 'stable.md', kind: 'document', name: 'Stable', attributes: { fingerprint: 'stable', text: 'unchanged' } },
+          { externalRef: 'edited.md', kind: 'document', name: 'Edited', attributes: { fingerprint: revision, text: revision } },
+        ],
+      },
+    });
     const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
-    for (const [digest, expectedClaims] of [['A', 2], ['B', 3], ['A', 4]] as const) {
+    for (const [digest, expectedClaims] of [
+      ['A', 2],
+      ['B', 3],
+      ['A', 4],
+    ] as const) {
       revision = digest;
       const result = await svc.refresh('docs', '2026-10-02T00:00:00Z', () => `item-${++n}`);
       assert.equal(result.outcome, 'changed');
       assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, expectedClaims);
     }
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
-
 
 test('a source retired or read-revoked during reader I/O cannot admit the completed read', async () => {
   for (const action of ['retire', 'revoke'] as const) {
@@ -525,7 +879,9 @@ test('a source retired or read-revoked during reader I/O cannot admit the comple
     try {
       let release!: () => void;
       const reader: SourceReader = async () => {
-        await new Promise<void>(resolve => { release = resolve; });
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
         return { outcome: 'read', report: { digest: 'read-after-revoke', summary: 'late read', evidence: 'witnessed' } };
       };
       const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
@@ -538,16 +894,26 @@ test('a source retired or read-revoked during reader I/O cannot admit the comple
       await assert.rejects(reading, action === 'retire' ? /retired/ : /read permission is disabled/);
       assert.equal(getSource(fx.store, 'docs')?.lastSnapshotId, null);
       assert.equal(listObservations(fx.store, { sourceId: 'docs' }).length, 0);
-    } finally { fx.cleanup(); }
+    } finally {
+      fx.cleanup();
+    }
   }
 });
-
 
 test('unchanged reported reader content admits witnessed claims later and preserves earlier trust metadata', async () => {
   const fx = freshStore();
   try {
-    let evidence: 'reported' | 'witnessed' = 'reported'; let n = 0;
-    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'same', summary: 'one item', evidence, items: [{ externalRef: 'same.md', kind: 'document', name: 'Same', attributes: { fingerprint: 'same', absent: undefined } }] } });
+    let evidence: 'reported' | 'witnessed' = 'reported';
+    let n = 0;
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: 'same',
+        summary: 'one item',
+        evidence,
+        items: [{ externalRef: 'same.md', kind: 'document', name: 'Same', attributes: { fingerprint: 'same', absent: undefined } }],
+      },
+    });
     const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
     const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `trust-${++n}`);
@@ -555,82 +921,175 @@ test('unchanged reported reader content admits witnessed claims later and preser
     assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 0);
     evidence = 'witnessed';
     assert.equal((await refresh()).outcome, 'unchanged');
-    assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1, 'first witnessed observation admits evidence even without a content change');
+    assert.equal(
+      listClaims(fx.store, { sourceId: 'docs' }).length,
+      1,
+      'first witnessed observation admits evidence even without a content change',
+    );
     await refresh();
     assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 1);
     svc.syncDeclarations(file([{ ...docs, authorityLevel: 'informative', sensitivity: 'confidential' }]), '2026-10-03T00:00:00Z');
     await refresh();
     const claims = listClaims(fx.store, { sourceId: 'docs' });
-    assert.deepEqual(claims.map(claim => [claim.authority, claim.sensitivity]).sort(([a], [b]) => a!.localeCompare(b!)), [['authoritative', 'internal'], ['informative', 'confidential']], 'new reads carry current trust metadata without rewriting historical claims');
-  } finally { fx.cleanup(); }
+    assert.deepEqual(
+      claims.map((claim) => [claim.authority, claim.sensitivity]).sort(([a], [b]) => a!.localeCompare(b!)),
+      [
+        ['authoritative', 'internal'],
+        ['informative', 'confidential'],
+      ],
+      'new reads carry current trust metadata without rewriting historical claims',
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('a witnessed partial read cannot promote carried reported content to observed evidence', async () => {
   const fx = freshStore();
   try {
-    let partial = false; let n = 0;
-    const reader: SourceReader = async () => ({ outcome: 'read', report: {
-      digest: partial ? 'partial-witness' : 'reported-inventory', summary: 'documents',
-      evidence: partial ? 'witnessed' : 'reported', coverage: { complete: !partial },
-      items: (partial ? ['returned.md'] : ['carried.md', 'returned.md']).map(externalRef => ({ externalRef, kind: 'document', name: externalRef, attributes: { fingerprint: externalRef, text: `Content of ${externalRef}` } })),
-    } });
+    let partial = false;
+    let n = 0;
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: partial ? 'partial-witness' : 'reported-inventory',
+        summary: 'documents',
+        evidence: partial ? 'witnessed' : 'reported',
+        coverage: { complete: !partial },
+        items: (partial ? ['returned.md'] : ['carried.md', 'returned.md']).map((externalRef) => ({
+          externalRef,
+          kind: 'document',
+          name: externalRef,
+          attributes: { fingerprint: externalRef, text: `Content of ${externalRef}` },
+        })),
+      },
+    });
     const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
     const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `partial-trust-${++n}`);
     await refresh();
     partial = true;
     const result = await refresh();
-    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'only returned items were witnessed');
-    assert.deepEqual(currentManifest(fx.store, 'docs')!.map(entry => entry.ref), ['carried.md', 'returned.md'], 'partial inventory still retains unseen items');
+    assert.deepEqual(
+      listClaims(fx.store, { sourceId: 'docs' }).map((claim) => claim.locator),
+      ['returned.md'],
+      'only returned items were witnessed',
+    );
+    assert.deepEqual(
+      currentManifest(fx.store, 'docs')!.map((entry) => entry.ref),
+      ['carried.md', 'returned.md'],
+      'partial inventory still retains unseen items',
+    );
     const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
     assert.ok(result.snapshot);
     for (const ref of ['docs:carried.md', `snapshot:${result.snapshot.id}:carried.md`]) {
       assert.equal(resolve(ref)?.provenance, 'reported', `${ref} must retain its weaker evidence boundary`);
     }
     const search = searchContext(fx.store, { query: 'Content of carried.md', sourceId: 'docs' }, '2026-10-02T00:00:00Z');
-    assert.equal(search.items.find(item => item.ref.endsWith(':carried.md'))?.provenance, 'reported', 'retrieval exposes conservative provenance too');
+    assert.equal(
+      search.items.find((item) => item.ref.endsWith(':carried.md'))?.provenance,
+      'reported',
+      'retrieval exposes conservative provenance too',
+    );
     await refresh();
-    assert.deepEqual(listClaims(fx.store, { sourceId: 'docs' }).map(claim => claim.locator), ['returned.md'], 'repeated partial reads neither promote carried items nor duplicate observed claims');
-  } finally { fx.cleanup(); }
+    assert.deepEqual(
+      listClaims(fx.store, { sourceId: 'docs' }).map((claim) => claim.locator),
+      ['returned.md'],
+      'repeated partial reads neither promote carried items nor duplicate observed claims',
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('partial reads preserve retained supersession and metadata until a full replacement', async () => {
   const fx = freshStore();
   try {
-    let phase: 'initial' | 'partial' | 'replacement' = 'initial'; let n = 0;
-    const old = { externalRef: 'old.md', kind: 'document', name: 'Old', attributes: {
-      fingerprint: 'old', text: 'Old policy', supersededBy: 'new.md', schema: { type: 'string' },
-      url: 'https://example.com/old', truncated: true, updatedAt: '2026-10-01', weak: true, via: 'fixture',
-      size: 100, mtimeMs: 1, supersedes: ['older.md'], declaredSupersededBy: 'new.md',
-    } };
+    let phase: 'initial' | 'partial' | 'replacement' = 'initial';
+    let n = 0;
+    const old = {
+      externalRef: 'old.md',
+      kind: 'document',
+      name: 'Old',
+      attributes: {
+        fingerprint: 'old',
+        text: 'Old policy',
+        supersededBy: 'new.md',
+        schema: { type: 'string' },
+        url: 'https://example.com/old',
+        truncated: true,
+        updatedAt: '2026-10-01',
+        weak: true,
+        via: 'fixture',
+        size: 100,
+        mtimeMs: 1,
+        supersedes: ['older.md'],
+        declaredSupersededBy: 'new.md',
+      },
+    };
     const current = { externalRef: 'new.md', kind: 'document', name: 'New', attributes: { fingerprint: 'new', text: 'Current policy' } };
-    const reader: SourceReader = async () => ({ outcome: 'read', report: {
-      digest: phase, summary: 'policies', evidence: 'witnessed', coverage: { complete: phase !== 'partial' },
-      items: phase === 'partial' ? [current] : phase === 'replacement' ? [{ ...old, attributes: { ...old.attributes, supersededBy: undefined, declaredSupersededBy: undefined } }, current] : [old, current],
-    } });
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: phase,
+        summary: 'policies',
+        evidence: 'witnessed',
+        coverage: { complete: phase !== 'partial' },
+        items:
+          phase === 'partial'
+            ? [current]
+            : phase === 'replacement'
+              ? [{ ...old, attributes: { ...old.attributes, supersededBy: undefined, declaredSupersededBy: undefined } }, current]
+              : [old, current],
+      },
+    });
     const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
     const refresh = () => svc.refresh('docs', '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
     const first = await refresh();
-    const original = currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md');
+    const original = currentManifest(fx.store, 'docs')!.find((entry) => entry.ref === 'old.md');
     const claims = listClaims(fx.store, { sourceId: 'docs' }).length;
     phase = 'partial';
     for (let repeat = 0; repeat < 2; repeat++) {
       const result = await refresh();
-      assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'retention round-trips every manifest field');
+      assert.deepEqual(
+        currentManifest(fx.store, 'docs')!.find((entry) => entry.ref === 'old.md'),
+        original,
+        'retention round-trips every manifest field',
+      );
       const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
       for (const ref of ['docs:old.md', `snapshot:${result.snapshot!.id}:old.md`, `snapshot:${first.snapshot!.id}:old.md`]) {
         assert.equal(resolve(ref)?.supersededBy, 'new.md', `${ref} retains supersession`);
       }
-      assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+      assert.equal(
+        searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find((item) =>
+          item.ref.endsWith(':old.md'),
+        )?.status,
+        'superseded',
+      );
       assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims, 'unread retained items do not become new claims');
     }
     const host = createSourceService(fx.store, { readers: new Map() });
-    const reported = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'Current policy' }] }, '2026-10-02T00:00:00Z', () => `supersession-${++n}`);
-    assert.deepEqual(currentManifest(fx.store, 'docs')!.find(entry => entry.ref === 'old.md'), original, 'a host partial read preserves every retained manifest field too');
+    const reported = host.reportRead(
+      'docs',
+      { partial: true, items: [{ ref: 'new.md', text: 'Current policy' }] },
+      '2026-10-02T00:00:00Z',
+      () => `supersession-${++n}`,
+    );
+    assert.deepEqual(
+      currentManifest(fx.store, 'docs')!.find((entry) => entry.ref === 'old.md'),
+      original,
+      'a host partial read preserves every retained manifest field too',
+    );
     const reportedResolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
-    for (const ref of ['docs:old.md', `snapshot:${reported.snapshot!.id}:old.md`]) assert.equal(reportedResolve(ref)?.supersededBy, 'new.md');
-    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'superseded');
+    for (const ref of ['docs:old.md', `snapshot:${reported.snapshot!.id}:old.md`])
+      assert.equal(reportedResolve(ref)?.supersededBy, 'new.md');
+    assert.equal(
+      searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find((item) =>
+        item.ref.endsWith(':old.md'),
+      )?.status,
+      'superseded',
+    );
     assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, claims);
     phase = 'replacement';
     const replacement = await refresh();
@@ -638,8 +1097,15 @@ test('partial reads preserve retained supersession and metadata until a full rep
     assert.equal(resolve('docs:old.md')?.supersededBy, undefined, 'a full replacement can clear current supersession');
     assert.equal(resolve(`snapshot:${replacement.snapshot!.id}:old.md`)?.supersededBy, undefined);
     assert.equal(resolve(`snapshot:${first.snapshot!.id}:old.md`)?.supersededBy, 'new.md', 'historical supersession remains immutable');
-    assert.equal(searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
-  } finally { fx.cleanup(); }
+    assert.equal(
+      searchContext(fx.store, { query: 'Old policy', sourceId: 'docs' }, '2026-10-02T00:00:00Z').items.find((item) =>
+        item.ref.endsWith(':old.md'),
+      )?.status,
+      'captured',
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('a complete host report clears retained supersession even when all content fingerprints match', async () => {
@@ -649,26 +1115,53 @@ test('a complete host report clears retained supersession even when all content 
     const next = () => `host-replacement-${++n}`;
     const at = '2026-10-02T00:00:00Z';
     const fingerprint = (text: string) => createHash('sha256').update(text).digest('hex');
-    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'original', summary: 'policies', evidence: 'witnessed', items: [
-      { externalRef: 'old.md', kind: 'item', name: 'Old', attributes: { text: 'Old', fingerprint: fingerprint('Old'), supersededBy: 'new.md' } },
-      { externalRef: 'new.md', kind: 'item', name: 'New', attributes: { text: 'New', fingerprint: fingerprint('New') } },
-    ] } });
+    const reader: SourceReader = async () => ({
+      outcome: 'read',
+      report: {
+        digest: 'original',
+        summary: 'policies',
+        evidence: 'witnessed',
+        items: [
+          {
+            externalRef: 'old.md',
+            kind: 'item',
+            name: 'Old',
+            attributes: { text: 'Old', fingerprint: fingerprint('Old'), supersededBy: 'new.md' },
+          },
+          { externalRef: 'new.md', kind: 'item', name: 'New', attributes: { text: 'New', fingerprint: fingerprint('New') } },
+        ],
+      },
+    });
     const native = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
     native.syncDeclarations(file([docs]), at);
     const original = await native.refresh('docs', at, next);
     const host = createSourceService(fx.store, { readers: new Map() });
     const partial = host.reportRead('docs', { partial: true, items: [{ ref: 'new.md', text: 'New' }] }, at, next);
-    const report = { items: [{ ref: 'old.md', text: 'Old' }, { ref: 'new.md', text: 'New' }] };
+    const report = {
+      items: [
+        { ref: 'old.md', text: 'Old' },
+        { ref: 'new.md', text: 'New' },
+      ],
+    };
     const complete = host.reportRead('docs', report, at, next);
     assert.equal(complete.outcome, 'changed', 'removing retained metadata changes the persisted manifest');
     const resolve = projectResolver(fx.store, fx.root, null, { hostReads: 'accept' });
     assert.equal(resolve('docs:old.md')?.supersededBy, undefined);
     assert.equal(resolve(`snapshot:${complete.snapshot!.id}:old.md`)?.supersededBy, undefined);
     for (const result of [original, partial]) assert.equal(resolve(`snapshot:${result.snapshot!.id}:old.md`)?.supersededBy, 'new.md');
-    assert.equal(searchContext(fx.store, { query: 'Old', sourceId: 'docs' }, at).items.find(item => item.ref.endsWith(':old.md'))?.status, 'captured');
+    assert.equal(
+      searchContext(fx.store, { query: 'Old', sourceId: 'docs' }, at).items.find((item) => item.ref.endsWith(':old.md'))?.status,
+      'captured',
+    );
     assert.equal(host.reportRead('docs', report, at, next).outcome, 'unchanged', 'identical complete reports still deduplicate');
-    assert.equal(host.reportRead('docs', { items: report.items.map(item => ({ ...item, title: 'Display only' })) }, at, next).outcome, 'unchanged', 'titles absent from persisted manifest do not create revisions');
-  } finally { fx.cleanup(); }
+    assert.equal(
+      host.reportRead('docs', { items: report.items.map((item) => ({ ...item, title: 'Display only' })) }, at, next).outcome,
+      'unchanged',
+      'titles absent from persisted manifest do not create revisions',
+    );
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('kernel reports refuse credential-bearing item refs atomically', () => {
@@ -678,10 +1171,26 @@ test('kernel reports refuse credential-bearing item refs atomically', () => {
     const before = currentManifest(fx.store, 'wiki');
     const dirty = 'https://user:synthetic-password@wiki.example/page';
     for (const ref of [dirty, `<${dirty}|page>`, `[page](${dirty})`]) {
-      assert.throws(() => svc.reportRead('wiki', { items: [{ ref: 'valid', text: 'New text.' }, { ref, text: 'Held text.' }] }, at(), nextId), /credentials/);
+      assert.throws(
+        () =>
+          svc.reportRead(
+            'wiki',
+            {
+              items: [
+                { ref: 'valid', text: 'New text.' },
+                { ref, text: 'Held text.' },
+              ],
+            },
+            at(),
+            nextId,
+          ),
+        /credentials/,
+      );
       assert.deepEqual(currentManifest(fx.store, 'wiki'), before);
     }
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });
 
 test('native reader reports cannot persist credential addresses as refs or metadata', async () => {
@@ -690,24 +1199,66 @@ test('native reader reports cannot persist credential addresses as refs or metad
     try {
       let n = 0;
       const dirty = 'https://user:synthetic-password@wiki.example/page';
-      const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'unsafe', summary: 'Synthetic reader', evidence: 'witnessed', items: [{ externalRef: field === 'ref' ? dirty : 'opaque', kind: 'item', name: 'Synthetic', attributes: { text: 'Held text.', ...(field === 'url' ? { url: dirty } : {}) } }] } });
+      const reader: SourceReader = async () => ({
+        outcome: 'read',
+        report: {
+          digest: 'unsafe',
+          summary: 'Synthetic reader',
+          evidence: 'witnessed',
+          items: [
+            {
+              externalRef: field === 'ref' ? dirty : 'opaque',
+              kind: 'item',
+              name: 'Synthetic',
+              attributes: { text: 'Held text.', ...(field === 'url' ? { url: dirty } : {}) },
+            },
+          ],
+        },
+      });
       const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
       svc.syncDeclarations(file([docs]), '2026-10-02T00:00:00Z');
-      await assert.rejects(svc.refresh('docs', '2026-10-02T00:00:00Z', () => `unsafe-${++n}`), /credentials/);
+      await assert.rejects(
+        svc.refresh('docs', '2026-10-02T00:00:00Z', () => `unsafe-${++n}`),
+        /credentials/,
+      );
       assert.equal(currentManifest(fx.store, 'docs'), null);
       assert.equal(listClaims(fx.store, { sourceId: 'docs' }).length, 0);
-    } finally { fx.cleanup(); }
+    } finally {
+      fx.cleanup();
+    }
   }
 });
 
 test('source locators use parsed credential checks on both committed and local admission', () => {
   const { fx, at, svc } = wikiService();
   try {
-    for (const locator of ['https://user:synthetic\tpassword@example.invalid/source', 'https://user:synthetic\npassword@example.invalid/source']) {
+    for (const locator of [
+      'https://user:synthetic\tpassword@example.invalid/source',
+      'https://user:synthetic\npassword@example.invalid/source',
+    ]) {
       assert.throws(() => file([{ ...docs, id: 'unsafe', kind: 'other', locator }]), /credentials/);
-      assert.throws(() => svc.addLocal({ id: 'unsafe', kind: 'other', purpose: 'Synthetic source', locator, authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at()), /credentials/);
+      assert.throws(
+        () =>
+          svc.addLocal(
+            {
+              id: 'unsafe',
+              kind: 'other',
+              purpose: 'Synthetic source',
+              locator,
+              authorityLevel: 'informative',
+              authoritativeFor: [],
+              notAuthoritativeFor: [],
+              freshnessHours: null,
+              sensitivity: 'confidential',
+            },
+            at(),
+          ),
+        /credentials/,
+      );
       assert.throws(() => svc.setLocalLocator('wiki', locator, at()), /credentials/);
       assert.equal(getSource(fx.store, 'unsafe'), null);
     }
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });

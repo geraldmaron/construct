@@ -26,7 +26,9 @@ test('dirty scoped files and untracked additions survive snapshots; returned pat
     assert.equal(readFileSync(join(fixture.root, 'README.md'), 'utf8'), 'unrelated dirty work\n');
     assert.equal(fixture.git('diff', '--cached'), index);
     assert.equal(fixture.git('rev-list', '--count', 'HEAD').trim(), '1');
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('scope, symlink, credential, reviewer-write and stale-target violations are rejected', () => {
@@ -38,7 +40,10 @@ test('scope, symlink, credential, reviewer-write and stale-target violations are
     assert.throws(() => workspace.collect({ ...fixture.execution, snapshot }), /out-of-scope/);
     writeFileSync(join(snapshot.directory, 'README.md'), 'fixture\n');
     writeFileSync(join(snapshot.directory, 'src/value.txt'), 'worker\n');
-    assert.throws(() => workspace.collect({ ...fixture.execution, snapshot, assignment: { ...fixture.execution.assignment, role: 'review' } }), /reviewer changed/);
+    assert.throws(
+      () => workspace.collect({ ...fixture.execution, snapshot, assignment: { ...fixture.execution.assignment, role: 'review' } }),
+      /reviewer changed/,
+    );
     const artifact = workspace.collect({ ...fixture.execution, snapshot });
     writeFileSync(join(fixture.root, 'src/value.txt'), 'intervening user edit\n');
     assert.throws(() => workspace.integrate({ ...fixture.execution, snapshot, artifact }), /target changed/);
@@ -47,7 +52,9 @@ test('scope, symlink, credential, reviewer-write and stale-target violations are
     assert.throws(() => workspace.collect({ ...fixture.execution, snapshot }), /symlink/);
     writeFileSync(join(fixture.root, 'src/credential.txt'), `sk-ant-${'a1'.repeat(30)}`);
     assert.throws(() => workspace.prepare({ ...fixture.execution, id: 'credential' }, null), /credential/);
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('review and repair use the exact artifact and the original integration baseline', () => {
@@ -58,7 +65,11 @@ test('review and repair use the exact artifact and the original integration base
     writeFileSync(join(snapshot.directory, 'src/value.txt'), 'first implementation\n');
     const artifact = workspace.collect({ ...fixture.execution, snapshot });
     const subject = { ...fixture.execution, snapshot, artifact };
-    const review = { ...fixture.execution, id: 'review', assignment: { ...fixture.execution.assignment, role: 'review' as const, subject: subject.id } };
+    const review = {
+      ...fixture.execution,
+      id: 'review',
+      assignment: { ...fixture.execution.assignment, role: 'review' as const, subject: subject.id },
+    };
     const reviewSnapshot = workspace.prepare(review, subject);
     assert.equal(readFileSync(join(reviewSnapshot.directory, 'src/value.txt'), 'utf8'), 'first implementation\n');
     const repair = { ...fixture.execution, id: 'repair', assignment: { ...fixture.execution.assignment, repairOf: subject.id } };
@@ -68,7 +79,9 @@ test('review and repair use the exact artifact and the original integration base
     const repairedArtifact = workspace.collect({ ...repair, snapshot: repairSnapshot });
     workspace.integrate({ ...repair, snapshot: repairSnapshot, artifact: repairedArtifact });
     assert.equal(readFileSync(join(fixture.root, 'src/value.txt'), 'utf8'), 'repaired implementation\n');
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('host configuration and private paths are excluded and cannot be supplied as explicit scope', () => {
@@ -77,8 +90,13 @@ test('host configuration and private paths are excluded and cannot be supplied a
     mkdirSync(join(fixture.root, '.claude'));
     writeFileSync(join(fixture.root, '.claude/settings.json'), '{}');
     const workspace = new DelegationWorkspace(fixture.artifactsDir, fixture.env);
-    assert.throws(() => workspace.prepare({ ...fixture.execution, assignment: { ...fixture.execution.assignment, paths: ['.claude/'] } }, null), /private|host-control/);
-  } finally { fixture.cleanup(); }
+    assert.throws(
+      () => workspace.prepare({ ...fixture.execution, assignment: { ...fixture.execution.assignment, paths: ['.claude/'] } }, null),
+      /private|host-control/,
+    );
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('disjoint patches integrate serially while overlapping target changes still conflict', () => {
@@ -97,7 +115,9 @@ test('disjoint patches integrate serially while overlapping target changes still
     workspace.integrate({ ...second, snapshot: secondSnapshot, artifact: secondArtifact });
     assert.equal(readFileSync(join(fixture.root, 'README.md'), 'utf8'), 'second worker\n');
     assert.equal(readFileSync(join(fixture.root, 'src/value.txt'), 'utf8'), 'worker\n');
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });
 
 test('patch proposals cannot write outside scope or create symlinks', () => {
@@ -106,10 +126,26 @@ test('patch proposals cannot write outside scope or create symlinks', () => {
     const workspace = new DelegationWorkspace(fixture.artifactsDir, fixture.env);
     const snapshot = workspace.prepare(fixture.execution, null);
     const execution = { ...fixture.execution, snapshot };
-    assert.throws(() => workspace.applyProposal(execution, 'diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-fixture\n+bad\n'), /allowed paths/);
-    assert.throws(() => workspace.applyProposal(execution, 'diff --git a/src/link b/src/link\nnew file mode 120000\n--- /dev/null\n+++ b/src/link\n@@ -0,0 +1 @@\n+/outside\n'), /regular files/);
+    assert.throws(
+      () =>
+        workspace.applyProposal(
+          execution,
+          'diff --git a/README.md b/README.md\n--- a/README.md\n+++ b/README.md\n@@ -1 +1 @@\n-fixture\n+bad\n',
+        ),
+      /allowed paths/,
+    );
+    assert.throws(
+      () =>
+        workspace.applyProposal(
+          execution,
+          'diff --git a/src/link b/src/link\nnew file mode 120000\n--- /dev/null\n+++ b/src/link\n@@ -0,0 +1 @@\n+/outside\n',
+        ),
+      /regular files/,
+    );
     assert.equal(readFileSync(join(fixture.root, 'README.md'), 'utf8'), 'fixture\n');
     writeFileSync(join(snapshot.directory, '.git'), 'gitdir: /outside\n');
     assert.throws(() => workspace.collect(execution), /worktree identity/);
-  } finally { fixture.cleanup(); }
+  } finally {
+    fixture.cleanup();
+  }
 });

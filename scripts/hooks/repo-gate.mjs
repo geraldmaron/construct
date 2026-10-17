@@ -58,9 +58,7 @@ try {
   const unrunnable = results.filter((r) => !r.ran);
 
   if (unrunnable.length > 0) {
-    process.stderr.write(
-      `repo-gate: could not run ${unrunnable.map((r) => r.name).join(', ')} — committing anyway\n`,
-    );
+    process.stderr.write(`repo-gate: could not run ${unrunnable.map((r) => r.name).join(', ')} — committing anyway\n`);
   }
 
   for (const check of failed) {
@@ -69,9 +67,7 @@ try {
   }
 
   if (failed.length > 0) {
-    process.stderr.write(
-      `\nrepo-gate: this commit will turn CI red. Nothing is blocked — fix it before you push.\n\n`,
-    );
+    process.stderr.write(`\nrepo-gate: this commit will turn CI red. Nothing is blocked — fix it before you push.\n\n`);
   }
 
   // `ok` here means the gate itself worked, not that the code passed. A run of

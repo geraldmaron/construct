@@ -61,7 +61,8 @@ export const TIER_POLICIES: Readonly<Record<ActionTier, TierPolicy>> = {
   project_write: {
     tier: 'project_write',
     requirement: 'managed_outcome',
-    description: 'Reversible writes to Construct state or project working files inside an explicit outcome; remembering something happens only when asked.',
+    description:
+      'Reversible writes to Construct state or project working files inside an explicit outcome; remembering something happens only when asked.',
     standingGrantSuffices: true,
   },
   external_write: {
@@ -79,7 +80,8 @@ export const TIER_POLICIES: Readonly<Record<ActionTier, TierPolicy>> = {
   licensed_judgment: {
     tier: 'licensed_judgment',
     requirement: 'never_by_construct',
-    description: 'Legal, medical, regulated, fiduciary, or other sign-off a qualified person owns. Construct issue-spots and prepares; it never decides.',
+    description:
+      'Legal, medical, regulated, fiduciary, or other sign-off a qualified person owns. Construct issue-spots and prepares; it never decides.',
     standingGrantSuffices: false,
   },
 };

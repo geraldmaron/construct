@@ -281,8 +281,7 @@ export function violationsIn(relPath, text) {
       FIELD_RE.lastIndex = 0;
       let m;
       while ((m = FIELD_RE.exec(argText))) {
-        const inPrintedPosition =
-          noTemplateLiteral || substitutions.some(([s, e]) => m.index >= s && m.index < e);
+        const inPrintedPosition = noTemplateLiteral || substitutions.some(([s, e]) => m.index >= s && m.index < e);
         if (!inPrintedPosition) continue;
         const coveredByEscape = escaped.some(([s, e]) => m.index >= s && m.index < e);
         if (coveredByEscape) continue;
@@ -304,14 +303,8 @@ export function violationsIn(relPath, text) {
  * exactly the gap this lint exists to close for a new print site.
  */
 function lintableFiles() {
-  const out = execFileSync(
-    'git',
-    ['ls-files', '--cached', '--others', '--exclude-standard', SCOPE],
-    { encoding: 'utf8' },
-  );
-  return [...new Set(out.split('\n').filter(Boolean))]
-    .filter((f) => f.endsWith('.ts'))
-    .filter((f) => existsSync(f));
+  const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', SCOPE], { encoding: 'utf8' });
+  return [...new Set(out.split('\n').filter(Boolean))].filter((f) => f.endsWith('.ts')).filter((f) => existsSync(f));
 }
 
 function main() {

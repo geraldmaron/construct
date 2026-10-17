@@ -30,10 +30,7 @@ interface GateRun {
 function runGate(scripts: Record<string, string>, env: NodeJS.ProcessEnv = {}): GateRun {
   const fixture = sterile();
   try {
-    writeFileSync(
-      join(fixture.root, 'package.json'),
-      JSON.stringify({ name: 'gate-fixture', version: '0.0.0', scripts }),
-    );
+    writeFileSync(join(fixture.root, 'package.json'), JSON.stringify({ name: 'gate-fixture', version: '0.0.0', scripts }));
     const result = spawnSync(process.execPath, [GATE], {
       cwd: fixture.root,
       encoding: 'utf8',

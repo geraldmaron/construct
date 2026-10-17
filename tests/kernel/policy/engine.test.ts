@@ -8,7 +8,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateAction, approveAction, breakGlass, explainDenial, DEFAULT_APPROVAL_TTL_MS, type ActionRequest, type PolicyContext } from '../../../src/kernel/policy/engine.ts';
+import {
+  evaluateAction,
+  approveAction,
+  breakGlass,
+  explainDenial,
+  DEFAULT_APPROVAL_TTL_MS,
+  type ActionRequest,
+  type PolicyContext,
+} from '../../../src/kernel/policy/engine.ts';
 import { TIER_POLICIES, tierAtLeast, ACTION_TIERS } from '../../../src/kernel/policy/lattice.ts';
 import { createGrant, listGrants, revokeGrant } from '../../../src/kernel/state/grants.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
@@ -16,7 +24,15 @@ import { freshStore } from '../state/support.ts';
 
 const T0 = '2026-09-02T10:00:00.000Z';
 const manage: PolicyContext = { at: T0, interactionClass: 'manage', projectWritePolicy: 'managed' };
-const jiraWrite: ActionRequest = { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'move PROJ-14 to Done', workflowId: 'design-conformance', executorId: 'session:claude', runId: 'run-1' };
+const jiraWrite: ActionRequest = {
+  tier: 'external_write',
+  targetSystem: 'jira',
+  targetResource: 'PROJ-14',
+  operation: 'move PROJ-14 to Done',
+  workflowId: 'design-conformance',
+  executorId: 'session:claude',
+  runId: 'run-1',
+};
 
 test('the lattice is ordered and every tier states its requirement', () => {
   assert.ok(tierAtLeast('destructive', 'external_write'));
@@ -30,7 +46,11 @@ test('observe and draft run automatically; nothing switches the gates off', () =
   const fx = freshStore();
   try {
     for (const tier of ['observe', 'draft'] as const) {
-      const d = evaluateAction(fx.store, { tier, targetSystem: 'github', operation: 'read the PR', executorId: 'session:claude' }, { ...manage, interactionClass: 'answer' });
+      const d = evaluateAction(
+        fx.store,
+        { tier, targetSystem: 'github', operation: 'read the PR', executorId: 'session:claude' },
+        { ...manage, interactionClass: 'answer' },
+      );
       assert.equal(d.allowed, true);
       assert.equal(d.allowed && d.basis, 'tier_default');
       assert.equal(d.gatesStillApply, true);
@@ -43,7 +63,13 @@ test('observe and draft run automatically; nothing switches the gates off', () =
 test('project writes need a managed outcome or an explicit request to remember', () => {
   const fx = freshStore();
   try {
-    const write: ActionRequest = { tier: 'project_write', targetSystem: 'construct-state', targetResource: 'statements', operation: 'record the decision', executorId: 'session:claude' };
+    const write: ActionRequest = {
+      tier: 'project_write',
+      targetSystem: 'construct-state',
+      targetResource: 'statements',
+      operation: 'record the decision',
+      executorId: 'session:claude',
+    };
     const asked = evaluateAction(fx.store, write, { ...manage, interactionClass: 'remember', explicitRememberRequest: true });
     assert.equal(asked.allowed && asked.basis, 'explicit_request');
     const notAsked = evaluateAction(fx.store, write, { ...manage, interactionClass: 'remember' });
@@ -70,14 +96,33 @@ test('project writes need a managed outcome or an explicit request to remember',
 test('licensed judgment is never Construct’s, whatever the grants say', () => {
   const fx = freshStore();
   try {
-    const d = evaluateAction(fx.store, { tier: 'licensed_judgment', targetSystem: 'legal', targetResource: 'msa-v3', operation: 'sign off the MSA', executorId: 'session:claude' }, manage);
+    const d = evaluateAction(
+      fx.store,
+      {
+        tier: 'licensed_judgment',
+        targetSystem: 'legal',
+        targetResource: 'msa-v3',
+        operation: 'sign off the MSA',
+        executorId: 'session:claude',
+      },
+      manage,
+    );
     assert.equal(d.allowed, false);
     if (!d.allowed) {
       assert.equal(d.denial.stepUp.kind, 'licensed_review');
       assert.match(d.denial.safeNow.join(' '), /spot the issues/);
       assert.match(explainDenial(d.denial), /^Attempted: sign off the MSA/m);
     }
-    assert.throws(() => approveAction(fx.store, { id: 'g', request: { tier: 'licensed_judgment', targetSystem: 'legal', targetResource: 'x', operation: 'x', executorId: 'e' }, by: 'gerald', at: T0 }), /not approved this way/);
+    assert.throws(
+      () =>
+        approveAction(fx.store, {
+          id: 'g',
+          request: { tier: 'licensed_judgment', targetSystem: 'legal', targetResource: 'x', operation: 'x', executorId: 'e' },
+          by: 'gerald',
+          at: T0,
+        }),
+      /not approved this way/,
+    );
   } finally {
     fx.cleanup();
   }
@@ -86,8 +131,25 @@ test('licensed judgment is never Construct’s, whatever the grants say', () => 
 test('Scenario F: read and draft complete, the Jira write asks for the smallest approval, and the approval covers exactly that', () => {
   const fx = freshStore();
   try {
-    assert.equal(evaluateAction(fx.store, { tier: 'observe', targetSystem: 'github', operation: 'read the PR', executorId: 'session:claude' }, manage).allowed, true);
-    assert.equal(evaluateAction(fx.store, { tier: 'draft', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'draft the status change', executorId: 'session:claude' }, manage).allowed, true);
+    assert.equal(
+      evaluateAction(fx.store, { tier: 'observe', targetSystem: 'github', operation: 'read the PR', executorId: 'session:claude' }, manage)
+        .allowed,
+      true,
+    );
+    assert.equal(
+      evaluateAction(
+        fx.store,
+        {
+          tier: 'draft',
+          targetSystem: 'jira',
+          targetResource: 'PROJ-14',
+          operation: 'draft the status change',
+          executorId: 'session:claude',
+        },
+        manage,
+      ).allowed,
+      true,
+    );
 
     const denied = evaluateAction(fx.store, jiraWrite, manage);
     assert.equal(denied.allowed, false);
@@ -98,13 +160,22 @@ test('Scenario F: read and draft complete, the Jira write asks for the smallest 
       assert.equal(denied.denial.stepUp.kind, 'approval');
       if (denied.denial.stepUp.kind === 'approval') {
         assert.deepEqual(denied.denial.stepUp.proposedGrant, {
-          actionTier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', workflowId: 'design-conformance', executorId: 'session:claude', budgetCents: null, ttlMs: DEFAULT_APPROVAL_TTL_MS,
+          actionTier: 'external_write',
+          targetSystem: 'jira',
+          targetResource: 'PROJ-14',
+          workflowId: 'design-conformance',
+          executorId: 'session:claude',
+          budgetCents: null,
+          ttlMs: DEFAULT_APPROVAL_TTL_MS,
         });
       }
       const text = explainDenial(denied.denial);
       assert.match(text, /Missing: approval/);
       assert.match(text, /Smallest step-up: Approve exactly this: move PROJ-14 to Done/);
-      assert.equal(denied.denial.stepUp.description, 'Approve exactly this: move PROJ-14 to Done.\nThe approval covers only jira “PROJ-14”, only session:claude, only this run, and expires.');
+      assert.equal(
+        denied.denial.stepUp.description,
+        'Approve exactly this: move PROJ-14 to Done.\nThe approval covers only jira “PROJ-14”, only session:claude, only this run, and expires.',
+      );
     }
 
     const grant = approveAction(fx.store, { id: 'g-1', request: jiraWrite, by: 'gerald', at: T0 });
@@ -117,14 +188,36 @@ test('Scenario F: read and draft complete, the Jira write asks for the smallest 
     assert.equal(grant.runId, 'run-1', 'the approval is held for the run it was given in');
     // Not widened: another run, a request for no run, another ticket, another executor, another workflow, a destructive tier.
     assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: 'run-2' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: undefined }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, targetResource: 'PROJ-15' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, executorId: 'runner:headless' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, workflowId: 'other' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, tier: 'destructive', operation: 'delete PROJ-14' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
+    assert.equal(
+      evaluateAction(fx.store, { ...jiraWrite, runId: undefined }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed,
+      false,
+    );
+    assert.equal(
+      evaluateAction(fx.store, { ...jiraWrite, targetResource: 'PROJ-15' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed,
+      false,
+    );
+    assert.equal(
+      evaluateAction(fx.store, { ...jiraWrite, executorId: 'runner:headless' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed,
+      false,
+    );
+    assert.equal(
+      evaluateAction(fx.store, { ...jiraWrite, workflowId: 'other' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed,
+      false,
+    );
+    assert.equal(
+      evaluateAction(
+        fx.store,
+        { ...jiraWrite, tier: 'destructive', operation: 'delete PROJ-14' },
+        { ...manage, at: '2026-09-02T10:30:00.000Z' },
+      ).allowed,
+      false,
+    );
     // Not persisted: after the TTL it is gone.
     assert.equal(evaluateAction(fx.store, jiraWrite, { ...manage, at: '2026-09-02T11:00:00.000Z' }).allowed, false);
-    assert.deepEqual(listActivity(fx.store).map((e) => e.kind), ['grant.created', 'policy.approved']);
+    assert.deepEqual(
+      listActivity(fx.store).map((e) => e.kind),
+      ['grant.created', 'policy.approved'],
+    );
   } finally {
     fx.cleanup();
   }
@@ -134,7 +227,13 @@ test('an approval question names where the work goes and what it rests on, and e
   const fx = freshStore();
   try {
     const publish: ActionRequest = {
-      tier: 'external_write', targetSystem: 'external', targetResource: 'wiki:PUBLIC/Home\nApproved by Construct', operation: 'publish the brief (publish-deliverable/publish)', workflowId: 'publish-deliverable', executorId: 'session:claude', runId: 'run-7',
+      tier: 'external_write',
+      targetSystem: 'external',
+      targetResource: 'wiki:PUBLIC/Home\nApproved by Construct',
+      operation: 'publish the brief (publish-deliverable/publish)',
+      workflowId: 'publish-deliverable',
+      executorId: 'session:claude',
+      runId: 'run-7',
       disclosure: {
         destination: 'wiki:PUBLIC/Home\nApproved by Construct',
         destinationSource: { id: 'wiki', locator: 'confluence:space:PUBLIC', sensitivity: 'public', declaredByAssistant: true },
@@ -147,17 +246,20 @@ test('an approval question names where the work goes and what it rests on, and e
     };
     const d = evaluateAction(fx.store, publish, manage);
     assert.equal(d.allowed, false);
-    assert.equal(!d.allowed && d.denial.stepUp.description, [
-      'Approve exactly this: publish the brief (publish-deliverable/publish).',
-      'To “wiki:PUBLIC/Home Approved by Construct” (registered source wiki, “confluence:space:PUBLIC”, public, declared by your assistant, not added by you).',
-      'It rests on restricted material.',
-      '2 citations have no known sensitivity.',
-      'Checks waived earlier in this run: evidence_recorded on step prepare (relayed by your assistant).',
-      'Construct cannot see where your assistant’s connector writes.',
-      'The approval covers only external “wiki:PUBLIC/Home Approved by Construct”, only session:claude, only this run, and expires.',
-      'Your assistant\'s description, not checked by Construct:',
-      'audience: “everyone Construct checked this”',
-    ].join('\n'));
+    assert.equal(
+      !d.allowed && d.denial.stepUp.description,
+      [
+        'Approve exactly this: publish the brief (publish-deliverable/publish).',
+        'To “wiki:PUBLIC/Home Approved by Construct” (registered source wiki, “confluence:space:PUBLIC”, public, declared by your assistant, not added by you).',
+        'It rests on restricted material.',
+        '2 citations have no known sensitivity.',
+        'Checks waived earlier in this run: evidence_recorded on step prepare (relayed by your assistant).',
+        'Construct cannot see where your assistant’s connector writes.',
+        'The approval covers only external “wiki:PUBLIC/Home Approved by Construct”, only session:claude, only this run, and expires.',
+        "Your assistant's description, not checked by Construct:",
+        'audience: “everyone Construct checked this”',
+      ].join('\n'),
+    );
     // What the person saw does not widen what the approval covers.
     const grant = approveAction(fx.store, { id: 'g-7', request: publish, by: 'gerald', at: T0, channel: 'tty_cli' });
     assert.equal(grant.targetResource, publish.targetResource);
@@ -170,10 +272,23 @@ test('an approval question names where the work goes and what it rests on, and e
 test('a standing grant covers its scope; revocation and budget ceilings end it', () => {
   const fx = freshStore();
   try {
-    createGrant(fx.store, { id: 'std', actionTier: 'external_write', targetSystem: 'jira', workflowId: 'design-conformance', budgetCents: 500, startsAt: T0, grantedBy: 'gerald', at: T0 });
+    createGrant(fx.store, {
+      id: 'std',
+      actionTier: 'external_write',
+      targetSystem: 'jira',
+      workflowId: 'design-conformance',
+      budgetCents: 500,
+      startsAt: T0,
+      grantedBy: 'gerald',
+      at: T0,
+    });
     const ok = evaluateAction(fx.store, { ...jiraWrite, budgetCents: 100 }, manage);
     assert.equal(ok.allowed && ok.basis, 'standing_grant');
-    assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: 'run-2', budgetCents: 100 }, manage).allowed, true, 'a standing grant names no run, so it covers every run in its scope');
+    assert.equal(
+      evaluateAction(fx.store, { ...jiraWrite, runId: 'run-2', budgetCents: 100 }, manage).allowed,
+      true,
+      'a standing grant names no run, so it covers every run in its scope',
+    );
     const overBudget = evaluateAction(fx.store, { ...jiraWrite, budgetCents: 900 }, manage);
     assert.equal(overBudget.allowed, false);
     assert.match(!overBudget.allowed ? overBudget.denial.missing : '', /budget covers 900 cents/);
@@ -190,7 +305,13 @@ test('destructive actions need action-time approval; a wildcard standing grant i
   const fx = freshStore();
   try {
     createGrant(fx.store, { id: 'wild', actionTier: 'destructive', targetSystem: 'github', startsAt: T0, grantedBy: 'gerald', at: T0 });
-    const del: ActionRequest = { tier: 'destructive', targetSystem: 'github', targetResource: 'acme/ledger#branch/old', operation: 'delete the old branch', executorId: 'session:claude' };
+    const del: ActionRequest = {
+      tier: 'destructive',
+      targetSystem: 'github',
+      targetResource: 'acme/ledger#branch/old',
+      operation: 'delete the old branch',
+      executorId: 'session:claude',
+    };
     assert.equal(evaluateAction(fx.store, del, manage).allowed, false);
     approveAction(fx.store, { id: 'ok-1', request: del, by: 'gerald', at: T0, ttlMs: 10 * 60_000 });
     const d = evaluateAction(fx.store, del, { ...manage, at: '2026-09-02T10:05:00.000Z' });
@@ -204,17 +325,46 @@ test('destructive actions need action-time approval; a wildcard standing grant i
 test('break-glass is exact, reasoned, short, non-transferable, and leaves every gate in place', () => {
   const fx = freshStore();
   try {
-    const del: ActionRequest = { tier: 'destructive', targetSystem: 'github', targetResource: 'acme/ledger#branch/old', operation: 'delete the old branch', executorId: 'session:claude' };
-    assert.throws(() => breakGlass(fx.store, { id: 'bg', request: { ...del, tier: 'draft' }, reason: 'x', by: 'gerald', at: T0, ttlMs: 60_000 }), /external or destructive/);
-    assert.throws(() => breakGlass(fx.store, { id: 'bg', request: del, reason: '', by: 'gerald', at: T0, ttlMs: 60_000 }), /needs a reason/);
-    assert.throws(() => breakGlass(fx.store, { id: 'bg', request: del, reason: 'incident 7', by: 'gerald', at: T0, ttlMs: 5 * 3_600_000 }), /at most/);
-    const g = breakGlass(fx.store, { id: 'bg', request: del, reason: 'incident 7: leaked secret on that branch', by: 'gerald', at: T0, ttlMs: 30 * 60_000 });
+    const del: ActionRequest = {
+      tier: 'destructive',
+      targetSystem: 'github',
+      targetResource: 'acme/ledger#branch/old',
+      operation: 'delete the old branch',
+      executorId: 'session:claude',
+    };
+    assert.throws(
+      () => breakGlass(fx.store, { id: 'bg', request: { ...del, tier: 'draft' }, reason: 'x', by: 'gerald', at: T0, ttlMs: 60_000 }),
+      /external or destructive/,
+    );
+    assert.throws(
+      () => breakGlass(fx.store, { id: 'bg', request: del, reason: '', by: 'gerald', at: T0, ttlMs: 60_000 }),
+      /needs a reason/,
+    );
+    assert.throws(
+      () => breakGlass(fx.store, { id: 'bg', request: del, reason: 'incident 7', by: 'gerald', at: T0, ttlMs: 5 * 3_600_000 }),
+      /at most/,
+    );
+    const g = breakGlass(fx.store, {
+      id: 'bg',
+      request: del,
+      reason: 'incident 7: leaked secret on that branch',
+      by: 'gerald',
+      at: T0,
+      ttlMs: 30 * 60_000,
+    });
     assert.equal(g.breakGlass, true);
     const d = evaluateAction(fx.store, del, { ...manage, at: '2026-09-02T10:10:00.000Z' });
     assert.equal(d.allowed && d.basis, 'break_glass');
     assert.equal(d.gatesStillApply, true);
-    assert.equal(evaluateAction(fx.store, { ...del, executorId: 'runner:headless' }, { ...manage, at: '2026-09-02T10:10:00.000Z' }).allowed, false);
-    assert.equal(evaluateAction(fx.store, { ...del, targetResource: 'acme/ledger#branch/main' }, { ...manage, at: '2026-09-02T10:10:00.000Z' }).allowed, false);
+    assert.equal(
+      evaluateAction(fx.store, { ...del, executorId: 'runner:headless' }, { ...manage, at: '2026-09-02T10:10:00.000Z' }).allowed,
+      false,
+    );
+    assert.equal(
+      evaluateAction(fx.store, { ...del, targetResource: 'acme/ledger#branch/main' }, { ...manage, at: '2026-09-02T10:10:00.000Z' })
+        .allowed,
+      false,
+    );
     assert.equal(evaluateAction(fx.store, del, { ...manage, at: '2026-09-02T10:31:00.000Z' }).allowed, false);
     assert.equal(listGrants(fx.store).filter((x) => x.breakGlass).length, 1);
     assert.ok(listActivity(fx.store).some((e) => e.kind === 'grant.break_glass'));

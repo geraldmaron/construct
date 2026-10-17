@@ -37,9 +37,7 @@ import { fileURLToPath } from 'node:url';
  * that every other session and gate run on this machine shares. The bare
  * invocation `npm run lint` calls (no argument) resolves exactly as before.
  */
-const ROOT = process.argv[2]
-  ? resolve(process.argv[2])
-  : fileURLToPath(new URL('../', import.meta.url));
+const ROOT = process.argv[2] ? resolve(process.argv[2]) : fileURLToPath(new URL('../', import.meta.url));
 
 /**
  * A bead id, shaped the way the tracker mints them: three or four lowercase
@@ -53,13 +51,7 @@ const ROOT = process.argv[2]
 const BEAD = /construct-(?!mcp)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/g;
 
 /** The root records the house style treats as the drift record, cited by name. */
-const ROOT_RECORDS = [
-  'README.md',
-  'STRATEGY.md',
-  'CHANGELOG.md',
-  'RESEARCH-DECISIONS.md',
-  'GLOSSARY.md',
-];
+const ROOT_RECORDS = ['README.md', 'STRATEGY.md', 'CHANGELOG.md', 'RESEARCH-DECISIONS.md', 'GLOSSARY.md'];
 
 /**
  * Every markdown file under docs/, plus whichever root records exist. A
@@ -127,13 +119,9 @@ for (const file of docFiles()) {
 
 if (problems.length > 0) {
   for (const p of problems) {
-    process.stderr.write(
-      `${relative(ROOT, p.file)}:${p.line}: cites '${p.token}', which .beads/issues.jsonl has no record of\n`,
-    );
+    process.stderr.write(`${relative(ROOT, p.file)}:${p.line}: cites '${p.token}', which .beads/issues.jsonl has no record of\n`);
   }
-  process.stderr.write(
-    `\nlint-doc-bead-refs: ${String(problems.length)} cited bead id(s) not in the tracker export.\n`,
-  );
+  process.stderr.write(`\nlint-doc-bead-refs: ${String(problems.length)} cited bead id(s) not in the tracker export.\n`);
   process.exit(1);
 }
 

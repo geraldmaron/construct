@@ -23,8 +23,17 @@ test('a fresh init writes exactly the committed files, one database, and the ign
     const result = initializeProject(input(root));
     try {
       const layout = projectLayout(root);
-      assert.deepEqual(readdirSync(layout.dir).sort(), ['constitution.json', 'project.json', 'registry.lock.json', 'sources.json', 'state']);
-      assert.deepEqual(readdirSync(layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
+      assert.deepEqual(readdirSync(layout.dir).sort(), [
+        'constitution.json',
+        'project.json',
+        'registry.lock.json',
+        'sources.json',
+        'state',
+      ]);
+      assert.deepEqual(
+        readdirSync(layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)),
+        ['construct.sqlite'],
+      );
       assert.deepEqual(result.created, { projectFile: true, constitution: true, sources: true, lock: true, state: true });
       assert.equal(result.gitignoreUpdated, true);
       assert.match(readFileSync(join(root, '.gitignore'), 'utf8'), new RegExp(STATE_GITIGNORE_PATTERN.replaceAll('/', '\\/')));
@@ -59,7 +68,10 @@ test('a second init keeps every existing file and reopens the same database', ()
       assert.deepEqual(second.created, { projectFile: false, constitution: false, sources: false, lock: false, state: false });
       assert.equal(second.config.id, 'proj-1');
       assert.equal(second.gitignoreUpdated, false);
-      assert.deepEqual(readdirSync(second.layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
+      assert.deepEqual(
+        readdirSync(second.layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)),
+        ['construct.sqlite'],
+      );
     } finally {
       second.store.close();
     }
@@ -92,8 +104,15 @@ test('a format-1 project.json is recognized by its stamp and refused without mig
   const { root, cleanup } = tmpProject();
   try {
     mkdirSync(join(root, '.construct'), { recursive: true });
-    writeFileSync(join(root, '.construct', 'project.json'), JSON.stringify({ format: 'construct-project', formatVersion: 1, integrations: {} }), 'utf8');
-    assert.throws(() => initializeProject(input(root)), (err: unknown) => err instanceof LegacyProjectError && /format construct-project 1/.test(err.targets[0]!.what));
+    writeFileSync(
+      join(root, '.construct', 'project.json'),
+      JSON.stringify({ format: 'construct-project', formatVersion: 1, integrations: {} }),
+      'utf8',
+    );
+    assert.throws(
+      () => initializeProject(input(root)),
+      (err: unknown) => err instanceof LegacyProjectError && /format construct-project 1/.test(err.targets[0]!.what),
+    );
     const after = JSON.parse(readFileSync(join(root, '.construct', 'project.json'), 'utf8'));
     assert.equal(after.formatVersion, 1);
   } finally {
@@ -106,8 +125,15 @@ test('a constitution in a foreign format is refused as unsupported, not repaired
   try {
     const first = initializeProject(input(root));
     first.store.close();
-    writeFileSync(join(root, '.construct', 'constitution.json'), JSON.stringify({ format: 'construct-constitution', formatVersion: 9, name: 'x' }), 'utf8');
-    assert.throws(() => initializeProject(input(root)), (err: unknown) => err instanceof UnsupportedProjectFileError && err.foundVersion === 9);
+    writeFileSync(
+      join(root, '.construct', 'constitution.json'),
+      JSON.stringify({ format: 'construct-constitution', formatVersion: 9, name: 'x' }),
+      'utf8',
+    );
+    assert.throws(
+      () => initializeProject(input(root)),
+      (err: unknown) => err instanceof UnsupportedProjectFileError && err.foundVersion === 9,
+    );
   } finally {
     cleanup();
   }
@@ -117,9 +143,16 @@ test('a symlinked project file is refused', () => {
   const { root, cleanup } = tmpProject();
   try {
     mkdirSync(join(root, '.construct'), { recursive: true });
-    writeFileSync(join(root, 'elsewhere.json'), JSON.stringify({ format: 'construct-project', formatVersion: 2, id: 'x', name: 'x', createdAt: AT }), 'utf8');
+    writeFileSync(
+      join(root, 'elsewhere.json'),
+      JSON.stringify({ format: 'construct-project', formatVersion: 2, id: 'x', name: 'x', createdAt: AT }),
+      'utf8',
+    );
     symlinkSync(join(root, 'elsewhere.json'), join(root, '.construct', 'project.json'));
-    assert.throws(() => initializeProject(input(root)), (err: unknown) => err instanceof ProjectFileError && /symbolic link/.test(err.message));
+    assert.throws(
+      () => initializeProject(input(root)),
+      (err: unknown) => err instanceof ProjectFileError && /symbolic link/.test(err.message),
+    );
   } finally {
     cleanup();
   }
@@ -132,13 +165,20 @@ test('a committed file that tries to grant consent, carry a secret, or name a co
     const base = { format: 'construct-project', formatVersion: 2, id: 'x', name: 'x', createdAt: AT };
     for (const behavior of [{ consentGranted: true }, { apiToken: 'abc' }, { headlessCommand: '/bin/sh' }, { externalWrite: true }]) {
       writeFileSync(join(root, '.construct', 'project.json'), JSON.stringify({ ...base, behavior }), 'utf8');
-      assert.throws(() => initializeProject(input(root)), (err: unknown) => err instanceof ProjectFileError && /cannot grant consent, carry secrets/.test(err.message));
+      assert.throws(
+        () => initializeProject(input(root)),
+        (err: unknown) => err instanceof ProjectFileError && /cannot grant consent, carry secrets/.test(err.message),
+      );
     }
     writeFileSync(join(root, '.construct', 'project.json'), JSON.stringify({ ...base, behavior: { colour: 'always' } }), 'utf8');
     assert.throws(() => initializeProject(input(root)), /unknown key "colour"/);
     writeFileSync(join(root, '.construct', 'project.json'), JSON.stringify({ ...base, behavior: { color: 'always' } }), 'utf8');
     assert.throws(() => initializeProject(input(root)), /cannot be set by project config/);
-    writeFileSync(join(root, '.construct', 'project.json'), JSON.stringify({ ...base, behavior: { 'headless.executor': '/usr/bin/evil' } }), 'utf8');
+    writeFileSync(
+      join(root, '.construct', 'project.json'),
+      JSON.stringify({ ...base, behavior: { 'headless.executor': '/usr/bin/evil' } }),
+      'utf8',
+    );
     assert.throws(() => initializeProject(input(root)), /not a path or a command/);
   } finally {
     cleanup();
@@ -172,11 +212,14 @@ test('init stamps the store with its project, adopts an empty store file, and ne
     const original = readFileSync(layout.projectFile, 'utf8');
 
     rmSync(layout.projectFile);
-    assert.throws(() => initializeProject({ ...input(root), projectId: 'proj-2' }), (error: unknown) => {
-      assert.ok(error instanceof StoreProjectError);
-      assert.match(error.message, /already holds project proj-1/);
-      return true;
-    });
+    assert.throws(
+      () => initializeProject({ ...input(root), projectId: 'proj-2' }),
+      (error: unknown) => {
+        assert.ok(error instanceof StoreProjectError);
+        assert.match(error.message, /already holds project proj-1/);
+        return true;
+      },
+    );
     assert.equal(existsSync(layout.projectFile), false, 'no project file was written');
 
     writeFileSync(layout.projectFile, original.replace('"proj-1"', '"proj-2"'));

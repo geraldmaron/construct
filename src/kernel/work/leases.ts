@@ -58,7 +58,10 @@ export class PathLeaseConflictError extends Error {
   constructor(overlaps: readonly Overlap[]) {
     super(
       `these paths are reserved by other work: ${overlaps
-        .map((o) => `${o.path} (${o.heldPath}, held by ${o.holder} for ${o.workId} until ${o.until}${o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : ''})`)
+        .map(
+          (o) =>
+            `${o.path} (${o.heldPath}, held by ${o.holder} for ${o.workId} until ${o.until}${o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : ''})`,
+        )
         .join('; ')}`,
     );
     this.name = 'PathLeaseConflictError';
@@ -95,8 +98,12 @@ export function normalizeLeasePath(raw: string, use: 'reserve' | 'check' = 'rese
   // remain idempotent when reservations pass through multiple consumers.
   if (trimmed === '/') return '/';
   if (use === 'reserve') {
-    if (/[\s\p{C}]/u.test(trimmed)) throw new Error(`a reserved path is spelled without spaces or control characters; reserve the directory that holds it instead of ${JSON.stringify(trimmed.slice(0, 80))}`);
-    if (Buffer.byteLength(trimmed) > LEASE_PATH_MAX_BYTES) throw new Error(`a reserved path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; reserve a directory instead`);
+    if (/[\s\p{C}]/u.test(trimmed))
+      throw new Error(
+        `a reserved path is spelled without spaces or control characters; reserve the directory that holds it instead of ${JSON.stringify(trimmed.slice(0, 80))}`,
+      );
+    if (Buffer.byteLength(trimmed) > LEASE_PATH_MAX_BYTES)
+      throw new Error(`a reserved path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; reserve a directory instead`);
   }
   if (trimmed.startsWith('/') || /^[A-Za-z]:\//.test(trimmed)) throw new Error(`reserve paths relative to the repository, not ${trimmed}`);
   const directory = trimmed.endsWith('/');
@@ -156,7 +163,13 @@ export function listLiveLeases(store: StateStore, now: string): PathLease[] {
  */
 export function findOverlaps(
   store: StateStore,
-  input: { readonly paths: readonly string[]; readonly laneRoot: string; readonly now: string; readonly mode?: LeaseMode; readonly excludeWorkId?: string },
+  input: {
+    readonly paths: readonly string[];
+    readonly laneRoot: string;
+    readonly now: string;
+    readonly mode?: LeaseMode;
+    readonly excludeWorkId?: string;
+  },
 ): Overlap[] {
   const wanted = input.paths.map((p) => normalizeLeasePath(p, 'check'));
   const mode = input.mode ?? 'exclusive';
@@ -220,8 +233,30 @@ export function reservePaths(
   const leases: PathLease[] = [];
   for (const path of paths) {
     const id = `lease-${randomUUID()}`;
-    insert.run(id, input.workId, input.sessionId, input.agent, input.laneRoot, input.branch, path, input.mode, randomUUID(), input.now, input.until);
-    leases.push({ id, workId: input.workId, sessionId: input.sessionId, agent: input.agent, laneRoot: input.laneRoot, branch: input.branch, path, mode: input.mode, createdAt: input.now });
+    insert.run(
+      id,
+      input.workId,
+      input.sessionId,
+      input.agent,
+      input.laneRoot,
+      input.branch,
+      path,
+      input.mode,
+      randomUUID(),
+      input.now,
+      input.until,
+    );
+    leases.push({
+      id,
+      workId: input.workId,
+      sessionId: input.sessionId,
+      agent: input.agent,
+      laneRoot: input.laneRoot,
+      branch: input.branch,
+      path,
+      mode: input.mode,
+      createdAt: input.now,
+    });
   }
   return { leases, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') };
 }
@@ -243,12 +278,26 @@ export function releasePaths(store: StateStore, input: { readonly workId: string
  */
 export function transferPaths(
   store: StateStore,
-  input: { readonly workId: string; readonly sessionId: string; readonly agent: string | null; readonly laneRoot: string; readonly branch?: string | null; readonly until: string; readonly now: string },
+  input: {
+    readonly workId: string;
+    readonly sessionId: string;
+    readonly agent: string | null;
+    readonly laneRoot: string;
+    readonly branch?: string | null;
+    readonly until: string;
+    readonly now: string;
+  },
 ): { readonly leases: PathLease[]; readonly dropped: Overlap[] } {
   const dropped: Overlap[] = [];
   const release = store.db.prepare(`UPDATE path_leases SET released_at = ?, release_reason = ? WHERE id = ?`);
   for (const lease of leasesFor(store, input.workId)) {
-    const collisions = findOverlaps(store, { paths: [lease.path], laneRoot: input.laneRoot, now: input.now, mode: lease.mode, excludeWorkId: input.workId }).filter((o) => o.kind === 'collision');
+    const collisions = findOverlaps(store, {
+      paths: [lease.path],
+      laneRoot: input.laneRoot,
+      now: input.now,
+      mode: lease.mode,
+      excludeWorkId: input.workId,
+    }).filter((o) => o.kind === 'collision');
     if (collisions.length === 0) continue;
     release.run(input.now, 'held by other work in the new checkout', lease.id);
     dropped.push(...collisions);
@@ -274,5 +323,15 @@ export function leasesFor(store: StateStore, workId: string): PathLease[] {
 }
 
 function toLease(r: Omit<LiveRow, 'title' | 'claim_owner' | 'claim_until'>): PathLease {
-  return { id: r.id, workId: r.work_id, sessionId: r.session_id, agent: r.agent, laneRoot: r.lane_root, branch: r.branch, path: r.path, mode: r.mode, createdAt: r.created_at };
+  return {
+    id: r.id,
+    workId: r.work_id,
+    sessionId: r.session_id,
+    agent: r.agent,
+    laneRoot: r.lane_root,
+    branch: r.branch,
+    path: r.path,
+    mode: r.mode,
+    createdAt: r.created_at,
+  };
 }

@@ -50,10 +50,7 @@ function plant(trees: { src?: boolean; dist?: boolean }): string {
   }
   if (trees.dist) {
     mkdirSync(join(root, 'dist', 'cli'), { recursive: true });
-    writeFileSync(
-      join(root, 'dist', 'cli', 'index.js'),
-      'export async function main() { console.log("ran:dist"); return 0; }\n',
-    );
+    writeFileSync(join(root, 'dist', 'cli', 'index.js'), 'export async function main() { console.log("ran:dist"); return 0; }\n');
   }
   return root;
 }

@@ -32,19 +32,18 @@ test('a fresh open creates one database stamped format 5, plus only its WAL side
   const fx = freshStore();
   try {
     const meta = Object.fromEntries(
-      (fx.store.db.prepare('SELECT key, value FROM meta').all() as Array<{ key: string; value: string }>).map(
-        (r) => [r.key, r.value],
-      ),
+      (fx.store.db.prepare('SELECT key, value FROM meta').all() as Array<{ key: string; value: string }>).map((r) => [r.key, r.value]),
     );
     assert.equal(meta.format, STATE_FORMAT_ID);
     assert.equal(meta.format_version, String(STATE_FORMAT_VERSION));
     assert.equal(STATE_FORMAT_VERSION, 5);
     const files = readdirSync(dirname(fx.dbPath)).sort();
-    assert.deepEqual(files.filter((f) => !/^construct\.sqlite-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
+    assert.deepEqual(
+      files.filter((f) => !/^construct\.sqlite-(?:wal|shm)$/.test(f)),
+      ['construct.sqlite'],
+    );
     const tables = new Set(
-      (fx.store.db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>).map(
-        (r) => r.name,
-      ),
+      (fx.store.db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>).map((r) => r.name),
     );
     for (const required of REQUIRED_TABLES) assert.ok(tables.has(required), `missing table ${required}`);
     assert.equal(fx.store.db.prepare('PRAGMA foreign_keys').get()?.foreign_keys, 1);
@@ -58,8 +57,14 @@ test('reopening a current store works and keeps its rows', () => {
   try {
     const at = clock();
     addSource(fx.store, {
-      id: 'src-1', kind: 'repo', purpose: 'the code', authorityLevel: 'authoritative',
-      sensitivity: 'internal', canRead: true, canWrite: false, at: at(),
+      id: 'src-1',
+      kind: 'repo',
+      purpose: 'the code',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: at(),
     });
     fx.store.close();
     const again = openStateStore(fx.dbPath);
@@ -92,7 +97,10 @@ test('a format-1 store is refused with the reset instruction and is not read', (
     // Untouched: the old rows are still there and no format-2 table was added.
     const check = new DatabaseSync(path);
     const tables = check.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`).all() as Array<{ name: string }>;
-    assert.deepEqual(tables.map((t) => t.name), ['meta', 'runs']);
+    assert.deepEqual(
+      tables.map((t) => t.name),
+      ['meta', 'runs'],
+    );
     check.close();
   } finally {
     cleanup();
@@ -170,7 +178,10 @@ test('a transaction that throws leaves nothing behind', () => {
       appendActivity(fx.store, { at: at(), kind: 'outer', payload: {} });
       fx.store.transaction(() => appendActivity(fx.store, { at: at(), kind: 'nested', payload: {} }));
     });
-    assert.deepEqual(listActivity(fx.store).map((e) => e.kind), ['outer', 'nested']);
+    assert.deepEqual(
+      listActivity(fx.store).map((e) => e.kind),
+      ['outer', 'nested'],
+    );
   } finally {
     fx.cleanup();
   }
@@ -180,10 +191,7 @@ test('foreign keys are enforced', () => {
   const fx = freshStore();
   try {
     assert.throws(
-      () =>
-        fx.store.db
-          .prepare(`INSERT INTO source_authority (source_id, claim_type, authoritative) VALUES ('nope', 'x', 1)`)
-          .run(),
+      () => fx.store.db.prepare(`INSERT INTO source_authority (source_id, claim_type, authoritative) VALUES ('nope', 'x', 1)`).run(),
       /FOREIGN KEY/,
     );
   } finally {
@@ -196,8 +204,14 @@ test('a complete format-2 store upgrades only when asked, in place, and keeps it
   try {
     const at = clock();
     addSource(fx.store, {
-      id: 'src-1', kind: 'repo', purpose: 'the code', authorityLevel: 'authoritative',
-      sensitivity: 'internal', canRead: true, canWrite: false, at: at(),
+      id: 'src-1',
+      kind: 'repo',
+      purpose: 'the code',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: at(),
     });
     fx.store.close();
     const db = new DatabaseSync(fx.dbPath);
@@ -207,8 +221,14 @@ test('a complete format-2 store upgrades only when asked, in place, and keeps it
     }
     db.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
     db.close();
-    assert.throws(() => openStateStore(fx.dbPath), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
-    assert.throws(() => openStateStore(fx.dbPath, { readOnly: true, migrate: true }), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
+    assert.throws(
+      () => openStateStore(fx.dbPath),
+      (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older',
+    );
+    assert.throws(
+      () => openStateStore(fx.dbPath, { readOnly: true, migrate: true }),
+      (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older',
+    );
     const again = openStateStore(fx.dbPath, { migrate: true });
     const meta = again.db.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string };
     assert.equal(meta.value, '5');
@@ -226,10 +246,21 @@ test('a complete format-2 store upgrades only when asked, in place, and keeps it
 
 /** Every table's columns in order, and every index by name: the physical shape a migration must reproduce. */
 function shape(db: DatabaseSync): Record<string, unknown> {
-  const tables = (db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name`).all() as Array<{ name: string }>).map((r) => r.name);
+  const tables = (
+    db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name`).all() as Array<{
+      name: string;
+    }>
+  ).map((r) => r.name);
   const out: Record<string, unknown> = {};
-  for (const t of tables) out[t] = (db.prepare(`PRAGMA table_info("${t}")`).all() as Array<{ name: string; type: string; notnull: number; pk: number }>).map((c) => `${c.name} ${c.type}${c.notnull ? ' NOT NULL' : ''}${c.pk ? ' PK' : ''}`);
-  out['#indexes'] = (db.prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%' ORDER BY name`).all() as Array<{ name: string }>).map((r) => r.name);
+  for (const t of tables)
+    out[t] = (db.prepare(`PRAGMA table_info("${t}")`).all() as Array<{ name: string; type: string; notnull: number; pk: number }>).map(
+      (c) => `${c.name} ${c.type}${c.notnull ? ' NOT NULL' : ''}${c.pk ? ' PK' : ''}`,
+    );
+  out['#indexes'] = (
+    db.prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND name NOT LIKE 'sqlite_%' ORDER BY name`).all() as Array<{
+      name: string;
+    }>
+  ).map((r) => r.name);
   return out;
 }
 
@@ -239,8 +270,14 @@ test('a format-3 store upgraded to format 5 has exactly the shape of a fresh one
   try {
     const at = clock();
     addSource(old.store, {
-      id: 'src-1', kind: 'repo', purpose: 'the code', authorityLevel: 'authoritative',
-      sensitivity: 'internal', canRead: true, canWrite: false, at: at(),
+      id: 'src-1',
+      kind: 'repo',
+      purpose: 'the code',
+      authorityLevel: 'authoritative',
+      sensitivity: 'internal',
+      canRead: true,
+      canWrite: false,
+      at: at(),
     });
     old.store.close();
     const db = new DatabaseSync(old.dbPath);
@@ -249,7 +286,10 @@ test('a format-3 store upgraded to format 5 has exactly the shape of a fresh one
     for (const [table, column] of FORMAT4_COLUMNS) db.exec(`ALTER TABLE ${table} DROP COLUMN ${column}`);
     db.prepare(`UPDATE meta SET value = '3' WHERE key = 'format_version'`).run();
     db.close();
-    assert.throws(() => openStateStore(old.dbPath), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
+    assert.throws(
+      () => openStateStore(old.dbPath),
+      (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older',
+    );
     const upgraded = openStateStore(old.dbPath, { migrate: true });
     assert.equal(upgraded.migratedFrom, 3);
     assert.deepEqual(shape(upgraded.db), shape(fresh.store.db));

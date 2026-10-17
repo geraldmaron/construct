@@ -109,7 +109,9 @@ export function authorityVerdict(
     }
     const authority = isAuthoritativeFor(store, claim.sourceId, input.claimType);
     if (authority !== 'yes') {
-      reasons.push(`source ${claim.sourceId} is ${authority === 'no' ? 'declared not authoritative' : 'not declared authoritative'} for ${input.claimType}`);
+      reasons.push(
+        `source ${claim.sourceId} is ${authority === 'no' ? 'declared not authoritative' : 'not declared authoritative'} for ${input.claimType}`,
+      );
       continue;
     }
     const freshness = freshnessOf(store, claim.sourceId, input.at);

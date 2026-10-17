@@ -5,7 +5,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  explainConfig, resolveConfig, configFlagsFrom, validateUserDefaults, CONFIG_KEYS, CONFIG_TIERS, userDefaultsPath,
+  explainConfig,
+  resolveConfig,
+  configFlagsFrom,
+  validateUserDefaults,
+  CONFIG_KEYS,
+  CONFIG_TIERS,
+  userDefaultsPath,
 } from '../../../src/kernel/project/config.ts';
 import { ProjectFileError } from '../../../src/kernel/project/files.ts';
 
@@ -34,12 +40,22 @@ test('each tier overrides the one below it and explain lists every candidate', (
   assert.equal(withEnv.effective.source, 'environment');
   assert.equal(withEnv.effective.origin, 'CONSTRUCT_LOCALE');
 
-  const withFlag = explainConfig({ userDefaults: user, projectConfig: project, env: { CONSTRUCT_LOCALE: 'es-ES' }, flags: { '--locale': 'it-IT' } }, 'locale');
+  const withFlag = explainConfig(
+    { userDefaults: user, projectConfig: project, env: { CONSTRUCT_LOCALE: 'es-ES' }, flags: { '--locale': 'it-IT' } },
+    'locale',
+  );
   assert.equal(withFlag.effective.value, 'it-IT');
   assert.equal(withFlag.effective.source, 'flag');
-  assert.deepEqual(withFlag.candidates.map((c) => [c.source, c.value]), [
-    ['built-in default', 'en-US'], ['user defaults', 'fr-FR'], ['project config', 'de-DE'], ['environment', 'es-ES'], ['flag', 'it-IT'],
-  ]);
+  assert.deepEqual(
+    withFlag.candidates.map((c) => [c.source, c.value]),
+    [
+      ['built-in default', 'en-US'],
+      ['user defaults', 'fr-FR'],
+      ['project config', 'de-DE'],
+      ['environment', 'es-ES'],
+      ['flag', 'it-IT'],
+    ],
+  );
 });
 
 test('a tier that may not set a key is ignored for that key', () => {
@@ -48,8 +64,14 @@ test('a tier that may not set a key is ignored for that key', () => {
   assert.equal(color.effective.value, 'never');
   assert.equal(color.effective.source, 'user defaults');
   // review.cadence is project policy: user defaults cannot set it.
-  const cadence = explainConfig({ userDefaults: { path: user.path, values: { 'review.cadence': 'weekly' } }, projectConfig: project }, 'review.cadence');
-  assert.equal(cadence.candidates.some((c) => c.source === 'user defaults'), false);
+  const cadence = explainConfig(
+    { userDefaults: { path: user.path, values: { 'review.cadence': 'weekly' } }, projectConfig: project },
+    'review.cadence',
+  );
+  assert.equal(
+    cadence.candidates.some((c) => c.source === 'user defaults'),
+    false,
+  );
   assert.equal(cadence.effective.value, 'weekly');
   assert.equal(cadence.effective.source, 'project config');
   // and an env var for a key with no env tier does nothing.
@@ -60,15 +82,24 @@ test('a tier that may not set a key is ignored for that key', () => {
 test('environment and flag values are validated like file values', () => {
   assert.throws(() => explainConfig({ env: { CONSTRUCT_LOCALE: 'not a locale!' } }, 'locale'), /language tag/);
   assert.throws(() => explainConfig({ flags: { '--color': 'sometimes' } }, 'color'), /must be one of auto \| always \| never/);
-  assert.throws(() => explainConfig({ env: { CONSTRUCT_HEADLESS_EXECUTOR: '../bin/run' } }, 'headless.executor'), /not a path or a command/);
+  assert.throws(
+    () => explainConfig({ env: { CONSTRUCT_HEADLESS_EXECUTOR: '../bin/run' } }, 'headless.executor'),
+    /not a path or a command/,
+  );
   assert.equal(explainConfig({ env: { CONSTRUCT_SOURCE_FRESHNESS_HOURS: '24' } }, 'sources.defaultFreshnessHours').effective.value, 24);
-  assert.throws(() => explainConfig({ env: { CONSTRUCT_SOURCE_FRESHNESS_HOURS: '0' } }, 'sources.defaultFreshnessHours'), /positive whole number/);
+  assert.throws(
+    () => explainConfig({ env: { CONSTRUCT_SOURCE_FRESHNESS_HOURS: '0' } }, 'sources.defaultFreshnessHours'),
+    /positive whole number/,
+  );
   assert.equal(explainConfig({ env: { CONSTRUCT_LOCALE: '' } }, 'locale').effective.source, 'built-in default');
   assert.throws(() => explainConfig({}, 'nope'), /unknown configuration key/);
 });
 
 test('flags are collected only for known config flags, in both spellings', () => {
-  assert.deepEqual(configFlagsFrom(['--locale=fr-FR', '--color', 'never', '--json', '--unknown=1', '--executor']), { '--locale': 'fr-FR', '--color': 'never' });
+  assert.deepEqual(configFlagsFrom(['--locale=fr-FR', '--color', 'never', '--json', '--unknown=1', '--executor']), {
+    '--locale': 'fr-FR',
+    '--color': 'never',
+  });
 });
 
 test('user defaults are a closed presentation schema in the per-user config dir', () => {
@@ -76,8 +107,14 @@ test('user defaults are a closed presentation schema in the per-user config dir'
   assert.equal(path, '/home/u/.config/construct/config.json');
   const ok = validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 1, values: { locale: 'fr-FR' } }, path);
   assert.deepEqual(ok.values, { locale: 'fr-FR' });
-  assert.throws(() => validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 1, values: { 'policy.projectWrite': 'never' } }, path), /cannot be set by user defaults/);
-  assert.throws(() => validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 1, values: { githubToken: 'x' } }, path), ProjectFileError);
+  assert.throws(
+    () => validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 1, values: { 'policy.projectWrite': 'never' } }, path),
+    /cannot be set by user defaults/,
+  );
+  assert.throws(
+    () => validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 1, values: { githubToken: 'x' } }, path),
+    ProjectFileError,
+  );
   assert.throws(() => validateUserDefaults({ format: 'construct-user-defaults', formatVersion: 2, values: {} }, path), /does not read/);
   for (const spec of CONFIG_KEYS) assert.ok(spec.settableBy.length > 0, `${spec.key} is settable somewhere`);
 });

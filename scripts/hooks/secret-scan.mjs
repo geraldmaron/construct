@@ -77,9 +77,7 @@ function stagedDiff() {
 function main() {
   const hits = scanDiff(stagedDiff());
   if (hits.length > 0) {
-    process.stderr.write(
-      `secret-scan: blocked commit — possible ${[...new Set(hits)].join(', ')} in staged changes\n`,
-    );
+    process.stderr.write(`secret-scan: blocked commit — possible ${[...new Set(hits)].join(', ')} in staged changes\n`);
     process.exit(1);
   }
 }

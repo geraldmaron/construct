@@ -6,7 +6,16 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import type { PathsEnv } from '../../kernel/paths.ts';
-import { clientWiring, configPathFor, launchFor, MCP_SERVER_NAME, projectsOfEntry, shownPath, type ClientWiring, type WirableClient } from './clients.ts';
+import {
+  clientWiring,
+  configPathFor,
+  launchFor,
+  MCP_SERVER_NAME,
+  projectsOfEntry,
+  shownPath,
+  type ClientWiring,
+  type WirableClient,
+} from './clients.ts';
 import { launchParts, mergeMcpServerEntry, readMcpServerEntry } from './merge-mcp.ts';
 import { mergeTomlServerTable, readTomlServerTable } from './merge-toml.ts';
 import { mergeYamlServerBlock, readYamlServerBlock } from './merge-yaml.ts';
@@ -53,7 +62,11 @@ export function launchOf(client: WirableClient, projectRoot: string, env: PathsE
   const w = clientWiring(client)!;
   const entry = readEntry(w, configPathFor(w, projectRoot, env));
   if (!entry || foreignBinding(w, entry, projectRoot) !== null) return null;
-  const [command, ...rest] = Array.isArray(entry.command) ? entry.command.map(String) : typeof entry.command === 'string' ? [entry.command] : [];
+  const [command, ...rest] = Array.isArray(entry.command)
+    ? entry.command.map(String)
+    : typeof entry.command === 'string'
+      ? [entry.command]
+      : [];
   if (!command) return null;
   return { command, args: Array.isArray(entry.command) ? rest : Array.isArray(entry.args) ? entry.args.map(String) : [] };
 }
@@ -72,22 +85,43 @@ export function inspectWiring(client: WirableClient, projectRoot: string, env: P
   if (!entry) return { client, path, status: 'absent', detail: `no ${MCP_SERVER_NAME} entry in ${shown}` };
   const foreign = foreignBinding(w, entry, projectRoot);
   if (foreign !== null) return { client, path, status: 'absent', detail: `${shown} ${foreign}, not this project` };
-  if ((client === 'bob' && entry.disabled === true) || ((client === 'codex' || client === 'opencode' || client === 'hermes') && entry.enabled === false)) {
-    return { client, path, status: 'broken', detail: `${shown} has construct disabled. Enable construct in ${w.label}'s MCP settings or this file, then restart the server.` };
+  if (
+    (client === 'bob' && entry.disabled === true) ||
+    ((client === 'codex' || client === 'opencode' || client === 'hermes') && entry.enabled === false)
+  ) {
+    return {
+      client,
+      path,
+      status: 'broken',
+      detail: `${shown} has construct disabled. Enable construct in ${w.label}'s MCP settings or this file, then restart the server.`,
+    };
   }
   const repair = `\`construct init --client=${client}\` rewrites it`;
   const pinned = machinePaths(entry);
   const gone = pinned.find((p) => !existsSync(p));
-  if (gone) return { client, path, status: 'broken', detail: `${shown} starts ${gone}, which no longer exists (another machine's path or an old Node); ${repair}` };
-  if (!w.bound(entry)) return { client, path, status: 'broken', detail: `${shown} has a ${MCP_SERVER_NAME} entry that does not start serve --client=${client}; ${repair}` };
+  if (gone)
+    return {
+      client,
+      path,
+      status: 'broken',
+      detail: `${shown} starts ${gone}, which no longer exists (another machine's path or an old Node); ${repair}`,
+    };
+  if (!w.bound(entry))
+    return {
+      client,
+      path,
+      status: 'broken',
+      detail: `${shown} has a ${MCP_SERVER_NAME} entry that does not start serve --client=${client}; ${repair}`,
+    };
   const line = launchParts(entry).join(' ');
   return {
     client,
     path,
     status: 'installed',
-    detail: pinned.length > 0
-      ? `${shown} starts ${line}, a path on this machine only; \`construct init --client=${client}\` writes one that works on any machine`
-      : `${shown} starts ${line}`,
+    detail:
+      pinned.length > 0
+        ? `${shown} starts ${line}, a path on this machine only; \`construct init --client=${client}\` writes one that works on any machine`
+        : `${shown} starts ${line}`,
   };
 }
 
@@ -95,17 +129,20 @@ export function installWiring(client: WirableClient, projectRoot: string, env: P
   const w = clientWiring(client)!;
   const path = configPathFor(w, projectRoot, env);
   const launch = launchFor(projectRoot);
-  const result = w.format === 'toml'
-    ? mergeTomlServerTable(path, MCP_SERVER_NAME, w.entry(launch, projectRoot))
-    : w.format === 'yaml'
-      ? mergeYamlServerBlock(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), {
-        // A user-level file serves one project; rebinding it would silently cut the other project off.
-        conflict: (existing) => {
-          const foreign = foreignBinding(w, existing, projectRoot);
-          return foreign === null ? null : `it already ${foreign}; one ${w.label} profile serves one Construct project, so run ${w.label} for this project with its own HERMES_HOME, or remove that entry first`;
-        },
-      })
-      : mergeMcpServerEntry(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), { serversKey: w.serversKey });
+  const result =
+    w.format === 'toml'
+      ? mergeTomlServerTable(path, MCP_SERVER_NAME, w.entry(launch, projectRoot))
+      : w.format === 'yaml'
+        ? mergeYamlServerBlock(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), {
+            // A user-level file serves one project; rebinding it would silently cut the other project off.
+            conflict: (existing) => {
+              const foreign = foreignBinding(w, existing, projectRoot);
+              return foreign === null
+                ? null
+                : `it already ${foreign}; one ${w.label} profile serves one Construct project, so run ${w.label} for this project with its own HERMES_HOME, or remove that entry first`;
+            },
+          })
+        : mergeMcpServerEntry(path, MCP_SERVER_NAME, w.entry(launch, projectRoot), { serversKey: w.serversKey });
   if (!result.ok) return { client, path, status: 'broken', detail: `could not write ${shownPath(w, path)}: ${result.reason}` };
   const inspected = inspectWiring(client, projectRoot, env);
   if (inspected.status !== 'installed' || result.replaced.length === 0) return inspected;

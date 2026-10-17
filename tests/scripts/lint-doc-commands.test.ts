@@ -35,7 +35,9 @@ async function lint(root: string): Promise<{ code: number; err: string }> {
 }
 
 test('real commands pass: a noun with subcommand, a bare command, and their flags', async () => {
-  const { root, cleanup } = repoWith('Run `construct source add repo --kind=directory --purpose="files" --json`, then:\n\n```bash\nconstruct status --json\nconstruct config explain locale\nconstruct init --dry-run\n```\n');
+  const { root, cleanup } = repoWith(
+    'Run `construct source add repo --kind=directory --purpose="files" --json`, then:\n\n```bash\nconstruct status --json\nconstruct config explain locale\nconstruct init --dry-run\n```\n',
+  );
   try {
     assert.equal((await lint(root)).code, 0);
   } finally {
@@ -77,7 +79,9 @@ test('a documented flag the command does not accept fails the lint', async () =>
 });
 
 test('prose and output transcripts are not commands', async () => {
-  const { root, cleanup } = repoWith('When you run construct outcome nothing happens.\n\n```text\nconstruct outcome printed this once\n```\n');
+  const { root, cleanup } = repoWith(
+    'When you run construct outcome nothing happens.\n\n```text\nconstruct outcome printed this once\n```\n',
+  );
   try {
     assert.equal((await lint(root)).code, 0);
   } finally {

@@ -49,7 +49,14 @@ export function sandbox(): Sandbox {
   mkdirSync(join(cwd, '.git'));
   writeFileSync(join(cwd, 'README.md'), '# Demo\n\nA demo project for the CLI tests.\n', 'utf8');
   writeFileSync(join(cwd, 'package.json'), JSON.stringify({ name: 'demo', description: 'A demo project' }), 'utf8');
-  const env: NodeJS.ProcessEnv = { HOME: home, XDG_CONFIG_HOME: join(home, '.config'), XDG_STATE_HOME: join(home, '.state'), XDG_DATA_HOME: join(home, '.data'), XDG_CACHE_HOME: join(home, '.cache'), PATH: sterileBin(home) };
+  const env: NodeJS.ProcessEnv = {
+    HOME: home,
+    XDG_CONFIG_HOME: join(home, '.config'),
+    XDG_STATE_HOME: join(home, '.state'),
+    XDG_DATA_HOME: join(home, '.data'),
+    XDG_CACHE_HOME: join(home, '.cache'),
+    PATH: sterileBin(home),
+  };
   for (const key of AMBIENT_ENV_KEYS) delete env[key];
   let n = 0;
   let t = Date.parse('2026-09-02T12:00:00.000Z');
@@ -59,14 +66,27 @@ export function sandbox(): Sandbox {
     now: () => new Date((t += 1000)).toISOString(),
     nextId: (prefix) => `${prefix}-${String(++n).padStart(4, '0')}`,
   };
-  return { cwd, home, ctx, cleanup: () => { rmSync(cwd, { recursive: true, force: true }); rmSync(home, { recursive: true, force: true }); } };
+  return {
+    cwd,
+    home,
+    ctx,
+    cleanup: () => {
+      rmSync(cwd, { recursive: true, force: true });
+      rmSync(home, { recursive: true, force: true });
+    },
+  };
 }
 
 /** An initialized, fully answered project. */
 export async function inProject(fn: (ctx: CliContext, box: Sandbox) => Promise<void> | void): Promise<void> {
   const box = sandbox();
   try {
-    const init = await capture(() => run(['init', '--scale=solo', '--outcome=ship it', '--constraint=never break the API', `--skills-dir=${join(box.home, 'skills')}`], box.ctx));
+    const init = await capture(() =>
+      run(
+        ['init', '--scale=solo', '--outcome=ship it', '--constraint=never break the API', `--skills-dir=${join(box.home, 'skills')}`],
+        box.ctx,
+      ),
+    );
     if (init.code !== 0) throw new Error(`init failed: ${init.err}${init.out}`);
     await fn(box.ctx, box);
   } finally {

@@ -23,7 +23,16 @@ function cli(fx: SterileFixture, cwd: string, args: string[], overrides: NodeJS.
   const r = spawnSync(process.execPath, [LAUNCHER, ...args], {
     cwd,
     encoding: 'utf8',
-    env: { PATH: process.env.PATH, HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, NO_COLOR: '1', ...overrides },
+    env: {
+      PATH: process.env.PATH,
+      HOME: join(fx.root, 'home'),
+      XDG_CONFIG_HOME: fx.paths.configDir,
+      XDG_STATE_HOME: fx.paths.stateDir,
+      XDG_DATA_HOME: fx.paths.dataDir,
+      XDG_CACHE_HOME: fx.paths.cacheDir,
+      NO_COLOR: '1',
+      ...overrides,
+    },
   });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
@@ -43,7 +52,8 @@ function toFormat2(db: string): void {
   d.exec('PRAGMA journal_mode = DELETE');
   d.exec('PRAGMA foreign_keys = OFF');
   d.exec(`CREATE TABLE keep_work AS SELECT * FROM work_items`);
-  for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) d.exec(`DROP TABLE IF EXISTS ${table}`);
+  for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items'])
+    d.exec(`DROP TABLE IF EXISTS ${table}`);
   d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
   d.prepare(`DELETE FROM meta WHERE key = 'project_id'`).run();
   d.close();
@@ -75,7 +85,10 @@ function backupsIn(dir: string): string[] {
 
 /** A process that holds the store open and idle, as an agent session's MCP server does. */
 async function holdOpen(db: string): Promise<ChildProcess> {
-  const holder = spawn(process.execPath, ['-e', `const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(${JSON.stringify(db)}); d.prepare('SELECT 1').get(); process.stdout.write('open\\n'); setTimeout(() => {}, 60000);`]);
+  const holder = spawn(process.execPath, [
+    '-e',
+    `const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(${JSON.stringify(db)}); d.prepare('SELECT 1').get(); process.stdout.write('open\\n'); setTimeout(() => {}, 60000);`,
+  ]);
   await new Promise<void>((resolve) => holder.stdout!.once('data', () => resolve()));
   return holder;
 }
@@ -123,7 +136,11 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
     const upgraded = new DatabaseSync(db, { readOnly: true });
     assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '5');
     const projectId = (JSON.parse(readFileSync(join(dir, '.construct', 'project.json'), 'utf8')) as { id: string }).id;
-    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'project_id'`).get() as { value: string } | undefined)?.value, projectId, 'the upgrade stamps the store with its project');
+    assert.equal(
+      (upgraded.prepare(`SELECT value FROM meta WHERE key = 'project_id'`).get() as { value: string } | undefined)?.value,
+      projectId,
+      'the upgrade stamps the store with its project',
+    );
     upgraded.close();
     const second = cli(fx, dir, ['migrate', '--json']);
     assert.equal(second.status, 0);
@@ -153,7 +170,15 @@ test('migrate refuses a newer store and leaves it as it was', () => {
 });
 
 function envOf(fx: SterileFixture): NodeJS.ProcessEnv {
-  return { PATH: process.env.PATH, HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, NO_COLOR: '1' };
+  return {
+    PATH: process.env.PATH,
+    HOME: join(fx.root, 'home'),
+    XDG_CONFIG_HOME: fx.paths.configDir,
+    XDG_STATE_HOME: fx.paths.stateDir,
+    XDG_DATA_HOME: fx.paths.dataDir,
+    XDG_CACHE_HOME: fx.paths.cacheDir,
+    NO_COLOR: '1',
+  };
 }
 
 function rowCounts(db: string, tables: readonly string[]): Record<string, number> {
@@ -171,12 +196,20 @@ test('every row an older store holds is still there after migrate', () => {
     const { dir, db } = project(fx);
     toFormat2(db);
     const d = new DatabaseSync(db, { readOnly: true });
-    const tables = (d.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as Array<{ name: string }>).map((r) => r.name);
+    const tables = (
+      d.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as Array<{ name: string }>
+    ).map((r) => r.name);
     d.close();
     const before = rowCounts(db, tables);
-    assert.ok(Object.values(before).some((n) => n > 0), 'the fixture carries rows');
+    assert.ok(
+      Object.values(before).some((n) => n > 0),
+      'the fixture carries rows',
+    );
     assert.equal(cli(fx, dir, ['migrate']).status, 0);
-    const after = rowCounts(db, tables.filter((t) => t !== 'meta'));
+    const after = rowCounts(
+      db,
+      tables.filter((t) => t !== 'meta'),
+    );
     for (const [table, n] of Object.entries(after)) assert.equal(n, before[table], `${table} rows`);
   } finally {
     fx.cleanup();
@@ -206,7 +239,10 @@ test('reset refuses while another process has the store open, and --force leaves
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    const holder = spawn(process.execPath, ['-e', `const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(${JSON.stringify(db)}); d.prepare('SELECT 1').get(); process.stdout.write('open\\n'); setTimeout(() => {}, 60000);`]);
+    const holder = spawn(process.execPath, [
+      '-e',
+      `const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(${JSON.stringify(db)}); d.prepare('SELECT 1').get(); process.stdout.write('open\\n'); setTimeout(() => {}, 60000);`,
+    ]);
     await new Promise<void>((resolve) => holder.stdout.once('data', () => resolve()));
     try {
       const refused = cli(fx, dir, ['reset', '--confirm']);
@@ -301,14 +337,17 @@ test('the backup is taken under the upgrade’s write lock: a write that lands w
     const { dir, db } = project(fx);
     toFormat3(db);
     // Another writer holds the lock with a row not yet committed, and commits once migrate is waiting.
-    const writer = spawn(process.execPath, ['-e', `
+    const writer = spawn(process.execPath, [
+      '-e',
+      `
       const { DatabaseSync } = require('node:sqlite');
       const d = new DatabaseSync(${JSON.stringify(db)});
       d.exec('BEGIN IMMEDIATE');
       d.prepare("INSERT INTO work_items (id, kind, title, description, status, created_at, updated_at) VALUES ('w-late', 'task', 'late', 'written while migrate waited', 'open', '2026-09-24T00:00:00.000Z', '2026-09-24T00:00:00.000Z')").run();
       process.stdout.write('locked\\n');
       setTimeout(() => { d.exec('COMMIT'); d.close(); }, 2500);
-    `]);
+    `,
+    ]);
     await new Promise<void>((resolve) => writer.stdout.once('data', () => resolve()));
     const r = await cliAsync(fx, dir, ['migrate', '--json', '--force']);
     assert.equal(r.status, 0, r.out);
@@ -317,7 +356,11 @@ test('the backup is taken under the upgrade’s write lock: a write that lands w
     const backup = new DatabaseSync(record.backup, { readOnly: true });
     try {
       assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '3');
-      assert.equal((backup.prepare(`SELECT COUNT(*) AS n FROM work_items WHERE id = 'w-late'`).get() as { n: number }).n, 1, 'the backup holds the store the upgrade started from');
+      assert.equal(
+        (backup.prepare(`SELECT COUNT(*) AS n FROM work_items WHERE id = 'w-late'`).get() as { n: number }).n,
+        1,
+        'the backup holds the store the upgrade started from',
+      );
     } finally {
       backup.close();
     }
@@ -342,5 +385,7 @@ test('migration refuses unavailable holder inspection without backup or writes; 
     assert.equal(forced.status, 0, forced.out);
     assert.equal(formatOf(db), '5');
     assert.equal(backupsIn(dir).length, 1);
-  } finally { fx.cleanup(); }
+  } finally {
+    fx.cleanup();
+  }
 });

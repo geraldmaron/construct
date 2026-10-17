@@ -4,7 +4,10 @@ import { runnerCapabilities, executorSupport, executorCommand, prepareExecutor }
 import { WIRABLE_CLIENTS } from '../../src/hosts/wiring/clients.ts';
 
 test('every supported interactive host has an explicit unattended status, with no fallback or inherited grants', async () => {
-  assert.deepEqual(executorSupport().map((row) => row.host), [...WIRABLE_CLIENTS]);
+  assert.deepEqual(
+    executorSupport().map((row) => row.host),
+    [...WIRABLE_CLIENTS],
+  );
   for (const row of executorSupport()) {
     if (!row.supported) {
       assert.deepEqual(runnerCapabilities(row.host), []);

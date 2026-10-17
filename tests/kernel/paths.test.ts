@@ -17,10 +17,7 @@ test('resolvePaths honors XDG overrides over HOME', () => {
 });
 
 test('an empty XDG value is unset, per the spec, never a relative base', () => {
-  const paths = resolvePaths(
-    { XDG_CONFIG_HOME: '', XDG_STATE_HOME: '', XDG_DATA_HOME: '', XDG_CACHE_HOME: '' },
-    '/tmp/fixture-home',
-  );
+  const paths = resolvePaths({ XDG_CONFIG_HOME: '', XDG_STATE_HOME: '', XDG_DATA_HOME: '', XDG_CACHE_HOME: '' }, '/tmp/fixture-home');
   assert.equal(paths.stateDir, '/tmp/fixture-home/.local/state/construct');
   assert.equal(paths.configDir, '/tmp/fixture-home/.config/construct');
   assert.equal(paths.dataDir, '/tmp/fixture-home/.local/share/construct');

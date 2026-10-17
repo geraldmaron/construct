@@ -9,12 +9,7 @@
 
 import type { StateStore } from './open.ts';
 import { DECISION_CHANNELS, isPersonChannel, type DecisionChannel } from '../policy/channels.ts';
-import {
-  assertTransition,
-  requireInstant,
-  requireNonEmpty,
-  requireOneOf,
-} from './rows.ts';
+import { assertTransition, requireInstant, requireNonEmpty, requireOneOf } from './rows.ts';
 
 export const PROJECT_SCALES = ['solo', 'side_project', 'team', 'multi_team', 'organization'] as const;
 export type ProjectScale = (typeof PROJECT_SCALES)[number];
@@ -61,9 +56,7 @@ function toProfile(row: ProfileRow): ProjectProfile {
 }
 
 export function getProfile(store: StateStore): ProjectProfile | null {
-  const row = store.db.prepare('SELECT * FROM project_profile WHERE id = 1').get() as
-    | ProfileRow
-    | undefined;
+  const row = store.db.prepare('SELECT * FROM project_profile WHERE id = 1').get() as ProfileRow | undefined;
   return row ? toProfile(row) : null;
 }
 
@@ -72,11 +65,7 @@ export type ProfilePatch = Partial<Omit<ProjectProfile, 'updatedAt' | 'onboardin
 };
 
 /** Create or update the single profile row. Omitted fields are kept. */
-export function upsertProfile(
-  store: StateStore,
-  patch: ProfilePatch,
-  at: string,
-): ProjectProfile {
+export function upsertProfile(store: StateStore, patch: ProfilePatch, at: string): ProjectProfile {
   requireInstant(at, 'profile.at');
   if (patch.scale !== undefined && patch.scale !== null) {
     requireOneOf(patch.scale, PROJECT_SCALES, 'profile.scale');
@@ -165,7 +154,8 @@ export const STATEMENT_VOICES = ['person', 'relayed', 'inferred', 'unrecorded'] 
 export type StatementVoice = (typeof STATEMENT_VOICES)[number];
 
 export function voiceOf(channel: string | null, status: StatementStatus, provenance: StatementProvenance): StatementVoice {
-  if (channel !== null && (DECISION_CHANNELS as readonly string[]).includes(channel) && isPersonChannel(channel as DecisionChannel)) return 'person';
+  if (channel !== null && (DECISION_CHANNELS as readonly string[]).includes(channel) && isPersonChannel(channel as DecisionChannel))
+    return 'person';
   if (channel === 'relay') return 'relayed';
   if (status === 'proposed' && provenance !== 'user') return 'inferred';
   return 'unrecorded';
@@ -329,9 +319,7 @@ export function addStatement(
 }
 
 export function getStatement(store: StateStore, id: string): Statement | null {
-  const row = store.db.prepare('SELECT * FROM statements WHERE id = ?').get(id) as
-    | StatementRow
-    | undefined;
+  const row = store.db.prepare('SELECT * FROM statements WHERE id = ?').get(id) as StatementRow | undefined;
   return row ? toStatement(row) : null;
 }
 
@@ -345,12 +333,7 @@ export function listStatements(
         WHERE (? IS NULL OR kind = ?) AND (? IS NULL OR status = ?)
         ORDER BY created_at, id`,
     )
-    .all(
-      filter.kind ?? null,
-      filter.kind ?? null,
-      filter.status ?? null,
-      filter.status ?? null,
-    ) as unknown as StatementRow[];
+    .all(filter.kind ?? null, filter.kind ?? null, filter.status ?? null, filter.status ?? null) as unknown as StatementRow[];
   return rows.map(toStatement);
 }
 
@@ -382,9 +365,7 @@ export function setStatementStatus(
       }
     }
     store.db
-      .prepare(
-        `UPDATE statements SET status = ?, superseded_by = ?, updated_at = ?, channel = COALESCE(?, channel) WHERE id = ?`,
-      )
+      .prepare(`UPDATE statements SET status = ?, superseded_by = ?, updated_at = ?, channel = COALESCE(?, channel) WHERE id = ?`)
       .run(input.status, input.supersededBy ?? null, input.at, input.channel ?? null, input.id);
     return getStatement(store, input.id)!;
   });

@@ -47,12 +47,18 @@ test('two sessions of one host hold separate identities, and a claim is theirs a
     }
     const check = new DatabaseSync(db, { readOnly: true });
     try {
-      const sessions = check.prepare('SELECT id, host, surface, host_session_id, host_session_source, client_name, ended_at FROM sessions ORDER BY started_at').all() as Array<Record<string, string | null>>;
+      const sessions = check
+        .prepare('SELECT id, host, surface, host_session_id, host_session_source, client_name, ended_at FROM sessions ORDER BY started_at')
+        .all() as Array<Record<string, string | null>>;
       assert.equal(sessions.length, 2);
       assert.notEqual(sessions[0]!.id, sessions[1]!.id);
       assert.deepEqual(sessions.map((s) => s.host_session_id).sort(), ['host-session-a', 'host-session-b']);
-      assert.ok(sessions.every((s) => s.host_session_source === 'CLAUDE_CODE_SESSION_ID' && s.client_name === 'test-host' && s.ended_at !== null));
-      const acts = check.prepare(`SELECT actor, session_id, channel FROM activity_events WHERE kind = 'work.claimed'`).all() as Array<Record<string, string | null>>;
+      assert.ok(
+        sessions.every((s) => s.host_session_source === 'CLAUDE_CODE_SESSION_ID' && s.client_name === 'test-host' && s.ended_at !== null),
+      );
+      const acts = check.prepare(`SELECT actor, session_id, channel FROM activity_events WHERE kind = 'work.claimed'`).all() as Array<
+        Record<string, string | null>
+      >;
       assert.ok(acts.length >= 1);
       for (const act of acts) {
         assert.match(String(act.session_id), /^ses_/);
@@ -75,9 +81,13 @@ test('nothing a session writes over MCP is recorded as the person', { timeout: 6
     try {
       await s.request('initialize', INITIALIZE);
       const boot = await s.ok('bootstrap');
-      const question = (boot.profile as { openQuestions: Array<{ id: string; options: string[] | null }> }).openQuestions.find((q) => q.options);
+      const question = (boot.profile as { openQuestions: Array<{ id: string; options: string[] | null }> }).openQuestions.find(
+        (q) => q.options,
+      );
       if (question) await s.ok('decide', { decisionId: question.id, resolution: question.options![0] });
-      const reason = (await s.ok('remember', { kind: 'decision', text: 'We keep one store per project.' })) as { remembered: { id: string } };
+      const reason = (await s.ok('remember', { kind: 'decision', text: 'We keep one store per project.' })) as {
+        remembered: { id: string };
+      };
       const added = await s.ok('work', { action: 'add', serves: reason.remembered.id, title: 'attributed item' });
       const claimed = await s.ok('work', { action: 'claim', id: added.id, agent: 'helper' });
       await s.ok('work', { action: 'complete', id: added.id, token: claimed.claimToken, agent: 'helper' });
@@ -86,7 +96,11 @@ test('nothing a session writes over MCP is recorded as the person', { timeout: 6
     }
     const check = new DatabaseSync(db, { readOnly: true });
     try {
-      const asPerson = check.prepare(`SELECT kind, actor, channel FROM activity_events WHERE session_id IS NOT NULL AND actor LIKE '%person%' AND (channel IS NULL OR channel <> 'tty_cli')`).all();
+      const asPerson = check
+        .prepare(
+          `SELECT kind, actor, channel FROM activity_events WHERE session_id IS NOT NULL AND actor LIKE '%person%' AND (channel IS NULL OR channel <> 'tty_cli')`,
+        )
+        .all();
       assert.deepEqual(asPerson, [], 'no MCP-written row names the person without a person channel');
       const byHelper = check.prepare(`SELECT COUNT(*) AS n FROM activity_events WHERE agent = 'helper'`).get() as { n: number };
       assert.ok(byHelper.n >= 1, 'an agent that names itself is recorded on its rows');
@@ -110,7 +124,10 @@ test('a server stopped by signal ends its session', { timeout: 60_000 }, async (
     await s.kill('SIGTERM');
     const check = new DatabaseSync(db, { readOnly: true });
     try {
-      const row = check.prepare('SELECT ended_at, end_reason FROM sessions').get() as { ended_at: string | null; end_reason: string | null };
+      const row = check.prepare('SELECT ended_at, end_reason FROM sessions').get() as {
+        ended_at: string | null;
+        end_reason: string | null;
+      };
       assert.ok(row.ended_at, 'the session ended');
     } finally {
       check.close();

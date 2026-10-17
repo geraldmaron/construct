@@ -12,9 +12,17 @@ test('the conformance run needs no credential and reports every host as passed, 
   const out = mkdtempSync(join(tmpdir(), 'construct-conformance-test-'));
   try {
     const report = join(out, 'report.json');
-    const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'conformance.mjs'), `--out=${report}`], { cwd: ROOT, encoding: 'utf8', env: { ...process.env, CLAUDECODE: '1' } });
+    const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'conformance.mjs'), `--out=${report}`], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: { ...process.env, CLAUDECODE: '1' },
+    });
     assert.equal(r.status, 0, r.stdout + r.stderr);
-    const parsed = JSON.parse(readFileSync(report, 'utf8')) as { live: boolean; summary: { passed: number; failed: number; untested: number }; checks: { host: string; check: string; status: string; detail: string }[] };
+    const parsed = JSON.parse(readFileSync(report, 'utf8')) as {
+      live: boolean;
+      summary: { passed: number; failed: number; untested: number };
+      checks: { host: string; check: string; status: string; detail: string }[];
+    };
     assert.equal(parsed.live, false);
     assert.equal(parsed.summary.failed, 0);
     assert.ok(parsed.summary.passed > 0);
@@ -23,7 +31,10 @@ test('the conformance run needs no credential and reports every host as passed, 
       if (c.status === 'untested') assert.ok(c.detail.length > 10, `${c.host}/${c.check} is untested without a reason`);
     }
     for (const host of ['claude-code', 'cursor', 'vscode', 'opencode', 'codex', 'bob']) {
-      assert.ok(parsed.checks.some((c) => c.host === host && c.check === 'live host call' && c.status === 'untested'), `${host}: a static run never claims a live host call`);
+      assert.ok(
+        parsed.checks.some((c) => c.host === host && c.check === 'live host call' && c.status === 'untested'),
+        `${host}: a static run never claims a live host call`,
+      );
       for (const check of ['documented configuration simulation', 'protocol profile simulation']) {
         const result = parsed.checks.find((c) => c.host === host && c.check === check);
         assert.equal(result?.status, 'passed', `${host}/${check}: ${result?.detail ?? 'missing'}`);

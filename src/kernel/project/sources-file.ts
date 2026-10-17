@@ -9,15 +9,7 @@
 
 import { AUTHORITY_LEVELS, SENSITIVITIES, type AuthorityLevel, type Sensitivity } from '../state/sources.ts';
 import { urlCarriesCredentials } from './urls.ts';
-import {
-  ProjectFileError,
-  expectFormat,
-  expectRecord,
-  isRecord,
-  optionalString,
-  refuseForbiddenKeys,
-  stringList,
-} from './files.ts';
+import { ProjectFileError, expectFormat, expectRecord, isRecord, optionalString, refuseForbiddenKeys, stringList } from './files.ts';
 
 export const SOURCES_FORMAT = 'construct-sources';
 export const SOURCES_VERSION = 2;
@@ -50,7 +42,9 @@ export function emptySourcesFile(): SourcesFile {
 export function serializeSourcesFile(file: SourcesFile): {
   readonly format: typeof SOURCES_FORMAT;
   readonly formatVersion: typeof SOURCES_VERSION;
-  readonly sources: readonly (Omit<DeclaredSource, 'read' | 'write'> & { readonly capabilities: { readonly read: boolean; readonly write: boolean } })[];
+  readonly sources: readonly (Omit<DeclaredSource, 'read' | 'write'> & {
+    readonly capabilities: { readonly read: boolean; readonly write: boolean };
+  })[];
 } {
   return {
     format: file.format,
@@ -69,7 +63,9 @@ export function locatorCarriesCredentials(locator: string): boolean {
   try {
     const parsed = new URL(locator.trim());
     if (parsed.username || parsed.password) return true;
-  } catch { /* Opaque provider locators retain their existing grammar. */ }
+  } catch {
+    /* Opaque provider locators retain their existing grammar. */
+  }
   return USERINFO.test(locator.trim());
 }
 
@@ -85,7 +81,10 @@ export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
     const where = `${path} "sources[${String(i)}]"`;
     if (!isRecord(item)) throw new ProjectFileError(where, 'must be an object');
     if (Object.hasOwn(item, 'read') || Object.hasOwn(item, 'write')) {
-      throw new ProjectFileError(where, 'top-level read/write permissions are ambiguous; explicitly set capabilities.read and capabilities.write to the intended booleans, then remove the top-level read/write fields and retry');
+      throw new ProjectFileError(
+        where,
+        'top-level read/write permissions are ambiguous; explicitly set capabilities.read and capabilities.write to the intended booleans, then remove the top-level read/write fields and retry',
+      );
     }
     const id = str(item, 'id', where);
     if (!SOURCE_ID.test(id)) throw new ProjectFileError(where, '"id" must be lowercase letters, digits, and dashes');
@@ -93,7 +92,10 @@ export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
     seen.add(id);
     const locator = optionalString(item, 'locator', where);
     if (locator !== null && locatorCarriesCredentials(locator)) {
-      throw new ProjectFileError(where, '"locator" carries credentials; keep credentials with the host or connector, never in a committed file');
+      throw new ProjectFileError(
+        where,
+        '"locator" carries credentials; keep credentials with the host or connector, never in a committed file',
+      );
     }
     const authorityLevel = str(item, 'authorityLevel', where);
     if (!(AUTHORITY_LEVELS as readonly string[]).includes(authorityLevel)) {

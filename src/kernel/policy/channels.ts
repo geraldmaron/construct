@@ -36,8 +36,12 @@ export function isPersonChannel(channel: DecisionChannel): boolean {
  * declines.
  */
 export function personStepFor(decisionId: string | null, answer: string | null = null): string {
-  if (!decisionId) return 'The person gives this answer directly, in their own terminal with `construct inbox`. A model relaying their words cannot give it.';
-  const command = answer === null ? `\`construct inbox resolve ${decisionId} approve\` (or decline)` : `\`construct inbox resolve ${decisionId} ${answer}\``;
+  if (!decisionId)
+    return 'The person gives this answer directly, in their own terminal with `construct inbox`. A model relaying their words cannot give it.';
+  const command =
+    answer === null
+      ? `\`construct inbox resolve ${decisionId} approve\` (or decline)`
+      : `\`construct inbox resolve ${decisionId} ${answer}\``;
   return `The person answers this directly: they run ${command} in their own terminal. A model relaying their words cannot give this answer.`;
 }
 

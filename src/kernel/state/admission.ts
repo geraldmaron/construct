@@ -17,12 +17,7 @@ import {
   type Entity,
   type EntityKind,
 } from './graph.ts';
-import {
-  getStatement,
-  setStatementStatus,
-  type Statement,
-  type StatementKind,
-} from './profile.ts';
+import { getStatement, setStatementStatus, type Statement, type StatementKind } from './profile.ts';
 
 export const GOVERNING_STATEMENT_KINDS = ['decision', 'constraint', 'principle', 'outcome', 'invariant'] as const;
 export type GoverningStatementKind = (typeof GOVERNING_STATEMENT_KINDS)[number];
@@ -200,7 +195,10 @@ export function implicationsOf(store: StateStore, entityId: string): Entity[] {
   };
   for (const r of relations) {
     if (r.fromId === entityId && (r.kind === 'governs' || r.kind === 'depends_on')) add(r.toId);
-    if (r.toId === entityId && (r.kind === 'depends_on' || r.kind === 'implements' || r.kind === 'contributes_to' || r.kind === 'verifies')) {
+    if (
+      r.toId === entityId &&
+      (r.kind === 'depends_on' || r.kind === 'implements' || r.kind === 'contributes_to' || r.kind === 'verifies')
+    ) {
       add(r.fromId);
     }
   }

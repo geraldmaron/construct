@@ -31,7 +31,10 @@ test('construct and adversarial-review carry behavior evals that pass on the cur
 });
 
 test('every professional pack carries behavior evals that pass on the current digest', () => {
-  const professional = skills.list().filter((s) => s.manifest.category === 'professional').map((s) => s.manifest.id);
+  const professional = skills
+    .list()
+    .filter((s) => s.manifest.category === 'professional')
+    .map((s) => s.manifest.id);
   assert.ok(professional.length >= 9, `expected professional packs, got ${professional.join(',')}`);
   for (const id of professional) assertBehavior(id);
 });

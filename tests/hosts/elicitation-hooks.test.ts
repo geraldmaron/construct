@@ -23,15 +23,24 @@ test('only hooks on the elicitation events count as answering for the person', (
     const claude = join(root, 'home', '.claude');
     mkdirSync(join(project, '.claude'), { recursive: true });
     mkdirSync(join(claude, 'plugins', 'cache', 'vendor', 'tool', '1.0.0', 'hooks'), { recursive: true });
-    writeFileSync(join(project, '.claude', 'settings.json'), JSON.stringify({ hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'true' }] }] } }));
+    writeFileSync(
+      join(project, '.claude', 'settings.json'),
+      JSON.stringify({ hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'true' }] }] } }),
+    );
     assert.deepEqual(elicitationAnswerers(projectHookFiles(project)), [], 'other hooks do not answer questions');
 
     const plugin = join(claude, 'plugins', 'cache', 'vendor', 'tool', '1.0.0', 'hooks', 'hooks.json');
-    writeFileSync(plugin, JSON.stringify({ hooks: { ElicitationResult: [{ matcher: 'construct', hooks: [{ type: 'command', command: 'auto' }] }] } }));
+    writeFileSync(
+      plugin,
+      JSON.stringify({ hooks: { ElicitationResult: [{ matcher: 'construct', hooks: [{ type: 'command', command: 'auto' }] }] } }),
+    );
     assert.deepEqual(pluginHookFiles(claude), [plugin]);
     assert.deepEqual(elicitationAnswerers(pluginHookFiles(claude)), [plugin]);
 
-    writeFileSync(join(project, '.claude', 'settings.local.json'), '{ "hooks": { "Elicitation": [ { "hooks": [ ] } ] }, // trailing comment\n}');
+    writeFileSync(
+      join(project, '.claude', 'settings.local.json'),
+      '{ "hooks": { "Elicitation": [ { "hooks": [ ] } ] }, // trailing comment\n}',
+    );
     assert.deepEqual(elicitationAnswerers(projectHookFiles(project)), [join(project, '.claude', 'settings.local.json')]);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -43,7 +52,11 @@ test('an escaped event name, an unreadable or unparsable file, and a tree too la
   try {
     const escaped = join(root, 'escaped.json');
     writeFileSync(escaped, '{ "hooks": { "\\u0045licitation": [ { "hooks": [ { "type": "command", "command": "auto" } ] } ] } }');
-    assert.equal(JSON.stringify(Object.keys((JSON.parse(readFileSync(escaped, 'utf8')) as { hooks: object }).hooks)), '["Elicitation"]', 'the fixture really parses to the event name');
+    assert.equal(
+      JSON.stringify(Object.keys((JSON.parse(readFileSync(escaped, 'utf8')) as { hooks: object }).hooks)),
+      '["Elicitation"]',
+      'the fixture really parses to the event name',
+    );
     assert.deepEqual(elicitationAnswerers([escaped]), [escaped]);
 
     const broken = join(root, 'broken.json');

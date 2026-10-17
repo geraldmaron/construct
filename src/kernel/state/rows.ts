@@ -23,11 +23,7 @@ export function boolFrom(value: number | null): boolean {
   return value === 1;
 }
 
-export function requireOneOf<T extends string>(
-  value: string,
-  allowed: readonly T[],
-  label: string,
-): T {
+export function requireOneOf<T extends string>(value: string, allowed: readonly T[], label: string): T {
   if (!(allowed as readonly string[]).includes(value)) {
     throw new Error(`${label} must be one of ${allowed.join(' | ')} (got ${value})`);
   }
@@ -85,18 +81,10 @@ export class IllegalTransitionError extends Error {
   }
 }
 
-export function assertTransition<S extends string>(
-  machine: Readonly<Record<S, readonly S[]>>,
-  subject: string,
-  from: S,
-  to: S,
-): void {
+export function assertTransition<S extends string>(machine: Readonly<Record<S, readonly S[]>>, subject: string, from: S, to: S): void {
   if (!machine[from].includes(to)) throw new IllegalTransitionError(subject, from, to);
 }
 
-export function isTerminal<S extends string>(
-  machine: Readonly<Record<S, readonly S[]>>,
-  state: S,
-): boolean {
+export function isTerminal<S extends string>(machine: Readonly<Record<S, readonly S[]>>, state: S): boolean {
   return machine[state].length === 0;
 }

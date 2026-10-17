@@ -13,13 +13,17 @@ export type MergeResult =
   | { readonly ok: true; readonly created: boolean; readonly path: string; readonly replaced: readonly string[] }
   | { readonly ok: false; readonly reason: string; readonly path: string };
 
-type ReadConfig = { readonly kind: 'absent' } | { readonly kind: 'problem'; readonly problem: string } | { readonly kind: 'config'; readonly config: Record<string, unknown> };
+type ReadConfig =
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'problem'; readonly problem: string }
+  | { readonly kind: 'config'; readonly config: Record<string, unknown> };
 
 function readConfig(path: string): ReadConfig {
   if (!existsSync(path)) return { kind: 'absent' };
   try {
     const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
-    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return { kind: 'problem', problem: 'the file is not a JSON object' };
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed))
+      return { kind: 'problem', problem: 'the file is not a JSON object' };
     return { kind: 'config', config: parsed as Record<string, unknown> };
   } catch {
     return { kind: 'problem', problem: 'the file is not valid JSON' };
@@ -43,12 +47,20 @@ export function launchesConstructServe(entry: unknown): boolean {
   return hasBin && parts.includes('serve');
 }
 
-export function mergeMcpServerEntry(path: string, serverName: string, entry: Record<string, unknown>, opts: { readonly serversKey?: McpServersKey; readonly seed?: Record<string, unknown> } = {}): MergeResult {
+export function mergeMcpServerEntry(
+  path: string,
+  serverName: string,
+  entry: Record<string, unknown>,
+  opts: { readonly serversKey?: McpServersKey; readonly seed?: Record<string, unknown> } = {},
+): MergeResult {
   const key = opts.serversKey ?? 'mcpServers';
   const current = readConfig(path);
   if (current.kind === 'problem') return { ok: false, reason: current.problem, path };
   const existing: Record<string, unknown> = current.kind === 'config' ? current.config : { ...(opts.seed ?? {}) };
-  const servers = existing[key] !== null && typeof existing[key] === 'object' && !Array.isArray(existing[key]) ? { ...(existing[key] as Record<string, unknown>) } : {};
+  const servers =
+    existing[key] !== null && typeof existing[key] === 'object' && !Array.isArray(existing[key])
+      ? { ...(existing[key] as Record<string, unknown>) }
+      : {};
   const replaced: string[] = [];
   for (const [name, candidate] of Object.entries(servers)) {
     if (name === serverName) continue;
@@ -70,7 +82,11 @@ export function mergeMcpServerEntry(path: string, serverName: string, entry: Rec
   return { ok: true, created: current.kind === 'absent', path, replaced };
 }
 
-export function readMcpServerEntry(path: string, serverName: string, opts: { readonly serversKey?: McpServersKey } = {}): Record<string, unknown> | null {
+export function readMcpServerEntry(
+  path: string,
+  serverName: string,
+  opts: { readonly serversKey?: McpServersKey } = {},
+): Record<string, unknown> | null {
   const current = readConfig(path);
   if (current.kind !== 'config') return null;
   const servers = current.config[opts.serversKey ?? 'mcpServers'];

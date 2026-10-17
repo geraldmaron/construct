@@ -75,12 +75,14 @@ function lintableFiles() {
   const out = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
     encoding: 'utf8',
   });
-  return [...new Set(out.split('\n').filter(Boolean))]
-    .filter((f) => GLOSSARY_SCOPE.some((re) => re.test(f)))
-    .filter((f) => !EXEMPT.some((re) => re.test(f)))
-    // --cached still names a file deleted from the working tree but not yet
-    // staged as a deletion. There is nothing to read and nothing to govern.
-    .filter((f) => existsSync(f));
+  return (
+    [...new Set(out.split('\n').filter(Boolean))]
+      .filter((f) => GLOSSARY_SCOPE.some((re) => re.test(f)))
+      .filter((f) => !EXEMPT.some((re) => re.test(f)))
+      // --cached still names a file deleted from the working tree but not yet
+      // staged as a deletion. There is nothing to read and nothing to govern.
+      .filter((f) => existsSync(f))
+  );
 }
 
 const glossaryPath = new URL('../GLOSSARY.md', import.meta.url);

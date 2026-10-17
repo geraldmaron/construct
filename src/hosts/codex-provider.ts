@@ -2,7 +2,10 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-export interface CodexProvider { readonly id: string; readonly [key: string]: string | boolean; }
+export interface CodexProvider {
+  readonly id: string;
+  readonly [key: string]: string | boolean;
+}
 
 /** The five non-secret keys of a codex model provider that the runner carries over; nothing else in the person's config is read. */
 export const CODEX_PROVIDER_KEYS = ['name', 'base_url', 'wire_api', 'requires_openai_auth', 'supports_websockets'];
@@ -59,5 +62,12 @@ export function codexProviderFromConfig(env: NodeJS.ProcessEnv = process.env): C
 /** The `-c` overrides that put a provider back under --ignore-user-config: model_provider and its non-secret keys. */
 export function codexProviderArgs(provider: CodexProvider | null): string[] {
   if (!provider) return [];
-  return ['-c', `model_provider=${JSON.stringify(provider.id)}`, ...CODEX_PROVIDER_KEYS.filter((k) => provider[k] !== undefined).flatMap((k) => ['-c', `model_providers.${provider.id}.${k}=${JSON.stringify(provider[k])}`])];
+  return [
+    '-c',
+    `model_provider=${JSON.stringify(provider.id)}`,
+    ...CODEX_PROVIDER_KEYS.filter((k) => provider[k] !== undefined).flatMap((k) => [
+      '-c',
+      `model_providers.${provider.id}.${k}=${JSON.stringify(provider[k])}`,
+    ]),
+  ];
 }

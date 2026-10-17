@@ -93,9 +93,21 @@ interface WiringFacts {
 }
 
 export type ClientWiring =
-  | (WiringFacts & { readonly format: 'json'; readonly serversKey: McpServersKey; entry(launch: Launch, projectRoot: string): Record<string, unknown> })
-  | (WiringFacts & { readonly format: 'toml'; readonly serversKey: 'mcp_servers'; entry(launch: Launch, projectRoot: string): Record<string, TomlValue> })
-  | (WiringFacts & { readonly format: 'yaml'; readonly serversKey: 'mcp_servers'; entry(launch: Launch, projectRoot: string): Record<string, YamlValue> });
+  | (WiringFacts & {
+      readonly format: 'json';
+      readonly serversKey: McpServersKey;
+      entry(launch: Launch, projectRoot: string): Record<string, unknown>;
+    })
+  | (WiringFacts & {
+      readonly format: 'toml';
+      readonly serversKey: 'mcp_servers';
+      entry(launch: Launch, projectRoot: string): Record<string, TomlValue>;
+    })
+  | (WiringFacts & {
+      readonly format: 'yaml';
+      readonly serversKey: 'mcp_servers';
+      entry(launch: Launch, projectRoot: string): Record<string, YamlValue>;
+    });
 
 /**
  * The absolute path of the file a host reads for this project. `env` is
@@ -152,7 +164,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     firstRun: [
       'Start a new Claude Code session in this folder; a session already open does not see Construct.',
       'Approve the project server construct when Claude Code asks. `claude mcp get construct` shows whether it is pending, approved, or rejected; if you declined it, `claude mcp reset-project-choices` asks again.',
-      'Allow Construct\'s tools when Claude Code asks, or add mcp__construct to permissions.allow in your own settings.',
+      "Allow Construct's tools when Claude Code asks, or add mcp__construct to permissions.allow in your own settings.",
     ],
     relativePath: '.mcp.json',
     scope: 'project',
@@ -168,10 +180,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     binaries: ['cursor', 'cursor-agent'],
     projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
     readsClaudeSkills: true,
-    firstRun: [
-      'Open this folder in Cursor, or start cursor-agent here.',
-      'Check that construct is on in Cursor\'s MCP settings.',
-    ],
+    firstRun: ['Open this folder in Cursor, or start cursor-agent here.', "Check that construct is on in Cursor's MCP settings."],
     relativePath: join('.cursor', 'mcp.json'),
     scope: 'project',
     format: 'json',
@@ -221,13 +230,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     readsClaudeSkills: false,
     firstRun: [
       'Start codex in this folder and trust the project when it asks; Codex reads .codex/config.toml only in trusted projects.',
-      'Approve construct\'s tool calls when Codex asks.',
+      "Approve construct's tool calls when Codex asks.",
     ],
     relativePath: join('.codex', 'config.toml'),
     scope: 'project',
     format: 'toml',
     serversKey: 'mcp_servers',
-    documentation: 'https://learn.chatgpt.com/docs/extend/mcp (project .codex/config.toml, read in trusted projects only; tool_timeout_sec defaults to 60)',
+    documentation:
+      'https://learn.chatgpt.com/docs/extend/mcp (project .codex/config.toml, read in trusted projects only; tool_timeout_sec defaults to 60)',
     // Above the 60 s Construct waits for the person on a question, so the host does not give up first.
     entry: (launch) => ({ command: launch.command, args: serveLine(launch, 'codex'), tool_timeout_sec: 120 }),
     bound: boundTo('codex'),
@@ -238,10 +248,7 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     binaries: ['bob'],
     projectSkillsDir: join('.bob', 'skills'),
     readsClaudeSkills: false,
-    firstRun: [
-      'Open this folder in Bob; it reads .bob/mcp.json.',
-      'Approve construct\'s tools when Bob asks.',
-    ],
+    firstRun: ['Open this folder in Bob; it reads .bob/mcp.json.', "Approve construct's tools when Bob asks."],
     relativePath: join('.bob', 'mcp.json'),
     scope: 'project',
     format: 'json',
@@ -259,14 +266,15 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     firstRun: [
       'Run `hermes skills trust` in this folder so Hermes loads the project skills in .agents/skills.',
       'Start hermes in this folder, or from the gateway; the entry names this project, so the working directory does not matter.',
-      'Approve construct\'s write tools when Hermes asks; the entry marks the server untrusted, so every tool that changes something asks first.',
+      "Approve construct's write tools when Hermes asks; the entry marks the server untrusted, so every tool that changes something asks first.",
       'One Hermes profile serves one Construct project. For a second project, run Hermes with its own HERMES_HOME.',
     ],
     relativePath: join('~', '.hermes', 'config.yaml'),
     scope: 'user',
     format: 'yaml',
     serversKey: 'mcp_servers',
-    documentation: 'https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp (user-level ~/.hermes/config.yaml under mcp_servers; HERMES_HOME moves it; trust: untrusted asks before any tool without readOnlyHint)',
+    documentation:
+      'https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp (user-level ~/.hermes/config.yaml under mcp_servers; HERMES_HOME moves it; trust: untrusted asks before any tool without readOnlyHint)',
     entry: (launch, projectRoot) => ({
       command: launch.command,
       args: serveLine(launch, 'hermes', `--project=${projectRoot}`),
@@ -298,7 +306,18 @@ export function projectSkillsDirFor(client: WirableClient, wired: readonly Wirab
 export function normalizeClient(raw: string | undefined): ClientId {
   if (!raw) return 'unknown';
   const key = raw.trim().toLowerCase();
-  const aliases: Record<string, ClientId> = { claude: 'claude-code', 'claude-code': 'claude-code', cursor: 'cursor', vscode: 'vscode', 'vs-code': 'vscode', opencode: 'opencode', codex: 'codex', bob: 'bob', hermes: 'hermes', 'hermes-agent': 'hermes' };
+  const aliases: Record<string, ClientId> = {
+    claude: 'claude-code',
+    'claude-code': 'claude-code',
+    cursor: 'cursor',
+    vscode: 'vscode',
+    'vs-code': 'vscode',
+    opencode: 'opencode',
+    codex: 'codex',
+    bob: 'bob',
+    hermes: 'hermes',
+    'hermes-agent': 'hermes',
+  };
   return aliases[key] ?? 'unknown';
 }
 
@@ -306,7 +325,10 @@ export function normalizeClient(raw: string | undefined): ClientId {
 export function parseClients(values: readonly string[]): { clients: WirableClient[]; unknown: string[] } {
   const clients: WirableClient[] = [];
   const unknown: string[] = [];
-  for (const raw of values.flatMap((v) => v.split(',')).map((v) => v.trim()).filter(Boolean)) {
+  for (const raw of values
+    .flatMap((v) => v.split(','))
+    .map((v) => v.trim())
+    .filter(Boolean)) {
     const id = normalizeClient(raw);
     if (id === 'unknown') unknown.push(raw);
     else if (!clients.includes(id)) clients.push(id);

@@ -58,7 +58,10 @@ const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 /** The one name a project and trigger's unit has, so reinstalling replaces it. */
 export function timerLabel(projectId: string, triggerId: string): string {
   if (!SAFE_ID.test(projectId)) throw new Error(`project id "${projectId}" cannot name a platform timer`);
-  if (!SAFE_ID.test(triggerId)) throw new Error(`trigger id "${triggerId}" cannot name a platform timer; define the trigger with a --trigger-id of letters, digits, - and _`);
+  if (!SAFE_ID.test(triggerId))
+    throw new Error(
+      `trigger id "${triggerId}" cannot name a platform timer; define the trigger with a --trigger-id of letters, digits, - and _`,
+    );
   return `construct.${projectId}.${triggerId}`;
 }
 
@@ -102,7 +105,9 @@ type CalendarEntry = Readonly<Partial<Record<'Minute' | 'Hour' | 'Day' | 'Month'
  */
 export function launchdCalendar(expression: string, timezone: string, systemTimezone: string): CalendarEntry[] {
   if (timezone !== systemTimezone) {
-    throw new Error(`launchd evaluates a calendar in this Mac's timezone (${systemTimezone}), and this trigger is in ${timezone}; launchd cannot express it exactly. Define the trigger with --timezone=${systemTimezone}, or use \`workflow recipe --clock=cron\` with a cron that honors CRON_TZ`);
+    throw new Error(
+      `launchd evaluates a calendar in this Mac's timezone (${systemTimezone}), and this trigger is in ${timezone}; launchd cannot express it exactly. Define the trigger with --timezone=${systemTimezone}, or use \`workflow recipe --clock=cron\` with a cron that honors CRON_TZ`,
+    );
   }
   const c: CronFields = parseCron(expression);
   const axes: Array<readonly [keyof CalendarEntry, number[] | null]> = [
@@ -112,11 +117,18 @@ export function launchdCalendar(expression: string, timezone: string, systemTime
   ];
   const { day, weekday } = dayRule(c);
   const variants: Array<Array<readonly [keyof CalendarEntry, number[] | null]>> =
-    day && weekday ? [[...axes, ['Day', day]], [...axes, ['Weekday', weekday]]] : [[...axes, ['Day', day], ['Weekday', weekday]]];
+    day && weekday
+      ? [
+          [...axes, ['Day', day]],
+          [...axes, ['Weekday', weekday]],
+        ]
+      : [[...axes, ['Day', day], ['Weekday', weekday]]];
   let count = 0;
   for (const v of variants) count += v.reduce((n, [, values]) => n * (values ? values.length : 1), 1);
   if (count > MAX_CALENDAR_ENTRIES) {
-    throw new Error(`"${expression}" needs ${String(count)} launchd calendar entries (the limit is ${String(MAX_CALENDAR_ENTRIES)}); launchd cannot express it as a calendar. Choose a coarser schedule`);
+    throw new Error(
+      `"${expression}" needs ${String(count)} launchd calendar entries (the limit is ${String(MAX_CALENDAR_ENTRIES)}); launchd cannot express it as a calendar. Choose a coarser schedule`,
+    );
   }
   const out: CalendarEntry[] = [];
   for (const v of variants) {
@@ -139,7 +151,12 @@ const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
  */
 export function systemdCalendar(expression: string, timezone: string): string[] {
   const c = parseCron(expression);
-  const list = (set: ReadonlySet<number>, min: number, max: number) => (covers(set, min, max) ? '*' : sorted(set).map((v) => String(v).padStart(2, '0')).join(','));
+  const list = (set: ReadonlySet<number>, min: number, max: number) =>
+    covers(set, min, max)
+      ? '*'
+      : sorted(set)
+          .map((v) => String(v).padStart(2, '0'))
+          .join(',');
   const time = `${list(c.hours, 0, 23)}:${list(c.minutes, 0, 59)}:00`;
   const months = list(c.months, 1, 12);
   const { day, weekday } = dayRule(c);
@@ -153,7 +170,8 @@ export function systemdCalendar(expression: string, timezone: string): string[] 
 function unitEnv(facts: TimerFacts): Array<readonly [string, string]> {
   const env: Array<readonly [string, string]> = [['PATH', facts.path]];
   for (const [key, value] of Object.entries(facts.env ?? {})) {
-    if (!TIMER_ENV_KEYS.includes(key) || key === 'PATH') throw new Error(`a platform timer carries only ${TIMER_ENV_KEYS.join(' and ')}; ${key} stays out of the unit`);
+    if (!TIMER_ENV_KEYS.includes(key) || key === 'PATH')
+      throw new Error(`a platform timer carries only ${TIMER_ENV_KEYS.join(' and ')}; ${key} stays out of the unit`);
     env.push([key, value]);
   }
   return env;
@@ -190,7 +208,12 @@ export function launchdUnit(input: TimerUnitInput): TimerUnitFile[] {
     '  </dict>',
     '  <key>StartCalendarInterval</key>',
     '  <array>',
-    ...calendar.map((entry) => `    <dict>${Object.entries(entry).map(([k, v]) => `<key>${k}</key><integer>${String(v)}</integer>`).join('')}</dict>`),
+    ...calendar.map(
+      (entry) =>
+        `    <dict>${Object.entries(entry)
+          .map(([k, v]) => `<key>${k}</key><integer>${String(v)}</integer>`)
+          .join('')}</dict>`,
+    ),
     '  </array>',
     '  <key>ProcessType</key><string>Background</string>',
     `  <key>StandardOutPath</key>${str(log)}`,
@@ -204,7 +227,8 @@ export function launchdUnit(input: TimerUnitInput): TimerUnitFile[] {
 
 function refuseControl(value: string): string {
   // A control character would end the directive or smuggle another one in.
-  if (/[\u0000-\u001f\u007f]/.test(value)) throw new Error(`a platform timer cannot carry ${JSON.stringify(value)}: it holds a control character`);
+  if (/[\u0000-\u001f\u007f]/.test(value))
+    throw new Error(`a platform timer cannot carry ${JSON.stringify(value)}: it holds a control character`);
   return value;
 }
 
@@ -216,7 +240,8 @@ function refuseControl(value: string): string {
  */
 export function systemdPath(value: string): string {
   if (!value.startsWith('/')) throw new Error(`a platform timer needs an absolute directory, not ${JSON.stringify(value)}`);
-  if (/[\\\s]$/.test(value)) throw new Error(`systemd cannot hold the directory ${JSON.stringify(value)} exactly: it ends in a backslash or whitespace`);
+  if (/[\\\s]$/.test(value))
+    throw new Error(`systemd cannot hold the directory ${JSON.stringify(value)} exactly: it ends in a backslash or whitespace`);
   return refuseControl(value).replace(/%/g, '%%');
 }
 
@@ -249,7 +274,9 @@ export function systemdUnit(input: TimerUnitInput): TimerUnitFile[] {
     'Type=oneshot',
     `WorkingDirectory=${systemdPath(input.projectRoot)}`,
     ...unitEnv(input.facts).map(([k, v]) => `Environment=${systemdQuoted(`${k}=${v}`, false)}`),
-    `ExecStart=${fireArgs(input).map((a) => systemdQuoted(a, true)).join(' ')}`,
+    `ExecStart=${fireArgs(input)
+      .map((a) => systemdQuoted(a, true))
+      .join(' ')}`,
     '',
   ];
   const timer = [
@@ -265,7 +292,10 @@ export function systemdUnit(input: TimerUnitInput): TimerUnitFile[] {
     'WantedBy=timers.target',
     '',
   ];
-  return [{ name: `${label}.service`, content: service.join('\n') }, { name: `${label}.timer`, content: timer.join('\n') }];
+  return [
+    { name: `${label}.service`, content: service.join('\n') },
+    { name: `${label}.timer`, content: timer.join('\n') },
+  ];
 }
 
 export function timerUnit(platform: TimerPlatform, input: TimerUnitInput): TimerUnitFile[] {
@@ -287,7 +317,12 @@ export interface InstalledTimerFacts {
 export function readTimerUnit(platform: TimerPlatform, name: string, content: string): InstalledTimerFacts | null {
   const m = /^construct\.([A-Za-z0-9][A-Za-z0-9_-]*)\.([A-Za-z0-9][A-Za-z0-9_-]*)\.(plist|service)$/.exec(name);
   if (!m || (platform === 'launchd') !== (m[3] === 'plist')) return null;
-  const unxml = (s: string) => s.replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  const unxml = (s: string) =>
+    s
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
   let root: string | null = null;
   let executor: string | null = null;
   let program: string[] = [];

@@ -385,7 +385,9 @@ export function projectWorktrees(root: string): ProjectWorktree[] {
   const rel = relative(mainReal, realpathOr(root));
   if (rel.startsWith('..') || isAbsolute(rel)) return [];
   const main = repo.linked ? resolveRepository(repo.mainRoot) : repo;
-  const out: ProjectWorktree[] = [{ root: join(mainReal, rel), checkout: mainReal, branch: main?.branch ?? null, head: main?.head ?? null, main: true }];
+  const out: ProjectWorktree[] = [
+    { root: join(mainReal, rel), checkout: mainReal, branch: main?.branch ?? null, head: main?.head ?? null, main: true },
+  ];
   const records = join(repo.commonDir, 'worktrees');
   let names: string[];
   try {
@@ -485,9 +487,10 @@ export function locateProject(ctx: CliContext): ProjectLocation {
     return { root: here, lane: ctx.sessionCwd === undefined ? null : laneFor(here, ctx.sessionCwd) };
   }
   const sameRelative = (dir: string): string => join(mainRoot, relative(repo.checkout, dir));
-  const root = here !== null
-    ? sameRelative(here)
-    : findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot }) ?? findStoreRoot(sameRelative(ctx.cwd), mainRoot);
+  const root =
+    here !== null
+      ? sameRelative(here)
+      : (findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot }) ?? findStoreRoot(sameRelative(ctx.cwd), mainRoot));
   if (root === null || (!hasProject(root) && !existsSync(projectDbPath(root)))) {
     if (here !== null) {
       throw new WorktreeBindingError(
@@ -553,7 +556,10 @@ export interface ExpectedProject {
 
 export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenProject {
   const bound = bindProject(ctx);
-  if (expected && (realpathOr(bound.root) !== realpathOr(expected.root) || (expected.id !== null && bound.files.config?.id !== expected.id))) {
+  if (
+    expected &&
+    (realpathOr(bound.root) !== realpathOr(expected.root) || (expected.id !== null && bound.files.config?.id !== expected.id))
+  ) {
     throw new OperationError(
       'The project binding changed while this connection was waiting to bind.',
       'Restart the MCP server after checking the intended project root and identity. Nothing was recorded.',
@@ -562,7 +568,9 @@ export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenPr
   if (!existsSync(bound.layout.dbPath)) {
     throw new OperationError(
       `this project has no state database at ${bound.layout.dbPath}`,
-      bound.lane ? `Run \`construct init\` in ${bound.root} to create it; every worktree shares that one store.` : 'Run `construct init` to create it.',
+      bound.lane
+        ? `Run \`construct init\` in ${bound.root} to create it; every worktree shares that one store.`
+        : 'Run `construct init` to create it.',
     );
   }
   try {
@@ -581,7 +589,10 @@ export function openProject(ctx: CliContext, expected?: ExpectedProject): OpenPr
   } catch (error) {
     if (error instanceof UnsupportedStateError || error instanceof StoreProjectError) throw error;
     if (error instanceof StateBusyError) throw new ProjectBusyError(error.message);
-    throw new OperationError(`cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`, 'Check the file’s permissions and that this user owns it.');
+    throw new OperationError(
+      `cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`,
+      'Check the file’s permissions and that this user owns it.',
+    );
   }
 }
 

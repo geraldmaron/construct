@@ -110,7 +110,10 @@ test('a claimer never leases a step above its tier or beyond its capabilities', 
     const tooHigh = runner.service.claimNext({ runId: started.run.id });
     assert.equal(tooHigh.packet, null);
     assert.equal(tooHigh.waitingOn?.kind, 'refused');
-    assert.match((tooHigh.waitingOn as { reason: string }).reason, /push acts at external_write; this executor may reach project_write at most/);
+    assert.match(
+      (tooHigh.waitingOn as { reason: string }).reason,
+      /push acts at external_write; this executor may reach project_write at most/,
+    );
 
     const lacking = narrow.service.claimNext({ runId: started.run.id });
     assert.equal(lacking.waitingOn?.kind, 'refused');

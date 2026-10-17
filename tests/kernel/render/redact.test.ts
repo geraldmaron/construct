@@ -94,7 +94,6 @@ test('a generic high-entropy token is redacted, a long ordinary word is not', ()
   assert.equal(redact(word), word);
 });
 
-
 test('public URL path segments survive while URL credentials and opaque values are redacted', () => {
   const urls = [
     'https://reference.example.org/2026-07-28/server/discover',

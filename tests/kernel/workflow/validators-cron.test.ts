@@ -11,29 +11,72 @@ import { BUILTIN_VALIDATORS } from '../../../src/kernel/registry/capability-regi
 
 test('validators are deterministic and every shipped name has an implementation', () => {
   assert.deepEqual([...knownValidators()].sort(), [...BUILTIN_VALIDATORS].sort());
-  const base = { expectedKeys: ['summary', 'findings'], evidence: [{ ref: 'docs/design.md#L4' }], resolvableRefs: new Set(['docs/design.md#L4']) };
-  const good = runValidators(['schema', 'citations_present', 'no_uncited_material_findings', 'deliverable_complete', 'evidence_refs_resolve'], { ...base, output: { summary: 'ok', findings: [{ material: true, citations: ['docs/design.md#L4'] }] } });
-  assert.ok(good.every((v) => v.ok), JSON.stringify(good));
-  const bad = runValidators(['schema', 'citations_present', 'no_uncited_material_findings', 'evidence_refs_resolve'], { ...base, evidence: [{ ref: 'nowhere' }], output: { summary: 'x', findings: [{ severity: 'material' }] } });
-  assert.deepEqual(bad.map((v) => [v.validator, v.ok]), [['schema', true], ['citations_present', true], ['no_uncited_material_findings', false], ['evidence_refs_resolve', false]]);
+  const base = {
+    expectedKeys: ['summary', 'findings'],
+    evidence: [{ ref: 'docs/design.md#L4' }],
+    resolvableRefs: new Set(['docs/design.md#L4']),
+  };
+  const good = runValidators(
+    ['schema', 'citations_present', 'no_uncited_material_findings', 'deliverable_complete', 'evidence_refs_resolve'],
+    { ...base, output: { summary: 'ok', findings: [{ material: true, citations: ['docs/design.md#L4'] }] } },
+  );
+  assert.ok(
+    good.every((v) => v.ok),
+    JSON.stringify(good),
+  );
+  const bad = runValidators(['schema', 'citations_present', 'no_uncited_material_findings', 'evidence_refs_resolve'], {
+    ...base,
+    evidence: [{ ref: 'nowhere' }],
+    output: { summary: 'x', findings: [{ severity: 'material' }] },
+  });
+  assert.deepEqual(
+    bad.map((v) => [v.validator, v.ok]),
+    [
+      ['schema', true],
+      ['citations_present', true],
+      ['no_uncited_material_findings', false],
+      ['evidence_refs_resolve', false],
+    ],
+  );
   assert.match(runValidators(['schema'], { ...base, output: { summary: 'x' } })[0]!.problems[0]!, /lacks "findings"/);
   assert.match(bad[2]!.problems[0]!, /material but cites nothing/);
   const velocity = runValidators(['no_velocity_as_capacity'], { ...base, output: { capacity: { basis: 'velocity', points: 40 } } });
   assert.equal(velocity[0]!.ok, false);
   assert.match(velocity[0]!.problems.join(' '), /never capacity/);
-  const capacityOk = runValidators(['no_velocity_as_capacity'], { ...base, output: { capacity: { range: [3, 5] }, assumptions: ['5 people at 80%'] } });
+  const capacityOk = runValidators(['no_velocity_as_capacity'], {
+    ...base,
+    output: { capacity: { range: [3, 5] }, assumptions: ['5 people at 80%'] },
+  });
   assert.equal(capacityOk[0]!.ok, true);
-  const plan = runValidators(['deliverable_complete'], { expectedKeys: ['plan', 'assumptions', 'blockers'], evidence: [], resolvableRefs: new Set(), output: { plan: 'do the work', assumptions: [], blockers: [] } });
+  const plan = runValidators(['deliverable_complete'], {
+    expectedKeys: ['plan', 'assumptions', 'blockers'],
+    evidence: [],
+    resolvableRefs: new Set(),
+    output: { plan: 'do the work', assumptions: [], blockers: [] },
+  });
   assert.ok(plan[0]!.ok, JSON.stringify(plan));
-  const invented = runValidators(['no_placeholder_facts'], { expectedKeys: [], evidence: [], resolvableRefs: new Set(), output: { summary: 'done', findings: [], unknowns: ['the SLA'], verified: true } });
+  const invented = runValidators(['no_placeholder_facts'], {
+    expectedKeys: [],
+    evidence: [],
+    resolvableRefs: new Set(),
+    output: { summary: 'done', findings: [], unknowns: ['the SLA'], verified: true },
+  });
   assert.equal(invented[0]!.ok, false);
   assert.match(invented[0]!.problems.join(' '), /unknown/);
   assert.equal(runValidators(['nope'], { ...base, output: {} })[0]!.ok, false);
 });
 
 test('cron fires at the right wall-clock instant in a timezone, and refuses bad expressions', () => {
-  assert.equal(nextCronAfter('0 9 * * 1', 'Europe/Berlin', '2026-09-02T12:00:00.000Z'), '2026-09-07T07:00:00.000Z', 'Monday 09:00 Berlin is 07:00 UTC in summer');
-  assert.equal(nextCronAfter('0 9 * * 1', 'Europe/Berlin', '2026-12-02T12:00:00.000Z'), '2026-12-07T08:00:00.000Z', 'and 08:00 UTC in winter');
+  assert.equal(
+    nextCronAfter('0 9 * * 1', 'Europe/Berlin', '2026-09-02T12:00:00.000Z'),
+    '2026-09-07T07:00:00.000Z',
+    'Monday 09:00 Berlin is 07:00 UTC in summer',
+  );
+  assert.equal(
+    nextCronAfter('0 9 * * 1', 'Europe/Berlin', '2026-12-02T12:00:00.000Z'),
+    '2026-12-07T08:00:00.000Z',
+    'and 08:00 UTC in winter',
+  );
   assert.equal(nextCronAfter('0 0 1 1 *', 'UTC', '2026-09-02T12:00:00.000Z'), '2027-01-01T00:00:00.000Z', 'every January');
   assert.equal(nextCronAfter('*/15 * * * *', 'UTC', '2026-09-02T12:07:00.000Z'), '2026-09-02T12:15:00.000Z');
   assert.equal(nextCronAfter('30 14 * * *', 'America/New_York', '2026-09-02T18:30:00.000Z'), '2026-09-03T18:30:00.000Z', 'strictly after');

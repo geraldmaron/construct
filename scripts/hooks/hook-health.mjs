@@ -16,8 +16,7 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 // which is the sterile-discipline hole tests/harness/sterile.ts exists to close.
 // Env-reading is a scripts/ liberty, not a kernel one — src/kernel/paths.ts is
 // still the only module inside the kernel permitted to do it.
-const stateFile =
-  process.env.CONSTRUCT_HOOK_HEALTH_FILE ?? join(repoRoot, '.claude', '.hook-health.json');
+const stateFile = process.env.CONSTRUCT_HOOK_HEALTH_FILE ?? join(repoRoot, '.claude', '.hook-health.json');
 
 export function recordHookOutcome(hookName, ok) {
   let state = {};

@@ -1,6 +1,14 @@
 import { isInside } from '../safety/containment.ts';
 import { contentReceipt } from '../workflow/verification.ts';
-import { searchContext, rebuildContextIndex, contextIndexStatus, configureEmbeddings, putEmbeddings, type SearchInput, type EmbeddingIdentity } from '../context/retrieval.ts';
+import {
+  searchContext,
+  rebuildContextIndex,
+  contextIndexStatus,
+  configureEmbeddings,
+  putEmbeddings,
+  type SearchInput,
+  type EmbeddingIdentity,
+} from '../context/retrieval.ts';
 import { semanticReviewStatus } from '../workflow/semantic-review.ts';
 import { DeliveryRecoveryRequired, recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
 import { claimChecks, assessClaims, type ClaimCheck } from '../workflow/claim-support.ts';
@@ -44,20 +52,74 @@ import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, ty
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
 import { assertLeasePaths, laneNamed, UnknownWorktreeError, WORKTREE_PATH_MAX, type EditLane } from '../work/lanes.ts';
 import { coordinationFor, presentSessions } from '../coord/awareness.ts';
-import { acceptWork, prepareAcceptance, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork, type WorkItem } from '../work/service.ts';
+import {
+  acceptWork,
+  prepareAcceptance,
+  claimWork as claimWorkItem,
+  completeWork,
+  handoffOf,
+  handoffWork,
+  listOffers,
+  getWork,
+  getWorkByLegacyId,
+  listReady,
+  queryWork,
+  readinessOf,
+  releaseWork,
+  reopenWork,
+  takeoverWork,
+  updateWork,
+  requalifyWork,
+  type WorkItem,
+} from '../work/service.ts';
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { periodCoverage, runValidators } from '../workflow/validators.ts';
-import { checkSlot, dayOf, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
+import {
+  checkSlot,
+  dayOf,
+  PERIOD_RELATIVES,
+  PERIOD_SEMANTICS,
+  resolvePeriod,
+  type PeriodSpec,
+  type ResolvedPeriod,
+} from '../registry/slots.ts';
 import { inputProblems } from '../registry/resolver.ts';
 import type { RegisteredWorkflow } from '../registry/models.ts';
-import { differsNext, OBJECTION_DISPOSITIONS, OBJECTIONS_EXAMPLE, readObjections, VALIDATED_BY_CHECKS, type Objection, type PromotionSubject, type StartResult } from '../workflow/service.ts';
+import {
+  differsNext,
+  OBJECTION_DISPOSITIONS,
+  OBJECTIONS_EXAMPLE,
+  readObjections,
+  VALIDATED_BY_CHECKS,
+  type Objection,
+  type PromotionSubject,
+  type StartResult,
+} from '../workflow/service.ts';
 import { askedOf, type Assumption, type Declared, type JudgedBy } from '../workflow/asked.ts';
 import { STAKE_AREAS } from '../workflow/consequence.ts';
 import {
-  EXECUTION_PATHS, CORE_EXAMPLE, COORDINATION_ACTIONS, COORDINATION_NEXT, DESTINATION_KINDS, GENERAL_CARRIER, INTAKE_KINDS, IntakeError, OPEN_ABOUT, SOURCE_ROLES,
-  destinationConflict, matchWorkflows, workflowCarries, questionsFor, slotQuestion, validateIntake, workflowInputFor,
-  type Intake, type IntakeCatalog, type ValidatedIntake, type WorkflowMatch,
+  EXECUTION_PATHS,
+  CORE_EXAMPLE,
+  COORDINATION_ACTIONS,
+  COORDINATION_NEXT,
+  DESTINATION_KINDS,
+  GENERAL_CARRIER,
+  INTAKE_KINDS,
+  IntakeError,
+  OPEN_ABOUT,
+  SOURCE_ROLES,
+  destinationConflict,
+  matchWorkflows,
+  workflowCarries,
+  questionsFor,
+  slotQuestion,
+  validateIntake,
+  workflowInputFor,
+  type Intake,
+  type IntakeCatalog,
+  type ValidatedIntake,
+  type WorkflowMatch,
 } from '../workflow/intake.ts';
 import { inRuleForm, RULE_FORM_REFUSAL, settledTerms } from '../project/governance.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
@@ -98,10 +160,17 @@ function define<I, O>(t: Tool<I, O>): Tool<I, O> {
  * confirmation remember asked for). Setup questions and earlier questions
  * come after the person's own request, never before it.
  */
-export function waitingOn(open: readonly Decision[]): { readonly inRuns: Decision[]; readonly aboutDrift: Decision[]; readonly setup: Decision[]; readonly earlier: Decision[] } {
+export function waitingOn(open: readonly Decision[]): {
+  readonly inRuns: Decision[];
+  readonly aboutDrift: Decision[];
+  readonly setup: Decision[];
+  readonly earlier: Decision[];
+} {
   const inRuns = open.filter((d) => d.runId !== null);
   const setup = open.filter((d) => d.runId === null && onboardingQuestionOf(d.subject) !== null);
-  const aboutDrift = open.filter((d) => d.runId === null && Array.isArray((d.subject as { driftFindingIds?: unknown } | null)?.driftFindingIds));
+  const aboutDrift = open.filter(
+    (d) => d.runId === null && Array.isArray((d.subject as { driftFindingIds?: unknown } | null)?.driftFindingIds),
+  );
   const earlier = open.filter((d) => !inRuns.includes(d) && !setup.includes(d) && !aboutDrift.includes(d));
   return { inRuns, aboutDrift, setup, earlier };
 }
@@ -121,7 +190,8 @@ function setupQuestion(d: Decision): Record<string, unknown> {
 const bootstrap = define<Record<string, never>, unknown>({
   name: 'bootstrap',
   title: 'Where things stand',
-  description: 'Call once at the start of a session. Returns the project binding, how complete its setup is, the questions still open, source and registry health, what this session may do, open decisions and active runs, and the recommended next action. Small on purpose; ask for details with project_context.',
+  description:
+    'Call once at the start of a session. Returns the project binding, how complete its setup is, the questions still open, source and registry health, what this session may do, open decisions and active runs, and the recommended next action. Small on purpose; ask for details with project_context.',
   surface: 'both',
   readOnly: true,
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
@@ -153,45 +223,101 @@ const bootstrap = define<Record<string, never>, unknown>({
     const missing = missingProfileFields(profile);
     // What waits until after the person's request: setup questions, proposed statements, and earlier questions only they can answer.
     const afterRequest = [
-      ...(waits.setup.length > 0 ? [`handle what the person asked first; ask a setup question only when its answer changes that work (the project's scale changes how much challenge managed work gets), in the same single message, and relay answers with decide; if they asked nothing yet, put the ${String(waits.setup.length)} setup question(s) to them in one message`] : []),
-      ...(proposals > 0 ? [`when the person is free, offer the ${String(proposals)} proposed statement(s) from inbox for confirmation; never before their request`] : []),
-      ...(waits.earlier.length > 0 ? [`${String(waits.earlier.length)} earlier question(s) wait in inbox for the person's own answer; offer them after their request`] : []),
+      ...(waits.setup.length > 0
+        ? [
+            `handle what the person asked first; ask a setup question only when its answer changes that work (the project's scale changes how much challenge managed work gets), in the same single message, and relay answers with decide; if they asked nothing yet, put the ${String(waits.setup.length)} setup question(s) to them in one message`,
+          ]
+        : []),
+      ...(proposals > 0
+        ? [
+            `when the person is free, offer the ${String(proposals)} proposed statement(s) from inbox for confirmation; never before their request`,
+          ]
+        : []),
+      ...(waits.earlier.length > 0
+        ? [`${String(waits.earlier.length)} earlier question(s) wait in inbox for the person's own answer; offer them after their request`]
+        : []),
     ];
     const next =
-      waits.inRuns.length > 0 ? `${String(waits.inRuns.length)} decision(s) about runs wait on the person; show them with inbox`
-      : workable.length > 0 ? `${String(workable.length)} run(s) active; continue with claim_work`
-      : blocked.length > 0 ? `${String(blocked.length)} run(s) blocked (${blocked.slice(0, 3).map((r) => r.id).join(', ')}${blocked.length > 3 ? ', …' : ''}); claim_work with a runId says what would unblock it`
-      : moved.length > 0 ? `${moved.join(', ')} changed since last read; refresh with sources before relying on them`
-      : drift.length > 0 || waits.aboutDrift.length > 0 ? `${String(drift.length)} drift finding(s) open${waits.aboutDrift.length > 0 ? ` and ${String(waits.aboutDrift.length)} decision(s) on them wait on the person` : ''}; read them with project_context drift and tell the person`
-      : afterRequest.length > 0 ? afterRequest.join('; ')
-      : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
+      waits.inRuns.length > 0
+        ? `${String(waits.inRuns.length)} decision(s) about runs wait on the person; show them with inbox`
+        : workable.length > 0
+          ? `${String(workable.length)} run(s) active; continue with claim_work`
+          : blocked.length > 0
+            ? `${String(blocked.length)} run(s) blocked (${blocked
+                .slice(0, 3)
+                .map((r) => r.id)
+                .join(', ')}${blocked.length > 3 ? ', …' : ''}); claim_work with a runId says what would unblock it`
+            : moved.length > 0
+              ? `${moved.join(', ')} changed since last read; refresh with sources before relying on them`
+              : drift.length > 0 || waits.aboutDrift.length > 0
+                ? `${String(drift.length)} drift finding(s) open${waits.aboutDrift.length > 0 ? ` and ${String(waits.aboutDrift.length)} decision(s) on them wait on the person` : ''}; read them with project_context drift and tell the person`
+                : afterRequest.length > 0
+                  ? afterRequest.join('; ')
+                  : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
-      construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null, lane: ctx.lane } },
+      construct: {
+        version: ctx.version,
+        project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null, lane: ctx.lane },
+      },
       session: { host: ctx.host.hostId, session: ctx.sessionId ?? ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: waits.setup.map(setupQuestion), proposals },
       // Sources only the host can read: when it reads them, it reports what it read so changes are tracked.
       sources: { ...sources, changedSinceRead: moved, reportWhenRead: hostRead },
-      registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
+      registry: {
+        skills: ctx.skills.list().length,
+        workflows: ctx.workflows.list().length,
+        locked: lock.filter((r) => r.state === 'current').length,
+        skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`),
+      },
       contextIndex: contextIndexStatus(ctx.store),
-      capabilities: { available: [...ctx.host.available].sort(), declared: [...(ctx.host.declared ?? [])].sort(), reported: ctx.host.reported ?? [], probed: ctx.host.probed ?? [], exercised: [...(ctx.host.exercised ?? [])].sort(), readiness: 'host-mediated capabilities remain unverified until observed for this session and scope; available is not a successful execution receipt', maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
+      capabilities: {
+        available: [...ctx.host.available].sort(),
+        declared: [...(ctx.host.declared ?? [])].sort(),
+        reported: ctx.host.reported ?? [],
+        probed: ctx.host.probed ?? [],
+        exercised: [...(ctx.host.exercised ?? [])].sort(),
+        readiness:
+          'host-mediated capabilities remain unverified until observed for this session and scope; available is not a successful execution receipt',
+        maxTier: ctx.host.maxTier,
+        restrictions: ctx.host.restrictions,
+        budgetCents: ctx.host.budgetCents,
+      },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
       decisions: { open: open.length },
       runs: runs.map((r) => ({ id: r.id, workflow: r.workflowId, state: r.state })),
       drift: { open: drift.length },
       coordination: coordinationFor(ctx.store, { sessionId: ctx.sessionId, laneRoot: ctx.lane?.root, now: at }),
-      next: ctx.surface === 'headless'
-        ? 'Continue only the assigned run with claim_step, heartbeat, submit_work and run_status. Do not create outcomes or record project decisions.'
-        : `${INTERACTIVE_ENTRY_GUIDANCE} Project state: ${next}`,
+      next:
+        ctx.surface === 'headless'
+          ? 'Continue only the assigned run with claim_step, heartbeat, submit_work and run_status. Do not create outcomes or record project decisions.'
+          : `${INTERACTIVE_ENTRY_GUIDANCE} Project state: ${next}`,
     };
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'quality', 'work', 'sessions', 'activity', 'source_history'] as const;
+const TOPICS = [
+  'summary',
+  'constitution',
+  'sources',
+  'decisions',
+  'runs',
+  'entities',
+  'claims',
+  'relations',
+  'drift',
+  'statements',
+  'quality',
+  'work',
+  'sessions',
+  'activity',
+  'source_history',
+] as const;
 
 const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number; cursor?: string }, unknown>({
   name: 'project_context',
   title: 'Project context',
-  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, resolved decisions, activity history, or source_history (recorded source revisions). Ask for one topic at a time; pass a query to narrow. Search covers full history before paging. Results name their revision, selection reason and nextCursor; pass that cursor with the same topic/query to continue. A changed snapshot asks you to restart.',
+  description:
+    'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, resolved decisions, activity history, or source_history (recorded source revisions). Ask for one topic at a time; pass a query to narrow. Search covers full history before paging. Results name their revision, selection reason and nextCursor; pass that cursor with the same topic/query to continue. A changed snapshot asks you to restart.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
@@ -207,16 +333,29 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { topic: str(raw, 'topic', { oneOf: TOPICS }) as (typeof TOPICS)[number], query: str(raw, 'query', { optional: true }), limit: Math.max(1, Math.min(Math.floor(num(raw, 'limit') ?? 50), 200)), cursor: str(raw, 'cursor', { optional: true }) };
+    return {
+      topic: str(raw, 'topic', { oneOf: TOPICS }) as (typeof TOPICS)[number],
+      query: str(raw, 'query', { optional: true }),
+      limit: Math.max(1, Math.min(Math.floor(num(raw, 'limit') ?? 50), 200)),
+      cursor: str(raw, 'cursor', { optional: true }),
+    };
   },
   run(ctx, { topic, query, limit, cursor }) {
     if (isHistoryTopic(topic)) return historyPage(ctx.store, topic, query, limit, cursor);
-    if (cursor && (topic === 'summary' || topic === 'constitution')) throw new ToolInputError('this topic is not paged', { field: 'cursor' });
-    const page = <T>(items: readonly T[], text: (item: T) => string, q: string | undefined, n: number) => contextPage(items, text, topic, q, n, cursor);
+    if (cursor && (topic === 'summary' || topic === 'constitution'))
+      throw new ToolInputError('this topic is not paged', { field: 'cursor' });
+    const page = <T>(items: readonly T[], text: (item: T) => string, q: string | undefined, n: number) =>
+      contextPage(items, text, topic, q, n, cursor);
     switch (topic) {
       case 'summary': {
         const c = ctx.files.constitution;
-        return { constitution: c ? { ...c, completeness: constitutionCompleteness(c) } : null, sources: ctx.sources.summary(ctx.now()), openDecisions: listOpenDecisions(ctx.store).length, activeRuns: listActiveRuns(ctx.store).length, readyWork: listReady(ctx.store, ctx.now()).length };
+        return {
+          constitution: c ? { ...c, completeness: constitutionCompleteness(c) } : null,
+          sources: ctx.sources.summary(ctx.now()),
+          openDecisions: listOpenDecisions(ctx.store).length,
+          activeRuns: listActiveRuns(ctx.store).length,
+          readyWork: listReady(ctx.store, ctx.now()).length,
+        };
       }
       case 'constitution':
         return ctx.files.constitution;
@@ -233,7 +372,12 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
       case 'statements':
         return page(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`, query, limit);
       case 'sessions':
-        return page(presentSessions(ctx.store, { now: ctx.now(), sessionId: ctx.sessionId }), (s) => `${s.id} ${s.host} ${s.client ?? ''} ${s.lane} ${s.branch ?? ''} ${s.agents.join(' ')}`, query, limit);
+        return page(
+          presentSessions(ctx.store, { now: ctx.now(), sessionId: ctx.sessionId }),
+          (s) => `${s.id} ${s.host} ${s.client ?? ''} ${s.lane} ${s.branch ?? ''} ${s.agents.join(' ')}`,
+          query,
+          limit,
+        );
       case 'quality':
         return page(skillQuality(ctx.store), (q) => `${q.skill} ${q.version}`, query, limit);
       default:
@@ -243,32 +387,92 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
 });
 
 const contextSearch = define<SearchInput, unknown>({
-  name: 'context_search', title: 'Find relevant context', surface: 'interactive', readOnly: true,
-  description: 'Rank admitted project context and source passages. Expand related concepts with the current host and pass expansions. Results carry citations, revisions, provenance and coverage; similarity grants no authority. Exact project_context lookups remain available.',
-  inputSchema: { type: 'object', properties: {
-    query: { type: 'string', description: 'Question, concept, exact phrase or record reference.' },
-    expansions: { type: 'array', items: { type: 'string', description: 'Text value.' }, description: 'Up to eight related queries inferred by this host.' },
-    topic: { type: 'string', description: 'sources, statements, decisions, claims, entities, work, runs or outcomes.' },
-    sourceId: { type: 'string', description: 'Restrict to one admitted source.' },
-    limit: { type: 'number', description: 'At most 50 documents; default 12.' },
-    budgetChars: { type: 'number', description: 'Returned item budget; default 12000, maximum 48000 characters. Diagnostics are separately bounded.' },
-    embedding: { type: 'object', description: 'Optional vector from the explicitly configured embedding implementation.', properties: {
-      model: { type: 'string', description: 'Text value.' }, dimensions: { type: 'number', description: 'Finite numeric value.' }, vector: { type: 'array', description: 'Embedding dimensions.', items: { type: 'number', description: 'Finite numeric value.' } },
-    }, required: ['model', 'dimensions', 'vector'], additionalProperties: false },
-  }, required: ['query'], additionalProperties: false },
-  validate(raw) { closed(raw, this.inputSchema); return { ...raw, query: str(raw, 'query')! } as unknown as SearchInput; },
-  run(ctx, input) { return searchContext(ctx.store, input, ctx.now()); },
+  name: 'context_search',
+  title: 'Find relevant context',
+  surface: 'interactive',
+  readOnly: true,
+  description:
+    'Rank admitted project context and source passages. Expand related concepts with the current host and pass expansions. Results carry citations, revisions, provenance and coverage; similarity grants no authority. Exact project_context lookups remain available.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: { type: 'string', description: 'Question, concept, exact phrase or record reference.' },
+      expansions: {
+        type: 'array',
+        items: { type: 'string', description: 'Text value.' },
+        description: 'Up to eight related queries inferred by this host.',
+      },
+      topic: { type: 'string', description: 'sources, statements, decisions, claims, entities, work, runs or outcomes.' },
+      sourceId: { type: 'string', description: 'Restrict to one admitted source.' },
+      limit: { type: 'number', description: 'At most 50 documents; default 12.' },
+      budgetChars: {
+        type: 'number',
+        description: 'Returned item budget; default 12000, maximum 48000 characters. Diagnostics are separately bounded.',
+      },
+      embedding: {
+        type: 'object',
+        description: 'Optional vector from the explicitly configured embedding implementation.',
+        properties: {
+          model: { type: 'string', description: 'Text value.' },
+          dimensions: { type: 'number', description: 'Finite numeric value.' },
+          vector: { type: 'array', description: 'Embedding dimensions.', items: { type: 'number', description: 'Finite numeric value.' } },
+        },
+        required: ['model', 'dimensions', 'vector'],
+        additionalProperties: false,
+      },
+    },
+    required: ['query'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    return { ...raw, query: str(raw, 'query')! } as unknown as SearchInput;
+  },
+  run(ctx, input) {
+    return searchContext(ctx.store, input, ctx.now());
+  },
 });
 
 const contextIndex = define<Record<string, unknown>, unknown>({
-  name: 'context_index', title: 'Context index', surface: 'interactive', readOnly: false,
-  description: 'Inspect or rebuild the derived local index. Explicitly enable or disable supplied embeddings; configure resets prior vectors. Record vectors for returned embeddingRef and exact passage fingerprints. This tool invokes no model, download or service.',
-  inputSchema: { type: 'object', properties: {
-    action: { type: 'string', description: 'Index operation.', enum: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] },
-    model: { type: 'string', description: 'Text value.' }, dimensions: { type: 'number', description: 'Finite numeric value.' },
-    items: { type: 'array', description: 'Vectors of admitted documents.', items: { type: 'object', properties: { ref: { type: 'string', description: 'Text value.' }, digest: { type: 'string', description: 'Text value.' }, vector: { type: 'array', description: 'Embedding dimensions.', items: { type: 'number', description: 'Finite numeric value.' } } }, required: ['ref', 'digest', 'vector'], additionalProperties: false } },
-  }, required: ['action'], additionalProperties: false },
-  validate(raw) { closed(raw, this.inputSchema); str(raw, 'action', { oneOf: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] }); return raw; },
+  name: 'context_index',
+  title: 'Context index',
+  surface: 'interactive',
+  readOnly: false,
+  description:
+    'Inspect or rebuild the derived local index. Explicitly enable or disable supplied embeddings; configure resets prior vectors. Record vectors for returned embeddingRef and exact passage fingerprints. This tool invokes no model, download or service.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      action: { type: 'string', description: 'Index operation.', enum: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] },
+      model: { type: 'string', description: 'Text value.' },
+      dimensions: { type: 'number', description: 'Finite numeric value.' },
+      items: {
+        type: 'array',
+        description: 'Vectors of admitted documents.',
+        items: {
+          type: 'object',
+          properties: {
+            ref: { type: 'string', description: 'Text value.' },
+            digest: { type: 'string', description: 'Text value.' },
+            vector: {
+              type: 'array',
+              description: 'Embedding dimensions.',
+              items: { type: 'number', description: 'Finite numeric value.' },
+            },
+          },
+          required: ['ref', 'digest', 'vector'],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ['action'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    str(raw, 'action', { oneOf: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] });
+    return raw;
+  },
   run(ctx, input) {
     if (input.action === 'status') return contextIndexStatus(ctx.store);
     if (input.action === 'rebuild') return rebuildContextIndex(ctx.store, ctx.now());
@@ -284,7 +488,10 @@ function shownStatement(s: Statement): Record<string, unknown> {
   return { id: s.id, kind: s.kind, text: s.text, at: s.createdAt, channel: s.channel, voice: s.voice };
 }
 
-const remember = define<{ kind: StatementKind; text: string; assumptions: string[]; replaces?: string; contradicts: string[]; outdates: string[] }, unknown>({
+const remember = define<
+  { kind: StatementKind; text: string; assumptions: string[]; replaces?: string; contradicts: string[]; outdates: string[] },
+  unknown
+>({
   name: 'remember',
   title: 'Remember one thing',
   description: `Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff. Replacing an earlier record, ruling terms out, or marking a document outdated needs the person’s own confirmation; Construct asks them when the host can. ${PERSON_ASKED_ONLY}`,
@@ -293,12 +500,25 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
   inputSchema: {
     type: 'object',
     properties: {
-      kind: { type: 'string', description: 'What kind of thing this is.', enum: ['decision', 'constraint', 'principle', 'note', 'outcome', 'non_goal', 'success_measure', 'unknown'] },
+      kind: {
+        type: 'string',
+        description: 'What kind of thing this is.',
+        enum: ['decision', 'constraint', 'principle', 'note', 'outcome', 'non_goal', 'success_measure', 'unknown'],
+      },
       text: { type: 'string', description: 'The person’s wording, as they said it.' },
       assumptions: { type: 'array', description: 'Load-bearing assumptions this governing record rests on.', items: { type: 'string' } },
       replaces: { type: 'string', description: 'The id of a statement this one supersedes.' },
-      contradicts: { type: 'array', items: { type: 'string' }, description: 'For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named.' },
-      outdates: { type: 'array', items: { type: 'string' }, description: 'Documents or items the person said are no longer current; only names they said.' },
+      contradicts: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named.',
+      },
+      outdates: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Documents or items the person said are no longer current; only names they said.',
+      },
     },
     required: ['kind', 'text'],
     additionalProperties: false,
@@ -306,22 +526,36 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
   validate(raw) {
     closed(raw, this.inputSchema);
     const assumptions = list(raw, 'assumptions').filter((a): a is string => typeof a === 'string' && a.trim().length > 0);
-    const terms = (field: string) => list(raw, field).filter((x): x is string => typeof x === 'string' && x.trim().length >= 3).map((x) => x.trim());
+    const terms = (field: string) =>
+      list(raw, field)
+        .filter((x): x is string => typeof x === 'string' && x.trim().length >= 3)
+        .map((x) => x.trim());
     const text = str(raw, 'text')!;
     // The forms that restrict later work are written by Construct when the person confirms them, never relayed as text.
     if (inRuleForm(text)) throw new ToolInputError(RULE_FORM_REFUSAL, { field: 'text' });
-    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text, assumptions, replaces: str(raw, 'replaces', { optional: true }), contradicts: terms('contradicts'), outdates: terms('outdates') };
+    return {
+      kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind,
+      text,
+      assumptions,
+      replaces: str(raw, 'replaces', { optional: true }),
+      contradicts: terms('contradicts'),
+      outdates: terms('outdates'),
+    };
   },
   async run(ctx, input) {
     const rulesOut = input.kind === 'decision' ? input.contradicts : [];
     // The person asked the model to keep this; the record says the model relayed it.
-    const relayed = () => ctx.workflow.remember({ kind: input.kind, text: input.text, assumptions: input.assumptions, by: ctx.actor, channel: 'relay' });
-    if (!input.replaces && rulesOut.length === 0 && input.outdates.length === 0) return { remembered: shownStatement(relayed()), nothingElseCreated: true };
+    const relayed = () =>
+      ctx.workflow.remember({ kind: input.kind, text: input.text, assumptions: input.assumptions, by: ctx.actor, channel: 'relay' });
+    if (!input.replaces && rulesOut.length === 0 && input.outdates.length === 0)
+      return { remembered: shownStatement(relayed()), nothingElseCreated: true };
     // What only adds is recorded now; replacing a record waits for the person, and the rules always do. Both land, or neither.
     const { s, pending } = ctx.store.transaction(() => {
       const kept = input.replaces ? null : relayed();
       const asking = ctx.workflow.proposeSettlement({
-        ...(kept ? { forStatementId: kept.id } : { record: { kind: input.kind, text: input.text, assumptions: input.assumptions }, replaces: input.replaces }),
+        ...(kept
+          ? { forStatementId: kept.id }
+          : { record: { kind: input.kind, text: input.text, assumptions: input.assumptions }, replaces: input.replaces }),
         rulesOut,
         outdates: input.outdates,
         by: ctx.actor,
@@ -333,7 +567,12 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
     if (asked && state !== 'open') {
       // The person answered the prompt: approved, it is all recorded in their voice; declined, only what was already kept stays.
       const made = s ?? (input.replaces ? getStatement(ctx.store, getStatement(ctx.store, input.replaces)?.supersededBy ?? '') : null);
-      return { remembered: made ? shownStatement(made) : null, settlement: asked.decision, channel: asked.channel, nothingElseCreated: true };
+      return {
+        remembered: made ? shownStatement(made) : null,
+        settlement: asked.decision,
+        channel: asked.channel,
+        nothingElseCreated: true,
+      };
     }
     return {
       remembered: s ? shownStatement(s) : null,
@@ -377,15 +616,21 @@ const INTAKE_SCHEMA: JsonSchema = {
       required: ['kind'],
       additionalProperties: false,
     },
-    intent: { type: 'object', description: 'Host interpretation.', properties: {
-      outcome: { type: 'string', description: 'Desired result.' },
-      audience: { type: 'string', description: 'Audience.' },
-      path: { type: 'string', description: 'Work path.', enum: EXECUTION_PATHS },
-      acceptance: { type: 'array', description: 'Success checks.', items: { type: 'string' } },
-      constraints: { type: 'array', description: 'Labeled constraints.', items: { type: 'string' } },
-      assumptions: { type: 'array', description: 'Assumptions.', items: { type: 'string' } },
-      priorWork: { type: 'array', description: 'Prior records.', items: { type: 'string' } },
-    }, required: ['outcome', 'path'], additionalProperties: false },
+    intent: {
+      type: 'object',
+      description: 'Host interpretation.',
+      properties: {
+        outcome: { type: 'string', description: 'Desired result.' },
+        audience: { type: 'string', description: 'Audience.' },
+        path: { type: 'string', description: 'Work path.', enum: EXECUTION_PATHS },
+        acceptance: { type: 'array', description: 'Success checks.', items: { type: 'string' } },
+        constraints: { type: 'array', description: 'Labeled constraints.', items: { type: 'string' } },
+        assumptions: { type: 'array', description: 'Assumptions.', items: { type: 'string' } },
+        priorWork: { type: 'array', description: 'Prior records.', items: { type: 'string' } },
+      },
+      required: ['outcome', 'path'],
+      additionalProperties: false,
+    },
     skill: { type: 'string', description: 'Method id.' },
     workflowId: { type: 'string', description: 'Workflow id.' },
     target: { type: 'string', description: 'Target.' },
@@ -491,7 +736,12 @@ function fromIntake<T>(fn: () => T): T {
   try {
     return fn();
   } catch (error) {
-    if (error instanceof IntakeError) throw new ToolInputError(error.message, { field: error.field, ...(error.allowed ? { allowed: error.allowed } : {}), example: error.example });
+    if (error instanceof IntakeError)
+      throw new ToolInputError(error.message, {
+        field: error.field,
+        ...(error.allowed ? { allowed: error.allowed } : {}),
+        example: error.example,
+      });
     throw error;
   }
 }
@@ -503,7 +753,7 @@ function declaredOf(intake: Intake): Declared {
 
 /** The host that reported the reading, and the client it named at the handshake. */
 function judgedByHost(ctx: BrokerContext): JudgedBy {
-  return { by: 'host', host: ctx.host.hostId, client: ctx.sessionId ? getSession(ctx.store, ctx.sessionId)?.clientName ?? null : null };
+  return { by: 'host', host: ctx.host.hostId, client: ctx.sessionId ? (getSession(ctx.store, ctx.sessionId)?.clientName ?? null) : null };
 }
 
 /**
@@ -512,10 +762,19 @@ function judgedByHost(ctx: BrokerContext): JudgedBy {
  * When the reading's destination and a given one disagree, the person's
  * question settles it and neither is mapped.
  */
-function mappedInput(intake: Intake, workflow: RegisteredWorkflow, explicit: Readonly<Record<string, unknown>>, own: boolean): { readonly input: Record<string, unknown>; readonly missing: readonly string[] } {
+function mappedInput(
+  intake: Intake,
+  workflow: RegisteredWorkflow,
+  explicit: Readonly<Record<string, unknown>>,
+  own: boolean,
+): { readonly input: Record<string, unknown>; readonly missing: readonly string[] } {
   const declared = Object.keys(workflow.manifest.inputSchema);
-  const reading = own ? intake : { ...intake, inputs: Object.fromEntries(Object.entries(intake.inputs).filter(([k]) => declared.includes(k))) };
-  return fromIntake(() => workflowInputFor(destinationConflict(reading, explicit) ? { ...reading, destination: null } : reading, workflow, explicit));
+  const reading = own
+    ? intake
+    : { ...intake, inputs: Object.fromEntries(Object.entries(intake.inputs).filter(([k]) => declared.includes(k))) };
+  return fromIntake(() =>
+    workflowInputFor(destinationConflict(reading, explicit) ? { ...reading, destination: null } : reading, workflow, explicit),
+  );
 }
 
 /** A skill's use-when text: its first sentence, at most 200 characters. */
@@ -527,10 +786,15 @@ function firstSentence(text: string, cap = 200): string {
 }
 
 /** The skills the matches bind, and the chosen one; for the general carrier with no method chosen, every method and professional skill. */
-function skillCatalog(ctx: BrokerContext, intake: Intake, found: readonly WorkflowMatch[]): Record<string, { title: string; category: string; useWhen: string }> {
+function skillCatalog(
+  ctx: BrokerContext,
+  intake: Intake,
+  found: readonly WorkflowMatch[],
+): Record<string, { title: string; category: string; useWhen: string }> {
   const ids = new Set<string>([...(intake.skill ? [intake.skill] : []), ...found.flatMap((m) => m.skills)]);
   if (found[0]?.workflowId === GENERAL_CARRIER && intake.skill === null) {
-    for (const s of ctx.skills.list()) if (s.manifest.category === 'method' || s.manifest.category === 'professional') ids.add(s.manifest.id);
+    for (const s of ctx.skills.list())
+      if (s.manifest.category === 'method' || s.manifest.category === 'professional') ids.add(s.manifest.id);
   }
   const out: Record<string, { title: string; category: string; useWhen: string }> = {};
   for (const id of ids) {
@@ -552,25 +816,36 @@ function scheduleCommand(workflowId: string, schedule: Intake['schedule']): stri
 function classifyNext(validated: ValidatedIntake, first: string | null, open: number, challenge: boolean): string {
   const { intake } = validated;
   if (intake.kind === 'answer') return 'Answer in chat. Nothing was recorded.';
-  if (intake.kind === 'remember') return 'Call remember with the person’s wording and the kind of statement it is. Nothing else is created.';
+  if (intake.kind === 'remember')
+    return 'Call remember with the person’s wording and the kind of statement it is. Nothing else is created.';
   if (intake.kind === 'coordinate') return COORDINATION_NEXT[intake.coordination!];
   const unregistered = validated.resolved.sources.filter((s) => !s.registered && !s.candidates?.length).length;
-  const prefix = unregistered > 0
-    ? `${String(unregistered)} of the systems in your reading ${unregistered === 1 ? 'is' : 'are'} not registered with Construct; declare each one the person named with sources action declare, then report what you read before citing it. `
-    : '';
+  const prefix =
+    unregistered > 0
+      ? `${String(unregistered)} of the systems in your reading ${unregistered === 1 ? 'is' : 'are'} not registered with Construct; declare each one the person named with sources action declare, then report what you read before citing it. `
+      : '';
   if (first === null) {
     return `${prefix}No workflow here produces ${intake.deliverable?.kind ?? 'this'} ${intake.kind === 'maintain' ? 'on a schedule or an event; tell the person, and offer to run it once now instead (kind manage)' : 'for this reading; tell the person what the listed workflows can do instead'}.`;
   }
-  if (first === GENERAL_CARRIER && open === 0) return `${prefix}First inspect carrierAlternatives and the reported execution path; the portable carrier needs no project command. never request broader shell permission to deliver research or advice. Call start_outcome with workflowId "${first}" and this intake when its obligations fit.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
-  if (first === 'managed-outcome' && open === 0) return `${prefix}The implementation path requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this path only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
-  if (open > 0) return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
+  if (first === GENERAL_CARRIER && open === 0)
+    return `${prefix}First inspect carrierAlternatives and the reported execution path; the portable carrier needs no project command. never request broader shell permission to deliver research or advice. Call start_outcome with workflowId "${first}" and this intake when its obligations fit.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
+  if (first === 'managed-outcome' && open === 0)
+    return `${prefix}The implementation path requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this path only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
+  if (open > 0)
+    return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
   return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` start_outcome saves the standing intent without starting work now. The clock and executor still require provisioning; ${scheduleCommand(first, intake.schedule)} is only an alternate definition command, not an executing schedule.` : ''}`;
 }
 
 function workflowVerification(w: RegisteredWorkflow) {
   const execution = w.manifest.steps.some((step) => step.capabilities.includes('run_tests'));
   const challenge = w.manifest.steps.some((step) => step.challenge);
-  return { kind: execution ? 'observed_project_command' : challenge ? 'evidence_and_model_challenge' : 'declared_structural_checks', executionRequired: execution, assurance: execution ? 'observed command; intended criteria need a frozen verifier contract' : 'deterministic checks and host-reported judgment; no independent semantic proof' };
+  return {
+    kind: execution ? 'observed_project_command' : challenge ? 'evidence_and_model_challenge' : 'declared_structural_checks',
+    executionRequired: execution,
+    assurance: execution
+      ? 'observed command; intended criteria need a frozen verifier contract'
+      : 'deterministic checks and host-reported judgment; no independent semantic proof',
+  };
 }
 
 const classify = define<Record<string, unknown>, unknown>({
@@ -586,7 +861,10 @@ const classify = define<Record<string, unknown>, unknown>({
     } catch (error) {
       // The person's words go in words, with the reading beside them.
       if (error instanceof ToolInputError && error.field === 'text') {
-        throw new ToolInputError('"text" is not an input of this tool: put the person’s words, verbatim, in "words", with your reading of them beside it', { field: 'text', allowed: Object.keys(this.inputSchema.properties), example: CORE_EXAMPLE });
+        throw new ToolInputError(
+          '"text" is not an input of this tool: put the person’s words, verbatim, in "words", with your reading of them beside it',
+          { field: 'text', allowed: Object.keys(this.inputSchema.properties), example: CORE_EXAMPLE },
+        );
       }
       throw error;
     }
@@ -602,7 +880,19 @@ const classify = define<Record<string, unknown>, unknown>({
       const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId)!, {}, i === 0);
       const { preflight } = ctx.workflow.preflight(m.workflowId, input, { declared });
       return {
-        match: { workflowId: m.workflowId, title: m.title, deliverableKind: m.deliverableKind, because: m.because, verification: workflowVerification(ctx.workflows.get(m.workflowId)!), status: preflight.status, summary: preflight.summary, reasons: preflight.reasons, approvalsAhead: preflight.approvalsAhead, input, missing },
+        match: {
+          workflowId: m.workflowId,
+          title: m.title,
+          deliverableKind: m.deliverableKind,
+          because: m.because,
+          verification: workflowVerification(ctx.workflows.get(m.workflowId)!),
+          status: preflight.status,
+          summary: preflight.summary,
+          reasons: preflight.reasons,
+          approvalsAhead: preflight.approvalsAhead,
+          input,
+          missing,
+        },
         judgment: preflight.judgment,
       };
     });
@@ -616,7 +906,19 @@ const classify = define<Record<string, unknown>, unknown>({
       resolved: validated.resolved,
       normalized: validated.normalized,
       matches: checked.map((c) => c.match),
-      ...((intake.kind === 'manage' || intake.kind === 'maintain') && (intake.deliverable?.kind === 'other' || found[0]?.workflowId === GENERAL_CARRIER) ? { carrierAlternatives: catalog.workflows.filter((w) => w.manifest.id !== GENERAL_CARRIER && workflowCarries(w, intake.kind, intake.schedule)).map((w) => ({ workflowId: w.manifest.id, deliverableKind: w.manifest.deliverable.kind, title: w.manifest.title, verification: workflowVerification(w) })) } : {}),
+      ...((intake.kind === 'manage' || intake.kind === 'maintain') &&
+      (intake.deliverable?.kind === 'other' || found[0]?.workflowId === GENERAL_CARRIER)
+        ? {
+            carrierAlternatives: catalog.workflows
+              .filter((w) => w.manifest.id !== GENERAL_CARRIER && workflowCarries(w, intake.kind, intake.schedule))
+              .map((w) => ({
+                workflowId: w.manifest.id,
+                deliverableKind: w.manifest.deliverable.kind,
+                title: w.manifest.title,
+                verification: workflowVerification(w),
+              })),
+          }
+        : {}),
       skills: skillCatalog(ctx, intake, found),
       questions,
       hostQuestions,
@@ -631,7 +933,8 @@ const classify = define<Record<string, unknown>, unknown>({
 const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; input?: Record<string, unknown> }, unknown>({
   name: 'workflows',
   title: 'Workflows',
-  description: 'List the workflows this project can run, show one, or resolve one against this session to learn whether it can run and what would stop it.',
+  description:
+    'List the workflows this project can run, show one, or resolve one against this session to learn whether it can run and what would stop it.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
@@ -646,10 +949,24 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'resolve'] }) as 'list' | 'show' | 'resolve', id: str(raw, 'id', { optional: true }), input: obj(raw, 'input', { optional: true }) };
+    return {
+      action: str(raw, 'action', { oneOf: ['list', 'show', 'resolve'] }) as 'list' | 'show' | 'resolve',
+      id: str(raw, 'id', { optional: true }),
+      input: obj(raw, 'input', { optional: true }),
+    };
   },
   run(ctx, { action, id, input }) {
-    if (action === 'list') return ctx.workflows.list().map((w) => ({ id: w.manifest.id, title: w.manifest.title, version: w.manifest.version, interactionClass: w.manifest.interactionClass, purpose: w.manifest.purpose, deliverableKind: w.manifest.deliverable.kind, verification: workflowVerification(w), triggers: w.manifest.triggers }));
+    if (action === 'list')
+      return ctx.workflows.list().map((w) => ({
+        id: w.manifest.id,
+        title: w.manifest.title,
+        version: w.manifest.version,
+        interactionClass: w.manifest.interactionClass,
+        purpose: w.manifest.purpose,
+        deliverableKind: w.manifest.deliverable.kind,
+        verification: workflowVerification(w),
+        triggers: w.manifest.triggers,
+      }));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     const w = ctx.workflows.get(id);
     if (!w) throw new Error(`no workflow "${id}"; list shows the ones this project has`);
@@ -661,7 +978,8 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
 const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; includeBody: boolean; model?: string }, unknown>({
   name: 'skills',
   title: 'Skills',
-  description: 'List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.',
+  description:
+    'List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.',
   surface: 'both',
   readOnly: true,
   inputSchema: {
@@ -669,7 +987,10 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     properties: {
       action: { type: 'string', description: 'list, show, or status.', enum: ['list', 'show', 'status'] },
       id: { type: 'string', description: 'The skill id, for show.' },
-      model: { type: 'string', description: 'Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies.' },
+      model: {
+        type: 'string',
+        description: 'Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies.',
+      },
       includeBody: { type: 'boolean', description: 'Include the skill’s full text (default false).' },
     },
     required: ['action'],
@@ -677,28 +998,55 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status', id: str(raw, 'id', { optional: true }), includeBody: bool(raw, 'includeBody', false), model: str(raw, 'model', { optional: true }) };
+    return {
+      action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status',
+      id: str(raw, 'id', { optional: true }),
+      includeBody: bool(raw, 'includeBody', false),
+      model: str(raw, 'model', { optional: true }),
+    };
   },
   run(ctx, { action, id, includeBody, model }) {
-    if (action === 'list') return ctx.skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, version: s.manifest.version, category: s.manifest.category, description: s.description }));
-    if (action === 'status') return lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).map((r) => ({ kind: r.kind, id: r.id, state: r.state, why: r.why }));
+    if (action === 'list')
+      return ctx.skills.list().map((s) => ({
+        id: s.manifest.id,
+        title: s.manifest.title,
+        version: s.manifest.version,
+        category: s.manifest.category,
+        description: s.description,
+      }));
+    if (action === 'status')
+      return lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).map((r) => ({
+        kind: r.kind,
+        id: r.id,
+        state: r.state,
+        why: r.why,
+      }));
     if (!id) throw new ToolInputError('"id" is required for show', { field: 'id' });
     const s = ctx.skills.get(id);
     if (!s) throw new Error(`no skill "${id}"`);
-    const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).find((r) => r.kind === 'skill' && r.id === id);
+    const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).find(
+      (r) => r.kind === 'skill' && r.id === id,
+    );
     const body = ctx.skills.body(id);
     return {
       ...s.manifest,
       origin: s.origin,
       digest: s.digest,
       files: s.files,
-      qualification: qualifySkill(s, lock, body, { host: ctx.host.hostId, model: model ?? null, now: ctx.now(), records: qualificationRecords(ctx.store, id), resolve: projectResolver(ctx) }),
+      qualification: qualifySkill(s, lock, body, {
+        host: ctx.host.hostId,
+        model: model ?? null,
+        now: ctx.now(),
+        records: qualificationRecords(ctx.store, id),
+        resolve: projectResolver(ctx),
+      }),
       body: includeBody ? body : undefined,
     };
   },
 });
 
-const NOTHING_STARTED = 'Nothing started. Recheck host-marked blockers: evidence gaps in an investigation can use blocking=false and handling=investigate or carry_unknown, without an assumed answer. Do not downgrade required permission, essential scope or destination decisions. Resolve real blockers with the person, then retry start_outcome; do not silently bypass this result.';
+const NOTHING_STARTED =
+  'Nothing started. Recheck host-marked blockers: evidence gaps in an investigation can use blocking=false and handling=investigate or carry_unknown, without an assumed answer. Do not downgrade required permission, essential scope or destination decisions. Resolve real blockers with the person, then retry start_outcome; do not silently bypass this result.';
 
 /** Input a workflow refuses: an undeclared key, or a value its type does not take. Each comes back naming input.<key>. */
 function refuseWrongInput(ctx: BrokerContext, workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>): void {
@@ -708,7 +1056,10 @@ function refuseWrongInput(ctx: BrokerContext, workflow: RegisteredWorkflow, inpu
   for (const [key, value] of Object.entries(input)) {
     const problems = inputProblems({ ...m, requiredInputs: [] }, { [key]: value }, slotContext);
     if (problems.length === 0) continue;
-    throw new ToolInputError(`${problems.map((p) => p.message).join('; ')}. ${problems[0]!.remedy}`, { field: `input.${key}`, ...(declared.includes(key) ? {} : { allowed: declared }) });
+    throw new ToolInputError(`${problems.map((p) => p.message).join('; ')}. ${problems[0]!.remedy}`, {
+      field: `input.${key}`,
+      ...(declared.includes(key) ? {} : { allowed: declared }),
+    });
   }
 }
 
@@ -717,7 +1068,12 @@ function startable(w: RegisteredWorkflow): boolean {
   return (w.manifest.interactionClass === 'manage' || w.manifest.interactionClass === 'maintain') && w.manifest.triggers.includes('manual');
 }
 
-function startedResult(ctx: BrokerContext, r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
+function startedResult(
+  ctx: BrokerContext,
+  r: StartResult,
+  normalized: readonly unknown[],
+  assumptions: readonly Assumption[],
+): Record<string, unknown> {
   return {
     started: true,
     semanticReview: semanticReviewStatus(ctx.store, r.run, resolverFor(ctx.store, ctx.root), ctx.now()),
@@ -743,7 +1099,10 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
     properties: {
       workflowId: { type: 'string', description: 'Which workflow: one classify_request matched.' },
       input: { type: 'object', description: 'Workflow inputs by their keys; with an intake, only what the reading does not carry.' },
-      intake: { type: 'object', description: 'The intake classify_request returned, with the person’s answers applied; Construct checks it again.' },
+      intake: {
+        type: 'object',
+        description: 'The intake classify_request returned, with the person’s answers applied; Construct checks it again.',
+      },
     },
     required: ['workflowId'],
     additionalProperties: false,
@@ -754,7 +1113,10 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
     const input = obj(raw, 'input', { optional: true });
     const intake = obj(raw, 'intake', { optional: true });
     if (!input && !intake) {
-      throw new ToolInputError('give "intake", the reading classify_request returned with the person’s answers applied, or "input", the workflow input', { field: 'intake', example: { intake: CORE_EXAMPLE } });
+      throw new ToolInputError(
+        'give "intake", the reading classify_request returned with the person’s answers applied, or "input", the workflow input',
+        { field: 'intake', example: { intake: CORE_EXAMPLE } },
+      );
     }
     return { workflowId, ...(input ? { input } : {}), ...(intake ? { intake } : {}) };
   },
@@ -766,7 +1128,11 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
       const validated = fromIntake(() => validateIntake(intake, catalog, 'start'));
       const matches = matchWorkflows(validated.intake, catalog);
       const match = matches.find((m) => m.workflowId === workflowId);
-      if (!match) throw new ToolInputError(`${workflowId} does not carry this reading; start one of the workflows it matched`, { field: 'workflowId', allowed: matches.map((m) => m.workflowId) });
+      if (!match)
+        throw new ToolInputError(`${workflowId} does not carry this reading; start one of the workflows it matched`, {
+          field: 'workflowId',
+          allowed: matches.map((m) => m.workflowId),
+        });
       const workflow = ctx.workflows.get(workflowId)!;
       const { input: mapped } = mappedInput(validated.intake, workflow, explicit, true);
       refuseWrongInput(ctx, workflow, mapped);
@@ -783,7 +1149,10 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
         asked: {
           intake: reading,
           periodSpec: reading.period,
-          sources: { registered: [...new Set(reading.sources.filter((s) => s.role === 'read' && s.id !== null).map((s) => s.id!))], named: resolved.sources.map((s) => ({ name: s.name, id: s.id, registered: s.registered })) },
+          sources: {
+            registered: [...new Set(reading.sources.filter((s) => s.role === 'read' && s.id !== null).map((s) => s.id!))],
+            named: resolved.sources.map((s) => ({ name: s.name, id: s.id, registered: s.registered })),
+          },
           declared: declaredOf(reading),
           judgedBy: judgedByHost(ctx),
           assumptions: validated.assumptions,
@@ -792,24 +1161,51 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
       return startedResult(ctx, r, validated.normalized, validated.assumptions);
     }
     const workflow = ctx.workflows.get(workflowId);
-    if (!workflow || !startable(workflow)) throw new ToolInputError(`no workflow "${workflowId}" can be started here`, { field: 'workflowId', allowed: ctx.workflows.list().filter(startable).map((w) => w.manifest.id) });
+    if (!workflow || !startable(workflow))
+      throw new ToolInputError(`no workflow "${workflowId}" can be started here`, {
+        field: 'workflowId',
+        allowed: ctx.workflows
+          .list()
+          .filter(startable)
+          .map((w) => w.manifest.id),
+      });
     refuseWrongInput(ctx, workflow, explicit);
     const missing = workflow.manifest.requiredInputs.filter((k) => explicit[k] === undefined);
-    if (missing.length > 0) return { started: false, recorded: false, questions: missing.map((slot) => slotQuestion(slot, workflow)), hostQuestions: [], normalized: [], next: NOTHING_STARTED };
+    if (missing.length > 0)
+      return {
+        started: false,
+        recorded: false,
+        questions: missing.map((slot) => slotQuestion(slot, workflow)),
+        hostQuestions: [],
+        normalized: [],
+        next: NOTHING_STARTED,
+      };
     const r = ctx.workflow.start({ workflowId, input: explicit, trigger: 'manual' });
-    return startedResult(ctx, r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
+    return startedResult(
+      ctx,
+      r,
+      [],
+      r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })),
+    );
   },
 });
 
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, bound skill, compact method index and instructions. For a requested local artifact, delivery includes its existing native work/path reservation and held draft: use that reservation instead of creating another commitment or work claim. Only the current step tier authorizes writing. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
+  description:
+    'Take the next ready step of a run to do in this session. Returns the step, its inputs, bound skill, compact method index and instructions. For a requested local artifact, delivery includes its existing native work/path reservation and held draft: use that reservation instead of creating another commitment or work claim. Only the current step tier authorizes writing. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { runId: { type: 'string', description: 'A run id; omit to take from any active run.' }, includeSkillBody: { type: 'boolean', description: 'Include the bound skill’s full text (default true); false requests metadata only.' } },
+    properties: {
+      runId: { type: 'string', description: 'A run id; omit to take from any active run.' },
+      includeSkillBody: {
+        type: 'boolean',
+        description: 'Include the bound skill’s full text (default true); false requests metadata only.',
+      },
+    },
     additionalProperties: false,
   },
   validate(raw) {
@@ -818,18 +1214,22 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
   },
   run(ctx, { runId, includeSkillBody }) {
     recoverAbandonedSteps(ctx, runId);
-    const result = (() => { try { return ctx.store.transaction(() => {
-      const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
-      const settledRunId = runId ?? (c.waitingOn?.kind === 're_resolve' ? c.waitingOn.runId : undefined);
-      if (!c.packet && settledRunId) {
-        const run = getRun(ctx.store, settledRunId);
-        if (run) settleManagedDelivery(ctx, run.id, run.state);
+    const result = (() => {
+      try {
+        return ctx.store.transaction(() => {
+          const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+          const settledRunId = runId ?? (c.waitingOn?.kind === 're_resolve' ? c.waitingOn.runId : undefined);
+          if (!c.packet && settledRunId) {
+            const run = getRun(ctx.store, settledRunId);
+            if (run) settleManagedDelivery(ctx, run.id, run.state);
+          }
+          return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
+        });
+      } catch (error) {
+        if (error instanceof DeliveryRecoveryRequired) return { recovery: error.recovery };
+        throw error;
       }
-      return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
-    }); } catch (error) {
-      if (error instanceof DeliveryRecoveryRequired) return { recovery: error.recovery };
-      throw error;
-    } })();
+    })();
     if ('recovery' in result) return { work: null, waitingOn: result.recovery };
     const { c, delivery } = result;
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
@@ -843,13 +1243,22 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         token: p.leased.nonce,
         leaseUntil: p.leased.leaseUntil,
         run: { id: p.run.id, workflow: p.run.workflowId },
-        step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators, capabilities: p.step.capabilities },
-        skill: p.skill ? { id: p.skill.id, version: p.skill.version, digest: p.skill.digest, body: includeSkillBody ? p.skill.body() : undefined } : null,
+        step: {
+          id: p.step.id,
+          title: p.step.title,
+          tier: p.step.tier,
+          outputs: p.step.outputs,
+          validators: p.step.validators,
+          capabilities: p.step.capabilities,
+        },
+        skill: p.skill
+          ? { id: p.skill.id, version: p.skill.version, digest: p.skill.digest, body: includeSkillBody ? p.skill.body() : undefined }
+          : null,
         inputs: p.inputs,
         intake: p.intake,
         method: p.method,
         methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
-        methodCatalogDetail: 'Compact index; skills list/show provides each skill\'s description and method resources.',
+        methodCatalogDetail: "Compact index; skills list/show provides each skill's description and method resources.",
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -873,18 +1282,30 @@ function citationsInput(raw: Record<string, unknown>, key: string): { ref: strin
   return list(raw, key).map((entry, n) => {
     const item = record(entry);
     if (item.excerpt !== undefined && item.excerpt !== null && typeof item.excerpt !== 'string') {
-      throw new ToolInputError(`${key}[${String(n)}].excerpt must be a readable string; extract the observed passage before citing it`, { field: `${key}[${String(n)}].excerpt` });
+      throw new ToolInputError(`${key}[${String(n)}].excerpt must be a readable string; extract the observed passage before citing it`, {
+        field: `${key}[${String(n)}].excerpt`,
+      });
     }
-    return { ref: typeof item.ref === 'string' ? item.ref : '', ...(typeof item.excerpt === 'string' ? { excerpt: redact(item.excerpt) } : {}) };
+    return {
+      ref: typeof item.ref === 'string' ? item.ref : '',
+      ...(typeof item.excerpt === 'string' ? { excerpt: redact(item.excerpt) } : {}),
+    };
   });
 }
 
-interface SubmitInput { stepRunId: string; token: string; output: Record<string, unknown>; evidence: { ref: string; excerpt?: string }[]; noData: boolean }
+interface SubmitInput {
+  stepRunId: string;
+  token: string;
+  output: Record<string, unknown>;
+  evidence: { ref: string; excerpt?: string }[];
+  noData: boolean;
+}
 
 const submitWork = define<SubmitInput, unknown>({
   name: 'submit_work',
   title: 'Submit a step’s result',
-  description: 'Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.',
+  description:
+    'Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.',
   surface: 'both',
   readOnly: false,
   inputSchema: {
@@ -903,7 +1324,13 @@ const submitWork = define<SubmitInput, unknown>({
   validate(raw) {
     closed(raw, this.inputSchema);
     const evidence = citationsInput(raw, 'evidence');
-    return { stepRunId: str(raw, 'stepRunId')!, token: leaseToken(raw), output: obj(raw, 'output')!, evidence, noData: bool(raw, 'noData', false) };
+    return {
+      stepRunId: str(raw, 'stepRunId')!,
+      token: leaseToken(raw),
+      output: obj(raw, 'output')!,
+      evidence,
+      noData: bool(raw, 'noData', false),
+    };
   },
   run(ctx, input) {
     if (!getStep(ctx.store, input.stepRunId)) throw new Error(`no step ${input.stepRunId}`);
@@ -922,7 +1349,9 @@ const submitWork = define<SubmitInput, unknown>({
       // How much of this step rests on what Construct opened itself versus what the host reports it read.
       evidence: provenanceOf(input.evidence, resolve),
       run: { id: r.run.id, state: r.run.state },
-      deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState, verification: r.deliverable.verification } : null,
+      deliverable: r.deliverable
+        ? { id: r.deliverable.id, trust: r.deliverable.trustState, verification: r.deliverable.verification }
+        : null,
       // Restated keys whose value differs from what the step was handed: the deliverable carries what was handed.
       ...(r.ignored.length > 0 ? { ignored: r.ignored } : {}),
     };
@@ -932,46 +1361,120 @@ const submitWork = define<SubmitInput, unknown>({
 /** A lease token as given: the claim's secret string. */
 function leaseToken(raw: Record<string, unknown>): string {
   const token = raw.token;
-  if (typeof token !== 'string' || !token.trim()) throw new ToolInputError('"token" is required: the token claim_work returned', { field: 'token' });
+  if (typeof token !== 'string' || !token.trim())
+    throw new ToolInputError('"token" is required: the token claim_work returned', { field: 'token' });
   return token.trim();
 }
 
-const checkpointWork = define<{ stepRunId: string; token: string; summary: string; artifact?: string; unknowns: string[]; remaining: string[]; gatherCalls: number }, unknown>({
-  name: 'checkpoint_work', title: 'Preserve work in progress', surface: 'both', readOnly: false,
-  description: 'Save a durable partial result on your current step lease before gathering or repairs exhaust their budget. This neither completes the step nor establishes verification. Files must already exist and be permitted by this step.',
-  inputSchema: { type: 'object', properties: {
-    stepRunId: { type: 'string', description: 'Current claimed step.' }, token: { type: 'string', description: 'Current lease token.' },
-    summary: { type: 'string', description: 'Useful progress so far.' }, artifact: { type: 'string', description: 'Existing authorized project artifact, when any.' },
-    unknowns: { type: 'array', description: 'Missing evidence and unresolved facts.', items: { type: 'string' } },
-    remaining: { type: 'array', description: 'Next actions without repeating completed effects.', items: { type: 'string' } },
-    gatherCalls: { type: 'number', description: 'Host-reported gathering calls so far; no execution proof.' },
-  }, required: ['stepRunId', 'token', 'summary'], additionalProperties: false },
-  validate(raw) { closed(raw,this.inputSchema); return { stepRunId: str(raw,'stepRunId')!, token: leaseToken(raw), summary: str(raw,'summary')!, artifact: str(raw,'artifact',{optional:true}), unknowns: list(raw,'unknowns') as string[], remaining: list(raw,'remaining') as string[], gatherCalls: num(raw,'gatherCalls') ?? 0 }; },
-  run(ctx,input) {
-    const step = getStep(ctx.store,input.stepRunId); const at = ctx.now();
-    const lease = step?.leaseOwner ? heldLease(ctx.store,{id:step.id,owner:ctx.host.executorId,nonce:input.token}) : null;
+const checkpointWork = define<
+  { stepRunId: string; token: string; summary: string; artifact?: string; unknowns: string[]; remaining: string[]; gatherCalls: number },
+  unknown
+>({
+  name: 'checkpoint_work',
+  title: 'Preserve work in progress',
+  surface: 'both',
+  readOnly: false,
+  description:
+    'Save a durable partial result on your current step lease before gathering or repairs exhaust their budget. This neither completes the step nor establishes verification. Files must already exist and be permitted by this step.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      stepRunId: { type: 'string', description: 'Current claimed step.' },
+      token: { type: 'string', description: 'Current lease token.' },
+      summary: { type: 'string', description: 'Useful progress so far.' },
+      artifact: { type: 'string', description: 'Existing authorized project artifact, when any.' },
+      unknowns: { type: 'array', description: 'Missing evidence and unresolved facts.', items: { type: 'string' } },
+      remaining: { type: 'array', description: 'Next actions without repeating completed effects.', items: { type: 'string' } },
+      gatherCalls: { type: 'number', description: 'Host-reported gathering calls so far; no execution proof.' },
+    },
+    required: ['stepRunId', 'token', 'summary'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    return {
+      stepRunId: str(raw, 'stepRunId')!,
+      token: leaseToken(raw),
+      summary: str(raw, 'summary')!,
+      artifact: str(raw, 'artifact', { optional: true }),
+      unknowns: list(raw, 'unknowns') as string[],
+      remaining: list(raw, 'remaining') as string[],
+      gatherCalls: num(raw, 'gatherCalls') ?? 0,
+    };
+  },
+  run(ctx, input) {
+    const step = getStep(ctx.store, input.stepRunId);
+    const at = ctx.now();
+    const lease = step?.leaseOwner ? heldLease(ctx.store, { id: step.id, owner: ctx.host.executorId, nonce: input.token }) : null;
     if (!step || !lease || lease.leaseUntil <= at) throw new Error('Checkpoint requires this session’s current unexpired step lease');
-    if (JSON.stringify(input).length > 20_000 || !Number.isSafeInteger(input.gatherCalls) || input.gatherCalls < 0 || [...input.unknowns,...input.remaining].some(s => typeof s !== 'string')) throw new ToolInputError('Checkpoint must contain bounded text and a nonnegative gather-call count');
-    const run = getRun(ctx.store,step.runId)!; if (run.cancelRequested || ['failed','cancelled','succeeded'].includes(run.state)) throw new Error('Stopped outcomes cannot receive a new checkpoint');
+    if (
+      JSON.stringify(input).length > 20_000 ||
+      !Number.isSafeInteger(input.gatherCalls) ||
+      input.gatherCalls < 0 ||
+      [...input.unknowns, ...input.remaining].some((s) => typeof s !== 'string')
+    )
+      throw new ToolInputError('Checkpoint must contain bounded text and a nonnegative gather-call count');
+    const run = getRun(ctx.store, step.runId)!;
+    if (run.cancelRequested || ['failed', 'cancelled', 'succeeded'].includes(run.state))
+      throw new Error('Stopped outcomes cannot receive a new checkpoint');
     const artifact = input.artifact ? projectResolver(ctx)(input.artifact, 'artifact') : null;
-    const receipt = input.artifact ? contentReceipt(input.artifact,projectResolver(ctx), 'artifact') : null;
-    const binding = (run.bindings as { steps?: readonly import('../registry/models.ts').WorkflowStep[]; execution?: import('../registry/models.ts').WorkflowManifest['execution'] } | null);
-    const bound = binding?.steps?.find(s => s.id === step.stepId);
-    if (input.artifact && (artifact?.kind !== 'file' || !artifact.path || !isInside(ctx.root,artifact.path) || !receipt?.digest || bound?.tier !== 'project_write')) throw new Error('Artifact checkpoint needs an existing readable artifact on a project-write step');
-    const payload = { summary: redact(input.summary), artifact: receipt, unknowns: input.unknowns.map(redact), remaining: input.remaining.map(redact),
-      gathering: { calls: input.gatherCalls, provenance: 'host_reported', limit: binding?.execution?.maxGatherCalls ?? null, exhausted: binding?.execution ? input.gatherCalls >= binding.execution.maxGatherCalls : false }, assurance: 'partial_unverified' };
-    const event = appendActivity(ctx.store,{at,kind:'step.checkpoint',runId:run.id,stepRunId:step.id,actor:ctx.host.executorId,payload});
-    return { ref: `checkpoint:${event.id}`, ...payload, next: 'Resume from this checkpoint; submit only when current-step obligations are satisfied. Preserve unknowns and do not repeat completed effects.' };
+    const receipt = input.artifact ? contentReceipt(input.artifact, projectResolver(ctx), 'artifact') : null;
+    const binding = run.bindings as {
+      steps?: readonly import('../registry/models.ts').WorkflowStep[];
+      execution?: import('../registry/models.ts').WorkflowManifest['execution'];
+    } | null;
+    const bound = binding?.steps?.find((s) => s.id === step.stepId);
+    if (
+      input.artifact &&
+      (artifact?.kind !== 'file' ||
+        !artifact.path ||
+        !isInside(ctx.root, artifact.path) ||
+        !receipt?.digest ||
+        bound?.tier !== 'project_write')
+    )
+      throw new Error('Artifact checkpoint needs an existing readable artifact on a project-write step');
+    const payload = {
+      summary: redact(input.summary),
+      artifact: receipt,
+      unknowns: input.unknowns.map(redact),
+      remaining: input.remaining.map(redact),
+      gathering: {
+        calls: input.gatherCalls,
+        provenance: 'host_reported',
+        limit: binding?.execution?.maxGatherCalls ?? null,
+        exhausted: binding?.execution ? input.gatherCalls >= binding.execution.maxGatherCalls : false,
+      },
+      assurance: 'partial_unverified',
+    };
+    const event = appendActivity(ctx.store, {
+      at,
+      kind: 'step.checkpoint',
+      runId: run.id,
+      stepRunId: step.id,
+      actor: ctx.host.executorId,
+      payload,
+    });
+    return {
+      ref: `checkpoint:${event.id}`,
+      ...payload,
+      next: 'Resume from this checkpoint; submit only when current-step obligations are satisfied. Preserve unknowns and do not repeat completed effects.',
+    };
   },
 });
 
 const runStatus = define<{ runId: string }, unknown>({
   name: 'run_status',
   title: 'Run status',
-  description: 'Where a run stands: its state, each step, the deliverables and how far they are trusted, any decision it waits on, and what it was asked to cover (the period in dates, the sources it names, who judged the reading).',
+  description:
+    'Where a run stands: its state, each step, the deliverables and how far they are trusted, any decision it waits on, and what it was asked to cover (the period in dates, the sources it names, who judged the reading).',
   surface: 'both',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'The run id.' } }, required: ['runId'], additionalProperties: false },
+  inputSchema: {
+    type: 'object',
+    properties: { runId: { type: 'string', description: 'The run id.' } },
+    required: ['runId'],
+    additionalProperties: false,
+  },
   validate(raw) {
     closed(raw, this.inputSchema);
     return { runId: str(raw, 'runId')! };
@@ -980,18 +1483,56 @@ const runStatus = define<{ runId: string }, unknown>({
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
     const asked = askedOf(v.run);
-    const checkpoints = ctx.store.db.prepare("SELECT id, step_run_id, at, payload_json FROM activity_events WHERE kind='step.checkpoint' AND run_id=? ORDER BY id DESC LIMIT 20").all(runId);
-    return { checkpoints, delivery: { state: v.deliverables.length ? 'available' : checkpoints.length ? 'partial' : 'not_produced', deterministic: v.deliverables.some(d => d.verification !== null) ? 'recorded' : 'not_recorded', semantic: v.semanticReview.state, acceptance: v.deliverables.some(d => ['accepted','final'].includes(d.trustState)) ? 'accepted' : 'not_accepted' }, semanticReview: v.semanticReview, run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    const checkpoints = ctx.store.db
+      .prepare(
+        "SELECT id, step_run_id, at, payload_json FROM activity_events WHERE kind='step.checkpoint' AND run_id=? ORDER BY id DESC LIMIT 20",
+      )
+      .all(runId);
+    return {
+      checkpoints,
+      delivery: {
+        state: v.deliverables.length ? 'available' : checkpoints.length ? 'partial' : 'not_produced',
+        deterministic: v.deliverables.some((d) => d.verification !== null) ? 'recorded' : 'not_recorded',
+        semantic: v.semanticReview.state,
+        acceptance: v.deliverables.some((d) => ['accepted', 'final'].includes(d.trustState)) ? 'accepted' : 'not_accepted',
+      },
+      semanticReview: v.semanticReview,
+      run: {
+        id: v.run.id,
+        workflow: v.run.workflowId,
+        state: v.run.state,
+        reason: v.run.stateReason,
+        preflight: v.run.preflight,
+        asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null },
+      },
+      steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })),
+      deliverables: v.deliverables.map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        trust: d.trustState,
+        verification: d.verification,
+        body: d.body,
+      })),
+      openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })),
+    };
   },
 });
 
 const inbox = define<{ runId?: string; owner?: string }, unknown>({
   name: 'inbox',
   title: 'Decisions waiting on the person',
-  description: 'The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person\'s (unowned items included).',
+  description:
+    "The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned items included).",
   surface: 'interactive',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' }, owner: { type: 'string', description: 'Only this owner’s, plus unowned ones.' } }, additionalProperties: false },
+  inputSchema: {
+    type: 'object',
+    properties: {
+      runId: { type: 'string', description: 'Only this run’s.' },
+      owner: { type: 'string', description: 'Only this owner’s, plus unowned ones.' },
+    },
+    additionalProperties: false,
+  },
   validate(raw) {
     closed(raw, this.inputSchema);
     return { runId: str(raw, 'runId', { optional: true }), owner: str(raw, 'owner', { optional: true }) };
@@ -1000,7 +1541,7 @@ const inbox = define<{ runId?: string; owner?: string }, unknown>({
     const owners = ctx.files.constitution?.owners ?? [];
     return listInbox(ctx.store, runId)
       .map((row) => {
-        const subject = row.kind === 'inbox_item' ? getDecision(ctx.store, row.id)?.subject ?? {} : {};
+        const subject = row.kind === 'inbox_item' ? (getDecision(ctx.store, row.id)?.subject ?? {}) : {};
         return { ...row, owner: ownerFor(owners, `${row.question} ${JSON.stringify(subject)}`) };
       })
       .filter((d) => !owner || d.owner === null || d.owner.toLowerCase() === owner.toLowerCase());
@@ -1026,7 +1567,10 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
   destructive: true,
   inputSchema: {
     type: 'object',
-    properties: { decisionId: { type: 'string', description: 'From inbox.' }, resolution: { type: 'string', description: 'The person’s answer, or one of the options.' } },
+    properties: {
+      decisionId: { type: 'string', description: 'From inbox.' },
+      resolution: { type: 'string', description: 'The person’s answer, or one of the options.' },
+    },
     required: ['decisionId', 'resolution'],
     additionalProperties: false,
   },
@@ -1042,8 +1586,19 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     const proposed = existing ? null : getStatement(ctx.store, decisionId);
     if (proposed?.status === 'proposed') {
       const answer = Array.isArray(resolution) ? resolution.join(' ') : resolution;
-      const statement = resolveProposal(ctx.store, { id: decisionId, resolution: answer, at: ctx.now(), nextId: ctx.nextId, by, channel: 'relay' });
-      return { decision: { id: statement.id, state: statement.status, resolvedBy: by }, run: null, statement: { id: statement.id, kind: statement.kind, status: statement.status } };
+      const statement = resolveProposal(ctx.store, {
+        id: decisionId,
+        resolution: answer,
+        at: ctx.now(),
+        nextId: ctx.nextId,
+        by,
+        channel: 'relay',
+      });
+      return {
+        decision: { id: statement.id, state: statement.status, resolvedBy: by },
+        run: null,
+        statement: { id: statement.id, kind: statement.kind, status: statement.status },
+      };
     }
     // A setup question's answer lands in the profile; the reply says what setup still needs.
     const setup = (): Record<string, unknown> => {
@@ -1053,18 +1608,36 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     };
     try {
       const r = ctx.workflow.decide({ decisionId, resolution, by, channel: 'relay' });
-      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)), ...setup() };
+      return {
+        decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy },
+        run: r.run ? { id: r.run.id, state: r.run.state } : null,
+        ...followUp(ctx, existing, String(resolution)),
+        ...setup(),
+      };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
       const relayed = `Your assistant relayed ${quoteHost(Array.isArray(resolution) ? resolution.join(' ') : resolution)}.`;
       // Accepting a deliverable is asked about the deliverable as it stands now: a question put before it changed is withdrawn and asked again.
       const promote = existing?.kind === 'approval' ? (existing.subject as { promote?: PromotionSubject } | null)?.promote : undefined;
-      const current = promote ? ctx.workflow.requestPromotion({ deliverableId: promote.deliverableId, to: promote.to, by: ctx.actor, reason: promote.reason ?? undefined }) : null;
+      const current = promote
+        ? ctx.workflow.requestPromotion({
+            deliverableId: promote.deliverableId,
+            to: promote.to,
+            by: ctx.actor,
+            reason: promote.reason ?? undefined,
+          })
+        : null;
       const askedId = current?.id ?? decisionId;
       const replaced = askedId !== decisionId ? { replaces: decisionId } : {};
       const asked = await askThePerson(ctx, askedId, relayed, error.answer);
       if (asked) return { ...asked, ...replaced, ...setup() };
-      return { decision: { id: askedId, state: 'open' }, ...replaced, personRequired: true, next: current ? personStepFor(askedId) : error.message, ...setup() };
+      return {
+        decision: { id: askedId, state: 'open' },
+        ...replaced,
+        personRequired: true,
+        next: current ? personStepFor(askedId) : error.message,
+        ...setup(),
+      };
     }
   },
 });
@@ -1076,7 +1649,12 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
  * it themselves, with the answer the assistant relayed when there was one.
  * Null when the host cannot ask.
  */
-async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: string | null, relayedAnswer: string | null = null): Promise<Record<string, unknown> | null> {
+async function askThePerson(
+  ctx: BrokerContext,
+  decisionId: string,
+  relayed: string | null,
+  relayedAnswer: string | null = null,
+): Promise<Record<string, unknown> | null> {
   if (!ctx.askPerson) return null;
   const decision = getDecision(ctx.store, decisionId);
   if (!decision || decision.state !== 'open') return null;
@@ -1084,16 +1662,34 @@ async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: str
   // What the assistant relayed is Construct's own line, right after the question's first, never inside the assistant's quoted words below it.
   const [lead, ...rest] = decision.question.split('\n');
   const answer = await ctx.askPerson({
-    message: [`Construct needs your own answer; your assistant cannot give it for you. ${lead ?? ''}`, ...(relayed ? [relayed] : []), ...rest].join('\n'),
+    message: [
+      `Construct needs your own answer; your assistant cannot give it for you. ${lead ?? ''}`,
+      ...(relayed ? [relayed] : []),
+      ...rest,
+    ].join('\n'),
     options,
   });
   if (!answer.answered) {
-    const why = { declined: 'the person declined the prompt', cancelled: 'the person closed the prompt', timeout: 'the person did not answer the prompt in time', unavailable: 'the host could not show the prompt' }[answer.why];
-    return { decision: { id: decisionId, state: 'open' }, personRequired: true, asked: why, next: personStepFor(decisionId, relayedAnswer) };
+    const why = {
+      declined: 'the person declined the prompt',
+      cancelled: 'the person closed the prompt',
+      timeout: 'the person did not answer the prompt in time',
+      unavailable: 'the host could not show the prompt',
+    }[answer.why];
+    return {
+      decision: { id: decisionId, state: 'open' },
+      personRequired: true,
+      asked: why,
+      next: personStepFor(decisionId, relayedAnswer),
+    };
   }
   const by = `person via ${ctx.host.hostId} prompt`;
   const r = ctx.workflow.decide({ decisionId, resolution: answer.choice, by, channel: 'elicitation' });
-  return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy, resolution: answer.choice }, channel: 'elicitation', run: r.run ? { id: r.run.id, state: r.run.state } : null };
+  return {
+    decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy, resolution: answer.choice },
+    channel: 'elicitation',
+    run: r.run ? { id: r.run.id, state: r.run.state } : null,
+  };
 }
 
 const SOURCE_ACTIONS = ['list', 'show', 'refresh', 'report', 'declare', 'check', 'map'] as const;
@@ -1125,26 +1721,48 @@ interface SourcesInput {
 
 /** A suggested id for a name that is not one yet: lowercase, dashes for anything else. */
 function idExample(name: string): string {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+/, '').replace(/-+$/, '').slice(0, 64);
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^[^a-z]+/, '')
+    .replace(/-+$/, '')
+    .slice(0, 64);
   return SOURCE_ID.test(slug) ? slug : 'jira';
 }
 
 function declareInput(raw: Record<string, unknown>, id: string | undefined): Pick<SourcesInput, 'id' | 'kind' | 'purpose' | 'locator'> {
-  if (!id) throw new ToolInputError('"id" is required for declare: a short name for the system, such as jira or web', { field: 'id', example: 'jira' });
-  if (!SOURCE_ID.test(id)) throw new ToolInputError('"id" is lowercase letters, digits and dashes, starting with a letter, at most 64 characters', { field: 'id', example: idExample(id) });
+  if (!id)
+    throw new ToolInputError('"id" is required for declare: a short name for the system, such as jira or web', {
+      field: 'id',
+      example: 'jira',
+    });
+  if (!SOURCE_ID.test(id))
+    throw new ToolInputError('"id" is lowercase letters, digits and dashes, starting with a letter, at most 64 characters', {
+      field: 'id',
+      example: idExample(id),
+    });
   const kind = raw.kind;
   if (kind === 'directory' || kind === 'git') {
-    throw new ToolInputError('a directory or git source is declared by the person with construct source add, because it lets Construct read files itself', { field: 'kind', allowed: DECLARABLE_KINDS, example: 'other' });
+    throw new ToolInputError(
+      'a directory or git source is declared by the person with construct source add, because it lets Construct read files itself',
+      { field: 'kind', allowed: DECLARABLE_KINDS, example: 'other' },
+    );
   }
   const k = str(raw, 'kind', { oneOf: DECLARABLE_KINDS }) as SourcesInput['kind'];
   const rawPurpose = str(raw, 'purpose', { optional: true });
   const purpose = rawPurpose?.replace(/[\u0000-\u001f\u007f\s]+/g, ' ').trim();
-  if (purpose !== undefined && purpose.length > PURPOSE_CAP) throw new ToolInputError(`"purpose" is one sentence of at most ${String(PURPOSE_CAP)} characters`, { field: 'purpose' });
+  if (purpose !== undefined && purpose.length > PURPOSE_CAP)
+    throw new ToolInputError(`"purpose" is one sentence of at most ${String(PURPOSE_CAP)} characters`, { field: 'purpose' });
   const locator = str(raw, 'locator', { optional: true })?.trim() || undefined;
   if (locator !== undefined) {
     const example = LOCATOR_EXAMPLES[k!];
-    if (locator.length > LOCATOR_CAP || /[\u0000-\u001f\u007f]/.test(locator)) throw new ToolInputError(`"locator" is one line of at most ${String(LOCATOR_CAP)} characters`, { field: 'locator', example });
-    if (locatorCarriesCredentials(locator)) throw new ToolInputError('"locator" carries credentials; your connector holds them, and Construct never records them', { field: 'locator', example });
+    if (locator.length > LOCATOR_CAP || /[\u0000-\u001f\u007f]/.test(locator))
+      throw new ToolInputError(`"locator" is one line of at most ${String(LOCATOR_CAP)} characters`, { field: 'locator', example });
+    if (locatorCarriesCredentials(locator))
+      throw new ToolInputError('"locator" carries credentials; your connector holds them, and Construct never records them', {
+        field: 'locator',
+        example,
+      });
     const problem = locatorProblem(k!, locator);
     if (problem) throw new ToolInputError(problem, { field: 'locator', example });
   }
@@ -1170,10 +1788,12 @@ function sourceAccessInput(raw: Record<string, unknown>, key: 'observation' | 'r
     }
     str(value, 'mode', { oneOf: ['read', 'write'] });
     if (key === 'observation') {
-      if (value.mode === 'write') throw new ToolInputError('a source read cannot report a write operation', { field: 'mode', allowed: ['read'] });
+      if (value.mode === 'write')
+        throw new ToolInputError('a source read cannot report a write operation', { field: 'mode', allowed: ['read'] });
       str(value, 'transport', { oneOf: ['api', 'mcp', 'local'] });
       const expiry = value.expiresAt as string;
-      if (!/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(expiry) || !Number.isFinite(Date.parse(expiry))) throw new ToolInputError('expiresAt must be an explicit expiry instant with a timezone', { field: 'expiresAt' });
+      if (!/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(expiry) || !Number.isFinite(Date.parse(expiry)))
+        throw new ToolInputError('expiresAt must be an explicit expiry instant with a timezone', { field: 'expiresAt' });
       for (const field of ['inputSchema', 'outputSchema']) if (value[field] !== undefined) obj(value, field);
     }
     return value;
@@ -1187,45 +1807,80 @@ function sourceAccessInput(raw: Record<string, unknown>, key: 'observation' | 'r
 const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
-  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), its url when it has one, title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
+  description:
+    'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), its url when it has one, title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Inspect, read, check scoped access, or map typed data.', enum: SOURCE_ACTIONS },
-      observation: { type: 'object', description: 'Observed access; omit unknown identity/expiry. Never grants access; session/provenance/grants ignored.', properties: {
-        ...ACCESS_REQUEST_PROPERTIES,
-        mode: { type: 'string', description: 'A source read cannot report a write operation.', enum: ['read'] },
-        transport: { type: 'string', description: 'Transport actually used for the read.', enum: ['api', 'mcp', 'local'] },
-        expiresAt: { type: 'string', description: 'Observed expiry with timezone; expired access is not current.' },
-        inputSchema: { type: 'object', description: 'Observed input schema.' },
-        outputSchema: { type: 'object', description: 'Observed output schema.' },
-      }, required: [...ACCESS_REQUEST_REQUIRED, 'transport', 'expiresAt'] },
-      request: { type: 'object', description: 'Check permission and current scoped access evidence without making a grant.', properties: ACCESS_REQUEST_PROPERTIES, required: ACCESS_REQUEST_REQUIRED },
+      observation: {
+        type: 'object',
+        description: 'Observed access; omit unknown identity/expiry. Never grants access; session/provenance/grants ignored.',
+        properties: {
+          ...ACCESS_REQUEST_PROPERTIES,
+          mode: { type: 'string', description: 'A source read cannot report a write operation.', enum: ['read'] },
+          transport: { type: 'string', description: 'Transport actually used for the read.', enum: ['api', 'mcp', 'local'] },
+          expiresAt: { type: 'string', description: 'Observed expiry with timezone; expired access is not current.' },
+          inputSchema: { type: 'object', description: 'Observed input schema.' },
+          outputSchema: { type: 'object', description: 'Observed output schema.' },
+        },
+        required: [...ACCESS_REQUEST_REQUIRED, 'transport', 'expiresAt'],
+      },
+      request: {
+        type: 'object',
+        description: 'Check permission and current scoped access evidence without making a grant.',
+        properties: ACCESS_REQUEST_PROPERTIES,
+        required: ACCESS_REQUEST_REQUIRED,
+      },
       item: { type: 'string', description: 'Map: item ref; without mapping returns its recorded mapping or unknown shape.' },
-      mapping: { type: 'object', description: 'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.' },
+      mapping: {
+        type: 'object',
+        description:
+          'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.',
+      },
       id: { type: 'string', description: 'Source id: lowercase letters, digits and dashes; starts with a letter.' },
-      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'Defaults to read. Empty/failed reads preserve evidence, never source-wide freshness.' },
+      outcome: {
+        type: 'string',
+        enum: SOURCE_READ_OUTCOMES,
+        description: 'Defaults to read. Empty/failed reads preserve evidence, never source-wide freshness.',
+      },
       reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
       scope: { type: 'string', description: 'For report: attempted query, item URI or scope; required for non-read outcomes.' },
       coverage: { type: 'object', description: 'Reported completeness, pagination and limitations.' },
-      items: { type: 'array', description: 'Read items; preserve passages, not summaries.', items: { type: 'object', properties: {
-        ref: { type: 'string', description: 'Stable nonempty key, unique within source.' },
-        url: { type: 'string', description: 'HTTP(S) address a person would open; never credentials.' },
-        title: { type: 'string', description: 'Observed item title.' },
-        updatedAt: { type: 'string', description: 'Provider last-updated time, when known; not the time you read it.' },
-        text: { type: 'string', description: 'Exact readable text; retained up to 256 KiB UTF-8.' },
-        truncated: { type: 'boolean', description: 'True if content omitted; omission preserves partial status. False requires a full read; separate from list partial.' },
-        kind: { type: 'string', description: 'Observed item kind.' },
-        fingerprint: { type: 'string', description: 'Provider content fingerprint, when available.' },
-        weak: { type: 'boolean', description: 'True for a discovered reference that was not read as a version.' },
-        schema: { type: 'object', description: 'Observed schema/units; never infer missing shape.' },
-      }, required: ['ref'] } },
+      items: {
+        type: 'array',
+        description: 'Read items; preserve passages, not summaries.',
+        items: {
+          type: 'object',
+          properties: {
+            ref: { type: 'string', description: 'Stable nonempty key, unique within source.' },
+            url: { type: 'string', description: 'HTTP(S) address a person would open; never credentials.' },
+            title: { type: 'string', description: 'Observed item title.' },
+            updatedAt: { type: 'string', description: 'Provider last-updated time, when known; not the time you read it.' },
+            text: { type: 'string', description: 'Exact readable text; retained up to 256 KiB UTF-8.' },
+            truncated: {
+              type: 'boolean',
+              description:
+                'True if content omitted; omission preserves partial status. False requires a full read; separate from list partial.',
+            },
+            kind: { type: 'string', description: 'Observed item kind.' },
+            fingerprint: { type: 'string', description: 'Provider content fingerprint, when available.' },
+            weak: { type: 'boolean', description: 'True for a discovered reference that was not read as a version.' },
+            schema: { type: 'object', description: 'Observed schema/units; never infer missing shape.' },
+          },
+          required: ['ref'],
+        },
+      },
       partial: { type: 'boolean', description: 'Partial read: preserve unreported items.' },
       kind: { type: 'string', description: 'Declare system kind; other includes the web.', enum: DECLARABLE_KINDS },
       purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
-      locator: { type: 'string', description: 'For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials.' },
+      locator: {
+        type: 'string',
+        description:
+          'For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials.',
+      },
     },
     required: ['action'],
     additionalProperties: false,
@@ -1245,19 +1900,51 @@ const sources = define<SourcesInput, unknown>({
     const observation = observationInput === undefined ? undefined : accessDescriptor(observationInput);
     const request = requestInput === undefined ? undefined : accessRequest(requestInput);
     const mapping = raw.mapping === undefined ? undefined : dataMapping(raw.mapping);
-    return { action, id, items, partial, observation, request, mapping, item: str(raw, 'item', { optional: true }), outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
+    return {
+      action,
+      id,
+      items,
+      partial,
+      observation,
+      request,
+      mapping,
+      item: str(raw, 'item', { optional: true }),
+      outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined,
+      reason: str(raw, 'reason', { optional: true }),
+      scope: str(raw, 'scope', { optional: true }),
+      coverage: obj(raw, 'coverage', { optional: true }),
+    };
   },
-  async run(ctx, { action, id, items, partial, kind, purpose, locator, outcome, reason, scope, coverage, observation, request, mapping, item }) {
+  async run(
+    ctx,
+    { action, id, items, partial, kind, purpose, locator, outcome, reason, scope, coverage, observation, request, mapping, item },
+  ) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     const active = ctx.sources.list();
     if (action === 'declare') {
       if (active.some((s) => s.id === id)) return { declared: false, already: true, source: ctx.sources.status(id, at) };
-      if (getSource(ctx.store, id)) throw new ToolInputError(`source "${id}" was retired; declare it under a new id`, { field: 'id', example: `${id}-2`.slice(0, 64) });
+      if (getSource(ctx.store, id))
+        throw new ToolInputError(`source "${id}" was retired; declare it under a new id`, { field: 'id', example: `${id}-2`.slice(0, 64) });
       // A declared source lives in this machine's state only, is treated as confidential, and settles nothing.
       ctx.store.transaction(() => {
-        ctx.sources.addLocal({ id, kind: kind!, purpose: purpose ?? DECLARED_PURPOSE, locator: locator ?? null, authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential', read: true, write: false }, at);
+        ctx.sources.addLocal(
+          {
+            id,
+            kind: kind!,
+            purpose: purpose ?? DECLARED_PURPOSE,
+            locator: locator ?? null,
+            authorityLevel: 'informative',
+            authoritativeFor: [],
+            notAuthoritativeFor: [],
+            freshnessHours: null,
+            sensitivity: 'confidential',
+            read: true,
+            write: false,
+          },
+          at,
+        );
         ensureSourceEntities(ctx.store, at, ctx.nextId);
         appendActivity(ctx.store, { at, kind: 'source.declared', actor: ctx.actor, payload: { sourceId: id, kind, by: 'relayed' } });
       });
@@ -1268,7 +1955,10 @@ const sources = define<SourcesInput, unknown>({
       };
     }
     if (!active.some((s) => s.id === id)) {
-      throw new ToolInputError(`no source "${id}" is declared; declare it with sources action declare (id, kind), then ${action === 'report' ? 'report again' : 'report what you read from it'}`, { field: 'id', allowed: active.map((s) => s.id) });
+      throw new ToolInputError(
+        `no source "${id}" is declared; declare it with sources action declare (id, kind), then ${action === 'report' ? 'report again' : 'report what you read from it'}`,
+        { field: 'id', allowed: active.map((s) => s.id) },
+      );
     }
     if (action === 'show') return ctx.sources.status(id, at);
     if (action === 'check') {
@@ -1279,32 +1969,74 @@ const sources = define<SourcesInput, unknown>({
       const ref = mapping?.item ?? item;
       if (!ref) throw new ToolInputError('map requires an item or mapping.item');
       if (item && mapping && item !== mapping.item) throw new ToolInputError('item differs from mapping.item');
-      return sourceMapping(ctx.store, { sourceId: id, item: ref, mapping, resolve: projectResolver(ctx), at, nextId: () => ctx.nextId('mapping') });
+      return sourceMapping(ctx.store, {
+        sourceId: id,
+        item: ref,
+        mapping,
+        resolve: projectResolver(ctx),
+        at,
+        nextId: () => ctx.nextId('mapping'),
+      });
     }
     if (action === 'report') {
-      if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
+      if (items.length === 0 && (!outcome || outcome === 'read'))
+        throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
-        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: `items[${String(n)}].ref` });
-        if (urlCarriesCredentials(i.ref)) throw new ToolInputError(`items[${String(n)}].ref carries credentials; give the address without them`, { field: `items[${String(n)}].ref` });
+        if (typeof i.ref !== 'string' || i.ref.trim() === '')
+          throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: `items[${String(n)}].ref` });
+        if (urlCarriesCredentials(i.ref))
+          throw new ToolInputError(`items[${String(n)}].ref carries credentials; give the address without them`, {
+            field: `items[${String(n)}].ref`,
+          });
         const opt = (k: string): string | undefined => {
           if (i[k] === undefined || i[k] === null) return undefined;
           if (typeof i[k] !== 'string') {
-            const expected = k === 'text' ? 'a readable string; extract the observed passage from structured provider content before reporting it' : 'a string';
+            const expected =
+              k === 'text'
+                ? 'a readable string; extract the observed passage from structured provider content before reporting it'
+                : 'a string';
             throw new ToolInputError(`items[${String(n)}].${k} must be ${expected}`, { field: `items[${String(n)}].${k}` });
           }
           return i[k] as string;
         };
-        if (i.weak !== undefined && typeof i.weak !== 'boolean') throw new ToolInputError(`items[${String(n)}].weak must be a boolean`, { field: `items[${String(n)}].weak` });
-        if (i.truncated !== undefined && typeof i.truncated !== 'boolean') throw new ToolInputError(`items[${String(n)}].truncated must be a boolean`, { field: `items[${String(n)}].truncated` });
-        if (i.schema !== undefined && i.schema !== null && (typeof i.schema !== 'object' || Array.isArray(i.schema))) throw new ToolInputError(`items[${String(n)}].schema must be an object`, { field: `items[${String(n)}].schema` });
+        if (i.weak !== undefined && typeof i.weak !== 'boolean')
+          throw new ToolInputError(`items[${String(n)}].weak must be a boolean`, { field: `items[${String(n)}].weak` });
+        if (i.truncated !== undefined && typeof i.truncated !== 'boolean')
+          throw new ToolInputError(`items[${String(n)}].truncated must be a boolean`, { field: `items[${String(n)}].truncated` });
+        if (i.schema !== undefined && i.schema !== null && (typeof i.schema !== 'object' || Array.isArray(i.schema)))
+          throw new ToolInputError(`items[${String(n)}].schema must be an object`, { field: `items[${String(n)}].schema` });
         const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
         const problem = url === undefined ? null : urlProblem(url);
-        if (problem) throw new ToolInputError(`items[${String(n)}].url ${problem}`, { field: `items[${String(n)}].url`, example: 'https://acme.atlassian.net/browse/PLAT-101' });
+        if (problem)
+          throw new ToolInputError(`items[${String(n)}].url ${problem}`, {
+            field: `items[${String(n)}].url`,
+            example: 'https://acme.atlassian.net/browse/PLAT-101',
+          });
         const updatedAt = opt('updatedAt');
-        if (updatedAt && /^\d{4}-\d{2}-\d{2}(?:[Tt ]|$)/.test(updatedAt.trim()) && dayOf(updatedAt.trim(), 'UTC') === null) throw new ToolInputError(`items[${String(n)}].updatedAt is not a valid calendar date or timestamp; preserve an unknown provider format as unknown, never invent a date`, { field: `items[${String(n)}].updatedAt` });
-        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt, text: opt('text'), fingerprint: opt('fingerprint'), weak: i.weak === true, ...(typeof i.truncated === 'boolean' ? { truncated: i.truncated } : {}), ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}), ...(url !== undefined ? { url } : {}) };
+        if (updatedAt && /^\d{4}-\d{2}-\d{2}(?:[Tt ]|$)/.test(updatedAt.trim()) && dayOf(updatedAt.trim(), 'UTC') === null)
+          throw new ToolInputError(
+            `items[${String(n)}].updatedAt is not a valid calendar date or timestamp; preserve an unknown provider format as unknown, never invent a date`,
+            { field: `items[${String(n)}].updatedAt` },
+          );
+        return {
+          ref: i.ref.trim(),
+          title: opt('title'),
+          kind: opt('kind'),
+          updatedAt,
+          text: opt('text'),
+          fingerprint: opt('fingerprint'),
+          weak: i.weak === true,
+          ...(typeof i.truncated === 'boolean' ? { truncated: i.truncated } : {}),
+          ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}),
+          ...(url !== undefined ? { url } : {}),
+        };
       });
-      const reported = ctx.sources.reportRead(id, { items: parsed, partial, outcome, reason, scope, coverage, observation, sessionId: ctx.sessionId ?? undefined }, at, () => ctx.nextId('snap'));
+      const reported = ctx.sources.reportRead(
+        id,
+        { items: parsed, partial, outcome, reason, scope, coverage, observation, sessionId: ctx.sessionId ?? undefined },
+        at,
+        () => ctx.nextId('snap'),
+      );
       // Access observations are scoped reports, not grants or evidence that every source
       // of the same kind is available. They never mutate permitted or available capabilities.
       if (reported.outcome === 'changed' || reported.outcome === 'unchanged' || reported.outcome === 'no_results') {
@@ -1312,7 +2044,10 @@ const sources = define<SourcesInput, unknown>({
         if (Array.isArray(ctx.host.reported) && !ctx.host.reported.includes(capability)) ctx.host.reported.push(capability);
       }
       if (!reported.truncated?.length) return reported;
-      return { ...reported, next: `The retained text of ${reported.truncated.join(', ')} is incomplete (at most ${String(REPORTED_TEXT_CAP / 1024)} KiB of UTF-8 per item). To capture a missing exact passage, report it using the same stable ref and URL with partial:true and items[].truncated:true; do not create another item for the same URL. For research closure, account for the uncaptured remainder under referenceDispositions using the exact cited ref. Set items[].truncated:false only after a complete read that fits the retained limit.` };
+      return {
+        ...reported,
+        next: `The retained text of ${reported.truncated.join(', ')} is incomplete (at most ${String(REPORTED_TEXT_CAP / 1024)} KiB of UTF-8 per item). To capture a missing exact passage, report it using the same stable ref and URL with partial:true and items[].truncated:true; do not create another item for the same URL. For research closure, account for the uncaptured remainder under referenceDispositions using the exact cited ref. Set items[].truncated:false only after a complete read that fits the retained limit.`,
+      };
     }
     return ctx.sources.refresh(id, at, () => ctx.nextId('snap'));
   },
@@ -1322,21 +2057,36 @@ const sources = define<SourcesInput, unknown>({
  * After the person answers a stale-work question, what starting the work they chose would look like. Nothing
  * starts on its own: the host offers it, and start_outcome runs only if the person wants it.
  */
-function followUp(ctx: BrokerContext, decision: ReturnType<typeof getDecision>, resolution: string): { suggestedOutcomes?: { workflowId: string; input: Record<string, unknown>; why: string }[] } {
+function followUp(
+  ctx: BrokerContext,
+  decision: ReturnType<typeof getDecision>,
+  resolution: string,
+): { suggestedOutcomes?: { workflowId: string; input: Record<string, unknown>; why: string }[] } {
   const subject = (decision?.subject ?? null) as { deliverableIds?: string[]; driftFindingIds?: string[] } | null;
   if (!subject?.deliverableIds?.length) return {};
   const said = resolution.toLowerCase();
   const out: { workflowId: string; input: Record<string, unknown>; why: string }[] = [];
   for (const [i, deliverableId] of subject.deliverableIds.entries()) {
-    const finding = subject.driftFindingIds?.[i] ? listDriftFindings(ctx.store, {}).find((f) => f.id === subject.driftFindingIds![i]) : undefined;
+    const finding = subject.driftFindingIds?.[i]
+      ? listDriftFindings(ctx.store, {}).find((f) => f.id === subject.driftFindingIds![i])
+      : undefined;
     const change = finding?.summary ?? 'material it drew on changed';
     if (said.startsWith('revise')) {
       const body = (listLiveDeliverablesFor(ctx, deliverableId)?.body ?? {}) as { artifact?: unknown };
-      out.push({ workflowId: 'revise-deliverable', input: { deliverable: deliverableId, change, ...(typeof body.artifact === 'string' ? { target: body.artifact } : {}) }, why: `revise ${deliverableId} for: ${change}` });
+      out.push({
+        workflowId: 'revise-deliverable',
+        input: { deliverable: deliverableId, change, ...(typeof body.artifact === 'string' ? { target: body.artifact } : {}) },
+        why: `revise ${deliverableId} for: ${change}`,
+      });
     } else if (said.startsWith('re-run') || said.startsWith('rerun')) {
       const d = listLiveDeliverablesFor(ctx, deliverableId);
       const run = d ? getRun(ctx.store, d.runId) : undefined;
-      if (run) out.push({ workflowId: run.workflowId, input: (run.input ?? {}) as Record<string, unknown>, why: `run ${run.workflowId} again with its original input` });
+      if (run)
+        out.push({
+          workflowId: run.workflowId,
+          input: (run.input ?? {}) as Record<string, unknown>,
+          why: `run ${run.workflowId} again with its original input`,
+        });
     }
   }
   return out.length ? { suggestedOutcomes: out } : {};
@@ -1356,23 +2106,48 @@ interface CheckAnswerInput {
 }
 
 /** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
-export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged', 'settled_not_contradicted'] as const;
+export const ANSWER_CHECKS = [
+  'citations_present',
+  'evidence_refs_resolve',
+  'excerpts_match',
+  'numbers_grounded',
+  'superseded_acknowledged',
+  'settled_not_contradicted',
+] as const;
 
 const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
-  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are named as such, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
+  description:
+    'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are named as such, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
       answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
-      historicalEvidence: { type: 'array', description: 'Historical citations used as history, never as current support: {ref,why}.', items: { type: 'object' } },
-      claims: { type: 'array', items: { type: 'object' }, description: 'Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown.' },
+      historicalEvidence: {
+        type: 'array',
+        description: 'Historical citations used as history, never as current support: {ref,why}.',
+        items: { type: 'object' },
+      },
+      claims: {
+        type: 'array',
+        items: { type: 'object' },
+        description:
+          'Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown.',
+      },
       citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: CITATION_ITEM },
-      period: { type: 'object', description: 'The period the answer covers, when it covers one: {semantics: as_of | changed_during | evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}.' },
-      outsidePeriod: { type: 'array', description: 'Cited items updated after the period that belong in the answer anyway: {ref, why} entries.', items: { type: 'object' } },
+      period: {
+        type: 'object',
+        description:
+          'The period the answer covers, when it covers one: {semantics: as_of | changed_during | evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}.',
+      },
+      outsidePeriod: {
+        type: 'array',
+        description: 'Cited items updated after the period that belong in the answer anyway: {ref, why} entries.',
+        items: { type: 'object' },
+      },
     },
     required: ['answer'],
     additionalProperties: false,
@@ -1385,8 +2160,18 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       const r = record(e);
       return { ref: typeof r.ref === 'string' ? r.ref : '', why: typeof r.why === 'string' ? r.why : '' };
     });
-    const historicalEvidence = list(raw,'historicalEvidence').map(e => { const r=record(e); return {ref:str(r,'ref')!,why:str(r,'why')!}; });
-    return { historicalEvidence, answer: str(raw, 'answer')!, claims: claimChecks(raw.claims), citations, ...(period ? { period } : {}), ...(outsidePeriod.length ? { outsidePeriod } : {}) };
+    const historicalEvidence = list(raw, 'historicalEvidence').map((e) => {
+      const r = record(e);
+      return { ref: str(r, 'ref')!, why: str(r, 'why')! };
+    });
+    return {
+      historicalEvidence,
+      answer: str(raw, 'answer')!,
+      claims: claimChecks(raw.claims),
+      citations,
+      ...(period ? { period } : {}),
+      ...(outsidePeriod.length ? { outsidePeriod } : {}),
+    };
   },
   run(ctx, { answer, claims, citations, period: spec, outsidePeriod, historicalEvidence }) {
     // A period is checked and worked out at the moment of asking, before anything is recorded.
@@ -1394,36 +2179,76 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
     if (spec) {
       const at = ctx.now();
       const wrong = checkSlot('period', 'period', spec, { at, sourceIds: [] });
-      if (wrong.length) throw new ToolInputError(`${wrong.map((p) => p.message).join('; ')}. ${wrong[0]!.remedy}`, { field: 'period', example: { semantics: 'changed_during', relative: 'last_quarter' } });
+      if (wrong.length)
+        throw new ToolInputError(`${wrong.map((p) => p.message).join('; ')}. ${wrong[0]!.remedy}`, {
+          field: 'period',
+          example: { semantics: 'changed_during', relative: 'last_quarter' },
+        });
       period = resolvePeriod(spec as unknown as PeriodSpec, at);
     }
     const resolve = projectResolver(ctx);
     const settled = settledTerms(listStatements(ctx.store, { kind: 'constraint', status: 'confirmed' }));
     const checks: string[] = [...ANSWER_CHECKS, ...(period ? ['within_period'] : [])];
     const claimSupport = assessClaims({ answer, claims, citations, resolve, store: ctx.store, at: ctx.now() });
-    const output = { historicalEvidence, summary: answer, derivations: claimSupport.results.flatMap((r) => r.derivation ? [r.derivation] : []), ...(outsidePeriod ? { outsidePeriod } : {}) };
-    const results = runValidators(checks, { output, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled, period });
+    const output = {
+      historicalEvidence,
+      summary: answer,
+      derivations: claimSupport.results.flatMap((r) => (r.derivation ? [r.derivation] : [])),
+      ...(outsidePeriod ? { outsidePeriod } : {}),
+    };
+    const results = runValidators(checks, {
+      output,
+      expectedKeys: [],
+      evidence: citations,
+      resolvableRefs: new Set(),
+      resolve,
+      settled,
+      period,
+    });
     const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
-    for (const result of claimSupport.results) if (result.status === 'contradicted' || (result.status === 'unknown' && claims.some((c) => c.claim === result.claim))) problems.push({ check: 'claim_support', problem: `${result.claim}: ${result.status}. ${result.problems.join('; ') || result.basis}` });
+    for (const result of claimSupport.results)
+      if (result.status === 'contradicted' || (result.status === 'unknown' && claims.some((c) => c.claim === result.claim)))
+        problems.push({
+          check: 'claim_support',
+          problem: `${result.claim}: ${result.status}. ${result.problems.join('; ') || result.basis}`,
+        });
     // Counted, so how often answers are checked is something a person can see, not something to hope for.
-    appendActivity(ctx.store, { at: ctx.now(), kind: 'answer.checked', actor: ctx.actor, payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length } });
+    appendActivity(ctx.store, {
+      at: ctx.now(),
+      kind: 'answer.checked',
+      actor: ctx.actor,
+      payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length },
+    });
     // Admitted on the host's word alone (policy.hostReads accept): the person should hear which parts those are.
     const unverified = [...new Set(citations.filter((c) => resolve(c.ref)?.provenance === 'unverified').map((c) => c.ref))];
-    const onWord = unverified.length === 0
-      ? ''
-      : `; no recorded read holds ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? ` (+${String(unverified.length - 5)} more)` : ''}, so say the parts resting on ${unverified.length === 1 ? 'it' : 'them'} are unverified, or record what you read with sources action report and check again`;
+    const onWord =
+      unverified.length === 0
+        ? ''
+        : `; no recorded read holds ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? ` (+${String(unverified.length - 5)} more)` : ''}, so say the parts resting on ${unverified.length === 1 ? 'it' : 'them'} are unverified, or record what you read with sources action report and check again`;
     return {
       ok: problems.length === 0,
       assurance: 'structural',
       semanticSupportVerified: false,
       claimSupport,
-      limits: 'Citation, excerpt, figure and policy checks do not establish that evidence entails every claim or that research is complete.',
+      limits:
+        'Citation, excerpt, figure and policy checks do not establish that evidence entails every claim or that research is complete.',
       problems,
       evidence: provenanceOf(citations, resolve),
-      ...(period ? { period: { from: period.from, to: period.to, timezone: period.timezone, assumptions: period.assumptions, coverage: periodCoverage(citations, resolve, period, outsidePeriod ?? []) } } : {}),
-      next: (problems.length === 0
-        ? 'Structural checks passed. Review whether the evidence actually supports each claim before answering; these checks do not establish semantic support. Name unsupported parts and reported sources.'
-        : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,
+      ...(period
+        ? {
+            period: {
+              from: period.from,
+              to: period.to,
+              timezone: period.timezone,
+              assumptions: period.assumptions,
+              coverage: periodCoverage(citations, resolve, period, outsidePeriod ?? []),
+            },
+          }
+        : {}),
+      next:
+        (problems.length === 0
+          ? 'Structural checks passed. Review whether the evidence actually supports each claim before answering; these checks do not establish semantic support. Name unsupported parts and reported sources.'
+          : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,
     };
   },
 });
@@ -1434,7 +2259,15 @@ const staff = define<{ action: 'list' | 'show'; id?: string }, unknown>({
   description: 'Who holds which capabilities and skills for this project. Read-only here; staff is set up on the command line.',
   surface: 'interactive',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { action: { type: 'string', description: 'list or show.', enum: ['list', 'show'] }, id: { type: 'string', description: 'The staff member id, for show.' } }, required: ['action'], additionalProperties: false },
+  inputSchema: {
+    type: 'object',
+    properties: {
+      action: { type: 'string', description: 'list or show.', enum: ['list', 'show'] },
+      id: { type: 'string', description: 'The staff member id, for show.' },
+    },
+    required: ['action'],
+    additionalProperties: false,
+  },
   validate(raw) {
     closed(raw, this.inputSchema);
     return { action: str(raw, 'action', { oneOf: ['list', 'show'] }) as 'list' | 'show', id: str(raw, 'id', { optional: true }) };
@@ -1454,7 +2287,8 @@ const PROMOTABLE = TRUST_STATES.filter((t) => t !== 'validated');
 const promote = define<{ deliverableId: string; to: TrustState; reason?: string; objections?: readonly Objection[] }, unknown>({
   name: 'promote_deliverable',
   title: 'Move a deliverable’s trust',
-  description: 'After the person has reviewed a deliverable: record a challenge with the objections it raised, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. Validated is set only by passing checks, never by this tool. A finished step never moves trust.',
+  description:
+    'After the person has reviewed a deliverable: record a challenge with the objections it raised, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. Validated is set only by passing checks, never by this tool. A finished step never moves trust.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -1466,10 +2300,14 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
       reason: { type: 'string', description: 'Why, in the person’s words.' },
       objections: {
         type: 'array',
-        description: 'For challenged: each objection the challenge raised and what was done about it (fixed, accepted, rejected, open); an empty list says it found nothing.',
+        description:
+          'For challenged: each objection the challenge raised and what was done about it (fixed, accepted, rejected, open); an empty list says it found nothing.',
         items: {
           type: 'object',
-          properties: { objection: { type: 'string', description: 'What the challenge objected to.' }, disposition: { type: 'string', description: 'What was done about it.', enum: OBJECTION_DISPOSITIONS } },
+          properties: {
+            objection: { type: 'string', description: 'What the challenge objected to.' },
+            disposition: { type: 'string', description: 'What was done about it.', enum: OBJECTION_DISPOSITIONS },
+          },
           required: ['objection', 'disposition'],
           additionalProperties: false,
         },
@@ -1480,7 +2318,11 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    if (raw.to === 'validated') throw new ToolInputError(`${VALIDATED_BY_CHECKS}; move it to challenged, accepted, or another state`, { field: 'to', allowed: PROMOTABLE });
+    if (raw.to === 'validated')
+      throw new ToolInputError(`${VALIDATED_BY_CHECKS}; move it to challenged, accepted, or another state`, {
+        field: 'to',
+        allowed: PROMOTABLE,
+      });
     const to = str(raw, 'to', { oneOf: PROMOTABLE }) as TrustState;
     const given = { deliverableId: str(raw, 'deliverableId')!, to, reason: str(raw, 'reason', { optional: true }) };
     if (to !== 'challenged') {
@@ -1488,12 +2330,21 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
       return given;
     }
     if (raw.objections === undefined || raw.objections === null) {
-      throw new ToolInputError('"objections" is required for challenged: each objection the challenge raised and what was done about it; an empty list says it found nothing', { field: 'objections', example: OBJECTIONS_EXAMPLE });
+      throw new ToolInputError(
+        '"objections" is required for challenged: each objection the challenge raised and what was done about it; an empty list says it found nothing',
+        { field: 'objections', example: OBJECTIONS_EXAMPLE },
+      );
     }
     const read = readObjections(raw.objections);
     if (!('objections' in read)) {
       const one = OBJECTIONS_EXAMPLE[0]!;
-      const example = read.field.endsWith('.disposition') ? one.disposition : read.field.endsWith('.objection') ? one.objection : read.field === 'objections' ? OBJECTIONS_EXAMPLE : one;
+      const example = read.field.endsWith('.disposition')
+        ? one.disposition
+        : read.field.endsWith('.objection')
+          ? one.objection
+          : read.field === 'objections'
+            ? OBJECTIONS_EXAMPLE
+            : one;
       throw new ToolInputError(read.message, { field: read.field, ...(read.allowed ? { allowed: read.allowed } : {}), example });
     }
     return { ...given, objections: read.objections };
@@ -1506,7 +2357,13 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
         const d = getDeliverable(ctx.store, deliverableId);
         return { ...asked, deliverable: { id: deliverableId, trust: d?.trustState ?? 'unchanged' } };
       }
-      return { deliverable: { id: deliverableId, trust: 'unchanged' }, pendingDecision: pending.id, personRequired: true, ...(asked ? { asked: asked.asked } : {}), next: personStepFor(pending.id) };
+      return {
+        deliverable: { id: deliverableId, trust: 'unchanged' },
+        pendingDecision: pending.id,
+        personRequired: true,
+        ...(asked ? { asked: asked.asked } : {}),
+        next: personStepFor(pending.id),
+      };
     }
     const verification = to === 'challenged' ? { challenge: { objections: objections ?? [] } } : undefined;
     const d = ctx.workflow.promote({ deliverableId, to, by: ctx.actor, channel: 'relay', reason, verification });
@@ -1514,7 +2371,26 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string;
   },
 });
 
-const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'update', 'link', 'unlink', 'requalify', 'claim', 'check', 'handoff', 'prepare_accept', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
+const WORK_ACTIONS = [
+  'list',
+  'ready',
+  'offers',
+  'show',
+  'add',
+  'update',
+  'link',
+  'unlink',
+  'requalify',
+  'claim',
+  'check',
+  'handoff',
+  'prepare_accept',
+  'accept',
+  'complete',
+  'release',
+  'takeover',
+  'reopen',
+] as const;
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
@@ -1546,7 +2422,7 @@ function renewedLane(ctx: BrokerContext, item: WorkItem, owner: string, now: str
   const lane = item.claimLane ?? undefined;
   if (lane === ctx.lane?.root) return null;
   const held = leasesFor(ctx.store, item.id)[0];
-  const branch = held ? held.branch : ctx.worktrees?.().find((w) => (lane === undefined ? w.main : w.root === lane))?.branch ?? null;
+  const branch = held ? held.branch : (ctx.worktrees?.().find((w) => (lane === undefined ? w.main : w.root === lane))?.branch ?? null);
   return { lane, branch };
 }
 
@@ -1555,14 +2431,24 @@ function renewedLane(ctx: BrokerContext, item: WorkItem, owner: string, now: str
  * session are two claimants; an agent the host did not vouch for is recorded
  * as reported. Without a session (a caller with none) the actor stands in.
  */
-function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string, where: EditLane = editLane(ctx, undefined)): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
+function claimantFor(
+  ctx: BrokerContext,
+  agent: string | undefined,
+  at: string,
+  where: EditLane = editLane(ctx, undefined),
+): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
   const who = claimantOf(ctx, agent, where);
-  if (who.session && who.agent !== 'main') recordAgent(ctx.store, { sessionId: who.session, agent: who.agent!, attestation: 'reported', at, laneRoot: who.lane });
+  if (who.session && who.agent !== 'main')
+    recordAgent(ctx.store, { sessionId: who.session, agent: who.agent!, attestation: 'reported', at, laneRoot: who.lane });
   return who;
 }
 
 /** The claimant an agent of this session is, editing in `where`, without recording anything. */
-function claimantOf(ctx: BrokerContext, agent: string | undefined, where: EditLane = editLane(ctx, undefined)): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
+function claimantOf(
+  ctx: BrokerContext,
+  agent: string | undefined,
+  where: EditLane = editLane(ctx, undefined),
+): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
   if (!ctx.sessionId) return { owner: ctx.actor, ...where };
   const name = agent ?? 'main';
   return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, ...where };
@@ -1573,8 +2459,15 @@ function worktreePath(raw: Record<string, unknown>): string | undefined {
   const value = str(raw, 'worktree', { optional: true });
   if (value === undefined) return undefined;
   const path = value.trim();
-  if (!path || path.length > WORKTREE_PATH_MAX || /\p{C}/u.test(path)) throw new ToolInputError(`"worktree" is the absolute path of a git worktree of this project, at most ${String(WORKTREE_PATH_MAX)} characters`, { field: 'worktree' });
-  if (!path.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(path)) throw new ToolInputError('"worktree" is the absolute path of a git worktree of this project, not a path relative to somewhere', { field: 'worktree' });
+  if (!path || path.length > WORKTREE_PATH_MAX || /\p{C}/u.test(path))
+    throw new ToolInputError(
+      `"worktree" is the absolute path of a git worktree of this project, at most ${String(WORKTREE_PATH_MAX)} characters`,
+      { field: 'worktree' },
+    );
+  if (!path.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(path))
+    throw new ToolInputError('"worktree" is the absolute path of a git worktree of this project, not a path relative to somewhere', {
+      field: 'worktree',
+    });
   return path;
 }
 
@@ -1590,7 +2483,8 @@ const HANDOFF_TARGET = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}(?:\/[A-Za-z0-9][A-Za-z0
 
 function leasePaths(raw: Record<string, unknown>): string[] {
   const items = list(raw, 'paths');
-  if (items.length > MAX_LEASE_PATHS) throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`, { field: 'paths' });
+  if (items.length > MAX_LEASE_PATHS)
+    throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`, { field: 'paths' });
   const use = raw.action === 'claim' ? 'reserve' : 'check';
   return items.map((p) => {
     if (typeof p !== 'string' || !p.trim()) throw new ToolInputError('"paths" holds non-empty strings', { field: 'paths' });
@@ -1656,7 +2550,8 @@ function strings(raw: Record<string, unknown>, key: string): string[] | undefine
 const work = define<WorkToolInput, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. When you edit in a git worktree of this project other than the one this session runs in, pass its absolute path as worktree with claim, check, accept, or takeover, so your reservations record that worktree and its branch. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
+  description:
+    'File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. When you edit in a git worktree of this project other than the one this session runs in, pass its absolute path as worktree with claim, check, accept, or takeover, so your reservations record that worktree and its branch. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -1669,42 +2564,113 @@ const work = define<WorkToolInput, unknown>({
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
       description: { type: 'string', description: 'For add and update: what the work is, in enough detail to pick it up cold.' },
       parent: { type: 'string', description: 'For add and link: the work item this one is part of.' },
-      serves: { type: 'string', description: 'For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id.' },
-      blockedBy: { type: 'array', items: { type: 'string' }, description: 'For add, link, and unlink: work that must finish before this is ready.' },
-      related: { type: 'array', items: { type: 'string' }, description: 'For add, link, and unlink: work that gives context without blocking.' },
-      acceptance: { type: 'array', items: { type: 'string' }, description: 'For add and update: observable criteria a finished item meets, one each. update replaces the list.' },
+      serves: {
+        type: 'string',
+        description:
+          'For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id.',
+      },
+      blockedBy: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'For add, link, and unlink: work that must finish before this is ready.',
+      },
+      related: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'For add, link, and unlink: work that gives context without blocking.',
+      },
+      acceptance: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'For add and update: observable criteria a finished item meets, one each. update replaces the list.',
+      },
       risk: { type: 'string', description: 'For add and update: what could go wrong.' },
-      sources: { type: 'array', items: { type: 'string' }, description: 'For add and update: source ids whose refresh sends this work back for requalification.' },
+      sources: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'For add and update: source ids whose refresh sends this work back for requalification.',
+      },
       removeParent: { type: 'boolean', description: 'For unlink: remove the parent.' },
-      reason: { type: 'string', description: 'Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met.' },
-      token: { type: 'string', description: 'Ledger claimToken for renewal, handoff or settlement; not a workflow-step token. Accept rotates it. Never relay the offerer’s token.' },
-      acceptanceKey: { type: 'string', description: 'Accept: private key from prepare_accept. Retain with offerId before dispatch; retry both unchanged to recover the same live claim without renewal. Never publish or invent a key.' },
-      offerId: { type: 'string', description: 'Accept: public immutable handoff.offerId from offers/show or prepare_accept. Pair with acceptanceKey to fence stale requests.' },
-      agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
-      paths: { type: 'array', items: { type: 'string' }, description: 'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.' },
-      mode: { type: 'string', description: 'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.', enum: [...LEASE_MODES] },
-      packet: { type: 'object', description: 'Handoff notes; descriptive paths do not reserve files. Only actual claim reservations transfer.', properties: {
-        state: { type: 'string', description: 'Where the work stands.' },
-        next: { type: 'string', description: 'The next concrete step.' },
-        watchOut: { type: 'array', items: { type: 'string' }, description: 'Known hazards.' },
-        openQuestions: { type: 'array', items: { type: 'string' }, description: 'Unresolved questions.' },
-        where: { type: 'object', description: 'Descriptive location; never authority or reservations.', properties: {
-          branch: { type: 'string', description: 'Branch name, when known.' },
-          commit: { type: 'string', description: 'Git commit id, when known.' },
-          paths: { type: 'array', items: { type: 'string' }, description: 'Repository-relative paths for context.' },
-        } },
-      }, required: ['state', 'next'] },
-      to: { type: 'string', description: 'For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept.' },
-      worktree: { type: 'string', description: 'For claim/check/accept/takeover in another managed worktree: its absolute path. Reservations bind that root and branch; renewal without it keeps that binding. Unknown worktrees refuse.' },
+      reason: {
+        type: 'string',
+        description:
+          'Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met.',
+      },
+      token: {
+        type: 'string',
+        description:
+          'Ledger claimToken for renewal, handoff or settlement; not a workflow-step token. Accept rotates it. Never relay the offerer’s token.',
+      },
+      acceptanceKey: {
+        type: 'string',
+        description:
+          'Accept: private key from prepare_accept. Retain with offerId before dispatch; retry both unchanged to recover the same live claim without renewal. Never publish or invent a key.',
+      },
+      offerId: {
+        type: 'string',
+        description:
+          'Accept: public immutable handoff.offerId from offers/show or prepare_accept. Pair with acceptanceKey to fence stale requests.',
+      },
+      agent: {
+        type: 'string',
+        description:
+          'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.',
+      },
+      paths: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.',
+      },
+      mode: {
+        type: 'string',
+        description:
+          'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.',
+        enum: [...LEASE_MODES],
+      },
+      packet: {
+        type: 'object',
+        description: 'Handoff notes; descriptive paths do not reserve files. Only actual claim reservations transfer.',
+        properties: {
+          state: { type: 'string', description: 'Where the work stands.' },
+          next: { type: 'string', description: 'The next concrete step.' },
+          watchOut: { type: 'array', items: { type: 'string' }, description: 'Known hazards.' },
+          openQuestions: { type: 'array', items: { type: 'string' }, description: 'Unresolved questions.' },
+          where: {
+            type: 'object',
+            description: 'Descriptive location; never authority or reservations.',
+            properties: {
+              branch: { type: 'string', description: 'Branch name, when known.' },
+              commit: { type: 'string', description: 'Git commit id, when known.' },
+              paths: { type: 'array', items: { type: 'string' }, description: 'Repository-relative paths for context.' },
+            },
+          },
+        },
+        required: ['state', 'next'],
+      },
+      to: {
+        type: 'string',
+        description: 'For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept.',
+      },
+      worktree: {
+        type: 'string',
+        description:
+          'For claim/check/accept/takeover in another managed worktree: its absolute path. Reservations bind that root and branch; renewal without it keeps that binding. Unknown worktrees refuse.',
+      },
     },
     required: ['action'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    if (raw.acceptanceKey !== undefined && raw.action !== 'accept') throw new ToolInputError('"acceptanceKey" is only for accept; prepare_accept generates one before dispatch', { field: 'acceptanceKey' });
-    if (raw.offerId !== undefined && raw.action !== 'accept') throw new ToolInputError('"offerId" is only for accept', { field: 'offerId' });
-    if (raw.acceptanceKey !== undefined && raw.offerId === undefined) throw new ToolInputError('"offerId" from the observed handoff is required with acceptanceKey', { field: 'offerId' });
+    if (raw.acceptanceKey !== undefined && raw.action !== 'accept')
+      throw new ToolInputError('"acceptanceKey" is only for accept; prepare_accept generates one before dispatch', {
+        field: 'acceptanceKey',
+      });
+    if (raw.offerId !== undefined && raw.action !== 'accept')
+      throw new ToolInputError('"offerId" is only for accept', { field: 'offerId' });
+    if (raw.acceptanceKey !== undefined && raw.offerId === undefined)
+      throw new ToolInputError('"offerId" from the observed handoff is required with acceptanceKey', { field: 'offerId' });
     return {
       action: str(raw, 'action', { oneOf: [...WORK_ACTIONS] }) as WorkAction,
       id: str(raw, 'id', { optional: true }),
@@ -1721,26 +2687,77 @@ const work = define<WorkToolInput, unknown>({
       removeParent: bool(raw, 'removeParent', false),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
-      acceptanceKey: matching(str(raw, 'acceptanceKey', { optional: true }), /^[a-f0-9]{64}$/i, 'acceptanceKey', '"acceptanceKey" is 32 cryptographically random bytes encoded as 64 hex characters and retained privately before accepting'),
-      offerId: matching(str(raw, 'offerId', { optional: true }), /^[A-Za-z0-9:_-]{1,160}$/, 'offerId', '"offerId" is the public immutable generation from the observed handoff'),
-      agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, 'agent', '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
+      acceptanceKey: matching(
+        str(raw, 'acceptanceKey', { optional: true }),
+        /^[a-f0-9]{64}$/i,
+        'acceptanceKey',
+        '"acceptanceKey" is 32 cryptographically random bytes encoded as 64 hex characters and retained privately before accepting',
+      ),
+      offerId: matching(
+        str(raw, 'offerId', { optional: true }),
+        /^[A-Za-z0-9:_-]{1,160}$/,
+        'offerId',
+        '"offerId" is the public immutable generation from the observed handoff',
+      ),
+      agent: matching(
+        str(raw, 'agent', { optional: true }),
+        AGENT_NAME,
+        'agent',
+        '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters',
+      ),
       paths: raw.paths === undefined ? undefined : leasePaths(raw),
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
       packet: obj(raw, 'packet', { optional: true }),
-      to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, 'to', '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
+      to: matching(
+        str(raw, 'to', { optional: true }),
+        HANDOFF_TARGET,
+        'to',
+        '"to" names a session or a session’s agent, such as ses_ab12/reviewer',
+      ),
       worktree: worktreePath(raw),
     };
   },
-  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, acceptanceKey, offerId, agent, paths, mode, packet, to, worktree }) {
+  run(
+    ctx,
+    {
+      action,
+      id,
+      title,
+      kind,
+      description,
+      parent,
+      serves,
+      blockedBy,
+      related,
+      acceptance,
+      risk,
+      sources,
+      removeParent,
+      reason,
+      token,
+      acceptanceKey,
+      offerId,
+      agent,
+      paths,
+      mode,
+      packet,
+      to,
+      worktree,
+    },
+  ) {
     const at = ctx.now();
     const where = editLane(ctx, LANE_ACTIONS.includes(action) ? worktree : undefined);
     if (action === 'list') return queryWork(ctx.store, { query: title, parentId: parent, limit: 50 });
-    if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
+    if (action === 'offers')
+      return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new ToolInputError('"paths" is required for check', { field: 'paths' });
       assertLeasePaths({ root: ctx.root, lane: where.lane, paths, store: ctx.store, now: at });
-      const named = id ? getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id) : null;
-      const exclude = named?.status === 'claimed' && named.claimOwner === claimantOf(ctx, agent).owner && named.claimUntil && named.claimUntil > at ? named.id : undefined;
+      const named = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id)) : null;
+      const exclude =
+        named?.status === 'claimed' && named.claimOwner === claimantOf(ctx, agent).owner && named.claimUntil && named.claimUntil > at
+          ? named.id
+          : undefined;
       return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: where.lane ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
     }
     if (action === 'ready') return listReady(ctx.store, at);
@@ -1769,10 +2786,20 @@ const work = define<WorkToolInput, unknown>({
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
-    if (action === 'prepare_accept') return { ...prepareAcceptance(ctx.store, { id: item.id, ...claimantOf(ctx, agent), now: at }), next: 'Retain acceptanceKey privately with offerId, then call work accept with both, the same id, agent and intended worktree. Repeat that identical accept after a lost response; never publish this capability.' };
+    if (action === 'prepare_accept')
+      return {
+        ...prepareAcceptance(ctx.store, { id: item.id, ...claimantOf(ctx, agent), now: at }),
+        next: 'Retain acceptanceKey privately with offerId, then call work accept with both, the same id, agent and intended worktree. Repeat that identical accept after a lost response; never publish this capability.',
+      };
     if (action === 'show') {
       const handoff = handoffOf(ctx.store, item.id);
-      return { ...item, readiness: readinessOf(ctx.store, item, at), structure: workStructure(ctx.store, item), leases: leasesFor(ctx.store, item.id), handoff: handoff ? handoffAsData(handoff) : null };
+      return {
+        ...item,
+        readiness: readinessOf(ctx.store, item, at),
+        structure: workStructure(ctx.store, item),
+        leases: leasesFor(ctx.store, item.id),
+        handoff: handoff ? handoffAsData(handoff) : null,
+      };
     }
     if (action === 'update') {
       return updateWork(ctx.store, {
@@ -1791,18 +2818,35 @@ const work = define<WorkToolInput, unknown>({
       if (!reason) throw new ToolInputError('requalify needs a reason: what was checked against the changed source', { field: 'reason' });
       return requalifyWork(ctx.store, { id: item.id, reason, at, actor: ctx.actor });
     }
-    if (action === 'link') return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
+    if (action === 'link')
+      return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
-    const renewing = action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
+    const renewing =
+      action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
     const who = claimantFor(ctx, agent, at, renewing ?? where);
-    if (['claim', 'takeover'].includes(action)) assertLeasePaths({ root: ctx.root, lane: who.lane, paths: paths?.length ? paths : leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at });
+    if (['claim', 'takeover'].includes(action))
+      assertLeasePaths({
+        root: ctx.root,
+        lane: who.lane,
+        paths: paths?.length ? paths : leasesFor(ctx.store, item.id).map((l) => l.path),
+        store: ctx.store,
+        now: at,
+      });
     if (action === 'handoff') {
       if (!token) throw new ToolInputError('"token" is required for handoff: the one your claim returned', { field: 'token' });
       if (!packet) throw new ToolInputError('"packet" is required for handoff: at least state and next', { field: 'packet' });
       return handoffWork(ctx.store, { id: item.id, owner: who.owner, token, packet, to, now: at });
     }
     if (action === 'accept') {
-      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at, acceptanceKey, offerId }, () => assertLeasePaths({ root: ctx.root, lane: who.lane, paths: leasesFor(ctx.store, item.id).map(l => l.path), store: ctx.store, now: at }));
+      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at, acceptanceKey, offerId }, () =>
+        assertLeasePaths({
+          root: ctx.root,
+          lane: who.lane,
+          paths: leasesFor(ctx.store, item.id).map((l) => l.path),
+          store: ctx.store,
+          now: at,
+        }),
+      );
       return { ...taken, handoff: handoffAsData(taken.handoff) };
     }
     if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });
@@ -1823,7 +2867,8 @@ const work = define<WorkToolInput, unknown>({
 const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
   name: 'heartbeat',
   title: 'Keep a lease alive',
-  description: 'The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.',
+  description:
+    'The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.',
   surface: 'both',
   readOnly: false,
   inputSchema: {
@@ -1853,10 +2898,15 @@ const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
 const claimStep = define<{ runId?: string }, unknown>({
   name: 'claim_step',
   title: 'Claim a pre-resolved step',
-  description: 'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.',
+  description:
+    'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.',
   surface: 'headless',
   readOnly: false,
-  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'A run id; omit for any active run.' } }, additionalProperties: false },
+  inputSchema: {
+    type: 'object',
+    properties: { runId: { type: 'string', description: 'A run id; omit for any active run.' } },
+    additionalProperties: false,
+  },
   validate(raw) {
     closed(raw, this.inputSchema);
     return { runId: str(raw, 'runId', { optional: true }) };
@@ -1869,13 +2919,53 @@ const claimStep = define<{ runId?: string }, unknown>({
     });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { semanticReview: p.semanticReview, stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
+    return {
+      work: {
+        semanticReview: p.semanticReview,
+        stepRunId: p.leased.id,
+        owner: p.leased.leaseOwner,
+        token: p.leased.nonce,
+        leaseUntil: p.leased.leaseUntil,
+        run: { id: p.run.id, workflow: p.run.workflowId },
+        step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators },
+        skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null,
+        inputs: p.inputs,
+        intake: p.intake,
+        method: p.method,
+        methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
+        delivery,
+        instructions: p.instructions,
+      },
+      waitingOn: null,
+    };
   },
 });
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, contextSearch, contextIndex, remember, workflows, skills, startOutcome, claimWork, submitWork, checkpointWork, runStatus, inbox, decide, sources, checkAnswer, staff, promote, work, delegate, claimStep, heartbeat,
+  bootstrap,
+  classify,
+  projectContext,
+  contextSearch,
+  contextIndex,
+  remember,
+  workflows,
+  skills,
+  startOutcome,
+  claimWork,
+  submitWork,
+  checkpointWork,
+  runStatus,
+  inbox,
+  decide,
+  sources,
+  checkAnswer,
+  staff,
+  promote,
+  work,
+  delegate,
+  claimStep,
+  heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {
@@ -1883,4 +2973,19 @@ export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unk
 }
 
 /** What the headless surface must never be able to do, by tool name. */
-export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'workflows', 'project_context', 'context_search', 'context_index', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];
+export const HEADLESS_FORBIDDEN: readonly string[] = [
+  'remember',
+  'start_outcome',
+  'decide',
+  'promote_deliverable',
+  'sources',
+  'workflows',
+  'project_context',
+  'context_search',
+  'context_index',
+  'staff',
+  'claim_work',
+  'classify_request',
+  'work',
+  'delegate',
+];

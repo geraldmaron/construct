@@ -107,14 +107,19 @@ export function record(raw: unknown): Record<string, unknown> {
   return raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
 }
 
-export function str(raw: Record<string, unknown>, key: string, opts: { readonly optional?: boolean; readonly oneOf?: readonly string[] } = {}): string | undefined {
+export function str(
+  raw: Record<string, unknown>,
+  key: string,
+  opts: { readonly optional?: boolean; readonly oneOf?: readonly string[] } = {},
+): string | undefined {
   const v = raw[key];
   if (v === undefined || v === null) {
     if (opts.optional) return undefined;
     throw new ToolInputError(`"${key}" is required`, { field: key, allowed: opts.oneOf });
   }
   if (typeof v !== 'string') throw new ToolInputError(`"${key}" must be a string`, { field: key, allowed: opts.oneOf });
-  if (opts.oneOf && !opts.oneOf.includes(v)) throw new ToolInputError(`"${key}" must be one of ${opts.oneOf.join(' | ')}`, { field: key, allowed: opts.oneOf });
+  if (opts.oneOf && !opts.oneOf.includes(v))
+    throw new ToolInputError(`"${key}" must be one of ${opts.oneOf.join(' | ')}`, { field: key, allowed: opts.oneOf });
   return v;
 }
 
@@ -132,7 +137,11 @@ export function num(raw: Record<string, unknown>, key: string): number | undefin
   return v;
 }
 
-export function obj(raw: Record<string, unknown>, key: string, opts: { readonly optional?: boolean } = {}): Record<string, unknown> | undefined {
+export function obj(
+  raw: Record<string, unknown>,
+  key: string,
+  opts: { readonly optional?: boolean } = {},
+): Record<string, unknown> | undefined {
   const v = raw[key];
   if (v === undefined || v === null) {
     if (opts.optional) return undefined;
@@ -152,7 +161,8 @@ export function list(raw: Record<string, unknown>, key: string): unknown[] {
 /** Refuse keys the schema does not declare, so a host cannot smuggle extra intent. */
 export function closed(raw: Record<string, unknown>, schema: JsonSchema): void {
   for (const key of Object.keys(raw)) {
-    if (!(key in schema.properties)) throw new ToolInputError(`"${key}" is not an input of this tool`, { field: key, allowed: Object.keys(schema.properties) });
+    if (!(key in schema.properties))
+      throw new ToolInputError(`"${key}" is not an input of this tool`, { field: key, allowed: Object.keys(schema.properties) });
   }
 }
 

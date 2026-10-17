@@ -36,12 +36,7 @@ const files = execSync("git ls-files 'src/' 'tests/' 'scripts/' 'skills/'", { en
   .split('\n')
   .filter(Boolean)
   .filter((f) => EXTENSIONS.some((ext) => f.endsWith(ext)))
-  .filter(
-    (f) =>
-      !f.includes('repo-gate') &&
-      !f.includes('labeling-kit') &&
-      !f.includes('lint-doc-bead-refs'),
-  )
+  .filter((f) => !f.includes('repo-gate') && !f.includes('labeling-kit') && !f.includes('lint-doc-bead-refs'))
   // git ls-files still lists a path after a working-tree delete until the
   // deletion is staged; skip those so a mid-edit tree does not crash the lint.
   .filter((f) => existsSync(f));

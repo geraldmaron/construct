@@ -66,7 +66,9 @@ function dirs(root: string): string[] {
     .sort();
 }
 
-export function createWorkflowRegistry(input: { readonly builtinDir?: string; readonly projectDir?: string | null } = {}): WorkflowRegistry {
+export function createWorkflowRegistry(
+  input: { readonly builtinDir?: string; readonly projectDir?: string | null } = {},
+): WorkflowRegistry {
   const workflows = new Map<string, RegisteredWorkflow>();
   const problems: { dir: string; message: string }[] = [];
   const sets: Array<[BundleOrigin, string[]]> = [

@@ -29,7 +29,11 @@ function refused(value: unknown, pattern: RegExp, at = AT): void {
 }
 
 test('relative periods are whole calendar units around today, labeled', () => {
-  const s = (relative: PeriodSpec['relative'], extra: Partial<PeriodSpec> = {}): PeriodSpec => ({ semantics: 'changed_during', relative, ...extra });
+  const s = (relative: PeriodSpec['relative'], extra: Partial<PeriodSpec> = {}): PeriodSpec => ({
+    semantics: 'changed_during',
+    relative,
+    ...extra,
+  });
   assert.deepEqual(window(s('last_quarter')), ['2026-07-01', '2026-09-30']);
   assert.deepEqual(window(s('this_quarter')), ['2026-10-01', '2026-12-31']);
   assert.equal(resolvePeriod(s('this_quarter'), AT).endsAfterToday, true, 'this_quarter is the whole quarter, which ends after today');
@@ -43,7 +47,11 @@ test('relative periods are whole calendar units around today, labeled', () => {
   assert.deepEqual(window(s('this_year')), ['2026-01-01', '2026-12-31']);
   assert.deepEqual(window(s('last_n_days', { n: 7 })), ['2026-10-02', '2026-10-08']);
   assert.deepEqual(window(s('last_n_days', { n: 30 })), ['2026-09-09', '2026-10-08']);
-  assert.deepEqual(window(s('last_quarter'), '2026-02-10T09:00:00.000Z'), ['2025-10-01', '2025-12-31'], 'last quarter in Q1 is the previous year’s Q4');
+  assert.deepEqual(
+    window(s('last_quarter'), '2026-02-10T09:00:00.000Z'),
+    ['2025-10-01', '2025-12-31'],
+    'last quarter in Q1 is the previous year’s Q4',
+  );
   assert.deepEqual(window(s('last_month'), '2026-01-15T09:00:00.000Z'), ['2025-12-01', '2025-12-31']);
 
   const lq = resolvePeriod(s('last_quarter', { phrase: 'last quarter' }), AT);
@@ -62,7 +70,10 @@ test('relative periods are whole calendar units around today, labeled', () => {
 test('a quarter without a year is the most recent one that has started; a year alone is the whole year', () => {
   const q3 = resolvePeriod({ semantics: 'evidence_window', quarter: 3 }, AT);
   assert.deepEqual([q3.from, q3.to, q3.how, q3.quarter, q3.year], ['2026-07-01', '2026-09-30', 'quarter', 3, 2026]);
-  assert.ok(q3.assumptions.some((a) => a.startsWith('Q3 taken as 2026')), q3.assumptions.join('; '));
+  assert.ok(
+    q3.assumptions.some((a) => a.startsWith('Q3 taken as 2026')),
+    q3.assumptions.join('; '),
+  );
   const q4 = resolvePeriod({ semantics: 'evidence_window', quarter: 4 }, '2026-08-15T12:00:00.000Z');
   assert.deepEqual([q4.from, q4.to, q4.year], ['2025-10-01', '2025-12-31', 2025]);
   assert.ok(q4.assumptions.some((a) => a.startsWith('Q4 taken as 2025')));
@@ -75,7 +86,11 @@ test('a quarter without a year is the most recent one that has started; a year a
 
   assert.deepEqual(window({ semantics: 'changed_during', year: 2028 }), ['2028-01-01', '2028-12-31']);
   assert.equal(resolvePeriod({ semantics: 'changed_during', year: 2028 }, AT).how, 'year');
-  assert.deepEqual(window({ semantics: 'changed_during', from: '2028-02-01', to: '2028-02-29' }), ['2028-02-01', '2028-02-29'], 'a leap day is a real date');
+  assert.deepEqual(
+    window({ semantics: 'changed_during', from: '2028-02-01', to: '2028-02-29' }),
+    ['2028-02-01', '2028-02-29'],
+    'a leap day is a real date',
+  );
   refused({ semantics: 'changed_during', from: '2027-02-01', to: '2027-02-29' }, /2027-02-29.*not a real date/);
   refused({ semantics: 'changed_during', from: '2026-02-30', to: '2026-03-01' }, /not a real date/);
 });
@@ -83,9 +98,21 @@ test('a quarter without a year is the most recent one that has started; a year a
 test('the timezone is the period’s own, else the caller’s, else UTC', () => {
   const at = '2026-10-01T02:00:00.000Z';
   assert.deepEqual(window({ semantics: 'changed_during', relative: 'this_quarter' }, at), ['2026-10-01', '2026-12-31']);
-  assert.deepEqual(window({ semantics: 'changed_during', relative: 'this_quarter', timezone: 'America/Los_Angeles' }, at), ['2026-07-01', '2026-09-30'], 'it is still September 30 in Los Angeles');
-  assert.deepEqual(window({ semantics: 'changed_during', relative: 'this_quarter' }, at, 'America/Los_Angeles'), ['2026-07-01', '2026-09-30'], 'the caller’s timezone');
-  assert.deepEqual(window({ semantics: 'changed_during', relative: 'this_quarter', timezone: 'UTC' }, at, 'America/Los_Angeles'), ['2026-10-01', '2026-12-31'], 'the period’s own wins');
+  assert.deepEqual(
+    window({ semantics: 'changed_during', relative: 'this_quarter', timezone: 'America/Los_Angeles' }, at),
+    ['2026-07-01', '2026-09-30'],
+    'it is still September 30 in Los Angeles',
+  );
+  assert.deepEqual(
+    window({ semantics: 'changed_during', relative: 'this_quarter' }, at, 'America/Los_Angeles'),
+    ['2026-07-01', '2026-09-30'],
+    'the caller’s timezone',
+  );
+  assert.deepEqual(
+    window({ semantics: 'changed_during', relative: 'this_quarter', timezone: 'UTC' }, at, 'America/Los_Angeles'),
+    ['2026-10-01', '2026-12-31'],
+    'the period’s own wins',
+  );
   const r = resolvePeriod({ semantics: 'changed_during', relative: 'this_quarter' }, at, 'America/Los_Angeles');
   assert.equal(r.timezone, 'America/Los_Angeles');
   assert.ok(r.assumptions.includes('dates are in America/Los_Angeles'));
@@ -106,10 +133,21 @@ test('as_of keeps only the end date, and an end after today is taken as of today
 });
 
 test('a malformed period is refused with what it takes', () => {
-  refused({ semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-02', to: '2026-09-30' }, /last_quarter on 2026-10-08 \(UTC\) runs from 2026-07-01 to 2026-09-30/);
+  refused(
+    { semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-02', to: '2026-09-30' },
+    /last_quarter on 2026-10-08 \(UTC\) runs from 2026-07-01 to 2026-09-30/,
+  );
   refused({ semantics: 'changed_during', quarter: 3, year: 2026, to: '2026-10-31' }, /Q3 2026 .* runs from 2026-07-01 to 2026-09-30/);
-  assert.deepEqual(checkSlot('period', 'period', { semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-01', to: '2026-09-30' }, ctx), [], 'agreeing dates may accompany relative');
-  assert.deepEqual(checkSlot('period', 'period', { semantics: 'as_of', relative: 'this_quarter', to: '2026-10-08' }, ctx), [], 'as_of may give today as the end of a unit that runs past it');
+  assert.deepEqual(
+    checkSlot('period', 'period', { semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-01', to: '2026-09-30' }, ctx),
+    [],
+    'agreeing dates may accompany relative',
+  );
+  assert.deepEqual(
+    checkSlot('period', 'period', { semantics: 'as_of', relative: 'this_quarter', to: '2026-10-08' }, ctx),
+    [],
+    'as_of may give today as the end of a unit that runs past it',
+  );
   refused({ semantics: 'changed_during', from: '2026-09-30', to: '2026-07-01' }, /from must not be after to/);
   refused({ semantics: 'changed_during', relative: 'last_week', n: 3 }, /only last_n_days takes/);
   refused({ semantics: 'changed_during', relative: 'last_n_days' }, /without "n"/);
@@ -132,7 +170,11 @@ test('a malformed period is refused with what it takes', () => {
 });
 
 test('source ids must name declared active sources', () => {
-  assert.deepEqual(checkSlot('source_ids', 'sources', ['jira', ' confluence ', 'jira'], ctx), [], 'whitespace and repeats are normalized, not refused');
+  assert.deepEqual(
+    checkSlot('source_ids', 'sources', ['jira', ' confluence ', 'jira'], ctx),
+    [],
+    'whitespace and repeats are normalized, not refused',
+  );
   const unknown = checkSlot('source_ids', 'sources', ['jira', 'datadog'], ctx);
   assert.equal(unknown.length, 1);
   assert.equal(unknown[0]!.code, 'unavailable_source');
@@ -153,8 +195,16 @@ test('a period is identified by its meaning, not by when or how it was worked ou
   assert.equal(slotIdentity('period', b), slotIdentity('period', a), 'two days in one quarter');
   assert.equal(slotIdentity('period', c), slotIdentity('period', a), 'the same window named another way');
   assert.equal(slotIdentity('period', reordered), slotIdentity('period', a), 'key order');
-  assert.notEqual(slotIdentity('period', resolvePeriod({ semantics: 'evidence_window', relative: 'last_quarter' }, AT)), slotIdentity('period', a), 'another meaning is other work');
-  assert.notEqual(slotIdentity('period', resolvePeriod({ semantics: 'changed_during', relative: 'last_quarter', timezone: 'Asia/Tokyo' }, AT)), slotIdentity('period', a), 'another timezone is other work');
+  assert.notEqual(
+    slotIdentity('period', resolvePeriod({ semantics: 'evidence_window', relative: 'last_quarter' }, AT)),
+    slotIdentity('period', a),
+    'another meaning is other work',
+  );
+  assert.notEqual(
+    slotIdentity('period', resolvePeriod({ semantics: 'changed_during', relative: 'last_quarter', timezone: 'Asia/Tokyo' }, AT)),
+    slotIdentity('period', a),
+    'another timezone is other work',
+  );
   assert.equal(slotIdentity('period', resolvePeriod({ semantics: 'as_of', to: '2026-09-30' }, AT)), 'as_of||2026-09-30|UTC');
   assert.equal(slotIdentity('source_ids', ['jira', 'confluence', 'jira']), slotIdentity('source_ids', ['confluence', 'jira']));
 });
@@ -165,7 +215,11 @@ test('the calendar gives the date an instant falls on in a timezone, and cron st
   assert.equal(calendarDate('2026-12-31T23:30:00.000Z', 'Asia/Tokyo'), '2027-01-01');
   assert.equal(dayOf('2026-10-05T23:30:00Z', 'Europe/Berlin'), '2026-10-06');
   assert.equal(dayOf('2026-10-05', 'America/Los_Angeles'), '2026-10-05', 'a bare date is that date anywhere');
-  assert.equal(dayOf('2026-10-05T23:30:00', 'America/Los_Angeles'), '2026-10-05', 'a time written without a zone is on the date it shows, on any machine');
+  assert.equal(
+    dayOf('2026-10-05T23:30:00', 'America/Los_Angeles'),
+    '2026-10-05',
+    'a time written without a zone is on the date it shows, on any machine',
+  );
   assert.equal(dayOf('2026-10-05 23:30', 'Asia/Tokyo'), '2026-10-05');
   assert.equal(dayOf('2026-10-05t23:30:00', 'Asia/Tokyo'), '2026-10-05', 'a lowercase t is still a time written without a zone');
   assert.equal(dayOf('2026-10-05T23:30:00.000+0000', 'Europe/Berlin'), '2026-10-06', 'a time with an offset is placed in the timezone');
@@ -175,7 +229,6 @@ test('the calendar gives the date an instant falls on in a timezone, and cron st
   assert.equal(isValidTimezone('Mars/Olympus'), false);
 });
 
-
 test('today is resolved from each firing in its own timezone, not the definition date', () => {
   const spec = { semantics: 'as_of', relative: 'today' } as const;
   assert.deepEqual(window(spec, '2026-10-09T23:30:00Z', 'Pacific/Auckland'), [null, '2026-10-10']);
@@ -183,6 +236,7 @@ test('today is resolved from each firing in its own timezone, not the definition
 });
 
 test('timestamp calendar dates cannot roll into another month before period evaluation', () => {
-  for (const value of ['2026-02-30T12:00:00Z', '2027-02-29T12:00:00+00:00', '2026-04-31T12:00:00-04:00']) assert.equal(dayOf(value, 'UTC'), null, value);
+  for (const value of ['2026-02-30T12:00:00Z', '2027-02-29T12:00:00+00:00', '2026-04-31T12:00:00-04:00'])
+    assert.equal(dayOf(value, 'UTC'), null, value);
   assert.equal(dayOf('2028-02-29T23:30:00-04:00', 'UTC'), '2028-03-01');
 });

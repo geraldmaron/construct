@@ -27,17 +27,29 @@ function pageFiles(name: string): { readonly path: string; readonly body: string
   });
 }
 
-interface Example { readonly file: string; readonly line: number; readonly argv: string[]; readonly expectCode: number }
+interface Example {
+  readonly file: string;
+  readonly line: number;
+  readonly argv: string[];
+  readonly expectCode: number;
+}
 
 function splitArgs(line: string): string[] {
   const out: string[] = [];
-  for (const m of line.matchAll(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g)) out.push(m[0].replace(/"([^"]*)"|'([^']*)'/g, (_, a: string | undefined, b: string | undefined) => a ?? b ?? ''));
+  for (const m of line.matchAll(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g))
+    out.push(m[0].replace(/"([^"]*)"|'([^']*)'/g, (_, a: string | undefined, b: string | undefined) => a ?? b ?? ''));
   return out;
 }
 
 function examples(): Example[] {
   const out: Example[] = [];
-  const pages = ['README.md', ...readdirSync(DOCS).filter((n) => n.endsWith('.md')).sort().map(n => join('docs', n))];
+  const pages = [
+    'README.md',
+    ...readdirSync(DOCS)
+      .filter((n) => n.endsWith('.md'))
+      .sort()
+      .map((n) => join('docs', n)),
+  ];
   for (const name of pages) {
     const text = readFileSync(join(ROOT, name), 'utf8');
     for (const fence of text.matchAll(SHELL_FENCE)) {
@@ -64,13 +76,31 @@ test('every documented construct command runs in a scratch project and exits as 
     // Documented timer commands run against a recorder under the sandbox HOME;
     // the real scheduler would refuse that HOME, and must never see it.
     const quiet = { admit: () => undefined, load: () => undefined, unload: () => undefined, loaded: () => null, firing: () => null };
-    const box = { ...sandboxed, ctx: { ...sandboxed.ctx, timers: { platform: 'darwin' as const, control: quiet, systemTimezone: 'Europe/Berlin', launcher: process.execPath } } };
+    const box = {
+      ...sandboxed,
+      ctx: {
+        ...sandboxed.ctx,
+        timers: { platform: 'darwin' as const, control: quiet, systemTimezone: 'Europe/Berlin', launcher: process.execPath },
+      },
+    };
     try {
       mkdirSync(join(box.cwd, 'docs'), { recursive: true });
       writeFileSync(join(box.cwd, 'docs', 'design.md'), '# Design\n\n- Keep the kernel host-agnostic\n', 'utf8');
       // Every page assumes an initialized project unless it initializes one itself.
       if (!list.some((e) => e.argv[0] === 'init')) {
-        const init = await capture(() => run(['init', '--scale=solo', '--outcome=ship', '--constraint=keep the API', `--skills-dir=${join(box.home, 'skills')}`, '--no-wire'], box.ctx));
+        const init = await capture(() =>
+          run(
+            [
+              'init',
+              '--scale=solo',
+              '--outcome=ship',
+              '--constraint=keep the API',
+              `--skills-dir=${join(box.home, 'skills')}`,
+              '--no-wire',
+            ],
+            box.ctx,
+          ),
+        );
         assert.equal(init.code, 0, `${file}: setup init failed: ${init.err}`);
       }
       for (const f of pageFiles(file)) {
@@ -80,7 +110,11 @@ test('every documented construct command runs in a scratch project and exits as 
       for (const e of list) {
         const argv = e.argv.map((a) => (a === '--client=cursor' ? `--client=cursor` : a));
         const result = await capture(() => run(argv, box.ctx));
-        assert.equal(result.code, e.expectCode, `${file}:${String(e.line)} \`construct ${argv.join(' ')}\` exited ${String(result.code)}, expected ${String(e.expectCode)}\n${result.err}${result.out.slice(0, 400)}`);
+        assert.equal(
+          result.code,
+          e.expectCode,
+          `${file}:${String(e.line)} \`construct ${argv.join(' ')}\` exited ${String(result.code)}, expected ${String(e.expectCode)}\n${result.err}${result.out.slice(0, 400)}`,
+        );
         assert.doesNotMatch(result.err, /    at /, `${file}:${String(e.line)} printed a stack trace`);
       }
     } finally {

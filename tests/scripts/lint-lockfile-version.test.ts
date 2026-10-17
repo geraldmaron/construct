@@ -7,7 +7,6 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-// @ts-expect-error — the script is plain .mjs, deliberately outside src/
 import { versionMismatch } from '../../scripts/lint-lockfile-version.mjs';
 
 test('versionMismatch is null when package.json and both lockfile copies agree', () => {

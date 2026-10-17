@@ -55,7 +55,11 @@ function git(fx: SterileFixture, cwd: string, args: string[]): string {
 
 /** A pattern matching a path however the temp directory is spelled (macOS /var or /private/var). */
 function pathPattern(path: string): RegExp {
-  return new RegExp(realpathSync(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/^\/private/, '(?:/private)?'));
+  return new RegExp(
+    realpathSync(path)
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/^\/private/, '(?:/private)?'),
+  );
 }
 
 interface Repo {
@@ -91,7 +95,7 @@ function titles(fx: SterileFixture, cwd: string): string[] {
   const r = cli(fx, cwd, ['work', 'list', '--json']);
   assert.equal(r.status, 0, r.out);
   const parsed = JSON.parse(r.out.trim().split('\n').pop()!) as { items?: Array<{ title: string }> } | Array<{ title: string }>;
-  const items = Array.isArray(parsed) ? parsed : parsed.items ?? [];
+  const items = Array.isArray(parsed) ? parsed : (parsed.items ?? []);
   return items.map((i) => i.title).sort();
 }
 
@@ -133,16 +137,22 @@ test('doctor in a worktree reports the shared project, and init there is refused
   }
 });
 
-test('doctor in a worktree checks that worktree\'s own Claude Code hooks and never says init in the main checkout adds them there', () => {
+test("doctor in a worktree checks that worktree's own Claude Code hooks and never says init in the main checkout adds them there", () => {
   const fx = sterile();
   try {
     const r = repo(fx, true);
     const wired = cli(fx, r.main, ['init', '--client=claude-code']);
     assert.equal(wired.status, 0, wired.out);
-    assert.match(cli(fx, r.main, ['doctor']).out, /ok\s+host-hooks: \.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/);
+    assert.match(
+      cli(fx, r.main, ['doctor']).out,
+      /ok\s+host-hooks: \.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/,
+    );
     const lane = cli(fx, r.external, ['doctor']).out;
     const line = lane.split('\n').find((l) => /host-hooks:/.test(l)) ?? '';
-    assert.match(line, /^ok\s+host-hooks: no construct hooks in \.claude\/settings\.local\.json; `construct init` writes the hooks only in the main checkout, .*, not in this worktree's own \.claude\/settings\.local\.json$/);
+    assert.match(
+      line,
+      /^ok\s+host-hooks: no construct hooks in \.claude\/settings\.local\.json; `construct init` writes the hooks only in the main checkout, .*, not in this worktree's own \.claude\/settings\.local\.json$/,
+    );
     assert.match(line, pathPattern(r.main));
     assert.doesNotMatch(line, /adds them/);
     assert.equal(existsSync(join(r.external, '.claude', 'settings.local.json')), false);
@@ -161,7 +171,10 @@ test('removing a worktree loses nothing, and a store copied into a worktree is n
     assert.equal(cli(fx, r.nested, ['work', 'add', 'made in lane a after the copy']).status, 0);
     const doctor = cli(fx, r.nested, ['doctor']);
     assert.notEqual(doctor.status, 0, 'a store inside a worktree is not healthy, even though it is never opened');
-    assert.match(doctor.out, /FAIL worktree-store: .*\.claude\/worktrees\/a\/\.construct\/state\/construct\.sqlite is a store inside this worktree that Construct never opens/);
+    assert.match(
+      doctor.out,
+      /FAIL worktree-store: .*\.claude\/worktrees\/a\/\.construct\/state\/construct\.sqlite is a store inside this worktree that Construct never opens/,
+    );
     assert.equal(sh(fx, r.main, 'git', ['worktree', 'remove', '--force', r.external]).status, 0);
     assert.deepEqual(titles(fx, r.main), ['made in lane a after the copy', 'made in lane b']);
   } finally {
@@ -199,7 +212,10 @@ function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): P
       for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
         const line = buffer.slice(0, nl);
         buffer = buffer.slice(nl + 1);
-        const msg = JSON.parse(line) as { id: number; result?: { structuredContent?: { construct?: { project?: { root: string; lane: BootstrapLane | null } } } } };
+        const msg = JSON.parse(line) as {
+          id: number;
+          result?: { structuredContent?: { construct?: { project?: { root: string; lane: BootstrapLane | null } } } };
+        };
         if (msg.id !== 2) continue;
         child.stdin.end();
         const project = msg.result?.structuredContent?.construct?.project;
@@ -207,7 +223,9 @@ function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): P
         resolve(project);
       }
     });
-    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lanes', version: '0' } } })}\n`);
+    child.stdin.write(
+      `${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lanes', version: '0' } } })}\n`,
+    );
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })}\n`);
   });
 }
@@ -223,7 +241,11 @@ test('a server started in a worktree binds the main store and reports its lane',
     assert.equal(fromLane.lane!.head, git(fx, r.external, ['rev-parse', 'HEAD']), 'a lane on a branch reports the commit it is at');
     const pinned = await bootstrapFrom(fx, r.nested, [`--project=${r.main}`]);
     assert.equal(realpathSync(pinned.root), realpathSync(r.main));
-    assert.equal(realpathSync(pinned.lane!.checkout), realpathSync(r.nested), 'a pinned --project still reports the worktree the session runs in');
+    assert.equal(
+      realpathSync(pinned.lane!.checkout),
+      realpathSync(r.nested),
+      'a pinned --project still reports the worktree the session runs in',
+    );
     const main = await bootstrapFrom(fx, r.main);
     assert.equal(main.lane, null);
   } finally {
@@ -231,7 +253,9 @@ test('a server started in a worktree binds the main store and reports its lane',
   }
 });
 
-test('a server pinned to the main checkout refuses a session in a worktree whose project file names a different project', { timeout: 60_000 }, async () => {
+test('a server pinned to the main checkout refuses a session in a worktree whose project file names a different project', {
+  timeout: 60_000,
+}, async () => {
   const fx = sterile();
   try {
     const r = repo(fx, true);
@@ -285,7 +309,10 @@ test('worktrees of a bare repository are refused, never treated as projects of t
       assert.equal(found?.mainRoot, null, lane);
     }
     for (const dir of [bareLane, containerLane, container]) {
-      for (const args of [['init', '--no-wire'], ['work', 'list']]) {
+      for (const args of [
+        ['init', '--no-wire'],
+        ['work', 'list'],
+      ]) {
         const refused = cli(fx, dir, args);
         assert.notEqual(refused.status, 0, `${args.join(' ')} in ${dir}: ${refused.out}`);
         assert.match(refused.out, /bare/);
@@ -436,10 +463,17 @@ test('commands that edit committed project files are refused in a worktree; read
       assert.match(refused.out, /edits the project's committed \.construct files/, args.join(' '));
       assert.match(refused.out, pathPattern(r.main), args.join(' '));
     }
-    assert.deepEqual(committed.map((f) => readFileSync(f, 'utf8')), before, 'the main checkout\'s committed files are untouched');
+    assert.deepEqual(
+      committed.map((f) => readFileSync(f, 'utf8')),
+      before,
+      "the main checkout's committed files are untouched",
+    );
     assert.equal(cli(fx, r.external, ['config', 'get', 'sources.defaultFreshnessHours']).status, 0);
     assert.equal(cli(fx, r.external, ['skill', 'update', '--dry-run']).status, 0);
-    assert.equal(cli(fx, r.external, ['source', 'add', 'scratch', '--kind=directory', '--purpose=scratch', '--locator=.', '--local']).status, 0);
+    assert.equal(
+      cli(fx, r.external, ['source', 'add', 'scratch', '--kind=directory', '--purpose=scratch', '--locator=.', '--local']).status,
+      0,
+    );
   } finally {
     fx.cleanup();
   }

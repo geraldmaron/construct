@@ -60,7 +60,8 @@ function nextStepFor(error: unknown): string | null {
   if (error instanceof LegacyProjectError) return null;
   if (error instanceof UnsupportedStateError) return null;
   if (error instanceof UnsupportedProjectFileError) return null;
-  if (error instanceof ResetNotConfirmedError) return 'Run `construct reset` without --confirm to see the exact targets, then confirm them.';
+  if (error instanceof ResetNotConfirmedError)
+    return 'Run `construct reset` without --confirm to see the exact targets, then confirm them.';
   if (error instanceof ProjectFileError) return 'Fix the file, or run `construct project validate` to see every problem at once.';
   return null;
 }

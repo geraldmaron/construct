@@ -38,10 +38,7 @@ function xdgBase(value: string | undefined, fallback: string): string {
   return value !== undefined && value !== '' ? value : fallback;
 }
 
-export function resolvePaths(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): Paths {
+export function resolvePaths(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): Paths {
   return {
     configDir: join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), APP),
     stateDir: join(xdgBase(env.XDG_STATE_HOME, join(home, '.local', 'state')), APP),
@@ -60,10 +57,7 @@ export function resolvePaths(
  * module is the only one permitted to, so a test that redirects HOME redirects
  * every path the tool will touch.
  */
-export function resolveSkillsDir(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string {
+export function resolveSkillsDir(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
   return join(home, '.claude', 'skills');
 }
 
@@ -83,11 +77,7 @@ export function resolveSkillsDir(
  * a caller states which home it means, so a test cannot reach the real one by
  * forgetting to pass its own.
  */
-export function resolveScheduleDir(
-  platform: NodeJS.Platform,
-  env: PathsEnv,
-  home: string = xdgBase(env.HOME, homedir()),
-): string | null {
+export function resolveScheduleDir(platform: NodeJS.Platform, env: PathsEnv, home: string = xdgBase(env.HOME, homedir())): string | null {
   if (platform === 'darwin') return join(home, 'Library', 'LaunchAgents');
   if (platform === 'linux') {
     return join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'systemd', 'user');
@@ -162,10 +152,7 @@ export function resolveHostSkillsDir(
  * `.claude` under home. Read here for the same reason as every home-rooted
  * path: a test that redirects HOME redirects this too.
  */
-export function resolveClaudeConfigDir(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string {
+export function resolveClaudeConfigDir(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
   const configured = env.CLAUDE_CONFIG_DIR;
   return configured && configured.trim() ? configured : join(home, '.claude');
 }
@@ -176,10 +163,7 @@ export function resolveClaudeConfigDir(
  * a project file (Hermes Agent website/docs/user-guide/features/mcp.md and
  * getting-started/installation.md, checked 2026-10-17).
  */
-export function resolveHermesHome(
-  env: PathsEnv = process.env,
-  home: string = xdgBase(env.HOME, homedir()),
-): string {
+export function resolveHermesHome(env: PathsEnv = process.env, home: string = xdgBase(env.HOME, homedir())): string {
   return xdgBase(env.HERMES_HOME, join(home, '.hermes'));
 }
 

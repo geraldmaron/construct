@@ -20,26 +20,10 @@ import {
   toJson,
 } from './rows.ts';
 
-export const ACTION_TIERS = [
-  'observe',
-  'draft',
-  'project_write',
-  'external_write',
-  'destructive',
-  'licensed_judgment',
-] as const;
+export const ACTION_TIERS = ['observe', 'draft', 'project_write', 'external_write', 'destructive', 'licensed_judgment'] as const;
 export type ActionTier = (typeof ACTION_TIERS)[number];
 
-export const STEP_STATES = [
-  'pending',
-  'ready',
-  'leased',
-  'waiting_for_decision',
-  'succeeded',
-  'failed',
-  'skipped',
-  'cancelled',
-] as const;
+export const STEP_STATES = ['pending', 'ready', 'leased', 'waiting_for_decision', 'succeeded', 'failed', 'skipped', 'cancelled'] as const;
 export type StepState = (typeof STEP_STATES)[number];
 
 export const STEP_TRANSITIONS: Readonly<Record<StepState, readonly StepState[]>> = {
@@ -83,11 +67,17 @@ const FAILED = `(SELECT COUNT(*) FROM step_attempts a WHERE a.step_run_id = step
 const EXPIRED = `(SELECT COUNT(*) FROM step_attempts a WHERE a.step_run_id = step_runs.id AND a.outcome = 'expired')`;
 
 function failedAttempts(store: StateStore, stepRunId: string): number {
-  return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'failed'`).get(stepRunId) as { n: number }).n;
+  return (
+    store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'failed'`).get(stepRunId) as { n: number }
+  ).n;
 }
 
 export function expiredAttempts(store: StateStore, stepRunId: string): number {
-  return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'expired'`).get(stepRunId) as { n: number }).n;
+  return (
+    store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'expired'`).get(stepRunId) as {
+      n: number;
+    }
+  ).n;
 }
 
 export interface LeasedStep extends StepRun {
@@ -105,9 +95,7 @@ export interface LeasedStep extends StepRun {
 
 export class StaleLeaseError extends Error {
   constructor(stepRunId: string, token: number) {
-    super(
-      `step ${stepRunId} is no longer held under token ${String(token)}: its lease expired, was released, or was replaced`,
-    );
+    super(`step ${stepRunId} is no longer held under token ${String(token)}: its lease expired, was released, or was replaced`);
     this.name = 'StaleLeaseError';
   }
 }
@@ -205,9 +193,7 @@ export function getStep(store: StateStore, id: string): StepRun | null {
 }
 
 export function listSteps(store: StateStore, runId: string): StepRun[] {
-  const rows = store.db
-    .prepare('SELECT * FROM step_runs WHERE run_id = ? ORDER BY ordinal, id')
-    .all(runId) as unknown as Row[];
+  const rows = store.db.prepare('SELECT * FROM step_runs WHERE run_id = ? ORDER BY ordinal, id').all(runId) as unknown as Row[];
   return rows.map(toStep);
 }
 
@@ -255,9 +241,17 @@ export function grantExtraAttempt(store: StateStore, input: { readonly id: strin
     const current = getStep(store, input.id);
     if (!current) throw new Error(`no step ${input.id}`);
     // Match validation enforcement: expired leases spend recovery allowance, not approved check attempts.
-    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts - ? + 1), updated_at = ? WHERE id = ?')
+    store.db
+      .prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts - ? + 1), updated_at = ? WHERE id = ?')
       .run(expiredAttempts(store, input.id), input.at, input.id);
-    appendActivity(store, { at: input.at, kind: 'step.attempt_granted', runId: current.runId, stepRunId: input.id, actor: input.by, payload: { stepId: current.stepId, attempts: current.attempts } });
+    appendActivity(store, {
+      at: input.at,
+      kind: 'step.attempt_granted',
+      runId: current.runId,
+      stepRunId: input.id,
+      actor: input.by,
+      payload: { stepId: current.stepId, attempts: current.attempts },
+    });
     return getStep(store, input.id)!;
   });
 }
@@ -298,9 +292,17 @@ export function claimStep(
           )
         RETURNING *`,
       )
-      .get(claim.owner, claim.leaseUntil, nonce, claim.now, claim.now, claim.runId ?? null, claim.runId ?? null, claim.stepRunId ?? null, claim.stepRunId ?? null) as
-      | Row
-      | undefined;
+      .get(
+        claim.owner,
+        claim.leaseUntil,
+        nonce,
+        claim.now,
+        claim.now,
+        claim.runId ?? null,
+        claim.runId ?? null,
+        claim.stepRunId ?? null,
+        claim.stepRunId ?? null,
+      ) as Row | undefined;
     if (!row) return null;
     const step = toStep(row);
     if (step.attempts > 1) {
@@ -308,9 +310,7 @@ export function claimStep(
       closeAttempt(store, step.id, step.attempts - 1, claim.now, 'expired', null);
     }
     store.db
-      .prepare(
-        `INSERT INTO step_attempts (step_run_id, attempt, owner, started_at) VALUES (?, ?, ?, ?)`,
-      )
+      .prepare(`INSERT INTO step_attempts (step_run_id, attempt, owner, started_at) VALUES (?, ?, ?, ?)`)
       .run(step.id, step.attempts, claim.owner, claim.now);
     appendActivity(store, {
       at: claim.now,
@@ -358,7 +358,12 @@ export function expireDeadLeases(store: StateStore, now: string, runId?: string)
         stepRunId: step.id,
         actor: 'kernel',
         unattributed: true,
-        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired and the step’s budget is spent', previousHolder: step.leaseOwner },
+        payload: {
+          stepId: step.stepId,
+          attempt: step.attempts,
+          reason: 'lease expired and the step’s budget is spent',
+          previousHolder: step.leaseOwner,
+        },
       });
     }
     const remaining = store.db
@@ -480,7 +485,8 @@ export function failStep(
   return store.transaction(() => {
     const current = getStep(store, failed.id);
     if (!current) throw new Error(`no step ${failed.id}`);
-    const retry = failedAttempts(store, failed.id) + 1 < current.maxAttempts && expiredAttempts(store, failed.id) < EXPIRED_ATTEMPTS_ALLOWED;
+    const retry =
+      failedAttempts(store, failed.id) + 1 < current.maxAttempts && expiredAttempts(store, failed.id) < EXPIRED_ATTEMPTS_ALLOWED;
     return settle(store, failed, retry ? 'ready' : 'failed', {
       error: failed.error,
       reason: failed.reason,
@@ -498,9 +504,7 @@ export interface StepAttempt {
 }
 
 export function listAttempts(store: StateStore, stepRunId: string): StepAttempt[] {
-  const rows = store.db
-    .prepare('SELECT * FROM step_attempts WHERE step_run_id = ? ORDER BY attempt')
-    .all(stepRunId) as unknown as Array<{
+  const rows = store.db.prepare('SELECT * FROM step_attempts WHERE step_run_id = ? ORDER BY attempt').all(stepRunId) as unknown as Array<{
     attempt: number;
     owner: string;
     started_at: string;
@@ -525,7 +529,10 @@ export function countStepsByState(store: StateStore, runId: string): Record<Step
 }
 
 /** The lease a caller proves it holds with the step's secret, or null when it does not hold it. */
-export function heldLease(store: StateStore, input: { readonly id: string; readonly owner: string; readonly nonce: string }): LeasedStep | null {
+export function heldLease(
+  store: StateStore,
+  input: { readonly id: string; readonly owner: string; readonly nonce: string },
+): LeasedStep | null {
   const row = store.db
     .prepare(`SELECT * FROM step_runs WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ?`)
     .get(input.id, input.owner, input.nonce) as Row | undefined;
@@ -535,11 +542,16 @@ export function heldLease(store: StateStore, input: { readonly id: string; reado
 }
 
 /** Extend a held lease, proving it with the lease's secret. False when it is no longer held. */
-export function extendLease(store: StateStore, input: { readonly id: string; readonly owner: string; readonly nonce: string; readonly until: string; readonly at: string }): boolean {
+export function extendLease(
+  store: StateStore,
+  input: { readonly id: string; readonly owner: string; readonly nonce: string; readonly until: string; readonly at: string },
+): boolean {
   input = { ...input, at: canonicalInstant(input.at, 'lease.at'), until: canonicalInstant(input.until, 'lease.until') };
   if (input.until <= input.at) throw new Error('lease.until must be after lease.at');
   const result = store.db
-    .prepare(`UPDATE step_runs SET lease_until = MAX(lease_until, ?), updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ? AND lease_until > ?`)
+    .prepare(
+      `UPDATE step_runs SET lease_until = MAX(lease_until, ?), updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ? AND lease_until > ?`,
+    )
     .run(input.until, input.at, input.id, input.owner, input.nonce, input.at);
   return Number(result.changes) > 0;
 }
@@ -548,14 +560,19 @@ export function extendLease(store: StateStore, input: { readonly id: string; rea
  * Extend every live lease `owner` holds that is past half its term, so an
  * executor that keeps calling Construct does not lose a long step to expiry.
  */
-export function renewExecutorLeases(store: StateStore, input: { readonly owner: string; readonly now: string; readonly termMs: number }): number {
+export function renewExecutorLeases(
+  store: StateStore,
+  input: { readonly owner: string; readonly now: string; readonly termMs: number },
+): number {
   input = { ...input, now: canonicalInstant(input.now, 'lease.now') };
   if (!Number.isFinite(input.termMs) || input.termMs <= 0) throw new Error('lease.termMs must be positive and finite');
   const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
   const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
   return Number(
     store.db
-      .prepare(`UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE state = 'leased' AND lease_owner = ? AND lease_until > ? AND lease_until < ?`)
+      .prepare(
+        `UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE state = 'leased' AND lease_owner = ? AND lease_until > ? AND lease_until < ?`,
+      )
       .run(until, input.now, input.owner, input.now, halfway).changes,
   );
 }

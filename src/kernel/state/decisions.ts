@@ -125,25 +125,19 @@ export function getDecision(store: StateStore, id: string): Decision | null {
 
 /** Every decision raised for one step, oldest first. */
 export function listStepDecisions(store: StateStore, stepRunId: string): Decision[] {
-  const rows = store.db
-    .prepare(`SELECT * FROM decisions WHERE step_run_id = ? ORDER BY raised_at, id`)
-    .all(stepRunId) as unknown as Row[];
+  const rows = store.db.prepare(`SELECT * FROM decisions WHERE step_run_id = ? ORDER BY raised_at, id`).all(stepRunId) as unknown as Row[];
   return rows.map(toDecision);
 }
 
 /** Every decision raised for one run, in the order they were raised. */
 export function listRunDecisions(store: StateStore, runId: string): Decision[] {
-  const rows = store.db
-    .prepare(`SELECT * FROM decisions WHERE run_id = ? ORDER BY raised_at, id`)
-    .all(runId) as unknown as Row[];
+  const rows = store.db.prepare(`SELECT * FROM decisions WHERE run_id = ? ORDER BY raised_at, id`).all(runId) as unknown as Row[];
   return rows.map(toDecision);
 }
 
 export function listOpenDecisions(store: StateStore, runId?: string): Decision[] {
   const rows = store.db
-    .prepare(
-      `SELECT * FROM decisions WHERE state = 'open' AND (? IS NULL OR run_id = ?) ORDER BY raised_at, id`,
-    )
+    .prepare(`SELECT * FROM decisions WHERE state = 'open' AND (? IS NULL OR run_id = ?) ORDER BY raised_at, id`)
     .all(runId ?? null, runId ?? null) as unknown as Row[];
   return rows.map(toDecision);
 }
@@ -151,7 +145,13 @@ export function listOpenDecisions(store: StateStore, runId?: string): Decision[]
 /** Record the answer. `channel` says how it reached Construct; it is kept on the decision and its activity row, null when unknown. */
 export function resolveDecision(
   store: StateStore,
-  input: { readonly id: string; readonly resolution: unknown; readonly by: string; readonly at: string; readonly channel?: DecisionChannel },
+  input: {
+    readonly id: string;
+    readonly resolution: unknown;
+    readonly by: string;
+    readonly at: string;
+    readonly channel?: DecisionChannel;
+  },
 ): Decision {
   requireNonEmpty(input.by, 'decision.by');
   requireInstant(input.at, 'decision.at');
@@ -160,14 +160,10 @@ export function resolveDecision(
     if (!current) throw new Error(`no decision ${input.id}`);
     assertTransition(DECISION_TRANSITIONS, `decision ${input.id}`, current.state, 'resolved');
     if (current.options && typeof input.resolution === 'string' && !current.options.includes(input.resolution)) {
-      throw new Error(
-        `decision ${input.id} offers ${current.options.join(' | ')}; "${input.resolution}" is not one of them`,
-      );
+      throw new Error(`decision ${input.id} offers ${current.options.join(' | ')}; "${input.resolution}" is not one of them`);
     }
     store.db
-      .prepare(
-        `UPDATE decisions SET state = 'resolved', resolution_json = ?, resolved_at = ?, resolved_by = ?, channel = ? WHERE id = ?`,
-      )
+      .prepare(`UPDATE decisions SET state = 'resolved', resolution_json = ?, resolved_at = ?, resolved_by = ?, channel = ? WHERE id = ?`)
       .run(toJson(input.resolution), input.at, input.by, input.channel ?? null, input.id);
     appendActivity(store, {
       at: input.at,

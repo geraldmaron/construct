@@ -26,7 +26,9 @@ test('every host init and dry run reports its startup surface without changing u
         assert.match(readFileSync(join(box.cwd, CURSOR_STARTUP_PATH), 'utf8'), /alwaysApply: true/);
         assert.match(host.startup.detail, /not enforced/);
       }
-    } finally { box.cleanup(); }
+    } finally {
+      box.cleanup();
+    }
   }
 });
 
@@ -44,7 +46,9 @@ test('no-wire plants no startup rule and repeated init preserves project edits w
     assert.equal(readFileSync(join(box.cwd, CURSOR_STARTUP_PATH), 'utf8'), edited);
     const health = JSON.parse((await capture(() => run(['doctor', '--json'], box.ctx))).out);
     assert.equal(health.checks.find((c: { name: string }) => c.name === 'host-startup:cursor').ok, false);
-  } finally { box.cleanup(); }
+  } finally {
+    box.cleanup();
+  }
 });
 
 test('startup installation refuses symlinked directories and files without changing the target', () => {
@@ -53,15 +57,19 @@ test('startup installation refuses symlinked directories and files without chang
     try {
       const target = join(box.home, 'owned');
       if (targetKind === 'directory') {
-        mkdirSync(target); symlinkSync(target, join(box.cwd, '.cursor'));
+        mkdirSync(target);
+        symlinkSync(target, join(box.cwd, '.cursor'));
       } else {
         mkdirSync(join(box.cwd, '.cursor/rules'), { recursive: true });
-        writeFileSync(target, 'owned'); symlinkSync(target, join(box.cwd, CURSOR_STARTUP_PATH));
+        writeFileSync(target, 'owned');
+        symlinkSync(target, join(box.cwd, CURSOR_STARTUP_PATH));
       }
       assert.equal(installStartup('cursor', box.cwd)?.status, 'broken');
       assert.equal(inspectStartup('cursor', box.cwd)?.status, 'broken');
       if (targetKind === 'file') assert.equal(readFileSync(target, 'utf8'), 'owned');
       else assert.equal(existsSync(join(target, 'rules')), false);
-    } finally { box.cleanup(); }
+    } finally {
+      box.cleanup();
+    }
   }
 });

@@ -10,11 +10,55 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..', '..');
-const GATES = ['withStore', 'openStore', 'src/kernel/store', 'schema 23', 'schema-23', 'record_outcome', 'shared default workspace', '.construct/settings.json', 'state: home', 'role-serve', 'construct outcome', 'construct work --run', 'construct skills ', 'construct settings', 'construct verdict', 'construct compose', 'lens pack', 'persona pack', '.claude/skills/construct-', 'TUNED_FAMILIES', 'implication map', 'legacy verb', 'Legacy aliases'];
+const GATES = [
+  'withStore',
+  'openStore',
+  'src/kernel/store',
+  'schema 23',
+  'schema-23',
+  'record_outcome',
+  'shared default workspace',
+  '.construct/settings.json',
+  'state: home',
+  'role-serve',
+  'construct outcome',
+  'construct work --run',
+  'construct skills ',
+  'construct settings',
+  'construct verdict',
+  'construct compose',
+  'lens pack',
+  'persona pack',
+  '.claude/skills/construct-',
+  'TUNED_FAMILIES',
+  'implication map',
+  'legacy verb',
+  'Legacy aliases',
+];
 
 function currentFiles(): string[] {
-  const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', 'src', 'scripts', 'skills', 'workflows', 'registry', 'docs', 'README.md', 'package.json', 'bin'], { cwd: ROOT, encoding: 'utf8' });
-  return out.split('\n').filter(Boolean).filter((f) => !f.startsWith('docs/internal/'));
+  const out = execFileSync(
+    'git',
+    [
+      'ls-files',
+      '-co',
+      '--exclude-standard',
+      'src',
+      'scripts',
+      'skills',
+      'workflows',
+      'registry',
+      'docs',
+      'README.md',
+      'package.json',
+      'bin',
+    ],
+    { cwd: ROOT, encoding: 'utf8' },
+  );
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .filter((f) => !f.startsWith('docs/internal/'));
 }
 
 test('no product file or current document names a removed store, verb, format, or pack path', () => {

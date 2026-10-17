@@ -107,9 +107,7 @@ export function initializeProject(input: InitializeProjectInput): InitializeProj
   const config = ensureFile(input.root, layout.projectFile, validateProjectConfig, () =>
     newProjectConfig({ id: input.projectId, name: input.name, at: input.at }),
   );
-  const constitution = ensureFile(input.root, layout.constitutionFile, validateConstitution, () =>
-    emptyConstitution(config.value.name),
-  );
+  const constitution = ensureFile(input.root, layout.constitutionFile, validateConstitution, () => emptyConstitution(config.value.name));
   const sources = ensureFile(input.root, layout.sourcesFile, validateSourcesFile, emptySourcesFile);
   const lock = ensureFile(input.root, layout.lockFile, validateLock, emptyLock);
   const gitignoreUpdated = ensureGitignore(input.root);
