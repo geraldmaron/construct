@@ -154,7 +154,7 @@ export function inputProblems(m: WorkflowManifest, input: Readonly<Record<string
 
 export function resolveWorkflow(input: ResolveInput): Resolution {
   const reasons: ResolutionReason[] = [];
-  const workflow = input.workflows.get(input.workflowId);
+  const workflow = input.workflows.get(input.workflowId, input.input.domain);
   if (!workflow) {
     const known = input.workflows.list().map((w) => w.manifest.id);
     return {
@@ -424,7 +424,9 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
   }
 
   const lock = lockStatus(input.lock, input.skills.list(), input.workflows.list()).filter(
-    (row) => (row.kind === 'workflow' && row.id === m.id) || (row.kind === 'skill' && plan.some((p) => p.skill?.id === row.id)),
+    (row) =>
+      (row.kind === 'workflow' && row.id === (workflow.canonicalId ?? m.id)) ||
+      (row.kind === 'skill' && plan.some((p) => p.skill?.id === row.id)),
   );
   for (const row of lock) {
     if (row.state === 'diverged' || row.state === 'blocked' || row.state === 'missing') {

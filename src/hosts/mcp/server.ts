@@ -4,6 +4,7 @@
  * the official TypeScript SDK transport.
  */
 
+import { workflowDomainCatalog } from '../../kernel/registry/workflow-domains.ts';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
@@ -87,6 +88,7 @@ export function modelFacingSurface(surface: BrokerSurface, skills: SkillRegistry
       .map((s) => ({ id: s.manifest.id, title: s.manifest.title, category: s.manifest.category, description: s.description })),
     workflows: workflows.list().map((w) => ({
       id: w.manifest.id,
+      ...workflowDomainCatalog(w),
       title: w.manifest.title,
       interactionClass: w.manifest.interactionClass,
       deliverableKind: w.manifest.deliverable.kind,

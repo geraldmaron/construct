@@ -18,6 +18,7 @@ import {
   type SkillManifest,
   type VersionedDependency,
   type WorkflowManifest,
+  type WorkflowDomain,
   type WorkflowStep,
 } from './models.ts';
 
@@ -307,6 +308,79 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
       throw new ManifestError(path, `step "${s.id}" cites evidence but does not check it against the period (add within_period)`);
     }
   }
+  const domains: Record<string, WorkflowDomain> = {};
+  const aliases: Record<string, string> = {};
+  const legacyDigests: Record<string, { version: string; digest: string }> = {};
+  let domainStep: string | undefined;
+  if (r.domains !== undefined) {
+    domainStep = str(r, 'domainStep', path);
+    if (!ids.has(domainStep)) throw new ManifestError(path, 'domainStep must name a step');
+    for (const [domain, raw] of Object.entries(rec(r.domains, path, 'domains'))) {
+      if (!ID.test(domain)) throw new ManifestError(path, `invalid domain ${domain}`);
+      const d = rec(raw, path, `domains.${domain}`);
+      const skill = rec(d.skill, path, `domains.${domain}.skill`);
+      if (skill.id !== domain) throw new ManifestError(path, `domain ${domain} must be keyed by its skill id`);
+      const patches = d.steps === undefined ? {} : rec(d.steps, path, `domains.${domain}.steps`);
+      for (const key of Object.keys(patches))
+        if (!ids.has(key)) throw new ManifestError(path, `domain ${domain} overrides unknown step ${key}`);
+      for (const [id, raw] of Object.entries(patches)) {
+        const patch = rec(raw, path, 'domain step');
+        const original = steps.find((s) => s.id === id)!;
+        for (const key of Object.keys(patch))
+          if (key === 'id' || !Object.hasOwn(original, key))
+            throw new ManifestError(path, `domain ${domain} cannot override step ${id}.${key}`);
+      }
+      // Validate the complete bound contract with the same rules as any ordinary workflow.
+      validateWorkflowManifest(
+        {
+          ...r,
+          ...d,
+          domains: undefined,
+          aliases: undefined,
+          domainStep: undefined,
+          legacyDigests: undefined,
+          steps: steps.map((s) => ({ ...s, ...rec(patches[s.id] ?? {}, path, 'domain step'), ...(s.id === domainStep ? { skill } : {}) })),
+        },
+        `${path}#${domain}`,
+      );
+      const allowed = new Set([
+        'skill',
+        'title',
+        'purpose',
+        'interactionClass',
+        'inputSchema',
+        'requiredInputs',
+        'steps',
+        'triggers',
+        'onNoData',
+        'onStaleData',
+        'concurrency',
+        'dedupeKey',
+        'cancellation',
+        'deliverable',
+        'proposes',
+        'execution',
+      ]);
+      for (const key of Object.keys(d)) if (!allowed.has(key)) throw new ManifestError(path, `domain ${domain} cannot override ${key}`);
+      domains[domain] = d as WorkflowDomain;
+    }
+    if (!Object.keys(domains).length) throw new ManifestError(path, 'domains must not be empty');
+    for (const [alias, domain] of Object.entries(rec(r.aliases, path, 'aliases'))) {
+      if (!ID.test(alias) || typeof domain !== 'string' || !Object.hasOwn(domains, domain))
+        throw new ManifestError(path, `alias ${alias} must name a declared domain`);
+      aliases[alias] = domain;
+    }
+  }
+  if (r.legacyDigests !== undefined) {
+    for (const [alias, raw] of Object.entries(rec(r.legacyDigests, path, 'legacyDigests'))) {
+      const legacy = rec(raw, path, 'legacy digest');
+      const version = str(legacy, 'version', path);
+      const digest = str(legacy, 'digest', path);
+      if (!Object.hasOwn(aliases, alias) || !isVersion(version) || !/^sha256:[a-f0-9]{64}$/.test(digest))
+        throw new ManifestError(path, `invalid legacy digest for ${alias}`);
+      legacyDigests[alias] = { version, digest };
+    }
+  }
   const deliverableRaw = rec(r.deliverable, path, '"deliverable"');
   const execution =
     r.execution === undefined
@@ -332,6 +406,7 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
         })();
   return {
     ...(execution ? { execution } : {}),
+    ...(domainStep ? { domainStep, domains, aliases, legacyDigests } : {}),
     format: WORKFLOW_MANIFEST_FORMAT,
     formatVersion: WORKFLOW_MANIFEST_VERSION,
     id,

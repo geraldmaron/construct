@@ -39,7 +39,8 @@ test('a reading that asks for a PRD, an RFC or a proposal matches its authoring 
         stakes: { reversible: true, affects: [] },
         deliverable: { kind },
       });
-      assert.equal(c.matches[0].workflowId, workflow, words);
+      assert.equal(c.matches[0].workflowId, 'authoring', words);
+      assert.equal(c.matches[0].domain, skill);
       assert.equal(c.matches[0].because, 'deliverable kind');
       assert.ok(c.matches[0].missing.includes('target'), `${workflow} asks for its target: ${JSON.stringify(c.matches[0].missing)}`);
       assert.ok(
@@ -187,6 +188,88 @@ test('when checks keep failing the person decides: the work is kept, an accepted
       final.trust,
       'nothing moved',
     );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('canonical starts select domain inputs, aliases infer domains, and domains isolate run identity', async () => {
+  const fx = brokerFixture();
+  try {
+    const research = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'investigative-research', question: 'What does the design establish?' },
+    });
+    assert.equal(research.run.workflow, 'authoring');
+    assert.equal(research.run.domain, 'investigative-research');
+    const same = await call(fx, 'start_outcome', {
+      workflowId: 'research-brief',
+      input: { question: 'What does the design establish?' },
+    });
+    assert.equal(same.run.id, research.run.id, 'an alias and its canonical domain identify the same work');
+    const missingAudience = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'decision-framing', request: 'Recommend the next step', target: 'docs/proposal.md' },
+    });
+    assert.equal(missingAudience.started, false);
+    assert.deepEqual(
+      missingAudience.questions.map((q: any) => q.slot),
+      ['audience'],
+    );
+    const first = await call(fx, 'start_outcome', { workflowId: 'architecture-decision-review', input: { target: 'docs/design.md' } });
+    const other = await call(fx, 'start_outcome', {
+      workflowId: 'review',
+      input: { domain: 'security-privacy', target: 'docs/design.md' },
+    });
+    assert.equal(first.run.workflow, 'review');
+    assert.equal(first.run.domain, 'system-architecture');
+    assert.equal(other.run.domain, 'security-privacy');
+    assert.notEqual(other.run.id, first.run.id, 'single concurrency is per domain, as it was before the merge');
+    const again = await call(fx, 'start_outcome', {
+      workflowId: 'review',
+      input: { domain: 'system-architecture', target: 'docs/design.md' },
+    });
+    assert.equal(again.run.id, first.run.id);
+    await assert.rejects(
+      call(fx, 'start_outcome', {
+        workflowId: 'architecture-decision-review',
+        input: { domain: 'security-privacy', target: 'docs/design.md' },
+      }),
+    );
+    const classified = await call(fx, 'classify_request', {
+      kind: 'manage',
+      words: 'Review privacy boundaries',
+      deliverable: { kind: 'review/security-privacy' },
+      workflowId: 'review',
+      inputs: { domain: 'security-privacy' },
+      stakes: { reversible: true, affects: [] },
+    });
+    assert.equal(classified.matches[0].workflowId, 'review');
+    assert.equal(classified.matches[0].domain, 'security-privacy');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an existing trigger addressed by a review alias fires its canonical domain', () => {
+  const fx = brokerFixture();
+  try {
+    const trigger = fx.broker.triggers.define({
+      workflowId: 'architecture-decision-review',
+      kind: 'schedule',
+      scheduleExpression: '0 9 * * 1',
+      timezone: 'UTC',
+      adapter: 'cron',
+      overlap: 'skip',
+      maxTier: 'project_write',
+      delivery: {},
+      input: { target: 'docs/design.md' },
+    });
+    const fired = fx.broker.triggers.fire({ triggerId: trigger.id, firingKey: 'first-tick' });
+    assert.equal(fired.outcome, 'started');
+    const run = fx.broker.workflow.status(fired.runId!)!.run;
+    assert.equal(run.workflowId, 'review');
+    assert.equal((run.input as Record<string, unknown>).domain, 'system-architecture');
   } finally {
     fx.cleanup();
   }

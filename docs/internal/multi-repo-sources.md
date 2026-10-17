@@ -382,7 +382,9 @@ deliverable that cites it (no column holds that), so the deliverable stays
 where an edge's evidence is read. A new validator, `edges_cited_both_ends`
 in `src/kernel/workflow/validators.ts`, checks rules 1 and 2. No workflow is
 dedicated to system maps today; the validator goes on the steps of
-`architecture-decision-review` and `rfc-authoring` that run the
+`review` (domain `system-architecture`) and `authoring` (domain
+`system-architecture`), formerly `architecture-decision-review` and
+`rfc-authoring`, that run the
 system-architecture skill, whose step 2 (compare the stated boundaries with
 the code's imports) is where edges are drawn.
 

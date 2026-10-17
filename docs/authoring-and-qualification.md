@@ -208,14 +208,16 @@ channel. It covers only the checks its question named: a check that fails
 anew is handled like any other failing check. A deliverable that went
 through one lists its waived checks and is never marked validated.
 
-The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
-apply them in a gather, draft, challenge, record sequence; `research-brief`
-answers a question from the project and the web in a gather, synthesize,
-challenge, record sequence and asks for at least two independent sources.
-It also takes the period the question covers and the sources to read, and
-checks its citations against both. What none of
-them can tell is whether a grounded claim is the right claim; that is the
-challenge step's and the person's.
+The `authoring` workflow applies them in a gather, draft, challenge, record
+sequence. Its domain selects requirements structuring for a PRD, decision
+framing for a proposal, system architecture for an RFC, or investigative
+research for a research brief. The research domain asks for at least two
+independent sources and takes an optional period and named sources; its
+citations are checked against both. Proposal retains its required audience
+and decision-ask check. The former authoring ids remain aliases, listed in
+[workflows and resolution](workflows-and-resolution.md#built-in-workflows).
+What these checks cannot tell is whether a grounded claim is the right claim;
+that is the challenge step's and the person's.
 
 ## Plain answers and revisions
 

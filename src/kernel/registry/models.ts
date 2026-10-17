@@ -68,7 +68,18 @@ export interface WorkflowStep {
   readonly timeoutMs: number;
 }
 
+export type WorkflowDomain = Partial<
+  Omit<WorkflowManifest, 'domains' | 'aliases' | 'legacyDigests' | 'domainStep' | 'steps' | 'id' | 'version'>
+> & {
+  readonly skill: VersionedDependency;
+  readonly steps?: Readonly<Record<string, Partial<Omit<WorkflowStep, 'id'>>>>;
+};
+
 export interface WorkflowManifest {
+  readonly legacyDigests?: Readonly<Record<string, { readonly version: string; readonly digest: string }>>;
+  readonly domainStep?: string;
+  readonly domains?: Readonly<Record<string, WorkflowDomain>>;
+  readonly aliases?: Readonly<Record<string, string>>;
   readonly execution?: {
     readonly path: 'research' | 'decision' | 'artifact' | 'implementation' | 'review';
     readonly checkpoints: readonly string[];
@@ -116,6 +127,8 @@ export interface RegisteredSkill {
 }
 
 export interface RegisteredWorkflow {
+  readonly canonicalId?: string;
+  readonly domain?: string;
   readonly manifest: WorkflowManifest;
   readonly origin: BundleOrigin;
   readonly dir: string;
