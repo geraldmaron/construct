@@ -24,19 +24,22 @@ function fixture() {
     const contract = {
       request: { input: { request: REQUEST } },
       obligations: SEMANTIC_OBLIGATIONS,
-      reviewer: { digest: 'a'.repeat(64), profile: 'codex-held-text-v1' },
+      reviewer: { digest: 'a'.repeat(64), profile: 'codex-app-server-held-text-v2' },
     };
     const bundle: any = {
+      formatVersion: 1,
+      canonicalization: 'utf16-codeunit-v1',
       runId: 'run',
       stepRunId: 'step',
       attempt: 1,
       contract,
-      contractDigest: reviewDigest(contract),
+      contractDigest: '',
       body: { summary: c.answer },
       artifacts: [{ ref: 'answer.md', content: { text: c.answer } }],
       evidence: [{ ref: 'source.txt', content: { text: c.source } }],
       problems: [],
     };
+    bundle.contractDigest = reviewContractDigest(bundle);
     const judgment = {
       checks: SEMANTIC_OBLIGATIONS.map((o) => ({
         id: o.id,
@@ -45,12 +48,19 @@ function fixture() {
         refs: ['body'],
       })),
     };
-    const observations = [
+    const observations: any[] = [
       { type: 'thread.started', sessionId: c.id },
       { type: 'turn.started' },
       { type: 'item.completed', itemType: 'agent_message', text: JSON.stringify(judgment) },
       { type: 'turn.completed' },
     ];
+    const prompt = semanticReviewPrompt(bundle);
+    observations.splice(1, 0, {
+      type: 'native.evidence_staged',
+      sessionId: c.id,
+      characters: [...prompt].length,
+      digest: reviewDigest(prompt),
+    });
     const event = {
       preparedRef: 'review:1',
       bundleDigest: reviewDigest(bundle),
@@ -60,14 +70,14 @@ function fixture() {
         sessionId: c.id,
         host: 'codex',
         hostVersion: 'codex-cli 0.163.0',
-        model: 'gpt-6-astra',
+        model: 'fixture-model',
         completed: true,
         exitStatus: 0,
         timedOut: false,
         transcriptDigest: reviewDigest(observations),
       },
       binaryDigest: 'a'.repeat(64),
-      profile: 'codex-held-text-v1',
+      profile: 'codex-app-server-held-text-v2',
       modelSource: 'requested',
       startedAt: '2026-10-10T00:59:00Z',
       observations,
@@ -95,6 +105,7 @@ function fixture() {
     version: '3.0.0-alpha.27',
     surfaceDigest: digest,
     broadQualification: false,
+    reviewerModel: 'fixture-model',
     limitations: Object.fromEntries(
       DISCLOSURES.map((k: string) => [k, 'This limited synthetic fixture establishes no general capability or qualification.']),
     ),
@@ -158,19 +169,7 @@ test('a release without native review passes only when it says so, why, and unde
   assert.match(other.check().problems.join('; '), /only record that no native review was available/);
 });
 test('versioned packet canonicalization binds its contract and refuses unsupported formats', () => {
-  const make = () => {
-    const f = fixture();
-    for (const r of f.records) {
-      const b = r.prepared.bundle;
-      b.formatVersion = 1;
-      b.canonicalization = 'utf16-codeunit-v1';
-      b.contractDigest = reviewContractDigest(b);
-      r.prepared.digest = reviewDigest(b);
-      r.event.bundleDigest = r.prepared.digest;
-    }
-    f.freeze();
-    return f;
-  };
+  const make = () => fixture();
   assert.equal(make().check().ok, true);
   const unknown = make();
   unknown.records[0].prepared.bundle.canonicalization = 'future';
@@ -186,30 +185,11 @@ test('versioned packet canonicalization binds its contract and refuses unsupport
   assert.equal(stale.check().ok, false);
 });
 test('the app-server profile requires exact staged prompt identity and ordered public observations', () => {
-  const make = () => {
-    const f = fixture();
-    for (const r of f.records) {
-      r.prepared.bundle.contract.reviewer.profile = 'codex-app-server-held-text-v2';
-      r.prepared.bundle.contractDigest = reviewDigest(r.prepared.bundle.contract);
-      r.prepared.digest = reviewDigest(r.prepared.bundle);
-      r.event.bundleDigest = r.prepared.digest;
-      r.event.profile = 'codex-app-server-held-text-v2';
-      const prompt = semanticReviewPrompt(r.prepared.bundle);
-      r.event.observations.splice(1, 0, {
-        type: 'native.evidence_staged',
-        sessionId: r.event.invocation.sessionId,
-        characters: [...prompt].length,
-        digest: reviewDigest(prompt),
-      });
-      r.event.invocation.transcriptDigest = reviewDigest(r.event.observations);
-    }
-    f.freeze();
-    return f;
-  };
+  const make = () => fixture();
   assert.equal(make().check().ok, true);
   for (const [field, value] of [
     ['hostVersion', 'codex-cli 0.145.0'],
-    ['profile', 'codex-app-server-held-text-v1'],
+    ['profile', 'codex-held-text-v1'],
   ]) {
     const old = make();
     if (field === 'hostVersion') old.records[0].event.invocation.hostVersion = value;
@@ -230,10 +210,10 @@ test('the app-server profile requires exact staged prompt identity and ordered p
   missing.freeze();
   assert.equal(missing.check().ok, false);
 });
-test('experimental alpha cannot replace a stable or unknown tier', () => {
+test('experimental alpha cannot replace a stable or unknown tier', async () => {
   const f = fixture();
   assert.equal(checkExperimental({ manifest: f.manifest, version: '3.0.0', digest, now, read: (p: string) => f.files.get(p) }).ok, false);
-  assert.equal(checkRelease({ tier: 'unqualified' }).ok, false);
+  assert.equal((await checkRelease({ tier: 'unqualified' })).ok, false);
 });
 test('missing, stale, malformed or reused native evidence is rejected', () => {
   const mutations: ((f: ReturnType<typeof fixture>) => void)[] = [
@@ -242,6 +222,12 @@ test('missing, stale, malformed or reused native evidence is rejected', () => {
     },
     (f) => {
       f.manifest.broadQualification = true;
+    },
+    (f) => {
+      f.manifest.reviewerModel = 'another-model';
+    },
+    (f) => {
+      delete f.manifest.reviewerModel;
     },
     (f) => {
       delete f.manifest.limitations.executor;

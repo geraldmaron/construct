@@ -246,7 +246,7 @@ function stateModel() {
     HEADER('src/kernel/state/schema.ts and the state machines'),
     '# State model',
     '',
-    `One SQLite database per project at \`.construct/state/construct.sqlite\`, format \`construct-state\` ${STATE_FORMAT_VERSION}. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger. A complete store in format 2, 3 or 4 is upgraded only by \`construct migrate\`, which needs every Construct session on the project stopped and backs the file up first; a store in a newer format is refused with the instruction to upgrade Construct; any other file is refused unread.`,
+    `One SQLite database per project at \`.construct/state/construct.sqlite\`, format \`construct-state\` ${STATE_FORMAT_VERSION}. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger. A complete store in format 5 is upgraded only by \`construct migrate\`, which needs every Construct session on the project stopped and backs the file up first; a store in a newer format is refused with the instruction to upgrade Construct; any other file is refused unread.`,
     '',
     '## Tables',
     '',

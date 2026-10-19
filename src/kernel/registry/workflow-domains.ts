@@ -1,13 +1,8 @@
-/** Domain bindings share a workflow graph; aliases retain the old public addresses. */
+/** Domain bindings share one workflow graph; a domain-keyed workflow is addressed by its id and a domain. */
 import type { SkillRegistry } from './skill-registry.ts';
 import type { RegisteredWorkflow } from './models.ts';
 
-export function bindWorkflow(
-  workflow: RegisteredWorkflow,
-  domain: string,
-  alias?: string,
-  skills?: SkillRegistry,
-): RegisteredWorkflow | null {
+export function bindWorkflow(workflow: RegisteredWorkflow, domain: string, skills?: SkillRegistry): RegisteredWorkflow | null {
   const m = workflow.manifest;
   if (!m.domains || !Object.hasOwn(m.domains, domain)) return null;
   const binding = m.domains[domain]!;
@@ -20,13 +15,8 @@ export function bindWorkflow(
       ...m,
       ...fields,
       domains: undefined,
-      aliases: undefined,
       domainStep: undefined,
-      id: alias ?? m.id,
-      // Aliases infer domain, so old callers need not supply a newly required input.
-      requiredInputs: alias
-        ? (fields.requiredInputs ?? m.requiredInputs).filter((k) => k !== 'domain')
-        : (fields.requiredInputs ?? m.requiredInputs),
+      requiredInputs: fields.requiredInputs ?? m.requiredInputs,
       steps: m.steps.map((s) => {
         const bound = { ...s, ...steps?.[s.id], ...(s.id === m.domainStep ? { skill } : {}) };
         if (s.id === m.domainStep && skills)
@@ -40,24 +30,11 @@ export function bindWorkflow(
   };
 }
 
-/** Intake keeps domain-specific deliverable kinds and old explicit selections addressable. */
+/** Every workflow intake can match: each domain of a domain-keyed workflow as its own bound copy. */
 export function workflowCandidates(workflows: readonly RegisteredWorkflow[]): readonly RegisteredWorkflow[] {
   return workflows
-    .flatMap((w) =>
-      w.manifest.domains ? Object.entries(w.manifest.aliases ?? {}).map(([alias, domain]) => bindWorkflow(w, domain, alias)!) : [w],
-    )
-    .sort((a, b) => a.manifest.id.localeCompare(b.manifest.id));
-}
-
-export function workflowAlias(
-  workflows: readonly RegisteredWorkflow[],
-  id: string,
-): { workflow: RegisteredWorkflow; domain: string } | null {
-  for (const workflow of workflows) {
-    const aliases = workflow.manifest.aliases;
-    if (aliases && Object.hasOwn(aliases, id)) return { workflow, domain: aliases[id]! };
-  }
-  return null;
+    .flatMap((w) => (w.manifest.domains ? Object.keys(w.manifest.domains).map((domain) => bindWorkflow(w, domain)!) : [w]))
+    .sort((a, b) => a.manifest.id.localeCompare(b.manifest.id) || (a.domain ?? '').localeCompare(b.domain ?? ''));
 }
 
 /** Public catalog metadata, also used when interpreting saved host transcripts. */
@@ -65,7 +42,6 @@ export function workflowDomainCatalog(workflow: RegisteredWorkflow) {
   const m = workflow.manifest;
   if (!m.domains) return {};
   return {
-    aliases: m.aliases,
     domains: Object.fromEntries(
       Object.keys(m.domains).map((domain) => {
         const bound = bindWorkflow(workflow, domain)!.manifest;

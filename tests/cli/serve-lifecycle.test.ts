@@ -106,7 +106,14 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
       else {
         const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
         if (repair === 'foreign') db.prepare("UPDATE meta SET value='another-project' WHERE key='project_id'").run();
-        else db.prepare("UPDATE meta SET value=? WHERE key='format_version'").run(repair === 'newer' ? '99' : '4');
+        else if (repair === 'newer') db.prepare("UPDATE meta SET value='99' WHERE key='format_version'").run();
+        else {
+          // A format-5 store: the current schema plus the work_legacy_ids table.
+          db.exec(
+            'CREATE TABLE work_legacy_ids (legacy_id TEXT PRIMARY KEY, work_id TEXT NOT NULL REFERENCES work_items(id), source TEXT NOT NULL, created_at TEXT NOT NULL); CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);',
+          );
+          db.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run();
+        }
         db.close();
       }
     }
@@ -129,7 +136,7 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
         const db = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
         if (repair === 'foreign')
           db.prepare("UPDATE meta SET value=? WHERE key='project_id'").run((JSON.parse(original) as { id: string }).id);
-        else db.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run();
+        else db.prepare("UPDATE meta SET value='6' WHERE key='format_version'").run();
         db.close();
       }
       const recovered = await bootstrap(s);
@@ -171,7 +178,7 @@ test('a refused connection never follows replacement identity', async () => {
     assert.match(switched.structuredContent.error!, /identity changed/);
     writeFileSync(file, original);
     const repaired = new DatabaseSync(join(box.cwd, '.construct/state/construct.sqlite'));
-    repaired.prepare("UPDATE meta SET value='5' WHERE key='format_version'").run();
+    repaired.prepare("UPDATE meta SET value='6' WHERE key='format_version'").run();
     repaired.close();
     assert.notEqual((await bootstrap(s)).isError, true);
   } finally {

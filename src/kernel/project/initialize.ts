@@ -3,8 +3,8 @@ import { rebuildContextIndex } from '../context/retrieval.ts';
  * kernel/project/initialize.ts — create or reconcile a project's Construct files.
  *
  * Idempotent: files that exist and validate are kept; files that are missing
- * are written; files from an earlier alpha stop everything with their exact
- * paths named, unparsed. One database, ignored by Git.
+ * are written; files in a format this version does not read stop everything
+ * with their exact paths named, unparsed. One database, ignored by Git.
  */
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -18,19 +18,19 @@ import { newProjectConfig, validateProjectConfig, type ProjectConfig } from './c
 import { emptyConstitution, validateConstitution, type Constitution } from './constitution.ts';
 import { emptySourcesFile, validateSourcesFile, type SourcesFile } from './sources-file.ts';
 import { emptyLock, validateLock, type RegistryLock } from './lock.ts';
-import { detectLegacyProjectFiles, type LegacyTarget } from './legacy.ts';
+import { detectUnsupportedProjectFiles, type UnsupportedTarget } from './unsupported-files.ts';
 import { PROJECT_DIR_NAME, STATE_GITIGNORE_PATTERN, projectLayout, type ProjectLayout } from './layout.ts';
 
-export class LegacyProjectError extends Error {
-  readonly targets: readonly LegacyTarget[];
+export class UnsupportedProjectFilesError extends Error {
+  readonly targets: readonly UnsupportedTarget[];
 
-  constructor(targets: readonly LegacyTarget[]) {
+  constructor(targets: readonly UnsupportedTarget[]) {
     super(
-      'Found files from an earlier Construct alpha, which this version does not read:\n' +
+      'Found Construct files in a format this version does not read:\n' +
         targets.map((t) => `  ${t.path}  (${t.what})`).join('\n') +
         '\nRun `construct reset` to see exactly what would be removed, then confirm. Nothing else in the project is touched.',
     );
-    this.name = 'LegacyProjectError';
+    this.name = 'UnsupportedProjectFilesError';
     this.targets = targets;
   }
 }
@@ -97,8 +97,8 @@ function ensureFile<T>(
 
 export function initializeProject(input: InitializeProjectInput): InitializeProjectResult {
   const layout = projectLayout(input.root);
-  const legacy = detectLegacyProjectFiles(input.root);
-  if (legacy.length > 0) throw new LegacyProjectError(legacy);
+  const unsupported = detectUnsupportedProjectFiles(input.root);
+  if (unsupported.length > 0) throw new UnsupportedProjectFilesError(unsupported);
 
   refuseOrphanedStore(layout);
   mkdirSync(layout.dir, { recursive: true });

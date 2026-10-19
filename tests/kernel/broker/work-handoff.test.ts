@@ -254,13 +254,10 @@ test('MCP acceptance recovers a lost response only with the retained private cap
     assert.equal(lost.isError, undefined);
     const other = call(b, { action: 'add', serves: await reasonFor(b), title: 'another held item' }) as { id: string };
     call(b, { action: 'claim', id: other.id });
-    fx.broker.store.db
-      .prepare('INSERT INTO work_legacy_ids (legacy_id, work_id, source, created_at) VALUES (?, ?, ?, ?)')
-      .run('legacy-recovery', added.id, 'fixture', now);
     mkdirSync(join(fx.box.cwd, 'briefs'), { recursive: true });
     symlinkSync(join(fx.box.cwd, 'README.md'), join(fx.box.cwd, 'briefs', 'later-alias.md'));
     now = '2026-10-15T12:16:00.000Z';
-    assert.equal((await accept({ id: 'legacy-recovery', acceptanceKey: randomBytes(32).toString('hex') })).isError, true);
+    assert.equal((await accept({ acceptanceKey: randomBytes(32).toString('hex') })).isError, true);
     assert.equal(
       fx.broker.store.db.prepare('SELECT claim_until FROM work_items WHERE id = ?').get(added.id)!.claim_until,
       lost.structuredContent.claimUntil,

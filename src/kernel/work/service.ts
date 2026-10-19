@@ -22,7 +22,6 @@ export {
   isRunDelivery,
   recordEvent,
   getWork,
-  getWorkByLegacyId,
   childrenOf,
   acceptanceOf,
   type WorkQuery,
@@ -40,7 +39,6 @@ export {
 export {
   type CreateWorkInput,
   createWork,
-  bindLegacyId,
   addWorkDependency,
   removeWorkDependency,
   requalifyWork,

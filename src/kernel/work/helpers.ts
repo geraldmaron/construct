@@ -141,11 +141,6 @@ export function getWork(store: StateStore, id: string): WorkItem | null {
   return row ? toWork(row) : null;
 }
 
-export function getWorkByLegacyId(store: StateStore, legacyId: string): WorkItem | null {
-  const map = store.db.prepare('SELECT work_id FROM work_legacy_ids WHERE legacy_id = ?').get(legacyId) as { work_id: string } | undefined;
-  return map ? getWork(store, map.work_id) : null;
-}
-
 /** Items whose parent is `id`, oldest first. */
 export function childrenOf(store: StateStore, id: string): WorkItem[] {
   const rows = store.db.prepare('SELECT * FROM work_items WHERE parent_id = ? ORDER BY created_at, id').all(id) as unknown as Row[];

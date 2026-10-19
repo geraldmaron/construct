@@ -15,7 +15,6 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { sterile, type SterileFixture } from '../harness/sterile.ts';
-import { FORMAT4_COLUMNS } from '../../src/kernel/state/migrate.ts';
 
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
@@ -46,27 +45,20 @@ function project(fx: SterileFixture): { dir: string; db: string } {
   return { dir, db: join(dir, '.construct', 'state', 'construct.sqlite') };
 }
 
-/** Rewind a current store to a complete format-2 store, as an earlier build left it. */
-function toFormat2(db: string): void {
+/** A complete format-5 store carries the mapping table and its index. */
+function toFormat5(db: string): void {
   const d = new DatabaseSync(db);
   d.exec('PRAGMA journal_mode = DELETE');
-  d.exec('PRAGMA foreign_keys = OFF');
-  d.exec(`CREATE TABLE keep_work AS SELECT * FROM work_items`);
-  for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items'])
-    d.exec(`DROP TABLE IF EXISTS ${table}`);
-  d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
-  d.prepare(`DELETE FROM meta WHERE key = 'project_id'`).run();
-  d.close();
-}
-
-/** Rewind a current store to a complete format-3 store, as the format-3 build left it. */
-function toFormat3(db: string): void {
-  const d = new DatabaseSync(db);
-  d.exec('PRAGMA foreign_keys = OFF');
-  for (const table of ['path_leases', 'session_agents', 'sessions']) d.exec(`DROP TABLE IF EXISTS ${table}`);
-  for (const [table, column] of FORMAT4_COLUMNS) d.exec(`ALTER TABLE ${table} DROP COLUMN ${column}`);
-  d.prepare(`UPDATE meta SET value = '3' WHERE key = 'format_version'`).run();
-  d.prepare(`DELETE FROM meta WHERE key = 'project_id'`).run();
+  d.exec(`CREATE TABLE work_legacy_ids (
+    legacy_id TEXT PRIMARY KEY,
+    work_id TEXT NOT NULL REFERENCES work_items(id),
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);
+  INSERT INTO work_legacy_ids SELECT 'old-one', id, 'import', created_at FROM work_items LIMIT 1;`);
+  d.prepare("UPDATE meta SET value = '5' WHERE key = 'format_version'").run();
+  d.prepare("DELETE FROM meta WHERE key = 'project_id'").run();
   d.close();
 }
 
@@ -107,7 +99,7 @@ test('a read-only command refuses an older store with the migrate step and leave
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat2(db);
+    toFormat5(db);
     const before = readFileSync(db);
     const status = cli(fx, dir, ['status']);
     assert.notEqual(status.status, 0);
@@ -123,18 +115,20 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat2(db);
+    toFormat5(db);
     const first = cli(fx, dir, ['migrate', '--json']);
     assert.equal(first.status, 0, first.out);
     const record = JSON.parse(first.out.trim().split('\n').pop()!) as { migrated: boolean; from: number; backup: string };
     assert.equal(record.migrated, true);
-    assert.equal(record.from, 2);
-    assert.ok(readdirSync(join(dir, '.construct', 'state')).some((f) => /^construct\.pre-v2-\d+-[0-9a-f]+\.sqlite$/.test(f)));
+    assert.equal(record.from, 5);
+    assert.ok(readdirSync(join(dir, '.construct', 'state')).some((f) => /^construct\.pre-v5-\d+-[0-9a-f]+\.sqlite$/.test(f)));
     const backup = new DatabaseSync(record.backup, { readOnly: true });
-    assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '2');
+    assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '5');
     backup.close();
     const upgraded = new DatabaseSync(db, { readOnly: true });
-    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '5');
+    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '6');
+    assert.equal(upgraded.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name = 'work_legacy_ids'").get()?.n, 0);
+    assert.equal(upgraded.prepare('SELECT COUNT(*) AS n FROM work_items').get()?.n, 1);
     const projectId = (JSON.parse(readFileSync(join(dir, '.construct', 'project.json'), 'utf8')) as { id: string }).id;
     assert.equal(
       (upgraded.prepare(`SELECT value FROM meta WHERE key = 'project_id'`).get() as { value: string } | undefined)?.value,
@@ -156,7 +150,7 @@ test('migrate refuses a newer store and leaves it as it was', () => {
   try {
     const { dir, db } = project(fx);
     const d = new DatabaseSync(db);
-    d.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
+    d.prepare(`UPDATE meta SET value = '7' WHERE key = 'format_version'`).run();
     d.close();
     const before = readFileSync(db);
     const r = cli(fx, dir, ['migrate']);
@@ -194,7 +188,7 @@ test('every row an older store holds is still there after migrate', () => {
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat2(db);
+    toFormat5(db);
     const d = new DatabaseSync(db, { readOnly: true });
     const tables = (
       d.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as Array<{ name: string }>
@@ -208,7 +202,7 @@ test('every row an older store holds is still there after migrate', () => {
     assert.equal(cli(fx, dir, ['migrate']).status, 0);
     const after = rowCounts(
       db,
-      tables.filter((t) => t !== 'meta'),
+      tables.filter((t) => t !== 'meta' && t !== 'work_legacy_ids'),
     );
     for (const [table, n] of Object.entries(after)) assert.equal(n, before[table], `${table} rows`);
   } finally {
@@ -220,7 +214,7 @@ test('migrates that race: all finish, exactly one upgrades, and one owner-only b
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat2(db);
+    toFormat5(db);
     // Racing migrates hold the store open while they check it, so each would
     // see the others as sessions to stop; forced, they race on the lock alone.
     const runs = await Promise.all(Array.from({ length: 3 }, () => cliAsync(fx, dir, ['migrate', '--json', '--force'])));
@@ -265,7 +259,7 @@ test('migrate refuses while another process has the store open, names it, and sa
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat3(db);
+    toFormat5(db);
     const holder = await holdOpen(db);
     try {
       const refused = cli(fx, dir, ['migrate']);
@@ -273,13 +267,13 @@ test('migrate refuses while another process has the store open, names it, and sa
       assert.match(refused.out, new RegExp(`open in 1 other process\\(es\\) \\(pid ${String(holder.pid)}\\)`));
       assert.match(refused.out, /Stop every Construct session on this project first/);
       assert.match(refused.out, /--force upgrades anyway/);
-      assert.equal(formatOf(db), '3', 'nothing upgraded');
+      assert.equal(formatOf(db), '5', 'nothing upgraded');
       assert.deepEqual(backupsIn(dir), [], 'no backup taken');
       const forced = cli(fx, dir, ['migrate', '--force']);
       assert.equal(forced.status, 0, forced.out);
-      assert.match(forced.out, /Upgraded .* from format 3 to 5/);
+      assert.match(forced.out, /Upgraded .* from format 5 to 6/);
       assert.match(forced.out, /session still running an older Construct must be stopped/);
-      assert.equal(formatOf(db), '5');
+      assert.equal(formatOf(db), '6');
       assert.equal(backupsIn(dir).length, 1);
     } finally {
       holder.kill();
@@ -290,11 +284,11 @@ test('migrate refuses while another process has the store open, names it, and sa
   }
 });
 
-test('an incomplete format-3 store is refused unread: no backup, none mentioned, and the file unchanged', () => {
+test('an incomplete format-5 store is refused unread: no backup, none mentioned, and the file unchanged', () => {
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat3(db);
+    toFormat5(db);
     const d = new DatabaseSync(db);
     d.exec('DROP TABLE run_bindings');
     d.close();
@@ -305,7 +299,7 @@ test('an incomplete format-3 store is refused unread: no backup, none mentioned,
     assert.doesNotMatch(r.out, /backup|pre-v/);
     assert.deepEqual(backupsIn(dir), []);
     assert.ok(readFileSync(db).equals(before), 'the file is byte for byte as it was');
-    assert.equal(formatOf(db), '3');
+    assert.equal(formatOf(db), '5');
   } finally {
     fx.cleanup();
   }
@@ -315,17 +309,18 @@ test('an upgrade that fails after its backup removes the backup and mentions non
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat3(db);
-    // A stray table where format 4 puts sessions: the upgrade fails partway and rolls back.
+    toFormat5(db);
+    // A metadata guard rejects the format stamp after the table drop; the transaction rolls back.
     const d = new DatabaseSync(db);
-    d.exec('CREATE TABLE sessions (id TEXT PRIMARY KEY)');
+    d.exec(`CREATE TRIGGER reject_upgrade BEFORE UPDATE ON meta WHEN NEW.key = 'format_version'
+      BEGIN SELECT RAISE(ABORT, 'upgrade rejected'); END;`);
     d.close();
     const r = cli(fx, dir, ['migrate']);
     assert.notEqual(r.status, 0);
-    assert.match(r.out, /no such column/);
+    assert.match(r.out, /upgrade rejected/);
     assert.doesNotMatch(r.out, /backup|pre-v/);
     assert.deepEqual(backupsIn(dir), [], 'the backup of an unchanged store is removed');
-    assert.equal(formatOf(db), '3');
+    assert.equal(formatOf(db), '5');
   } finally {
     fx.cleanup();
   }
@@ -335,7 +330,7 @@ test('the backup is taken under the upgrade’s write lock: a write that lands w
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat3(db);
+    toFormat5(db);
     // Another writer holds the lock with a row not yet committed, and commits once migrate is waiting.
     const writer = spawn(process.execPath, [
       '-e',
@@ -355,7 +350,7 @@ test('the backup is taken under the upgrade’s write lock: a write that lands w
     assert.equal(record.migrated, true);
     const backup = new DatabaseSync(record.backup, { readOnly: true });
     try {
-      assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '3');
+      assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '5');
       assert.equal(
         (backup.prepare(`SELECT COUNT(*) AS n FROM work_items WHERE id = 'w-late'`).get() as { n: number }).n,
         1,
@@ -373,7 +368,7 @@ test('migration refuses unavailable holder inspection without backup or writes; 
   const fx = sterile();
   try {
     const { dir, db } = project(fx);
-    toFormat3(db);
+    toFormat5(db);
     const before = readFileSync(db);
     const unavailable = { PATH: join(fx.root, 'missing-tools') };
     const refused = cli(fx, dir, ['migrate'], unavailable);
@@ -383,9 +378,31 @@ test('migration refuses unavailable holder inspection without backup or writes; 
     assert.deepEqual(backupsIn(dir), []);
     const forced = cli(fx, dir, ['migrate', '--force'], unavailable);
     assert.equal(forced.status, 0, forced.out);
-    assert.equal(formatOf(db), '5');
+    assert.equal(formatOf(db), '6');
     assert.equal(backupsIn(dir).length, 1);
   } finally {
     fx.cleanup();
   }
 });
+
+for (const version of [2, 3, 4]) {
+  test(`migrate refuses format ${version} unread with reset guidance and no backup`, () => {
+    const fx = sterile();
+    try {
+      const { dir, db } = project(fx);
+      const d = new DatabaseSync(db);
+      d.exec('PRAGMA journal_mode = DELETE');
+      d.prepare("UPDATE meta SET value = ? WHERE key = 'format_version'").run(String(version));
+      d.close();
+      const before = readFileSync(db);
+      const result = cli(fx, dir, ['migrate']);
+      assert.notEqual(result.status, 0);
+      assert.match(result.out, /format this version does not read/);
+      assert.match(result.out, /construct reset/);
+      assert.deepEqual(backupsIn(dir), []);
+      assert.deepEqual(readFileSync(db), before);
+    } finally {
+      fx.cleanup();
+    }
+  });
+}

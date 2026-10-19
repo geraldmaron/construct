@@ -306,7 +306,10 @@ test('what the person settled governs: a document they confirm is outdated is en
       })[0]!;
     assert.equal(check(replacedBy).ok, true, 'the typed replacement agrees with the confirmed store record');
     assert.equal(check('another-decision').ok, false);
-    const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
+    const started = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD', target: 'docs/prd.md' },
+    });
     const w = await step(fx, started.run.id);
     const settled = w.instructions.find((i: string) => i.startsWith('Settled by the person'));
     const relayed = w.instructions.find((i: string) => i.startsWith('Recorded for the person but not confirmed by them'));

@@ -6,7 +6,7 @@
 
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { ProjectFileError, UnsupportedProjectFileError } from '../kernel/project/files.ts';
-import { LegacyProjectError } from '../kernel/project/initialize.ts';
+import { UnsupportedProjectFilesError } from '../kernel/project/initialize.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 import { ResetNotConfirmedError } from '../kernel/project/reset.ts';
 import { UnsupportedStateError } from '../kernel/state/format.ts';
@@ -57,7 +57,7 @@ function nextStepFor(error: unknown): string | null {
   if (error instanceof OperationError) return error.next;
   if (error instanceof StoreProjectError) return error.next;
   if (error instanceof NoProjectError) return null; // its message already says
-  if (error instanceof LegacyProjectError) return null;
+  if (error instanceof UnsupportedProjectFilesError) return null;
   if (error instanceof UnsupportedStateError) return null;
   if (error instanceof UnsupportedProjectFileError) return null;
   if (error instanceof ResetNotConfirmedError)

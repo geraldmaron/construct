@@ -1,5 +1,5 @@
 /**
- * tests/kernel/state/support.ts — a fresh format-2 store in a tmpdir per test.
+ * tests/kernel/state/support.ts — a fresh current-format store in a tmpdir per test.
  */
 
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -15,7 +15,7 @@ export interface StoreFixture {
 }
 
 export function freshStore(): StoreFixture {
-  const root = mkdtempSync(join(tmpdir(), 'construct-state2-'));
+  const root = mkdtempSync(join(tmpdir(), 'construct-state-'));
   const dbPath = join(root, '.construct', 'state', 'construct.sqlite');
   const store = openStateStore(dbPath);
   return {

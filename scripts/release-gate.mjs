@@ -1,9 +1,9 @@
 /** Release tiers are explicit. Experimental evidence never becomes full qualification. */
-import { readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, relative, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { checkRecord, descriptionsDigest } from './evals-live.mjs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { descriptionsDigest } from './host-surface.mjs';
 import {
   reviewDigest,
   reviewContractDigest,
@@ -40,7 +40,7 @@ export function repositoryFile(root, name) {
   if (!rel || rel === '..' || rel.startsWith(`..${sep}`)) throw Error('evidence path escapes repository');
   return readFileSync(path);
 }
-export function validateNativeCase(record, c, digest, now) {
+export function validateNativeCase(record, c, digest, now, reviewerModel) {
   const problems = [],
     fail = (s) => problems.push(`${c.id}: ${s}`);
   const { prepared: p, event: e } = record ?? {},
@@ -70,11 +70,12 @@ export function validateNativeCase(record, c, digest, now) {
     !i.sessionId ||
     i.host !== 'codex' ||
     i.hostVersion !== 'codex-cli 0.163.0' ||
-    i.model !== 'gpt-6-astra' ||
+    typeof reviewerModel !== 'string' ||
+    i.model !== reviewerModel ||
     i.completed !== true ||
     i.exitStatus !== 0 ||
     i.timedOut !== false ||
-    !['codex-held-text-v1', 'codex-app-server-held-text-v2'].includes(e?.profile) ||
+    e?.profile !== 'codex-app-server-held-text-v2' ||
     e?.modelSource !== 'requested'
   )
     fail('native invocation incomplete or unsupported');
@@ -99,18 +100,15 @@ export function validateNativeCase(record, c, digest, now) {
   if (!Array.isArray(obs) || reviewDigest(obs) !== i?.transcriptDigest) fail('public transcript digest mismatch');
   else {
     const structural = obs.filter((o) => o.type !== 'native.metadata_warning' && o.type !== 'native.fail_closed_warning');
-    const staged = e?.profile === 'codex-app-server-held-text-v2';
-    const offset = staged ? 1 : 0;
-    if (staged) {
-      const prompt = b ? semanticReviewPrompt(b) : '';
-      if (
-        structural[1]?.type !== 'native.evidence_staged' ||
-        structural[1].sessionId !== i?.sessionId ||
-        structural[1].characters !== [...prompt].length ||
-        structural[1].digest !== reviewDigest(prompt)
-      )
-        fail('complete staged evidence is not bound to the held prompt');
-    }
+    const offset = 1;
+    const prompt = b ? semanticReviewPrompt(b) : '';
+    if (
+      structural[1]?.type !== 'native.evidence_staged' ||
+      structural[1].sessionId !== i?.sessionId ||
+      structural[1].characters !== [...prompt].length ||
+      structural[1].digest !== reviewDigest(prompt)
+    )
+      fail('complete staged evidence is not bound to the held prompt');
     if (
       structural.length !== 4 + offset ||
       structural[0]?.type !== 'thread.started' ||
@@ -200,7 +198,9 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
       problems.push('nativeReview must name the recorded decision that allows it');
     if (!Array.isArray(manifest?.cases) || manifest.cases.length !== 0)
       problems.push('a release without native review carries no review cases');
-  } else if (
+  } else if (typeof manifest?.reviewerModel !== 'string' || !manifest.reviewerModel.trim())
+    problems.push('a reviewed release names the model its native reviewer ran on');
+  else if (
     !Array.isArray(manifest?.cases) ||
     manifest.cases.length !== CASES.length ||
     new Set(manifest.cases.map((x) => x.id)).size !== CASES.length
@@ -215,7 +215,7 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
       const bytes = read(entry?.path);
       if (sha256(bytes) !== entry?.sha256) throw Error('evidence hash mismatch');
       const r = JSON.parse(bytes);
-      problems.push(...validateNativeCase(r, c, digest, now));
+      problems.push(...validateNativeCase(r, c, digest, now, manifest.reviewerModel));
       if (sessions.has(r.event?.invocation?.sessionId)) problems.push(`${c.id}: independent session reused`);
       sessions.add(r.event?.invocation?.sessionId);
     } catch (e) {
@@ -235,8 +235,15 @@ export function checkExperimental({ manifest, version, digest, read, now = Date.
   }
   return { ok: problems.length === 0, problems, tier: 'experimental-alpha', ...(unreviewed ? { nativeReview: 'unavailable' } : {}) };
 }
-export function checkRelease({ tier = 'qualified', root = ROOT, now = Date.now() } = {}) {
-  if (tier === 'qualified') return checkRecord({ cut: true });
+/** The live-run harness and record behind the qualified tier: maintainer-local, never in git. */
+export const EVAL_HARNESS = 'evals/scripts/evals-live.mjs';
+export async function checkRelease({ tier = 'qualified', root = ROOT, now = Date.now() } = {}) {
+  if (tier === 'qualified') {
+    const harness = resolve(root, EVAL_HARNESS);
+    if (!existsSync(harness))
+      return { ok: false, problems: [`the qualified tier reads the maintainer-local eval record, and ${EVAL_HARNESS} is absent here`] };
+    return (await import(pathToFileURL(harness).href)).checkRecord({ cut: true });
+  }
   if (tier !== 'experimental-alpha') return { ok: false, problems: ['unknown release tier'] };
   try {
     const version = JSON.parse(readFileSync(resolve(root, 'package.json'))).version;
@@ -251,7 +258,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     tier = args.find((a) => a.startsWith('--tier='))?.slice(7) ?? 'qualified';
   if (args.some((a) => !a.startsWith('--tier=')) || args.filter((a) => a.startsWith('--tier=')).length > 1)
     throw Error('usage: node scripts/release-gate.mjs [--tier=qualified|experimental-alpha]');
-  const r = checkRelease({ tier });
+  const r = await checkRelease({ tier });
   for (const p of r.problems) process.stderr.write(`release gate: ${p}\n`);
   if (r.ok) {
     console.log(`release gate: ${tier} evidence is current and meets its bounded policy; broader qualification is not inferred`);

@@ -264,7 +264,7 @@ test('start_outcome starts nothing while a required detail or a blocking questio
       stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'document/prd' },
     };
-    const missing = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: prd });
+    const missing = await call(fx, 'start_outcome', { workflowId: 'authoring', intake: prd });
     assert.equal(missing.started, false);
     assert.equal(missing.recorded, false);
     assert.deepEqual(
@@ -276,7 +276,7 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     assert.deepEqual(listRuns(fx.broker.store), [], 'no run is left for a missing input');
 
     const open = await call(fx, 'start_outcome', {
-      workflowId: 'prd-authoring',
+      workflowId: 'authoring',
       intake: {
         ...prd,
         target: 'docs/prd.md',
@@ -289,19 +289,26 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     assert.deepEqual(listRuns(fx.broker.store), []);
 
     assert.equal(
-      (await refusal(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { words: 'What is a PRD?', kind: 'answer' } })).field,
+      (await refusal(fx, 'start_outcome', { workflowId: 'authoring', intake: { words: 'What is a PRD?', kind: 'answer' } })).field,
       'kind',
     );
+    const undeclared = await refusal(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      intake: { ...prd, target: 'docs/prd.md' },
+      input: { domain: 'undeclared' },
+    });
+    assert.equal(undeclared.field, 'domain');
+    assert.ok((undeclared.allowed as string[]).includes('requirements-structuring'));
     const elsewhere = await refusal(fx, 'start_outcome', { workflowId: 'design-conformance', intake: { ...prd, target: 'docs/prd.md' } });
     assert.equal(elsewhere.field, 'workflowId');
     assert.deepEqual(
       elsewhere.allowed,
-      ['authoring', 'authoring', 'revise-deliverable', 'authoring'],
+      ['authoring', 'revise-deliverable'],
       'the workflows this reading matched: its kind, then its family in registry order',
     );
-    assert.equal((await refusal(fx, 'start_outcome', { workflowId: 'prd-authoring' })).field, 'intake');
+    assert.equal((await refusal(fx, 'start_outcome', { workflowId: 'authoring' })).field, 'intake');
     assert.equal(
-      (await refusal(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { ...prd, target: 'docs/prd.md', inputs: { bogus: 1 } } }))
+      (await refusal(fx, 'start_outcome', { workflowId: 'authoring', intake: { ...prd, target: 'docs/prd.md', inputs: { bogus: 1 } } }))
         .field,
       'inputs.bogus',
     );
@@ -337,16 +344,19 @@ test('start_outcome starts nothing while a required detail or a blocking questio
 test('without an intake a missing input starts nothing and an undeclared one is refused, while the command line still keeps a blocked run', async () => {
   const fx = brokerFixture();
   try {
-    const missing = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD for webhooks' } });
+    const missing = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD for webhooks' },
+    });
     assert.equal(missing.started, false);
     assert.deepEqual(
       missing.questions.map((q: { slot: string; neededBy: string }) => [q.slot, q.neededBy]),
-      [['target', 'prd-authoring']],
+      [['target', 'authoring']],
     );
     assert.deepEqual(listRuns(fx.broker.store), []);
     const stray = await refusal(fx, 'start_outcome', {
-      workflowId: 'prd-authoring',
-      input: { request: 'PRD for webhooks', target: 'docs/prd.md', dateRange: 'Q3' },
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD for webhooks', target: 'docs/prd.md', dateRange: 'Q3' },
     });
     assert.equal(stray.field, 'input.dateRange');
     assert.deepEqual(stray.allowed, ['request', 'target', 'template', 'domain']);
@@ -354,7 +364,11 @@ test('without an intake a missing input starts nothing and an undeclared one is 
     assert.equal(unknown.field, 'workflowId');
     assert.ok(!unknown.allowed?.includes('remember'));
     assert.deepEqual(listRuns(fx.broker.store), []);
-    const cli = fx.broker.workflow.start({ workflowId: 'prd-authoring', input: { request: 'PRD for webhooks' }, trigger: 'manual' });
+    const cli = fx.broker.workflow.start({
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD for webhooks' },
+      trigger: 'manual',
+    });
     assert.equal(cli.run.state, 'blocked', 'service.start keeps a blocked run for the command line and triggers');
     assert.ok(
       cli.preflight.questions.some((q) => q.slot === 'target'),
@@ -545,7 +559,7 @@ for (const handling of ['investigate', 'carry_unknown']) {
       assert.ok(!reading.assumptions.some((a: any) => a.by === 'host'));
       assert.equal(reading.intake.open[0].assumption, null);
       assert.equal(reading.matches[0].workflowId, 'authoring');
-      const started = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: reading.intake });
+      const started = await call(fx, 'start_outcome', { workflowId: 'authoring', intake: reading.intake });
       assert.equal(started.started, true);
       assert.equal(askedOf(getRun(fx.broker.store, started.run.id)!).intake!.open[0]!.handling, handling);
       const next = (await call(fx, 'claim_work', { runId: started.run.id })).work;
@@ -588,7 +602,7 @@ test('carrying an unknown cannot supply a required destination or waive an actua
   try {
     const gap = { question: 'What do the unavailable records establish?', blocking: false, handling: 'carry_unknown' };
     const missing = await call(fx, 'start_outcome', {
-      workflowId: 'prd-authoring',
+      workflowId: 'authoring',
       intake: {
         words: 'Write a PRD.',
         kind: 'manage',
@@ -600,7 +614,7 @@ test('carrying an unknown cannot supply a required destination or waive an actua
     assert.equal(missing.started, false);
     assert.ok(missing.questions.some((q: any) => q.slot === 'target'));
     const blocked = await call(fx, 'start_outcome', {
-      workflowId: 'research-brief',
+      workflowId: 'authoring',
       intake: {
         words: 'Research the confidential records after the owner permits access.',
         kind: 'manage',
@@ -662,7 +676,7 @@ test('generic research and renamed requests expose registry alternatives before 
 test('alternative verification metadata follows actual registry steps including project workflows', async () => {
   const fx = brokerFixture();
   try {
-    const research = fx.broker.workflows.get('research-brief')!;
+    const research = fx.broker.workflows.get('authoring', 'investigative-research')!;
     const clone = {
       ...research,
       canonicalId: undefined,
@@ -679,7 +693,7 @@ test('alternative verification metadata follows actual registry steps including 
     (fx.broker as any).workflows = {
       ...original,
       list: () => [...original.list(), clone],
-      get: (id: string) => (id === clone.manifest.id ? clone : original.get(id)),
+      get: (id: string, domain?: string) => (id === clone.manifest.id ? clone : original.get(id, domain)),
     };
     const result = await call(fx, 'classify_request', {
       words: 'Review measurements.',

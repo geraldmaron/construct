@@ -24,14 +24,6 @@ import { GLOBAL_FLAGS } from '../src/cli/commands.ts';
 const SHELL_FENCE = /^(bash|sh|shell|zsh|console)$/i;
 const ROOT = process.argv[2] ? resolve(process.argv[2]) : fileURLToPath(new URL('../', import.meta.url));
 
-/**
- * A directive describes the surface a program is building, not the one that
- * ships today; its commands become real as the program lands. Checking it
- * against the current registry would fail until the last phase and then
- * pass, which measures the calendar, not the document.
- */
-const DIRECTIVES = new Set(['docs/internal/cutover-directive.md']);
-
 const nouns = new Map(); // noun -> Set of subcommands ('' for a bare command)
 for (const spec of COMMANDS) {
   const [noun, sub] = spec.path;
@@ -52,7 +44,6 @@ function docFiles() {
   return out
     .split('\n')
     .filter(Boolean)
-    .filter((path) => !DIRECTIVES.has(path))
     .map((path) => join(ROOT, path));
 }
 

@@ -28,7 +28,6 @@ import {
   completeWork,
   exportWork,
   getWork,
-  getWorkByLegacyId,
   handoffOf,
   handoffWork,
   listOffers,
@@ -227,7 +226,7 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     ],
     readOnly: true,
   },
-  { path: ['work', 'show'], gloss: 'one work item, including legacy-id lookup', group, positionals: ['<id>'], flags: [], readOnly: true },
+  { path: ['work', 'show'], gloss: 'one work item', group, positionals: ['<id>'], flags: [], readOnly: true },
   { path: ['work', 'ready'], gloss: 'work that can be claimed now', group, positionals: [], flags: [], readOnly: true },
   {
     path: ['work', 'add'],
@@ -450,7 +449,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'show': {
         const id = args.positionals[0]!;
-        const w = getWork(project.store, id) ?? getWorkByLegacyId(project.store, id);
+        const w = getWork(project.store, id);
         if (!w) throw new OperationError(`no work ${id}`);
         const ready = readinessOf(project.store, w, at);
         const leases = leasesFor(project.store, w.id);
@@ -613,7 +612,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         if (!paths) throw new UsageError('work check needs --paths or --staged');
         assertLeasePaths({ root: project.root, lane: project.lane?.root, paths, store: project.store, now: at });
         const own = args.flags.work as string | undefined;
-        const named = own ? (getWork(project.store, own) ?? getWorkByLegacyId(project.store, own)) : null;
+        const named = own ? getWork(project.store, own) : null;
         const exclude =
           named?.status === 'claimed' && named.claimOwner === actor && named.claimUntil && named.claimUntil > at ? named.id : undefined;
         const overlaps =

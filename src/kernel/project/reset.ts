@@ -8,12 +8,12 @@
  */
 
 import { existsSync, rmSync } from 'node:fs';
-import { detectLegacyProjectFiles, type LegacyTarget } from './legacy.ts';
+import { detectUnsupportedProjectFiles, type UnsupportedTarget } from './unsupported-files.ts';
 import { projectDbPath, projectLayout } from './layout.ts';
 
 export interface ResetPlan {
   readonly root: string;
-  readonly targets: readonly LegacyTarget[];
+  readonly targets: readonly UnsupportedTarget[];
 }
 
 export interface PlanResetOptions {
@@ -23,7 +23,7 @@ export interface PlanResetOptions {
 
 export function planReset(root: string, options: PlanResetOptions = {}): ResetPlan {
   const layout = projectLayout(root);
-  const targets: LegacyTarget[] = [];
+  const targets: UnsupportedTarget[] = [];
   if (existsSync(layout.dbPath)) targets.push({ path: layout.dbPath, what: 'this project’s runtime state database' });
   // A store in WAL mode keeps recent writes beside it; left behind, they would be
   // replayed into the fresh database and make it unreadable.
@@ -33,7 +33,7 @@ export function planReset(root: string, options: PlanResetOptions = {}): ResetPl
   ] as const) {
     if (existsSync(`${layout.dbPath}${suffix}`)) targets.push({ path: `${layout.dbPath}${suffix}`, what });
   }
-  for (const legacy of detectLegacyProjectFiles(root)) targets.push(legacy);
+  targets.push(...detectUnsupportedProjectFiles(root));
   if (options.includeProjectFiles) {
     for (const [path, what] of [
       [layout.projectFile, 'the project config'],

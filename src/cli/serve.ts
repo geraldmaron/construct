@@ -11,7 +11,7 @@ import { hostname } from 'node:os';
 import { join, resolve } from 'node:path';
 import { serveLazyMcp, serveMcp, type BindFailure } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
-import { LegacyProjectError } from '../kernel/project/initialize.ts';
+import { UnsupportedProjectFilesError } from '../kernel/project/initialize.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 import { StoreProjectError } from '../kernel/state/identity.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
@@ -74,7 +74,7 @@ export function bindFailureFor(error: unknown): BindFailure {
   }
   if (error instanceof ProjectFileError)
     return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
-  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError)
+  if (error instanceof UnsupportedProjectFileError || error instanceof UnsupportedProjectFilesError)
     return {
       busy: false,
       reason: error.message,
@@ -246,7 +246,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       error instanceof UnsupportedStateError ||
       error instanceof ProjectFileError ||
       error instanceof UnsupportedProjectFileError ||
-      error instanceof LegacyProjectError ||
+      error instanceof UnsupportedProjectFilesError ||
       error instanceof StoreProjectError
     ) {
       let lazy: ReturnType<typeof openBroker> | null = null;

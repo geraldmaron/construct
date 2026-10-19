@@ -6,7 +6,6 @@ import {
   queryWork,
   listOffers,
   getWork,
-  getWorkByLegacyId,
   listReady,
   prepareAcceptance,
   handoffOf,
@@ -219,7 +218,7 @@ export const work = define<WorkToolInput, unknown>({
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Use prepare_accept before recoverable accept.', enum: [...WORK_ACTIONS] },
-      id: { type: 'string', description: 'Work id or a preserved legacy id.' },
+      id: { type: 'string', description: 'Work id' },
       title: { type: 'string', description: 'Title, for add and update.' },
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
       description: { type: 'string', description: 'For add and update: what the work is, in enough detail to pick it up cold.' },
@@ -413,7 +412,7 @@ export const work = define<WorkToolInput, unknown>({
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new ToolInputError('"paths" is required for check', { field: 'paths' });
       assertLeasePaths({ root: ctx.root, lane: where.lane, paths, store: ctx.store, now: at });
-      const named = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id)) : null;
+      const named = id ? getWork(ctx.store, id) : null;
       const exclude =
         named?.status === 'claimed' && named.claimOwner === claimantOf(ctx, agent).owner && named.claimUntil && named.claimUntil > at
           ? named.id
@@ -443,7 +442,7 @@ export const work = define<WorkToolInput, unknown>({
       return { ...filed.work, admitted: filed.admitted, admittedBy: filed.admittedBy, next: filed.next };
     }
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
-    const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
+    const item = getWork(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
     if (action === 'prepare_accept')

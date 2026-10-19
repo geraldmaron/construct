@@ -49,18 +49,6 @@ function str(r: Record<string, unknown>, key: string, path: string, opts: { read
   return v;
 }
 
-/**
- * Phrase lists that once said when a bundle engages. Nothing reads them: the
- * host model judges whether a skill applies from its SKILL.md description, and
- * a workflow is matched by the deliverable it declares. A manifest that still
- * carries one is refused so the dead vocabulary cannot grow back.
- */
-function refuseTriggerPhrases(r: Record<string, unknown>, path: string, where: string): void {
-  for (const key of ['activation', 'standDown']) {
-    if (r[key] !== undefined) throw new ManifestError(path, `"${key}" is not read; ${where}, so remove it`);
-  }
-}
-
 function strList(
   r: Record<string, unknown>,
   key: string,
@@ -146,7 +134,6 @@ export function validateSkillManifest(raw: unknown, path: string): SkillManifest
   if (r.format !== SKILL_MANIFEST_FORMAT || r.formatVersion !== SKILL_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${SKILL_MANIFEST_FORMAT} ${String(SKILL_MANIFEST_VERSION)}`);
   }
-  refuseTriggerPhrases(r, path, 'the host model reads the SKILL.md description to judge when the skill applies');
   // Only fields something enforces belong here; the method, its limits and what it produces are SKILL.md's to say.
   for (const key of Object.keys(r)) {
     if (!(SKILL_MANIFEST_KEYS as readonly string[]).includes(key))
@@ -240,12 +227,40 @@ function step(raw: unknown, path: string, i: number): WorkflowStep {
   };
 }
 
+/** Every field a workflow manifest may carry. */
+export const WORKFLOW_MANIFEST_KEYS = [
+  'format',
+  'formatVersion',
+  'id',
+  'title',
+  'version',
+  'purpose',
+  'interactionClass',
+  'inputSchema',
+  'requiredInputs',
+  'deliverable',
+  'steps',
+  'domainStep',
+  'domains',
+  'execution',
+  'triggers',
+  'concurrency',
+  'cancellation',
+  'dedupeKey',
+  'onNoData',
+  'onStaleData',
+  'proposes',
+] as const;
+
 export function validateWorkflowManifest(raw: unknown, path: string): WorkflowManifest {
   const r = rec(raw, path, 'the manifest');
   if (r.format !== WORKFLOW_MANIFEST_FORMAT || r.formatVersion !== WORKFLOW_MANIFEST_VERSION) {
     throw new ManifestError(path, `must carry format ${WORKFLOW_MANIFEST_FORMAT} ${String(WORKFLOW_MANIFEST_VERSION)}`);
   }
-  refuseTriggerPhrases(r, path, 'a workflow is matched by the deliverable it declares');
+  for (const key of Object.keys(r)) {
+    if (!(WORKFLOW_MANIFEST_KEYS as readonly string[]).includes(key))
+      throw new ManifestError(path, `"${key}" is not a workflow manifest field; the fields are ${WORKFLOW_MANIFEST_KEYS.join(', ')}`);
+  }
   const id = str(r, 'id', path);
   if (!ID.test(id)) throw new ManifestError(path, '"id" must be a kebab-case id');
   const version = str(r, 'version', path);
@@ -309,8 +324,6 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     }
   }
   const domains: Record<string, WorkflowDomain> = {};
-  const aliases: Record<string, string> = {};
-  const legacyDigests: Record<string, { version: string; digest: string }> = {};
   let domainStep: string | undefined;
   if (r.domains !== undefined) {
     domainStep = str(r, 'domainStep', path);
@@ -331,14 +344,13 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
             throw new ManifestError(path, `domain ${domain} cannot override step ${id}.${key}`);
       }
       // Validate the complete bound contract with the same rules as any ordinary workflow.
+      const { skill: _bound, steps: _patches, ...fields } = d;
       validateWorkflowManifest(
         {
           ...r,
-          ...d,
+          ...fields,
           domains: undefined,
-          aliases: undefined,
           domainStep: undefined,
-          legacyDigests: undefined,
           steps: steps.map((s) => ({ ...s, ...rec(patches[s.id] ?? {}, path, 'domain step'), ...(s.id === domainStep ? { skill } : {}) })),
         },
         `${path}#${domain}`,
@@ -365,21 +377,6 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
       domains[domain] = d as WorkflowDomain;
     }
     if (!Object.keys(domains).length) throw new ManifestError(path, 'domains must not be empty');
-    for (const [alias, domain] of Object.entries(rec(r.aliases, path, 'aliases'))) {
-      if (!ID.test(alias) || typeof domain !== 'string' || !Object.hasOwn(domains, domain))
-        throw new ManifestError(path, `alias ${alias} must name a declared domain`);
-      aliases[alias] = domain;
-    }
-  }
-  if (r.legacyDigests !== undefined) {
-    for (const [alias, raw] of Object.entries(rec(r.legacyDigests, path, 'legacyDigests'))) {
-      const legacy = rec(raw, path, 'legacy digest');
-      const version = str(legacy, 'version', path);
-      const digest = str(legacy, 'digest', path);
-      if (!Object.hasOwn(aliases, alias) || !isVersion(version) || !/^sha256:[a-f0-9]{64}$/.test(digest))
-        throw new ManifestError(path, `invalid legacy digest for ${alias}`);
-      legacyDigests[alias] = { version, digest };
-    }
   }
   const deliverableRaw = rec(r.deliverable, path, '"deliverable"');
   const execution =
@@ -406,7 +403,7 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
         })();
   return {
     ...(execution ? { execution } : {}),
-    ...(domainStep ? { domainStep, domains, aliases, legacyDigests } : {}),
+    ...(domainStep ? { domainStep, domains } : {}),
     format: WORKFLOW_MANIFEST_FORMAT,
     formatVersion: WORKFLOW_MANIFEST_VERSION,
     id,

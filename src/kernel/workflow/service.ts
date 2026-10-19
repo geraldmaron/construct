@@ -1740,14 +1740,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         });
     }
     const currentWorkflow = workflowOf(run);
-    const legacy = currentWorkflow?.manifest.legacyDigests?.[run.workflowId];
-    const frozen = run.bindings as { steps?: unknown } | null;
-    const preservedAlias =
-      legacy?.digest === run.workflowDigest &&
-      legacy?.version === run.workflowVersion &&
-      Array.isArray(frozen?.steps) &&
-      frozen.steps.length > 0;
-    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest && !preservedAlias) {
+    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
       return stop({
         kind: 're_resolve',
         reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing`,

@@ -182,24 +182,6 @@ test('continuing final noData grants a reviewable attempt and still requires a r
   }
 });
 
-test('legacy bindings do not gain retroactive semantic success', () => {
-  const f = fixture([step('final', { outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] })]);
-  try {
-    // Reconstruct the persisted binding shape of runs created by HEAD before this change.
-    const bindings = { ...(f.run.bindings as Record<string, unknown>) };
-    delete bindings.semanticContract;
-    f.store.db.prepare('UPDATE workflow_runs SET bindings_json = ? WHERE id = ?').run(JSON.stringify(bindings), f.run.id);
-    const result = f.service.submit({ leased: f.claim().packet!.leased, output: { summary: 'No reviewer has run.', findings: [] } });
-    assert.equal(result.semanticReview, undefined);
-    assert.equal(result.run.state, 'blocked');
-    assert.match(runSemanticProblems(f.store, f.run.id).join(), /Legacy managed run/);
-    assert.equal((result.deliverable!.verification as any).semanticSupportVerified, false);
-    assert.equal(getRun(f.store, f.run.id)!.state, 'blocked');
-  } finally {
-    f.cleanup();
-  }
-});
-
 test('resolved user clarification reaches producer and reviewer with answer provenance', () => {
   const f = fixture([step('plan', { outputs: ['plan', 'blockers'] }), step('final', { needs: ['plan'], outputs: ['summary'] })]);
   try {

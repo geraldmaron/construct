@@ -120,10 +120,10 @@ test('an older store yields the migrate step; a foreign one says to ask the pers
   try {
     const { dir, db } = initProject(fx);
     const d = new DatabaseSync(db);
-    d.exec('PRAGMA foreign_keys = OFF');
-    for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items'])
-      d.exec(`DROP TABLE IF EXISTS ${table}`);
-    d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
+    d.exec(
+      'CREATE TABLE work_legacy_ids (legacy_id TEXT PRIMARY KEY, work_id TEXT NOT NULL REFERENCES work_items(id), source TEXT NOT NULL, created_at TEXT NOT NULL); CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);',
+    );
+    d.prepare(`UPDATE meta SET value = '5' WHERE key = 'format_version'`).run();
     d.close();
     assert.match(await unboundAdvice(fx, dir, db), /construct migrate/);
 

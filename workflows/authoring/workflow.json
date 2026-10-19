@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "authoring",
   "title": "Author a deliverable",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "purpose": "Apply the bound domain method, preserving its inputs, checks and evidence obligations.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -469,30 +469,6 @@
           ]
         }
       }
-    }
-  },
-  "aliases": {
-    "prd-authoring": "requirements-structuring",
-    "proposal-authoring": "decision-framing",
-    "rfc-authoring": "system-architecture",
-    "research-brief": "investigative-research"
-  },
-  "legacyDigests": {
-    "prd-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:c49b325d848c77c971b46db136b673fb17a77b8ef467ca8149d1fddde630c06b"
-    },
-    "proposal-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:736081837fae6d68f42f6b7e067f932a36646b42da1a8daecfa9410d2ebafaad"
-    },
-    "rfc-authoring": {
-      "version": "1.1.3",
-      "digest": "sha256:b537816a9d75522e4e908b80270f5e3c0726d5092c322209970753f358d2cd26"
-    },
-    "research-brief": {
-      "version": "1.3.2",
-      "digest": "sha256:f0f90df204580549a186e23207d6e7ac7cb9fb2b11e0410bbf5e594f97a80c8f"
     }
   }
 }

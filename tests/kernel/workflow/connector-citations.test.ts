@@ -75,8 +75,8 @@ test('an RFC built from recorded connector reads passes the draft floor, and an 
     });
 
     const started = await call(fx, 'start_outcome', {
-      workflowId: 'rfc-authoring',
-      input: { request: 'RFC for idempotent payment retries', target: 'docs/rfc-retries.md' },
+      workflowId: 'authoring',
+      input: { domain: 'system-architecture', request: 'RFC for idempotent payment retries', target: 'docs/rfc-retries.md' },
     });
     assert.equal(started.preflight.status, 'runnable', started.preflight.summary);
     const runId = started.run.id as string;

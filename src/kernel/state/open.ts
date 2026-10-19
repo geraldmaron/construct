@@ -9,8 +9,8 @@
  * leaves the connection exactly as it was, so the next transaction is still a
  * transaction.
  *
- * Refuses any file that is not exactly this format. A store in an earlier
- * format is upgraded only when the caller asks for it; a read never changes
+ * Refuses any file that is not exactly this format. A complete format-5 store
+ * is upgraded only when the caller asks for it; a read never changes
  * the file's format. Foreign keys are always on. Multi-row transitions run
  * inside `transaction`, which is the only place BEGIN and COMMIT appear.
  */
@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
-import { isCompleteV2, isCompleteV3, isCompleteV4, migrateV2ToV3, migrateV3ToV4, migrateV4ToV5 } from './migrate.ts';
+import { isCompleteV5, migrateV5ToV6 } from './migrate.ts';
 
 /** How long one statement waits for another connection's lock. */
 export const BUSY_TIMEOUT_MS = 5000;
@@ -124,18 +124,11 @@ function readMeta(db: DatabaseSync, key: string): string | null {
   return row?.value ?? null;
 }
 
-function isComplete(db: DatabaseSync, version: 2 | 3 | 4): boolean {
-  return version === 2 ? isCompleteV2(db) : version === 3 ? isCompleteV3(db) : isCompleteV4(db);
-}
-
 /**
- * Format 5 is current. A complete store in format 2, 3 or 4 is upgraded in place
- * (one way, through each format in turn) when `migrate` is set, and refused as
- * older otherwise. A store missing one of its format's tables is refused
- * unread. A newer format is refused as newer, never with an instruction that
- * would discard it. Anything else is refused unread. The format is read again
- * under the write lock, so a store another process changed meanwhile is
- * judged as it now is.
+ * A complete format-5 store upgrades only when `migrate` is set; otherwise it
+ * is refused as older. Incomplete or foreign stores are refused unread, and
+ * newer formats are refused as newer. The format and completeness are read
+ * again under the write lock before the backup and upgrade.
  */
 function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions): number | null {
   const names = tableNames(db);
@@ -143,7 +136,7 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
   if (!names.has('meta')) throw new UnsupportedStateError(null, null);
 
   const format = readMeta(db, 'format');
-  const versionRaw = readMeta(db, 'format_version') ?? readMeta(db, 'schema_version');
+  const versionRaw = readMeta(db, 'format_version');
   const version = versionRaw === null ? null : Number(versionRaw);
   const versionOrNull = version !== null && Number.isFinite(version) ? version : null;
 
@@ -151,8 +144,8 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
   if (versionOrNull !== null && versionOrNull > STATE_FORMAT_VERSION) {
     throw new UnsupportedStateError(format, versionOrNull, 'newer');
   }
-  if (versionOrNull === 2 || versionOrNull === 3 || versionOrNull === 4) {
-    if (!isComplete(db, versionOrNull)) throw new UnsupportedStateError(format, versionOrNull);
+  if (versionOrNull === 5) {
+    if (!isCompleteV5(db)) throw new UnsupportedStateError(format, versionOrNull);
     if (!options.migrate || options.readOnly) throw new UnsupportedStateError(format, versionOrNull, 'older');
     let migrated: number | null = null;
     beginImmediate(db, path);
@@ -163,12 +156,10 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
       const foundOrNull = found !== null && Number.isFinite(found) ? found : null;
       if (nowFormat !== STATE_FORMAT_ID) throw new UnsupportedStateError(nowFormat, foundOrNull);
       if (foundOrNull !== null && foundOrNull > STATE_FORMAT_VERSION) throw new UnsupportedStateError(nowFormat, foundOrNull, 'newer');
-      if (foundOrNull === 2 || foundOrNull === 3 || foundOrNull === 4) {
-        if (!isComplete(db, foundOrNull)) throw new UnsupportedStateError(nowFormat, foundOrNull);
-        options.beforeUpgrade?.(foundOrNull);
-        if (foundOrNull === 2) migrateV2ToV3(db);
-        if (foundOrNull <= 3) migrateV3ToV4(db);
-        migrateV4ToV5(db);
+      if (foundOrNull === 5) {
+        if (!isCompleteV5(db)) throw new UnsupportedStateError(nowFormat, foundOrNull);
+        options.beforeUpgrade?.(5);
+        migrateV5ToV6(db);
         migrated = foundOrNull;
       } else if (foundOrNull !== STATE_FORMAT_VERSION) {
         throw new UnsupportedStateError(nowFormat, foundOrNull);

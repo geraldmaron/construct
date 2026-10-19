@@ -293,7 +293,10 @@ test('Scenario E: the strategy review needs confirmed source authority, states c
       at,
       next,
     );
-    const started = (await call(fx, 'start_outcome', { workflowId: 'strategy-execution-review', input: { target: 'FY27 plan' } })) as {
+    const started = (await call(fx, 'start_outcome', {
+      workflowId: 'review',
+      input: { domain: 'strategy-research', target: 'FY27 plan' },
+    })) as {
       run: { id: string; state: string };
       preflight: { status: string; summary: string };
     };
@@ -370,7 +373,10 @@ test('Scenario E: the strategy review needs confirmed source authority, states c
 test('Scenario F: the read and the draft complete; the external write asks for the smallest scoped approval', async () => {
   const fx = brokerFixture();
   try {
-    const started = (await call(fx, 'start_outcome', { workflowId: 'implementation-review', input: { target: 'src/kernel' } })) as {
+    const started = (await call(fx, 'start_outcome', {
+      workflowId: 'review',
+      input: { domain: 'software-engineering', target: 'src/kernel' },
+    })) as {
       run: { id: string };
       preflight: { approvalsAhead: string[] };
     };

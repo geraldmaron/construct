@@ -462,8 +462,8 @@ test('preparation packets scope the method to current outputs and leave final re
   const fx = brokerFixture('interactive', { semanticReview: 'none' });
   try {
     const run = await call(fx.broker, 'start_outcome', {
-      workflowId: 'research-brief',
-      input: { question: 'What does the supplied evidence establish?' },
+      workflowId: 'authoring',
+      input: { domain: 'investigative-research', question: 'What does the supplied evidence establish?' },
     });
     const work = await claim(fx.broker, run.run.id);
     assert.equal(work.step.id, 'gather');

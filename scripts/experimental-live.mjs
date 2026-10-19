@@ -30,13 +30,16 @@ export function beginExperimentalAttempt(path, out) {
 /** The disclosed form of a release that ran no native semantic review, and the decision that allows it. */
 export const WITHOUT_NATIVE_REVIEW = {
   status: 'unavailable',
-  decision: 'RESEARCH-DECISIONS §48',
+  decision: 'RESEARCH-DECISIONS §16',
   reason:
-    'Gerald directed on 2026-10-17 that Construct stop using Codex and gpt-6-astra. The only qualified native semantic reviewer is the Codex held-text profile on that model, so this alpha ran no independent semantic review, and no deliverable it validates carries a semantic-review verdict.',
+    'No native semantic reviewer was run for this alpha: the held-text reviewer profile needs a Codex model the maintainer has chosen and qualified for it, and none was. No deliverable this alpha validates carries a semantic-review verdict.',
 };
 
 async function main() {
   const withoutReview = process.argv.includes('--without-native-review');
+  const reviewerModel = process.argv.find((a) => a.startsWith('--reviewer-model='))?.slice('--reviewer-model='.length);
+  if (!withoutReview && !reviewerModel)
+    throw Error('name the native reviewer model with --reviewer-model=<model>, or pass --without-native-review');
   if (apiEnvironmentPresent(process.env)) throw Error('experimental controls use the existing subscription, not API credentials');
   const version = JSON.parse(readFileSync(join(ROOT, 'package.json'))).version;
   if (!/^\d+\.\d+\.\d+-alpha\.\d+$/.test(version)) throw Error('only numbered experimental alphas');
@@ -51,12 +54,12 @@ async function main() {
     version,
     surfaceDigest: digest,
     broadQualification: false,
+    ...(reviewerModel ? { reviewerModel } : {}),
     createdAt: new Date().toISOString(),
     limitations: {
       freshUser:
         'Fresh Codex and Cursor ordinary-prompt journeys are inconsistent: artifact correctness and managed completion remain unqualified; retained failures are not passes.',
-      hostSupport:
-        'The native semantic reviewer is a finite codex-app-server-held-text-v2 profile for Codex CLI 0.163.0 using the requested gpt-6-astra model. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.',
+      hostSupport: `The native semantic reviewer is a finite codex-app-server-held-text-v2 profile for Codex CLI 0.163.0${reviewerModel ? ` using the requested ${reviewerModel} model` : ', not run for this alpha'}. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.`,
       sourceAdapters:
         'Production API/MCP traversal, unknown schemas, complete access-scope coverage and changed-source outcomes are not generally qualified by these local synthetic cases.',
       composition:
@@ -155,7 +158,7 @@ async function main() {
         token: leased.nonce,
         preparedRef: prepared.ref,
         host: 'codex',
-        model: 'gpt-6-astra',
+        model: reviewerModel,
         env: process.env,
         root: dir.root,
         resolve: resolveEvidence,

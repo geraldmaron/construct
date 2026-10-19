@@ -1,5 +1,5 @@
 /**
- * kernel/state/schema.ts — Construct state format 5.
+ * kernel/state/schema.ts — Construct state format 6.
  *
  * One database per project. Columns that take part in policy, selection,
  * uniqueness, or a state transition are normalized and CHECKed here; JSON
@@ -38,7 +38,6 @@ export const REQUIRED_TABLES = [
   'work_items',
   'work_dependencies',
   'work_events',
-  'work_legacy_ids',
   'work_runs',
   'reviews',
   'run_bindings',
@@ -545,14 +544,6 @@ CREATE TRIGGER work_events_no_delete BEFORE DELETE ON work_events
 BEGIN
   SELECT RAISE(ABORT, 'work_events is append-only');
 END;
-
-CREATE TABLE work_legacy_ids (
-  legacy_id   TEXT PRIMARY KEY,
-  work_id     TEXT NOT NULL REFERENCES work_items(id),
-  source      TEXT NOT NULL,
-  created_at  TEXT NOT NULL
-);
-CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);
 
 CREATE TABLE work_runs (
   work_id     TEXT NOT NULL REFERENCES work_items(id),

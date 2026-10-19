@@ -9,12 +9,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
-import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
+import { ALWAYS_LOAD, mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
 import { AGENT_NAME, toolsFor } from '../../kernel/broker/tools.ts';
 import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
 import { renewExecutorLeases } from '../../kernel/state/steps.ts';
-import { getWork, getWorkByLegacyId, renewSessionClaims } from '../../kernel/work/service.ts';
+import { getWork, renewSessionClaims } from '../../kernel/work/service.ts';
 import { HostRequestError, HostRequests } from './outbound.ts';
 import { INTERACTIVE_INSTRUCTIONS, RUNNER_INSTRUCTIONS, unboundInstructions } from './instructions.ts';
 import type { AskPerson } from '../../kernel/policy/channels.ts';
@@ -270,7 +270,7 @@ export function createMcpHandler(surface: BrokerSurface, started: BrokerContext,
       // wrong key must not extend that item through the presence courtesy.
       const excludeWorkId =
         name === 'work' && args.action === 'accept' && typeof args.acceptanceKey === 'string' && typeof args.id === 'string'
-          ? (getWork(ctx.store, args.id) ?? getWorkByLegacyId(ctx.store, args.id))?.id
+          ? getWork(ctx.store, args.id)?.id
           : undefined;
       renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS, excludeWorkId });
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
@@ -457,6 +457,7 @@ export function createUnboundMcpHandler(
               description: 'Report that Construct is not bound to a project and what to do next.',
               inputSchema: { type: 'object', properties: {}, additionalProperties: false },
               annotations: { title: 'Bootstrap', readOnlyHint: true, destructiveHint: false, openWorldHint: false },
+              _meta: { [ALWAYS_LOAD]: true },
             },
           ],
         });

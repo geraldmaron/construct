@@ -1,9 +1,10 @@
 /**
- * kernel/project/legacy.ts — recognize files an earlier Construct wrote.
+ * kernel/project/unsupported-files.ts — recognize a project config in a
+ * format this version does not read.
  *
- * Recognition only: a known path, or a format stamp that is not the current
- * one. Nothing here parses an old schema or reads old contents, and nothing
- * here deletes; `reset` names these exact targets and asks first.
+ * Recognition only: a format stamp that is not the current one. Nothing here
+ * parses another schema or deletes; `reset` names these exact targets and
+ * asks first.
  */
 
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
@@ -11,23 +12,14 @@ import { join } from 'node:path';
 import { PROJECT_CONFIG_FORMAT, PROJECT_CONFIG_VERSION } from './config.ts';
 import { projectDir, projectFilePath } from './layout.ts';
 
-export interface LegacyTarget {
+export interface UnsupportedTarget {
   readonly path: string;
   readonly what: string;
 }
 
-const LEGACY_PROJECT_FILE_NAMES: ReadonlyArray<readonly [string, string]> = [
-  ['settings.json', 'a project settings file from an earlier alpha'],
-];
-
-/** Old Construct-owned files under this project's `.construct/`. */
-export function detectLegacyProjectFiles(root: string): LegacyTarget[] {
-  const found: LegacyTarget[] = [];
-  const dir = projectDir(root);
-  for (const [name, what] of LEGACY_PROJECT_FILE_NAMES) {
-    const path = join(dir, name);
-    if (existsSync(path)) found.push({ path, what });
-  }
+/** Construct-owned files under this project's `.construct/` in a format this version does not read. */
+export function detectUnsupportedProjectFiles(root: string): UnsupportedTarget[] {
+  const found: UnsupportedTarget[] = [];
   const projectFile = projectFilePath(root);
   const stamp = readFormatStamp(projectFile);
   if (stamp !== null && (stamp.format !== PROJECT_CONFIG_FORMAT || stamp.version !== PROJECT_CONFIG_VERSION)) {

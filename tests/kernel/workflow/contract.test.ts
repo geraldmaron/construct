@@ -116,22 +116,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const builtins = createWorkflowRegistry({ projectDir: null });
-const oldContracts = JSON.parse(readFileSync(new URL('./fixtures/domain-contracts.json', import.meta.url), 'utf8')) as Record<
-  string,
-  import('../../../src/kernel/registry/models.ts').WorkflowManifest
->;
 const cases = builtins
   .list()
-  .flatMap<{ id: string; domain: string | undefined; alias?: string }>((w) =>
+  .flatMap<{ id: string; domain: string | undefined }>((w) =>
     w.manifest.domains
-      ? [
-          ...Object.keys(w.manifest.domains).map((domain) => ({ id: w.manifest.id, domain })),
-          ...Object.entries(w.manifest.aliases ?? {}).map(([alias, domain]) => ({ id: w.manifest.id, domain, alias })),
-        ]
+      ? Object.keys(w.manifest.domains).map((domain) => ({ id: w.manifest.id, domain }))
       : [{ id: w.manifest.id, domain: undefined }],
   );
-for (const { id, domain, alias } of cases) {
-  test(`${id}${domain ? ` / ${domain}` : ''}${alias ? ` (saved ${alias})` : ''} starts and completes its shipped plan`, async () => {
+for (const { id, domain } of cases) {
+  test(`${id}${domain ? ` / ${domain}` : ''} starts and completes its shipped plan`, async () => {
     const fx = brokerFixture();
     try {
       writeFileSync(join(fx.box.cwd, 'docs/design.md'), DESIGN);
@@ -184,7 +177,7 @@ for (const { id, domain, alias } of cases) {
         grantedBy: 'fixture person',
         at: now(),
       });
-      let m = builtins.get(id, domain)!.manifest;
+      const m = builtins.get(id, domain)!.manifest;
       const values: Record<string, unknown> = {
         domain,
         request: 'Assess the design against the stated decision and preserve unknowns.',
@@ -198,29 +191,10 @@ for (const { id, domain, alias } of cases) {
       };
       const input = Object.fromEntries(m.requiredInputs.map((key) => [key, values[key]]));
       if (domain) input.domain = domain;
-      if (alias) delete input.domain;
-      const started = service.start({ workflowId: alias ?? id, input, trigger: 'manual' });
+      const started = service.start({ workflowId: id, input, trigger: 'manual' });
       assert.equal(started.preflight.status, 'runnable', JSON.stringify(started.preflight));
       assert.equal(started.run.workflowId, id);
       if (domain) assert.equal((started.run.input as Record<string, unknown>).domain, domain);
-      if (alias) {
-        // Recreate the stored shape of an old run, including research's old step name.
-        const legacy = m.legacyDigests![alias]!;
-        m = oldContracts[alias]!;
-        const frozen = { ...(started.run.bindings as object), steps: m.steps };
-        const oldInput = { ...input };
-        delete oldInput.domain;
-        store.db
-          .prepare(
-            'UPDATE workflow_runs SET workflow_id = ?, workflow_version = ?, workflow_digest = ?, input_json = ?, bindings_json = ? WHERE id = ?',
-          )
-          .run(alias, legacy.version, legacy.digest, JSON.stringify(oldInput), JSON.stringify(frozen), started.run.id);
-        store.db.prepare('UPDATE workflow_runs SET workflow_digest = ? WHERE id = ?').run(`sha256:${'0'.repeat(64)}`, started.run.id);
-        assert.equal(service.claimNext({ runId: started.run.id }).waitingOn?.kind, 're_resolve', 'unknown old bytes remain gated');
-        store.db.prepare('UPDATE workflow_runs SET workflow_digest = ? WHERE id = ?').run(legacy.digest, started.run.id);
-        if (alias === 'research-brief')
-          store.db.prepare("UPDATE step_runs SET step_id = 'synthesize' WHERE run_id = ? AND step_id = 'draft'").run(started.run.id);
-      }
       const visited: string[] = [];
       for (let i = 0; i < m.steps.length + 1; i++) {
         if (service.status(started.run.id)!.run.state === 'succeeded') break;

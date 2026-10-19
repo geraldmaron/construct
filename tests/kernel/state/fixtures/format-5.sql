@@ -1,11 +1,11 @@
--- The schema of a construct-state 3 store that reached format 3 by upgrading from format 2, as sqlite_master holds it: statements.quoted and workflow_runs.cancel_requested carry no CHECK.
--- Frozen: tests build older stores from this file to prove each upgrade.
 
 CREATE TABLE meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
 
+-- The project as Construct understands it. One row; onboarding_state says
+-- how much of it a person has confirmed.
 CREATE TABLE project_profile (
   id               INTEGER PRIMARY KEY CHECK (id = 1),
   name             TEXT,
@@ -19,6 +19,8 @@ CREATE TABLE project_profile (
   updated_at       TEXT NOT NULL
 );
 
+-- Constitution statements and remembered records. A remembered decision or
+-- note is the smallest record: one row here, nothing else.
 CREATE TABLE statements (
   id              TEXT PRIMARY KEY,
   kind            TEXT NOT NULL CHECK (kind IN (
@@ -32,13 +34,20 @@ CREATE TABLE statements (
   provenance      TEXT NOT NULL CHECK (provenance IN ('user', 'discovery', 'workflow')),
   source_id       TEXT REFERENCES sources(id),
   run_id          TEXT REFERENCES workflow_runs(id),
-  superseded_by   TEXT REFERENCES statements(id),
-  created_at      TEXT NOT NULL,
-  updated_at      TEXT NOT NULL
-, locator TEXT, span_json TEXT, excerpt TEXT, source_revision TEXT, extractor_version TEXT, content_digest TEXT, coverage_json TEXT, quoted INTEGER NOT NULL DEFAULT 0);
-
+  superseded_by     TEXT REFERENCES statements(id),
+  locator           TEXT,
+  span_json         TEXT,
+  excerpt           TEXT,
+  source_revision   TEXT,
+  extractor_version TEXT,
+  content_digest    TEXT,
+  coverage_json     TEXT,
+  quoted            INTEGER NOT NULL DEFAULT 0 CHECK (quoted IN (0, 1)),
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL,
+  channel           TEXT
+);
 CREATE INDEX statements_kind_status ON statements (kind, status);
-
 CREATE UNIQUE INDEX statements_glossary_term ON statements (term)
   WHERE kind = 'glossary_entry' AND status IN ('proposed', 'confirmed');
 
@@ -63,6 +72,8 @@ CREATE TABLE sources (
   retired_at            TEXT
 );
 
+-- Authority is per claim type. A row with authoritative = 0 is an explicit
+-- statement of what the source is NOT authoritative for.
 CREATE TABLE source_authority (
   source_id     TEXT NOT NULL REFERENCES sources(id),
   claim_type    TEXT NOT NULL,
@@ -71,15 +82,18 @@ CREATE TABLE source_authority (
 );
 
 CREATE TABLE source_snapshots (
-  id          TEXT PRIMARY KEY,
-  source_id   TEXT NOT NULL REFERENCES sources(id),
-  digest      TEXT NOT NULL,
-  summary     TEXT,
-  evidence_ref TEXT,
-  taken_at    TEXT NOT NULL, inventory_digest TEXT, content_digest TEXT, item_count INTEGER, coverage_json TEXT,
+  id               TEXT PRIMARY KEY,
+  source_id        TEXT NOT NULL REFERENCES sources(id),
+  digest           TEXT NOT NULL,
+  summary          TEXT,
+  evidence_ref     TEXT,
+  inventory_digest TEXT,
+  content_digest   TEXT,
+  item_count       INTEGER,
+  coverage_json    TEXT,
+  taken_at         TEXT NOT NULL,
   UNIQUE (source_id, digest)
 );
-
 CREATE INDEX source_snapshots_recent ON source_snapshots (source_id, taken_at);
 
 CREATE TABLE entities (
@@ -95,9 +109,7 @@ CREATE TABLE entities (
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL
 );
-
 CREATE UNIQUE INDEX entities_external ON entities (kind, external_ref) WHERE external_ref IS NOT NULL;
-
 CREATE INDEX entities_kind ON entities (kind, status);
 
 CREATE TABLE relations (
@@ -116,9 +128,7 @@ CREATE TABLE relations (
   CHECK (from_id <> to_id),
   UNIQUE (kind, from_id, to_id)
 );
-
 CREATE INDEX relations_from ON relations (from_id, kind);
-
 CREATE INDEX relations_to ON relations (to_id, kind);
 
 CREATE TABLE claims (
@@ -133,13 +143,19 @@ CREATE TABLE claims (
   sensitivity     TEXT NOT NULL CHECK (sensitivity IN ('public', 'internal', 'confidential', 'restricted')),
   confidence      REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
   status          TEXT NOT NULL CHECK (status IN ('observed', 'inferred', 'confirmed', 'superseded')),
-  observed_at     TEXT NOT NULL,
-  fresh_until     TEXT,
-  superseded_by   TEXT REFERENCES claims(id),
-  created_at      TEXT NOT NULL,
-  updated_at      TEXT NOT NULL
-, locator TEXT, span_json TEXT, excerpt TEXT, source_revision TEXT, extractor_version TEXT, content_digest TEXT, valid_at TEXT);
-
+  observed_at       TEXT NOT NULL,
+  fresh_until       TEXT,
+  superseded_by     TEXT REFERENCES claims(id),
+  locator           TEXT,
+  span_json         TEXT,
+  excerpt           TEXT,
+  source_revision   TEXT,
+  extractor_version TEXT,
+  content_digest    TEXT,
+  valid_at          TEXT,
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL
+);
 CREATE INDEX claims_subject ON claims (subject_id, claim_type, status);
 
 CREATE TABLE staff_members (
@@ -151,13 +167,11 @@ CREATE TABLE staff_members (
   created_at  TEXT NOT NULL,
   updated_at  TEXT NOT NULL
 );
-
 CREATE TABLE staff_capabilities (
   staff_id    TEXT NOT NULL REFERENCES staff_members(id),
   capability  TEXT NOT NULL,
   PRIMARY KEY (staff_id, capability)
 );
-
 CREATE TABLE staff_skills (
   staff_id    TEXT NOT NULL REFERENCES staff_members(id),
   skill_id    TEXT NOT NULL,
@@ -171,7 +185,6 @@ CREATE TABLE resolved_skills (
   origin      TEXT NOT NULL CHECK (origin IN ('builtin', 'project')),
   resolved_at TEXT NOT NULL
 );
-
 CREATE TABLE resolved_workflows (
   workflow_id TEXT PRIMARY KEY,
   version     TEXT NOT NULL,
@@ -200,12 +213,18 @@ CREATE TABLE workflow_runs (
   state_reason      TEXT,
   created_at        TEXT NOT NULL,
   updated_at        TEXT NOT NULL,
-  finished_at       TEXT
-, invocation_id TEXT, work_identity TEXT, work_id TEXT, workflow_digest TEXT, bindings_json TEXT, cancel_requested INTEGER NOT NULL DEFAULT 0);
-
+  finished_at       TEXT,
+  invocation_id     TEXT,
+  work_identity     TEXT,
+  work_id           TEXT,
+  workflow_digest   TEXT,
+  bindings_json     TEXT,
+  cancel_requested  INTEGER NOT NULL DEFAULT 0 CHECK (cancel_requested IN (0, 1))
+);
 CREATE INDEX workflow_runs_active ON workflow_runs (state, updated_at);
-
 CREATE INDEX workflow_runs_workflow ON workflow_runs (workflow_id, created_at);
+CREATE UNIQUE INDEX workflow_runs_invocation ON workflow_runs (invocation_id) WHERE invocation_id IS NOT NULL;
+CREATE INDEX workflow_runs_work_identity ON workflow_runs (work_identity, state);
 
 CREATE TABLE step_runs (
   id              TEXT PRIMARY KEY,
@@ -229,11 +248,10 @@ CREATE TABLE step_runs (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   finished_at     TEXT,
+  lease_nonce     TEXT,
   UNIQUE (run_id, step_id)
 );
-
 CREATE INDEX step_runs_claimable ON step_runs (state, lease_until);
-
 CREATE INDEX step_runs_run ON step_runs (run_id, ordinal);
 
 CREATE TABLE step_attempts (
@@ -261,9 +279,7 @@ CREATE TABLE deliverables (
   created_at        TEXT NOT NULL,
   updated_at        TEXT NOT NULL
 );
-
 CREATE UNIQUE INDEX deliverables_step ON deliverables (step_run_id) WHERE step_run_id IS NOT NULL;
-
 CREATE INDEX deliverables_run ON deliverables (run_id, created_at);
 
 CREATE TABLE decisions (
@@ -278,11 +294,13 @@ CREATE TABLE decisions (
   resolution_json TEXT,
   raised_at       TEXT NOT NULL,
   resolved_at     TEXT,
-  resolved_by     TEXT
+  resolved_by     TEXT,
+  channel         TEXT
 );
-
 CREATE INDEX decisions_open ON decisions (state, raised_at);
 
+-- Standing and break-glass grants. NULL in a scope column means "any" for a
+-- standing grant; break-glass rows must name their exact target and expiry.
 CREATE TABLE grants (
   id              TEXT PRIMARY KEY,
   action_tier     TEXT NOT NULL CHECK (action_tier IN (
@@ -302,10 +320,12 @@ CREATE TABLE grants (
   revoked_at      TEXT,
   revoked_reason  TEXT,
   created_at      TEXT NOT NULL,
+  run_id          TEXT,
+  step_run_id     TEXT,
+  channel         TEXT,
   CHECK (break_glass = 0 OR (reason IS NOT NULL AND ends_at IS NOT NULL AND target_resource IS NOT NULL AND executor_id IS NOT NULL)),
   CHECK (action_tier <> 'licensed_judgment')
 );
-
 CREATE INDEX grants_lookup ON grants (action_tier, target_system, revoked_at);
 
 CREATE TABLE observations (
@@ -336,7 +356,6 @@ CREATE TABLE drift_findings (
   created_at    TEXT NOT NULL,
   resolved_at   TEXT
 );
-
 CREATE INDEX drift_findings_open ON drift_findings (status, created_at);
 
 CREATE TABLE lessons (
@@ -354,6 +373,9 @@ CREATE TABLE lessons (
   updated_at    TEXT NOT NULL
 );
 
+-- Standing outcomes: a trigger names a workflow, how it fires, and what
+-- happens when a firing overlaps a run. An external clock fires it; the
+-- firing ledger is what makes a repeated firing idempotent.
 CREATE TABLE triggers (
   id                  TEXT PRIMARY KEY,
   workflow_id         TEXT NOT NULL,
@@ -380,13 +402,13 @@ CREATE TABLE triggers (
 CREATE TABLE trigger_firings (
   id              TEXT PRIMARY KEY,
   trigger_id      TEXT NOT NULL REFERENCES triggers(id),
-  idempotency_key TEXT NOT NULL UNIQUE,
+  idempotency_key TEXT NOT NULL,
   fired_at        TEXT NOT NULL,
   run_id          TEXT REFERENCES workflow_runs(id),
   outcome         TEXT NOT NULL CHECK (outcome IN ('started', 'skipped_overlap', 'replaced', 'deduplicated', 'blocked', 'disabled')),
-  reason          TEXT
+  reason          TEXT,
+  UNIQUE (trigger_id, idempotency_key)
 );
-
 CREATE INDEX trigger_firings_trigger ON trigger_firings (trigger_id, fired_at);
 
 CREATE TABLE activity_events (
@@ -396,24 +418,20 @@ CREATE TABLE activity_events (
   run_id       TEXT,
   step_run_id  TEXT,
   actor        TEXT,
-  payload_json TEXT NOT NULL
+  payload_json TEXT NOT NULL,
+  session_id      TEXT,
+  agent           TEXT,
+  channel         TEXT
 );
-
 CREATE INDEX activity_run ON activity_events (run_id, id);
-
 CREATE TRIGGER activity_events_no_update BEFORE UPDATE ON activity_events
 BEGIN
   SELECT RAISE(ABORT, 'activity_events is append-only');
 END;
-
 CREATE TRIGGER activity_events_no_delete BEFORE DELETE ON activity_events
 BEGIN
   SELECT RAISE(ABORT, 'activity_events is append-only');
 END;
-
-CREATE UNIQUE INDEX workflow_runs_invocation ON workflow_runs (invocation_id) WHERE invocation_id IS NOT NULL;
-
-CREATE INDEX workflow_runs_work_identity ON workflow_runs (work_identity, state);
 
 CREATE TABLE work_items (
   id              TEXT PRIMARY KEY,
@@ -438,11 +456,14 @@ CREATE TABLE work_items (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   completed_at    TEXT,
-  reason          TEXT
+  reason          TEXT,
+  claim_session   TEXT,
+  claim_agent     TEXT,
+  claim_lane      TEXT,
+  claim_touched_at TEXT,
+  handoff_json    TEXT
 );
-
 CREATE INDEX work_items_status ON work_items (status, updated_at);
-
 CREATE INDEX work_items_parent ON work_items (parent_id);
 
 CREATE TABLE work_dependencies (
@@ -454,9 +475,7 @@ CREATE TABLE work_dependencies (
   CHECK (from_id <> to_id),
   UNIQUE (kind, from_id, to_id)
 );
-
 CREATE INDEX work_deps_from ON work_dependencies (from_id, kind);
-
 CREATE INDEX work_deps_to ON work_dependencies (to_id, kind);
 
 CREATE TABLE work_events (
@@ -468,14 +487,11 @@ CREATE TABLE work_events (
   expected_revision  INTEGER,
   payload_json       TEXT NOT NULL
 );
-
 CREATE INDEX work_events_work ON work_events (work_id, id);
-
 CREATE TRIGGER work_events_no_update BEFORE UPDATE ON work_events
 BEGIN
   SELECT RAISE(ABORT, 'work_events is append-only');
 END;
-
 CREATE TRIGGER work_events_no_delete BEFORE DELETE ON work_events
 BEGIN
   SELECT RAISE(ABORT, 'work_events is append-only');
@@ -487,7 +503,6 @@ CREATE TABLE work_legacy_ids (
   source      TEXT NOT NULL,
   created_at  TEXT NOT NULL
 );
-
 CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);
 
 CREATE TABLE work_runs (
@@ -499,29 +514,97 @@ CREATE TABLE work_runs (
 );
 
 CREATE TABLE reviews (
-  id               TEXT PRIMARY KEY,
-  subject_kind     TEXT NOT NULL CHECK (subject_kind IN ('deliverable', 'work_item', 'artifact', 'claim', 'run')),
-  subject_id       TEXT NOT NULL,
-  subject_revision TEXT NOT NULL,
-  method           TEXT NOT NULL,
-  reviewer         TEXT NOT NULL,
-  evidence_json    TEXT NOT NULL,
-  objections_json  TEXT NOT NULL,
+  id                TEXT PRIMARY KEY,
+  subject_kind      TEXT NOT NULL CHECK (subject_kind IN ('deliverable', 'work_item', 'artifact', 'claim', 'run')),
+  subject_id        TEXT NOT NULL,
+  subject_revision  TEXT NOT NULL,
+  method            TEXT NOT NULL,
+  reviewer          TEXT NOT NULL,
+  evidence_json     TEXT NOT NULL,
+  objections_json   TEXT NOT NULL,
   dispositions_json TEXT NOT NULL,
-  unresolved_json  TEXT NOT NULL,
-  status           TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'invalidated')),
-  created_at       TEXT NOT NULL,
-  updated_at       TEXT NOT NULL
+  unresolved_json   TEXT NOT NULL,
+  status            TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'invalidated')),
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL
 );
-
 CREATE INDEX reviews_subject ON reviews (subject_kind, subject_id, status);
 
+-- run_bindings is no longer written: every step row carries its frozen skill
+-- binding. It is dropped at the next state-format change rather than forcing a
+-- migration for cleanup alone.
 CREATE TABLE run_bindings (
-  run_id             TEXT PRIMARY KEY REFERENCES workflow_runs(id),
-  workflow_id        TEXT NOT NULL,
-  workflow_version   TEXT NOT NULL,
-  workflow_digest    TEXT NOT NULL,
+  run_id              TEXT PRIMARY KEY REFERENCES workflow_runs(id),
+  workflow_id         TEXT NOT NULL,
+  workflow_version    TEXT NOT NULL,
+  workflow_digest     TEXT NOT NULL,
   skill_bindings_json TEXT NOT NULL,
-  policy_digest      TEXT,
-  frozen_at          TEXT NOT NULL
+  policy_digest       TEXT,
+  frozen_at           TEXT NOT NULL
 );
+
+-- Every host session, command-line invocation, and runner that opened this
+-- store. Construct mints the id; what a host reports about itself is kept as
+-- attributes labeled by source and never grants anything.
+CREATE TABLE sessions (
+  id                  TEXT PRIMARY KEY,
+  host                TEXT NOT NULL,
+  surface             TEXT NOT NULL CHECK (surface IN ('interactive', 'headless', 'cli', 'hook')),
+  host_session_id     TEXT,
+  host_session_source TEXT,
+  client_name         TEXT,
+  client_version      TEXT,
+  model               TEXT,
+  model_source        TEXT,
+  machine             TEXT NOT NULL,
+  pid                 INTEGER,
+  serve_version       TEXT,
+  lane_root           TEXT,
+  branch              TEXT,
+  head                TEXT,
+  started_at          TEXT NOT NULL,
+  last_seen_at        TEXT NOT NULL,
+  ended_at            TEXT,
+  end_reason          TEXT,
+  activity_cursor     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX sessions_live ON sessions (ended_at, last_seen_at);
+
+-- Agents seen inside a session (subagents, parallel agents). Attestation says
+-- whether the host vouched for the id or the agent only reported it.
+CREATE TABLE session_agents (
+  session_id      TEXT NOT NULL REFERENCES sessions(id),
+  agent           TEXT NOT NULL,
+  host_agent_id   TEXT,
+  agent_type      TEXT,
+  parent_agent    TEXT,
+  attestation     TEXT NOT NULL CHECK (attestation IN ('host', 'reported')),
+  lane_root       TEXT,
+  first_seen_at   TEXT NOT NULL,
+  last_seen_at    TEXT NOT NULL,
+  PRIMARY KEY (session_id, agent)
+);
+
+-- Advisory reservations of repository paths, held for a work item.
+CREATE TABLE path_leases (
+  id              TEXT PRIMARY KEY,
+  work_id         TEXT NOT NULL REFERENCES work_items(id),
+  session_id      TEXT NOT NULL,
+  agent           TEXT,
+  lane_root       TEXT NOT NULL,
+  branch          TEXT,
+  path            TEXT NOT NULL,
+  mode            TEXT NOT NULL CHECK (mode IN ('exclusive', 'shared')),
+  token           TEXT NOT NULL,
+  created_at      TEXT NOT NULL,
+  until           TEXT NOT NULL,
+  released_at     TEXT,
+  release_reason  TEXT
+);
+CREATE INDEX path_leases_live ON path_leases (released_at, until);
+
+INSERT INTO meta VALUES ('format', 'construct-state'), ('format_version', '5');
+INSERT INTO work_items (id, kind, title, description, status, created_at, updated_at) VALUES
+ ('w-one', 'task', 'First item', 'Keep this work', 'open', '2026-10-19T00:00:00Z', '2026-10-19T00:00:00Z'),
+ ('w-two', 'task', 'Second item', 'Keep this too', 'completed', '2026-10-19T00:00:00Z', '2026-10-19T00:00:00Z');
+INSERT INTO work_legacy_ids VALUES ('old-one', 'w-one', 'import', '2026-10-19T00:00:00Z');

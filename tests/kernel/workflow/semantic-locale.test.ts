@@ -27,12 +27,6 @@ try {
   const p=readPreparedReview(store,input.ref);
   const again=p?prepareSemanticReview(store,args):null;
   process.stdout.write(JSON.stringify({readable:!!p,problems:p?reviewFreshnessProblems(store,p,resolve):[],digest:again?.digest,ref:again?.ref,contractValid:p?reviewContractDigest(p.bundle)===p.bundle.contractDigest:false}));
- } else if(input.mode==='legacy') {
-  const p=readPreparedReview(store,input.ref), bundle={...p.bundle}; delete bundle.canonicalization;
-  bundle.stepRunId=listSteps(store,run.id).at(-1).id;
-  bundle.contractDigest=reviewDigest(bundle.contract);
-  const event=appendActivity(store,{kind:'semantic.prepared',channel:'kernel',runId:run.id,stepRunId:bundle.stepRunId,at:input.at,payload:{bundle,digest:reviewDigest(bundle)}});
-  process.stdout.write(JSON.stringify({ref:'review:'+event.id}));
  } else {
   const p=readPreparedReview(store,input.ref);
   process.stdout.write(JSON.stringify({readable:!!p,problems:semanticReviewStatus(store,run,resolve,input.at).problems,unrelated:canonicalReview({canonicalization:'utf16-codeunit-v1',z:1,'ä':2})}));
@@ -84,17 +78,10 @@ test('new Unicode-bearing packets and unchanged resubmissions survive a locale h
     assert.deepEqual(migrated.problems, []);
     assert.equal(migrated.digest, initial.digest);
     assert.equal(migrated.ref, initial.ref, 'unchanged resubmission retains its prepared generation');
-    const legacy = invoke('en_US.UTF-8', { mode: 'legacy', ref: initial.ref });
-    const localLegacy = invoke('en_US.UTF-8', { mode: 'legacy-read', ref: legacy.ref });
-    const foreignLegacy = invoke('sv_SE.UTF-8', { mode: 'legacy-read', ref: legacy.ref });
-    assert.equal(localLegacy.readable, true, 'legacy serialization is preserved under its original locale');
-    assert.equal(foreignLegacy.readable, false, 'a legacy digest must not be silently rehashed as a supported new packet');
-    assert.match(foreignLegacy.problems.join(), /legacy.*locale-dependent canonicalization/);
-    assert.notEqual(
-      localLegacy.unrelated,
-      foreignLegacy.unrelated,
-      'arbitrary user objects and other frozen hash callers retain legacy behavior',
-    );
+    const local = invoke('en_US.UTF-8', { mode: 'status', ref: initial.ref });
+    const foreign = invoke('sv_SE.UTF-8', { mode: 'status', ref: initial.ref });
+    assert.equal(foreign.readable, true, 'a review packet reads the same under another locale');
+    assert.notEqual(local.unrelated, foreign.unrelated, 'other frozen digests keep the serialization they were frozen with');
   } finally {
     f.cleanup();
   }

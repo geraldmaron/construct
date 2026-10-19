@@ -42,22 +42,20 @@ test('reset names exact targets and removes only what was confirmed', () => {
   const { root, cleanup } = tmpProject();
   try {
     initializeProject({ root, projectId: 'p', name: 'p', at: AT }).store.close();
-    mkdirSync(join(root, '.construct'), { recursive: true });
-    writeFileSync(join(root, '.construct', 'settings.json'), '{}', 'utf8');
+    const db = join(root, '.construct', 'state', 'construct.sqlite');
     const plan = planReset(root);
     assert.deepEqual(
-      plan.targets.map((t) => t.path).sort(),
-      [join(root, '.construct', 'settings.json'), join(root, '.construct', 'state', 'construct.sqlite')].sort(),
+      plan.targets.map((t) => t.path),
+      [db],
     );
     assert.throws(() => applyReset(plan, []), ResetNotConfirmedError);
     assert.throws(() => applyReset(plan, [join(root, '.construct', 'project.json')]), /did not name/);
-    const removed = applyReset(plan, [join(root, '.construct', 'settings.json')]);
-    assert.deepEqual(removed, [join(root, '.construct', 'settings.json')]);
-    assert.equal(existsSync(join(root, '.construct', 'state', 'construct.sqlite')), true);
+    assert.deepEqual(applyReset(plan, [db]), [db]);
+    assert.equal(existsSync(db), false);
     assert.equal(existsSync(join(root, '.construct', 'project.json')), true);
 
     const full = planReset(root, { includeProjectFiles: true });
-    assert.equal(full.targets.length, 5);
+    assert.equal(full.targets.length, 4, 'the four project files; the database is already gone');
     applyReset(
       full,
       full.targets.map((t) => t.path),

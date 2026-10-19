@@ -7,7 +7,7 @@ import { contextIndexStatus } from '../kernel/context/retrieval.ts';
 import { existsSync, accessSync, constants, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
+import { detectUnsupportedProjectFiles } from '../kernel/project/unsupported-files.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
@@ -103,8 +103,8 @@ function personalSkillChecks(ctx: CliContext): Check[] {
 
 /**
  * The platform timers on this machine that fire Construct triggers. One that
- * names a project or trigger that is gone fires into nothing every slot, the
- * shape the earlier resident daemons leaked in, so it fails health.
+ * names a project or trigger that is gone fires into nothing every slot, so it
+ * fails health.
  */
 function timerCheck(ctx: CliContext, projectId: string | null, root: string, store: StateStore): Check {
   const rows = timerRows(ctx, { id: projectId, root, store });
@@ -251,12 +251,12 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         });
       }
     }
-    const legacy = detectLegacyProjectFiles(root);
-    if (legacy.length > 0) {
+    const unsupported = detectUnsupportedProjectFiles(root);
+    if (unsupported.length > 0) {
       checks.push({
-        name: 'legacy-files',
+        name: 'project-files',
         ok: false,
-        detail: `${legacy.map((t) => t.path).join(', ')}: earlier alpha files; run \`construct reset\``,
+        detail: `${unsupported.map((t) => t.path).join(', ')}: in a format this version does not read; run \`construct reset\``,
       });
     }
     try {

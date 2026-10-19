@@ -743,13 +743,17 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
   // workflowId: a workflow that can carry this reading.
   if (workflowId !== null) {
     const domain = isRecord(r.inputs) && typeof r.inputs.domain === 'string' ? r.inputs.domain : skill;
-    const named = catalog.workflows.find(
-      (w) => w.manifest.id === workflowId || (w.canonicalId === workflowId && (domain === null || w.domain === domain)),
+    const bindings = catalog.workflows.filter(
+      (w) => (w.canonicalId ?? w.manifest.id) === workflowId && (!w.domain || domain === null || w.domain === domain),
     );
-    const ids = catalog.workflows.filter(matchable).map((w) => w.manifest.id);
+    // With no domain named, any binding of the workflow that can carry the reading will do.
+    const named = (work ? bindings.find((w) => matchable(w) && workflowCarries(w, kind, schedule)) : undefined) ?? bindings[0];
+    const ids = [...new Set(catalog.workflows.filter(matchable).map((w) => w.manifest.id))];
     if (!named || !matchable(named)) fail('workflowId', `no workflow "${workflowId}" carries work here`, ids);
     if (work && !workflowCarries(named, kind, schedule)) {
-      const fits = catalog.workflows.filter((w) => matchable(w) && workflowCarries(w, kind, schedule)).map((w) => w.manifest.id);
+      const fits = [
+        ...new Set(catalog.workflows.filter((w) => matchable(w) && workflowCarries(w, kind, schedule)).map((w) => w.manifest.id)),
+      ];
       fail('workflowId', `${workflowId} cannot carry this ${kind} reading: it starts on ${named.manifest.triggers.join(', ')}`, fits);
     }
   }
@@ -930,8 +934,9 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
   const skillFirst = (ws: readonly RegisteredWorkflow[]): RegisteredWorkflow[] => [...ws.filter(binds), ...ws.filter((w) => !binds(w))];
   const add = (ws: readonly RegisteredWorkflow[], because: (w: RegisteredWorkflow) => MatchReason): void => {
     for (const w of ws) {
-      if (out.has(w.manifest.id)) continue;
-      out.set(w.manifest.id, {
+      const key = w.domain ? `${w.canonicalId ?? w.manifest.id}/${w.domain}` : w.manifest.id;
+      if (out.has(key)) continue;
+      out.set(key, {
         workflowId: w.canonicalId ?? w.manifest.id,
         ...(w.domain ? { domain: w.domain } : {}),
         title: w.manifest.title,
@@ -1124,9 +1129,7 @@ export function questionsFor(
   }
   const workflow = firstMatch
     ? (catalog.workflows.find(
-        (w) =>
-          w.manifest.id === firstMatch.workflowId ||
-          ((w.canonicalId ?? w.manifest.id) === firstMatch.workflowId && w.domain === firstMatch.domain),
+        (w) => (w.canonicalId ?? w.manifest.id) === firstMatch.workflowId && (w.domain ?? null) === (firstMatch.domain ?? null),
       ) ?? null)
     : null;
   if (workflow) {

@@ -324,53 +324,28 @@ function checkout(fx: SterileFixture): { readonly root: string; readonly stateDi
   return { root, stateDir: join(root, '.construct', 'state'), env };
 }
 
-/** A grounding hook as an earlier release wrote it into the shared file: this machine's Node and install, by absolute path. */
-const committedHook = (event: string, matcher?: string) => ({
-  ...(matcher ? { matcher } : {}),
-  hooks: [
-    {
-      type: 'command',
-      command: `/opt/teammate/node/bin/node /opt/teammate/lib/node_modules/@geraldmaron/construct/bin/construct.mjs hook ${event} --client=claude-code --project=/opt/teammate/repo`,
-      timeout: 20,
-    },
-  ],
-});
-
 const AT = '2026-10-08T12:00:00.000Z';
 
-test("the grounding hooks go into the checkout's machine-local settings and run through the launcher; Construct's old entries leave the shared file and the person's stay", () => {
+test("the grounding hooks go into the checkout's machine-local settings and run through the launcher; the shared file is never written", () => {
   const fx = sterile();
   try {
     const { root, stateDir, env } = checkout(fx);
     const place = { checkout: root, stateDir };
     const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
-    const mine = { hooks: [{ type: 'command', command: 'say done' }] };
-    writeFileSync(
-      shared,
-      `${JSON.stringify({ model: 'x', hooks: { PostToolUse: [committedHook('post-tool', '*')], Stop: [mine, committedHook('stop')], SessionStart: [committedHook('session-start')] } }, null, 2)}\n`,
-    );
-    const before = inspectHooks(root, place);
-    assert.equal(before.status, 'stale');
-    assert.match(
-      before.detail,
-      /^\.claude\/settings\.json, the shared file, still holds 3 construct hook\(s\) that name one machine's Node and install; `construct init --client=claude-code` repairs them$/,
-    );
+    const sharedText = `${JSON.stringify({ model: 'x', hooks: { Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }] } }, null, 2)}\n`;
+    writeFileSync(shared, sharedText);
+    assert.equal(inspectHooks(root, place).status, 'absent');
 
     const state = installHooks(root, { ...place, env, at: AT });
     assert.equal(state.status, 'installed', state.detail);
     assert.equal(state.path, join(root, '.claude', 'settings.local.json'));
-    assert.match(state.detail, /moved 3 old construct hook\(s\) out of \.claude\/settings\.json$/);
-    assert.deepEqual(
-      JSON.parse(readFileSync(shared, 'utf8')),
-      { model: 'x', hooks: { Stop: [mine] } },
-      "the person's own Stop hook stays, and so do their settings",
-    );
+    assert.equal(readFileSync(shared, 'utf8'), sharedText, "the person's shared settings are untouched");
 
     const local = JSON.parse(readFileSync(join(root, HOOK_SETTINGS_PATH), 'utf8')) as {
       hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]>;
     };
     assert.deepEqual(Object.keys(local.hooks), ['PostToolUse', 'Stop', 'SessionStart']);
-    assert.equal(local.hooks.PostToolUse![0]!.matcher, '*');
+    assert.equal(local.hooks.PostToolUse![0]!.matcher, 'mcp__.*');
     for (const [hostEvent, event] of [
       ['PostToolUse', 'post-tool'],
       ['Stop', 'stop'],
@@ -451,7 +426,10 @@ test('re-running the install is byte-identical, and init repairs an entry that d
     assert.equal(readFileSync(local, 'utf8'), first[0], 'the stale entry is rewritten, not kept beside a new one');
 
     writeFileSync(local, '{ not json');
-    writeFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), JSON.stringify({ hooks: { Stop: [committedHook('stop')] } }));
+    writeFileSync(
+      join(root, SHARED_HOOK_SETTINGS_PATH),
+      JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }] } }),
+    );
     const sharedBefore = readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8');
     assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'broken');
     assert.equal(readFileSync(local, 'utf8'), '{ not json', 'a file that is not JSON is never rewritten');
@@ -513,7 +491,7 @@ test('a machine-local settings file git tracks is never written, because what is
     const local = join(root, HOOK_SETTINGS_PATH);
     const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
     writeFileSync(local, `${JSON.stringify({ permissions: { allow: ['Bash(ls)'] } }, null, 2)}\n`);
-    writeFileSync(shared, `${JSON.stringify({ hooks: { Stop: [committedHook('stop')] } }, null, 2)}\n`);
+    writeFileSync(shared, `${JSON.stringify({ hooks: { Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }] } }, null, 2)}\n`);
     const gitEnv = {
       ...env,
       GIT_AUTHOR_NAME: 'fixture',
@@ -906,6 +884,29 @@ test('an issue is recorded under the browse page its REST self link names, unles
     assert.equal(
       currentManifest(fx.broker.store, 'jira-plat')!.find((e) => e.ref === 'PLAT-101')?.url,
       'https://acme.atlassian.net/browse/PLAT-101',
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a grounding hook installed on every tool reads as stale, and installing again narrows it to MCP tools', () => {
+  const fx = sterile();
+  try {
+    const { root, stateDir, env } = checkout(fx);
+    const place = { checkout: root, stateDir };
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
+    const path = join(root, HOOK_SETTINGS_PATH);
+    const settings = JSON.parse(readFileSync(path, 'utf8')) as { hooks: Record<string, { matcher?: string }[]> };
+    settings.hooks.PostToolUse![0]!.matcher = '*';
+    writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`);
+    const before = inspectHooks(root, place);
+    assert.equal(before.status, 'stale', before.detail);
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
+    const after = JSON.parse(readFileSync(path, 'utf8')) as typeof settings;
+    assert.deepEqual(
+      after.hooks.PostToolUse!.map((e) => e.matcher),
+      ['mcp__.*'],
     );
   } finally {
     fx.cleanup();

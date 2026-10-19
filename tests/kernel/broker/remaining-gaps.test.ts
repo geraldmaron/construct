@@ -202,7 +202,10 @@ test('skill impact is measured from runs: first-pass rate, attempts, and which c
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.broker.root, 'docs', 'notes.md'), 'Polling hurts.\n');
-    const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
+    const started = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD', target: 'docs/prd.md' },
+    });
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { summary: 's', findings: ['f'], material: [] }, [{ ref: 'docs/notes.md' }]);
     await submit(fx, await step(fx, runId), { summary: 's', findings: ['f'], material: [], conflicts: [], unknowns: [] }, [

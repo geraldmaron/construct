@@ -1,17 +1,14 @@
 /**
  * kernel/state/format.ts — Construct state format identity.
  *
- * A state file carries its format id and version in the `meta` table. A file
- * in a foreign or ancient format, or missing one of its format's tables, is
- * refused unread and the operator resets. A file in format 2, 3 or 4 is upgraded
- * only by `construct migrate`, once every Construct session on the project is
- * stopped; it backs the file up first. A file in a newer format was written
- * by a newer Construct and is never reset on this build's say-so: the
- * operator upgrades Construct.
+ * A complete store one format behind (5) is upgraded only by `construct migrate`,
+ * once every session is stopped; the command backs the file up first. Older,
+ * foreign, or incomplete stores are refused unread and the operator resets.
+ * A newer format is refused as newer; the operator upgrades Construct.
  */
 
 export const STATE_FORMAT_ID = 'construct-state';
-export const STATE_FORMAT_VERSION = 5;
+export const STATE_FORMAT_VERSION = 6;
 
 export const UNSUPPORTED_STATE_MESSAGE =
   'This Construct state was written by a format this version does not read.\n' +

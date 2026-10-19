@@ -5,15 +5,9 @@
  * only when it is not (a packaged install, whose files[] ships bin, dist and
  * schemas but no src).
  *
- * The order used to be the other way round, and that was the defect in
- * construct-0dj: dist/ is gitignored build output that `npm run smoke` creates
- * as a side effect of prepack and never removes, so after one smoke run a dev
- * checkout permanently held a dist/ that aged against src/. Every test spawning
- * this launcher as a subprocess then exercised the stale build while the same
- * test's in-process fixtures exercised src/ — two halves of one test running
- * different builds of the codebase. It surfaced as a false red when a
- * SCHEMA_VERSION bump made the child refuse the fixture's store; the inverse, a
- * stale-but-compatible dist producing a false green, announces nothing.
+ * src/ wins whenever it is present because dist/ is gitignored build output
+ * that `npm run smoke` leaves behind; preferring it would let a subprocess run
+ * a stale build while the same test's in-process fixtures run src/.
  *
  * Preferring src loses no coverage of the packaged path: that path is proven by
  * scripts/smoke-packaged-install.sh, which installs a real tarball into a

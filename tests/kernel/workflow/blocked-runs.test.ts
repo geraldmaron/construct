@@ -265,13 +265,13 @@ test('through the tools: an undeclared input is refused and leaves no run, a cla
     assert.ok(work.work, 'the corrected run hands out work');
 
     const brief = await call(fx, 'start_outcome', {
-      workflowId: 'research-brief',
-      input: { question: 'Why did churn rise?', scope: 'enterprise' },
+      workflowId: 'authoring',
+      input: { domain: 'investigative-research', question: 'Why did churn rise?', scope: 'enterprise' },
     });
     assert.equal(brief.created, true);
     const reused = await call(fx, 'start_outcome', {
-      workflowId: 'research-brief',
-      input: { question: 'Why did churn rise?', scope: 'self-serve' },
+      workflowId: 'authoring',
+      input: { domain: 'investigative-research', question: 'Why did churn rise?', scope: 'self-serve' },
     });
     assert.equal(reused.created, false);
     assert.equal(reused.run.id, brief.run.id);

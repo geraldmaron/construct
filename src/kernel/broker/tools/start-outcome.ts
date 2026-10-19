@@ -103,19 +103,24 @@ export const startOutcome = define<{ workflowId: string; input?: Record<string, 
       const catalog = intakeCatalog(ctx);
       const validated = fromIntake(() => validateIntake(intake, catalog, 'start'));
       const matches = matchWorkflows(validated.intake, catalog);
-      const requested = ctx.workflows.get(
-        workflowId,
-        explicit.domain ?? validated.intake.inputs.domain ?? validated.intake.skill ?? undefined,
-      );
+      const requestedDomain = explicit.domain ?? validated.intake.inputs.domain ?? validated.intake.skill ?? undefined;
+      const requested = ctx.workflows.get(workflowId, requestedDomain);
+      const declared = ctx.workflows.get(workflowId)?.manifest.domains;
+      if (declared && typeof requestedDomain === 'string' && !Object.hasOwn(declared, requestedDomain))
+        throw new ToolInputError(`${workflowId} declares no domain "${requestedDomain}"`, {
+          field: 'domain',
+          allowed: Object.keys(declared),
+        });
       const match = matches.find(
         (m) => m.workflowId === (requested?.canonicalId ?? workflowId) && (!requested?.domain || m.domain === requested.domain),
       );
       if (!match)
         throw new ToolInputError(`${workflowId} does not carry this reading; start one of the workflows it matched`, {
           field: 'workflowId',
-          allowed: matches.map((m) => m.workflowId),
+          allowed: [...new Set(matches.map((m) => m.workflowId))],
         });
-      const workflow = ctx.workflows.get(workflowId, explicit.domain ?? match.domain)!;
+      const workflow = ctx.workflows.get(workflowId, explicit.domain ?? match.domain);
+      if (!workflow) throw new ToolInputError(`${workflowId} has no binding for this reading`, { field: 'workflowId' });
       const { input: mapped } = mappedInput(validated.intake, workflow, explicit, true);
       refuseWrongInput(ctx, workflow, mapped);
       const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, match, catalog, explicit));

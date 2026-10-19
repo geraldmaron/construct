@@ -82,19 +82,6 @@ export function createWork(store: StateStore, input: CreateWorkInput): WorkItem 
   });
 }
 
-export function bindLegacyId(
-  store: StateStore,
-  input: { readonly legacyId: string; readonly workId: string; readonly source: string; readonly at: string },
-): void {
-  requireNonEmpty(input.legacyId, 'legacy.id');
-  store.db
-    .prepare(
-      `INSERT INTO work_legacy_ids (legacy_id, work_id, source, created_at) VALUES (?, ?, ?, ?)
-       ON CONFLICT(legacy_id) DO NOTHING`,
-    )
-    .run(input.legacyId, input.workId, input.source, input.at);
-}
-
 export function addWorkDependency(
   store: StateStore,
   input: { readonly id: string; readonly fromId: string; readonly toId: string; readonly kind: WorkDepKind; readonly at: string },

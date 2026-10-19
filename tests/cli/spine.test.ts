@@ -58,7 +58,7 @@ test('init creates the exact layout, one database, the ignore rule, and plants t
   }
 });
 
-test('init refuses a bad scale before writing, and an earlier-alpha file with the reset instruction', async () => {
+test('init refuses a bad scale before writing, and a project file in an unsupported format with the reset instruction', async () => {
   const box = sandbox();
   try {
     const bad = await capture(() => run(['init', '--scale=huge'], box.ctx));
@@ -75,13 +75,13 @@ test('init refuses a bad scale before writing, and an earlier-alpha file with th
     assert.match(relayed.err, /side project, which lowers how much challenge work gets, needs your own answer/);
     assert.equal(existsSync(join(box.cwd, '.construct')), false);
     mkdirSync(join(box.cwd, '.construct'));
-    writeFileSync(join(box.cwd, '.construct', 'settings.json'), 'not json', 'utf8');
-    const legacy = await capture(() => run(['init'], box.ctx));
-    assert.equal(legacy.code, 1);
-    assert.match(legacy.err, /earlier Construct alpha/);
-    assert.match(legacy.err, /settings\.json/);
-    assert.match(legacy.err, /construct reset/);
-    assert.doesNotMatch(legacy.err, /    at /);
+    writeFileSync(join(box.cwd, '.construct', 'project.json'), JSON.stringify({ format: 'construct-project', formatVersion: 1 }), 'utf8');
+    const unsupported = await capture(() => run(['init'], box.ctx));
+    assert.equal(unsupported.code, 1);
+    assert.match(unsupported.err, /in a format this version does not read/);
+    assert.match(unsupported.err, /project\.json/);
+    assert.match(unsupported.err, /construct reset/);
+    assert.doesNotMatch(unsupported.err, /    at /);
   } finally {
     box.cleanup();
   }
@@ -324,17 +324,13 @@ test('skills list, show, install, verify, and remove use the shipped bytes', asy
 
 test('reset previews the exact targets, removes only them on --confirm, and recreates state', async () => {
   await inProject(async (ctx, box) => {
-    writeFileSync(join(box.cwd, '.construct', 'settings.json'), '{}', 'utf8');
     const preview = await capture(() => run(['reset'], ctx));
     assert.equal(preview.code, 0);
-    assert.match(preview.out, /settings\.json/);
     assert.match(preview.out, /construct\.sqlite/);
     assert.match(preview.out, /Nothing was removed/);
-    assert.ok(existsSync(join(box.cwd, '.construct', 'settings.json')));
     const projectBefore = readFileSync(join(box.cwd, '.construct', 'project.json'), 'utf8');
     const confirmed = await capture(() => run(['reset', '--confirm'], ctx));
     assert.equal(confirmed.code, 0, confirmed.err);
-    assert.equal(existsSync(join(box.cwd, '.construct', 'settings.json')), false);
     assert.ok(existsSync(join(box.cwd, '.construct', 'state', 'construct.sqlite')));
     assert.equal(
       readFileSync(join(box.cwd, '.construct', 'project.json'), 'utf8'),

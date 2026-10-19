@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { initializeProject, LegacyProjectError, readProjectFiles } from '../../../src/kernel/project/initialize.ts';
+import { initializeProject, UnsupportedProjectFilesError, readProjectFiles } from '../../../src/kernel/project/initialize.ts';
 import { projectLayout, STATE_GITIGNORE_PATTERN } from '../../../src/kernel/project/layout.ts';
 import { ProjectFileError, UnsupportedProjectFileError } from '../../../src/kernel/project/files.ts';
 import { getProfile } from '../../../src/kernel/state/profile.ts';
@@ -80,27 +80,7 @@ test('a second init keeps every existing file and reopens the same database', ()
   }
 });
 
-test('an earlier alpha settings file stops init, is named exactly, and is never parsed', () => {
-  const { root, cleanup } = tmpProject();
-  try {
-    mkdirSync(join(root, '.construct'), { recursive: true });
-    writeFileSync(join(root, '.construct', 'settings.json'), 'this is not even json {{{', 'utf8');
-    assert.throws(
-      () => initializeProject(input(root)),
-      (err: unknown) =>
-        err instanceof LegacyProjectError &&
-        err.targets.length === 1 &&
-        err.targets[0]!.path === join(root, '.construct', 'settings.json') &&
-        /construct reset/.test(err.message),
-    );
-    assert.equal(existsSync(join(root, '.construct', 'project.json')), false);
-    assert.equal(existsSync(join(root, '.construct', 'state')), false);
-  } finally {
-    cleanup();
-  }
-});
-
-test('a format-1 project.json is recognized by its stamp and refused without migration', () => {
+test('a project.json in a format this version does not read is refused by its stamp, unparsed', () => {
   const { root, cleanup } = tmpProject();
   try {
     mkdirSync(join(root, '.construct'), { recursive: true });
@@ -111,7 +91,7 @@ test('a format-1 project.json is recognized by its stamp and refused without mig
     );
     assert.throws(
       () => initializeProject(input(root)),
-      (err: unknown) => err instanceof LegacyProjectError && /format construct-project 1/.test(err.targets[0]!.what),
+      (err: unknown) => err instanceof UnsupportedProjectFilesError && /format construct-project 1/.test(err.targets[0]!.what),
     );
     const after = JSON.parse(readFileSync(join(root, '.construct', 'project.json'), 'utf8'));
     assert.equal(after.formatVersion, 1);

@@ -23,13 +23,23 @@ test('a reading that asks for a PRD, an RFC or a proposal matches its authoring 
   const fx = brokerFixture();
   try {
     const cases: [string, string, string, string][] = [
-      ['Write a PRD for public webhooks using our PRD template.', 'document/prd', 'requirements-structuring', 'prd-authoring'],
-      ['Draft an RFC for webhook event delivery, building on RFC-012.', 'document/rfc', 'system-architecture', 'rfc-authoring'],
+      [
+        'Write a PRD for public webhooks using our PRD template.',
+        'document/prd',
+        'requirements-structuring',
+        'authoring/requirements-structuring',
+      ],
+      [
+        'Draft an RFC for webhook event delivery, building on RFC-012.',
+        'document/rfc',
+        'system-architecture',
+        'authoring/system-architecture',
+      ],
       [
         'Write a one-page proposal for Sam to fully fund webhooks this half.',
         'document/proposal',
         'decision-framing',
-        'proposal-authoring',
+        'authoring/decision-framing',
       ],
     ];
     for (const [words, kind, skill, workflow] of cases) {
@@ -64,8 +74,13 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     writeFileSync(join(root, 'docs', 'metrics.md'), '429 responses per month: June 1.6M, September 2.1M.\n');
     writeFileSync(join(root, 'docs', 'okrs.md'), 'KR2: reduce API 429 responses by 50% vs the June baseline.\n');
     const started = await call(fx, 'start_outcome', {
-      workflowId: 'prd-authoring',
-      input: { request: 'PRD for webhooks', target: 'docs/prd-webhooks.md', template: 'docs/templates/prd.md' },
+      workflowId: 'authoring',
+      input: {
+        domain: 'requirements-structuring',
+        request: 'PRD for webhooks',
+        target: 'docs/prd-webhooks.md',
+        template: 'docs/templates/prd.md',
+      },
     });
     assert.equal(started.preflight.status, 'runnable', started.preflight.summary);
     const runId = started.run.id as string;
@@ -143,7 +158,10 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     const root = fx.broker.root;
     writeFileSync(join(root, 'docs', 'notes.md'), 'Customers poll the jobs API.\n');
     writeFileSync(join(root, 'docs', 'prd.md'), '# PRD\n## Problem\nPolling costs $9.9M a year.\n');
-    const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
+    const started = await call(fx, 'start_outcome', {
+      workflowId: 'authoring',
+      input: { domain: 'requirements-structuring', request: 'PRD', target: 'docs/prd.md' },
+    });
     const runId = started.run.id as string;
     const step = async () => (await call(fx, 'claim_work', { runId })).work;
     const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string }[]) =>
@@ -193,7 +211,7 @@ test('when checks keep failing the person decides: the work is kept, an accepted
   }
 });
 
-test('canonical starts select domain inputs, aliases infer domains, and domains isolate run identity', async () => {
+test('canonical starts select domain inputs, and domains isolate run identity', async () => {
   const fx = brokerFixture();
   try {
     const research = await call(fx, 'start_outcome', {
@@ -203,10 +221,10 @@ test('canonical starts select domain inputs, aliases infer domains, and domains 
     assert.equal(research.run.workflow, 'authoring');
     assert.equal(research.run.domain, 'investigative-research');
     const same = await call(fx, 'start_outcome', {
-      workflowId: 'research-brief',
-      input: { question: 'What does the design establish?' },
+      workflowId: 'authoring',
+      input: { domain: 'investigative-research', question: 'What does the design establish?' },
     });
-    assert.equal(same.run.id, research.run.id, 'an alias and its canonical domain identify the same work');
+    assert.equal(same.run.id, research.run.id, 'the same workflow, domain and input identify the same work');
     const missingAudience = await call(fx, 'start_outcome', {
       workflowId: 'authoring',
       input: { domain: 'decision-framing', request: 'Recommend the next step', target: 'docs/proposal.md' },
@@ -216,7 +234,10 @@ test('canonical starts select domain inputs, aliases infer domains, and domains 
       missingAudience.questions.map((q: any) => q.slot),
       ['audience'],
     );
-    const first = await call(fx, 'start_outcome', { workflowId: 'architecture-decision-review', input: { target: 'docs/design.md' } });
+    const first = await call(fx, 'start_outcome', {
+      workflowId: 'review',
+      input: { domain: 'system-architecture', target: 'docs/design.md' },
+    });
     const other = await call(fx, 'start_outcome', {
       workflowId: 'review',
       input: { domain: 'security-privacy', target: 'docs/design.md' },
@@ -230,12 +251,6 @@ test('canonical starts select domain inputs, aliases infer domains, and domains 
       input: { domain: 'system-architecture', target: 'docs/design.md' },
     });
     assert.equal(again.run.id, first.run.id);
-    await assert.rejects(
-      call(fx, 'start_outcome', {
-        workflowId: 'architecture-decision-review',
-        input: { domain: 'security-privacy', target: 'docs/design.md' },
-      }),
-    );
     const classified = await call(fx, 'classify_request', {
       kind: 'manage',
       words: 'Review privacy boundaries',
@@ -246,30 +261,6 @@ test('canonical starts select domain inputs, aliases infer domains, and domains 
     });
     assert.equal(classified.matches[0].workflowId, 'review');
     assert.equal(classified.matches[0].domain, 'security-privacy');
-  } finally {
-    fx.cleanup();
-  }
-});
-
-test('an existing trigger addressed by a review alias fires its canonical domain', () => {
-  const fx = brokerFixture();
-  try {
-    const trigger = fx.broker.triggers.define({
-      workflowId: 'architecture-decision-review',
-      kind: 'schedule',
-      scheduleExpression: '0 9 * * 1',
-      timezone: 'UTC',
-      adapter: 'cron',
-      overlap: 'skip',
-      maxTier: 'project_write',
-      delivery: {},
-      input: { target: 'docs/design.md' },
-    });
-    const fired = fx.broker.triggers.fire({ triggerId: trigger.id, firingKey: 'first-tick' });
-    assert.equal(fired.outcome, 'started');
-    const run = fx.broker.workflow.status(fired.runId!)!.run;
-    assert.equal(run.workflowId, 'review');
-    assert.equal((run.input as Record<string, unknown>).domain, 'system-architecture');
   } finally {
     fx.cleanup();
   }

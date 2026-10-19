@@ -108,7 +108,7 @@ export function verificationReceipt(input: {
     checks: input.checks.map(({ validator, ok }) => ({ validator, ok })),
   };
 }
-/** A prior claim keeps its observed bytes. Legacy citations without receipts stay unwitnessed. */
+/** A prior claim keeps its observed bytes. A citation from a step that recorded no receipt stays unwitnessed. */
 export function inheritedEvidence(steps: readonly StepRun[]): ContentReceipt[] {
   const held = new Map<string, ContentReceipt>();
   for (const step of steps.filter((s) => s.state === 'succeeded')) {
@@ -118,7 +118,7 @@ export function inheritedEvidence(steps: readonly StepRun[]): ContentReceipt[] {
       held.set(key, entry);
     }
     if (!output?.verificationReceipt)
-      for (const { ref } of output?.evidence ?? []) held.set(ref, { ref, digest: null, provenance: 'legacy_unwitnessed' });
+      for (const { ref } of output?.evidence ?? []) held.set(ref, { ref, digest: null, provenance: 'unwitnessed' });
   }
   return [...held.values()];
 }

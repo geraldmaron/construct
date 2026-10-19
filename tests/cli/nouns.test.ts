@@ -19,7 +19,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
     assert.match(list.out, /^design-conformance\s+\d+\.\d+\.\d+\s+builtin\s+manage/m);
-    assert.match(list.out, /^review\s+2\.0\.0\s+builtin\s+manage/m);
+    assert.match(list.out, /^review\s+\d+\.\d+\.\d+\s+builtin\s+manage/m);
     assert.doesNotMatch(list.out, /^remember\s/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
@@ -72,14 +72,34 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
 test('workflow run says when a corrected start replaced a blocked run and when a reused run was started with other values', async () => {
   await inProject(async (ctx) => {
     const wrong = await capture(() =>
-      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx),
+      run(
+        [
+          'workflow',
+          'run',
+          'authoring',
+          '--input=domain=investigative-research',
+          '--input=question=Why did churn rise?',
+          '--input=dateRange=Q3',
+        ],
+        ctx,
+      ),
     );
     assert.equal(wrong.code, 1);
     assert.match(wrong.out, /^started: run (\S+) \(blocked\)/m);
     assert.match(wrong.out, /or run this again with the input corrected; it says when it replaces this run\./);
     const blockedId = /^started: run (\S+) \(blocked\)/m.exec(wrong.out)![1]!;
     const retried = await capture(() =>
-      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx),
+      run(
+        [
+          'workflow',
+          'run',
+          'authoring',
+          '--input=domain=investigative-research',
+          '--input=question=Why did churn rise?',
+          '--input=dateRange=Q3',
+        ],
+        ctx,
+      ),
     );
     assert.equal(retried.code, 1);
     assert.match(
@@ -88,19 +108,50 @@ test('workflow run says when a corrected start replaced a blocked run and when a
       'the same start checks the blocked run again; it is not called running',
     );
     const fixed = await capture(() =>
-      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=enterprise'], ctx),
+      run(
+        [
+          'workflow',
+          'run',
+          'authoring',
+          '--input=domain=investigative-research',
+          '--input=question=Why did churn rise?',
+          '--input=scope=enterprise',
+        ],
+        ctx,
+      ),
     );
     assert.equal(fixed.code, 0, fixed.out + fixed.err);
     assert.match(fixed.out, new RegExp(`^superseded blocked run ${blockedId}$`, 'm'));
     const reused = await capture(() =>
-      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve', '--json'], ctx),
+      run(
+        [
+          'workflow',
+          'run',
+          'authoring',
+          '--input=domain=investigative-research',
+          '--input=question=Why did churn rise?',
+          '--input=scope=self-serve',
+          '--json',
+        ],
+        ctx,
+      ),
     );
     const record = JSON.parse(reused.out) as { created: boolean; differs: string[]; superseded: string | null };
     assert.equal(record.created, false);
     assert.deepEqual(record.differs, ['scope']);
     assert.equal(record.superseded, null);
     const prose = await capture(() =>
-      run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve'], ctx),
+      run(
+        [
+          'workflow',
+          'run',
+          'authoring',
+          '--input=domain=investigative-research',
+          '--input=question=Why did churn rise?',
+          '--input=scope=self-serve',
+        ],
+        ctx,
+      ),
     );
     assert.match(
       prose.out,

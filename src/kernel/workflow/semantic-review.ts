@@ -92,8 +92,8 @@ function canonicalValue(value: unknown, stable: boolean): string {
     .map(([k, v]) => `${JSON.stringify(k)}:${canonicalValue(v, stable)}`)
     .join(',')}}`;
 }
-/** New review packets opt into locale-independent ordering. Other frozen
- * hashes and unmarked legacy packets retain their original serialization. */
+/** Review packets use locale-independent key ordering; every other frozen
+ * digest keeps the serialization it was frozen with. */
 export function canonicalReview(value: unknown): string {
   return canonicalValue(value, markedBundle(value));
 }
@@ -178,8 +178,7 @@ export interface ReviewBundle {
   readonly runId: string;
   readonly stepRunId: string;
   readonly attempt: number;
-  /** Absent on legacy packets, whose key ordering follows the originating locale. */
-  readonly canonicalization?: typeof BUNDLE_CANONICALIZATION;
+  readonly canonicalization: typeof BUNDLE_CANONICALIZATION;
   readonly producerSessionId?: string | null;
   readonly contract: SemanticContract;
   readonly contractDigest: string;
@@ -192,8 +191,7 @@ export interface ReviewBundle {
   readonly sourceState: unknown;
   readonly governing: unknown;
   readonly answers: unknown;
-  /** Absent on legacy packets, whose source states include full manifest text. */
-  readonly sourceStateFormat?: 'text-digests-v1';
+  readonly sourceStateFormat: 'text-digests-v1';
   /** Explicitly scoped partial evidence remains subject to independent judgment. */
   readonly evidenceLimitations?: readonly {
     readonly ref: string;
@@ -419,11 +417,8 @@ export function readPreparedReview(store: StateStore, ref: string): PreparedRevi
   if (data.digest !== reviewDigest(data.bundle) || Buffer.byteLength(canonicalReview(data.bundle)) > REVIEW_BUNDLE_MAX_BYTES) return null;
   return { ref, ...data };
 }
-function unreadableReviewProblem(payload: string): string {
-  const stored = JSON.parse(payload) as { bundle?: { canonicalization?: unknown } };
-  return stored.bundle?.canonicalization === undefined
-    ? "The stored legacy review packet cannot be verified under this host's locale-dependent canonicalization or current bounds; its bytes remain preserved."
-    : 'The stored review packet uses an unsupported representation or no longer verifies under its declared canonicalization and bounds.';
+function unreadableReviewProblem(): string {
+  return 'The stored review packet uses an unsupported representation or no longer verifies under its declared canonicalization and bounds; its bytes remain preserved.';
 }
 /** What reviewed content is, wherever it is read from: its absolute path, checkout and commit say only where. */
 const unlocated = (content: ResolvedRef | null): unknown =>
@@ -688,7 +683,7 @@ export function semanticReviewStatus(
     return {
       ...base,
       state: 'stale',
-      problems: [unreadableReviewProblem(row.payload_json)],
+      problems: [unreadableReviewProblem()],
       next: 'Preserve the draft and prior receipts. Do not retry dispatch or infer corruption from this failure. Resubmit the exact candidate on a current eligible lease to prepare a supported new generation, or re-resolve the outcome if it cannot be resumed.',
     };
   }
@@ -797,7 +792,7 @@ export function runSemanticProblems(store: StateStore, runId: string, resolve?: 
   const run = getRun(store, runId);
   if (!run) return ['run does not exist'];
   if (!requiredSemanticContract(run))
-    return ['Legacy managed run has no frozen semantic contract; re-resolve the outcome rather than infer retroactive review'];
+    return ['This managed run has no frozen semantic contract; re-resolve the outcome rather than infer retroactive review'];
   const final = listSteps(store, runId).at(-1);
   const draft = listDeliverables(store, runId).findLast((d) => d.stepRunId === final?.id);
   if (!final || !draft) return ['Final artifact has no prepared semantic review'];
@@ -807,7 +802,7 @@ export function runSemanticProblems(store: StateStore, runId: string, resolve?: 
     )
     .get(runId, final.id) as { id: number; payload_json: string } | undefined;
   const prepared = row ? readPreparedReview(store, `review:${row.id}`) : null;
-  if (row && !prepared) return [unreadableReviewProblem(row.payload_json)];
+  if (row && !prepared) return [unreadableReviewProblem()];
   if (!prepared || prepared.bundle.attempt !== final.attempts || reviewDigest(prepared.bundle.body) !== reviewDigest(draft.body))
     return ['Final delivered body is not the reviewed generation'];
   return semanticReviewProblems(store, prepared, resolve);

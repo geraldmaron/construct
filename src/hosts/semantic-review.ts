@@ -1,7 +1,7 @@
 import { observeSemanticReview } from './semantic-observation.ts';
 /** Explicit host-invoked review of held text. No MCP handler invokes this adapter,
  * no arbitrary command can establish semantic review, and no fallback is made. */
-import { spawn, execFile, execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
 import { StringDecoder } from 'node:string_decoder';
 import { createRequire } from 'node:module';
@@ -14,7 +14,6 @@ import { getRun } from '../kernel/state/runs.ts';
 import { appendActivity } from '../kernel/state/activity.ts';
 import {
   assertReviewBundleCapacity,
-  assertReviewInputCapacity,
   semanticReviewPrompt,
   readPreparedReview,
   reviewFreshnessProblems,
@@ -75,35 +74,6 @@ export function disableReviewMcp(names: readonly string[]): string[] {
   if (names.some((name) => !/^[A-Za-z0-9_-]+$/.test(name)))
     throw new Error('native review cannot safely override an MCP name in this CLI version; no invocation started');
   return names.flatMap((name) => ['-c', `mcp_servers.${name}.enabled=false`]);
-}
-export function semanticReviewArgs(
-  root: string,
-  model: string,
-  provider: ReturnType<typeof codexProviderFromConfig>,
-  mcpNames: readonly string[] = [],
-): string[] {
-  return [
-    'exec',
-    '--json',
-    '--ephemeral',
-    '--skip-git-repo-check',
-    '--sandbox',
-    'read-only',
-    '--cd',
-    root,
-    '--model',
-    model,
-    ...REVIEW_DISABLED_FEATURES.flatMap((name) => ['--disable', name]),
-    '-c',
-    'approval_policy="never"',
-    '-c',
-    'web_search="disabled"',
-    '-c',
-    'forced_login_method="chatgpt"',
-    ...codexProviderArgs(provider),
-    ...disableReviewMcp(mcpNames),
-    '-',
-  ];
 }
 export function semanticAppServerArgs(provider: ReturnType<typeof codexProviderFromConfig>, mcpNames: readonly string[] = []): string[] {
   return [
@@ -199,142 +169,6 @@ export function reviewerIdentityProblems(pin: NativeReviewerIdentity): string[] 
   }
 }
 
-/** Bounded native stream decoder. Raw bytes count before line buffering and
- * before private-event filtering. Only public observations are retained. */
-export function semanticEventStream(stop: () => void, maxBytes = 1024 * 1024) {
-  const decoder = new StringDecoder('utf8');
-  const diagnostics = createReviewDiagnostics();
-  let bytes = 0,
-    buffer = '',
-    phase: 'initial' | 'session' | 'turn' | 'final' | 'done' = 'initial';
-  let sessionId: string | null = null,
-    text = '';
-  const problems: string[] = [],
-    observations: unknown[] = [];
-  const fail = (message: string) => {
-    if (!problems.includes(message)) problems.push(message);
-    stop();
-  };
-  function line(raw: string) {
-    let event: any;
-    try {
-      event = JSON.parse(raw);
-    } catch {
-      fail('malformed native event');
-      return;
-    }
-    if (!event || typeof event !== 'object' || Array.isArray(event) || typeof event.type !== 'string') {
-      fail('malformed native event envelope');
-      return;
-    }
-    if (phase === 'done') {
-      fail('native event arrived after terminal completion');
-      return;
-    }
-    // This CLI reports a missing metadata cache entry as an error item even
-    // though it continues with the explicitly requested model. Retain the
-    // warning; it is neither a completed review nor a model substitution.
-    if (
-      event.item?.type === 'error' &&
-      typeof event.item.message === 'string' &&
-      /^Model metadata for `[^`]+` not found\. Defaulting to fallback metadata;/.test(event.item.message)
-    ) {
-      observations.push({ type: 'native.metadata_warning', message: redact(event.item.message).slice(0, 2000) });
-      return;
-    }
-    if (event.type === 'error' || event.type === 'turn.failed' || event.item?.type === 'error') {
-      const message = redact(String(event.item?.message ?? event.error?.message ?? event.message ?? 'no public detail')).slice(0, 2000);
-      observations.push({ type: event.type, itemType: event.item?.type, message });
-      fail(`native review host reported failure: ${message}`);
-      return;
-    }
-    if (/reasoning|analysis|thinking/i.test(event.type) || /reasoning|analysis|thinking/i.test(event.item?.type ?? '')) return;
-    if (event.type === 'thread.started' && phase === 'initial' && typeof event.thread_id === 'string' && event.thread_id) {
-      phase = 'session';
-      sessionId = event.thread_id;
-      observations.push({ type: event.type, sessionId });
-      return;
-    }
-    if (event.type === 'turn.started' && phase === 'session') {
-      phase = 'turn';
-      observations.push({ type: event.type });
-      return;
-    }
-    if (event.type === 'item.started' && event.item?.type === 'agent_message' && phase === 'turn') return;
-    if (
-      event.type === 'item.completed' &&
-      event.item?.type === 'agent_message' &&
-      phase === 'turn' &&
-      typeof event.item.text === 'string'
-    ) {
-      text = event.item.text;
-      phase = 'final';
-      observations.push({ type: event.type, itemType: 'agent_message', text: redact(text) });
-      return;
-    }
-    if (event.type === 'turn.completed' && phase === 'final') {
-      phase = 'done';
-      observations.push({ type: event.type });
-      return;
-    }
-    observations.push({
-      type: event.type.slice(0, 160),
-      itemType: typeof event.item?.type === 'string' ? event.item.type.slice(0, 160) : null,
-      refused: true,
-    });
-    fail(
-      event.item?.type && event.item.type !== 'agent_message'
-        ? 'native review attempted a tool outside the held-text profile'
-        : 'native review event ordering or completion was invalid',
-    );
-  }
-  return {
-    write(data: Buffer, stderr = false) {
-      bytes += data.length;
-      if (bytes > maxBytes) {
-        fail('native review output exceeded its raw byte bound');
-        return;
-      }
-      if (stderr) {
-        diagnostics.write(data);
-        return;
-      }
-      if (problems.length) return;
-      buffer += decoder.write(data);
-      let end: number;
-      while ((end = buffer.indexOf('\n')) >= 0 && !problems.length) {
-        const raw = buffer.slice(0, end);
-        buffer = buffer.slice(end + 1);
-        if (raw.trim()) line(raw);
-      }
-    },
-    finish(exitStatus: number | null = 0) {
-      buffer += decoder.end();
-      if (buffer.trim() && !problems.length) line(buffer);
-      if (phase !== 'done') problems.push('native review did not complete its ordered event stream');
-      // Stderr is operational data, never model judgment. Persist only fixed
-      // classifications: arbitrary diagnostics may contain private content or
-      // credentials that pattern-based redaction cannot safely identify.
-      if (exitStatus !== 0 || phase !== 'done' || problems.length) {
-        const diagnostic = diagnostics.failureObservation();
-        if (diagnostic) {
-          observations.push(diagnostic);
-          problems.push(`native review process diagnostic: ${diagnostic.category}; raw stderr is withheld`);
-        }
-      }
-      return {
-        bytes,
-        problems,
-        observations,
-        text,
-        sessionId,
-        completed: phase === 'done',
-        transcriptDigest: createHash('sha256').update(canonicalReview(observations)).digest('hex'),
-      };
-    },
-  };
-}
-
 export async function executeSemanticReview(input: {
   store: StateStore;
   runId: string;
@@ -380,9 +214,8 @@ export async function executeSemanticReview(input: {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000)
     throw new Error('semantic review timeout must be between 1 and 300000 milliseconds');
   const pin = prepared.bundle.contract.reviewer;
-  if (!pin || pin.host !== input.host || !['codex-held-text-v1', 'codex-app-server-held-text-v2'].includes(pin.profile))
+  if (!pin || pin.host !== input.host || pin.profile !== 'codex-app-server-held-text-v2')
     throw new Error('no native reviewer identity was frozen at session startup; the draft remains unverified');
-  if (pin.profile === 'codex-held-text-v1') assertReviewInputCapacity(prepared.bundle, { unit: 'unicode_scalars', maximum: 1048576 });
   if (typeof pin.binary !== 'string')
     throw new Error('This native adapter requires an executable identity; use the qualified host-tool adapter for that profile');
   const nativePin = pin as NativeReviewerIdentity;
@@ -423,10 +256,7 @@ export async function executeSemanticReview(input: {
   const inventoryDigest = inventoryFingerprint(inventory);
   const mcpNames = inventory.map((v) => v.name as string).sort();
   const root = input.root,
-    argv =
-      pin.profile === 'codex-app-server-held-text-v2'
-        ? semanticAppServerArgs(provider, mcpNames)
-        : semanticReviewArgs(root, input.model, provider, mcpNames),
+    argv = semanticAppServerArgs(provider, mcpNames),
     id = randomUUID();
   const disabled = disableReviewMcp(mcpNames);
   const resolved: unknown = JSON.parse(await probe(binary, [...featureArgs, ...disabled, 'mcp', 'list', '--json'], env, root));
@@ -438,7 +268,6 @@ export async function executeSemanticReview(input: {
     throw new Error('native review could not disable every configured MCP server; no invocation started');
   const prompt = semanticReviewPrompt(prepared.bundle);
   let timedOut = false;
-  let stream: ReturnType<typeof semanticEventStream>;
   // One dispatch per prepared generation. A crashed dispatch stays visible and
   // must recover through a new lease; retries cannot silently duplicate model work.
   input.store.transaction(() => {
@@ -481,90 +310,41 @@ export async function executeSemanticReview(input: {
   const problems: string[] = [];
   {
     let exitStatus: number | null;
-    let observed: ReturnType<ReturnType<typeof semanticEventStream>['finish']>;
-    if (pin.profile === 'codex-app-server-held-text-v2') {
-      const outputSchema = {
-        type: 'object',
-        additionalProperties: false,
-        required: ['checks'],
-        properties: {
-          checks: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['id', 'verdict', 'reason', 'refs'],
-              properties: {
-                id: { type: 'string', enum: prepared.bundle.contract.obligations.map((item) => item.id) },
-                verdict: { type: 'string', enum: ['pass', 'fail', 'unknown'] },
-                reason: { type: 'string' },
-                refs: { type: 'array', items: { type: 'string' } },
-              },
+    let observed: Awaited<ReturnType<typeof runAppServerHeldReview>>;
+    const outputSchema = {
+      type: 'object',
+      additionalProperties: false,
+      required: ['checks'],
+      properties: {
+        checks: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id', 'verdict', 'reason', 'refs'],
+            properties: {
+              id: { type: 'string', enum: prepared.bundle.contract.obligations.map((item) => item.id) },
+              verdict: { type: 'string', enum: ['pass', 'fail', 'unknown'] },
+              reason: { type: 'string' },
+              refs: { type: 'array', items: { type: 'string' } },
             },
           },
         },
-      };
-      const result = await runAppServerHeldReview({
-        binary,
-        argv,
-        root,
-        env,
-        model: input.model,
-        heldText: prompt,
-        timeoutMs,
-        outputSchema,
-      });
-      exitStatus = result.exitStatus;
-      timedOut = result.timedOut;
-      observed = { ...result, problems: [...result.problems], observations: [...result.observations] };
-    } else {
-      exitStatus = await new Promise<number | null>((accept, reject) => {
-        const child = spawn(binary, argv, {
-          cwd: root,
-          env,
-          shell: false,
-          detached: process.platform !== 'win32',
-          stdio: ['pipe', 'pipe', 'pipe'],
-        });
-        const stop = () => {
-          try {
-            if (process.platform === 'win32') child.kill('SIGKILL');
-            else process.kill(-child.pid!, 'SIGKILL');
-          } catch {
-            /* already exited */
-          }
-        };
-        const interrupt = () => {
-          timedOut = true;
-          stop();
-        };
-        const timer = setTimeout(interrupt, timeoutMs);
-        process.once('SIGINT', interrupt);
-        process.once('SIGTERM', interrupt);
-        const cleanup = () => {
-          clearTimeout(timer);
-          process.removeListener('SIGINT', interrupt);
-          process.removeListener('SIGTERM', interrupt);
-          stop();
-        };
-        stream = semanticEventStream(stop);
-        child.stderr.on('data', (data: Buffer) => stream.write(data, true));
-        child.stdout.on('data', (data: Buffer) => stream.write(data));
-        child.stdin.on('error', () => {
-          /* close/error carries the failed invocation */
-        });
-        child.stdin.end(prompt);
-        child.on('error', () => {
-          cleanup();
-          reject(new Error('native semantic review failed to start; no fallback'));
-        });
-        child.on('close', (code) => {
-          cleanup();
-          accept(code);
-        });
-      });
-      observed = stream!.finish(exitStatus);
-    }
+      },
+    };
+    const result = await runAppServerHeldReview({
+      binary,
+      argv,
+      root,
+      env,
+      model: input.model,
+      heldText: prompt,
+      timeoutMs,
+      outputSchema,
+    });
+    exitStatus = result.exitStatus;
+    timedOut = result.timedOut;
+    observed = { ...result, problems: [...result.problems], observations: [...result.observations] };
     const { text, sessionId, completed, transcriptDigest, observations } = observed;
     problems.push(...observed.problems, ...reviewerIdentityProblems(nativePin));
     let judgment: unknown = null;

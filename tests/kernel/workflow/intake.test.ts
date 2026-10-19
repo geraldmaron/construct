@@ -42,9 +42,11 @@ const WORKFLOW_REGISTRY = createWorkflowRegistry({ projectDir: null });
 const SKILL_REGISTRY = createSkillRegistry({ projectDir: null });
 const WORKFLOWS = workflowCandidates(WORKFLOW_REGISTRY.list());
 const SKILLS = SKILL_REGISTRY.list();
-// Keep the pre-merge choice assertions: canonical matches must still identify the same domain.
-const legacyId = (m: { workflowId: string; domain?: string } | undefined) =>
-  m ? (WORKFLOWS.find((w) => w.canonicalId === m.workflowId && w.domain === m.domain)?.manifest.id ?? m.workflowId) : '';
+/** A candidate's binding: its workflow id, and for a domain-keyed workflow the domain it is bound to. */
+const bindingOf = (w: RegisteredWorkflow) => (w.domain ? `${w.canonicalId ?? w.manifest.id}/${w.domain}` : w.manifest.id);
+/** The binding a match names, in the same form. */
+const bindingId = (m: { workflowId: string; domain?: string } | undefined) =>
+  m ? (m.domain ? `${m.workflowId}/${m.domain}` : m.workflowId) : '';
 const SOURCES = [
   { id: 'jira', kind: 'jira', locator: 'PAY' },
   { id: 'eng-wiki', kind: 'docs', locator: 'confluence:space:ENG' },
@@ -59,19 +61,23 @@ function catalogOf(overrides: Partial<IntakeCatalog> = {}): IntakeCatalog {
 }
 const CATALOG = catalogOf();
 
+function binding(id: string): RegisteredWorkflow {
+  return WORKFLOWS.find((w) => bindingOf(w) === id)!;
+}
+
 function manifest(id: string): WorkflowManifest {
-  return WORKFLOWS.find((w) => w.manifest.id === id)!.manifest;
+  return binding(id).manifest;
 }
 
 /** A shipped workflow with some of its manifest replaced. */
 function withManifest(id: string, patch: Partial<WorkflowManifest>): RegisteredWorkflow {
-  const w = WORKFLOWS.find((x) => x.manifest.id === id)!;
+  const w = binding(id);
   return { ...w, manifest: { ...w.manifest, ...patch } };
 }
 
 function replaced(...ws: RegisteredWorkflow[]): RegisteredWorkflow[] {
-  const byId = new Map(ws.map((w) => [w.manifest.id, w]));
-  return WORKFLOWS.map((w) => byId.get(w.manifest.id) ?? w);
+  const byId = new Map(ws.map((w) => [bindingOf(w), w]));
+  return WORKFLOWS.map((w) => byId.get(bindingOf(w)) ?? w);
 }
 
 /** The general carrier with a period it requires, not only accepts. */
@@ -141,7 +147,7 @@ function refused(
 // ---------------------------------------------------------------- strict
 
 test('a reading that would gate a write is refused with the field, the allowed values, and an example of that field', () => {
-  const matchable = MATCHABLE.map((w) => w.manifest.id);
+  const matchable = [...new Set(MATCHABLE.map((w) => w.manifest.id))];
   const cases: readonly {
     readonly name: string;
     readonly raw: unknown;
@@ -312,11 +318,11 @@ test('a reading that would gate a write is refused with the field, the allowed v
     },
     {
       name: 'a named workflow that cannot run on a schedule',
-      raw: { ...STANDING, workflowId: 'prd-authoring' },
+      raw: { ...STANDING, workflowId: 'authoring', inputs: { domain: 'requirements-structuring' } },
       field: 'workflowId',
-      allowed: MATCHABLE.filter((w) => w.manifest.triggers.includes('schedule')).map((w) => w.manifest.id),
+      allowed: [...new Set(MATCHABLE.filter((w) => w.manifest.triggers.includes('schedule')).map((w) => w.manifest.id))],
       example: EXAMPLE.workflowId,
-      message: /prd-authoring cannot carry this maintain reading: it starts on manual/,
+      message: /authoring cannot carry this maintain reading: it starts on manual/,
     },
     {
       name: 'an unknown registered_source',
@@ -542,7 +548,7 @@ test('a deliverable kind resolves by the same words, a bare family stays a famil
 
   const prd = kindOf('prd');
   assert.deepEqual(prd.intake.deliverable, { kind: 'document/prd', describe: null });
-  assert.equal(legacyId(matchWorkflows(prd.intake, CATALOG)[0]), 'prd-authoring');
+  assert.equal(bindingId(matchWorkflows(prd.intake, CATALOG)[0]), 'authoring/requirements-structuring');
   assert.deepEqual(
     prd.normalized.map((n) => [n.field, n.from, n.to]),
     [['deliverable.kind', 'prd', 'document/prd']],
@@ -550,8 +556,8 @@ test('a deliverable kind resolves by the same words, a bare family stays a famil
 
   const ambiguous = catalogOf({
     workflows: replaced(
-      withManifest('architecture-decision-review', {
-        deliverable: { ...manifest('architecture-decision-review').deliverable, kind: 'review/prd' },
+      withManifest('review/system-architecture', {
+        deliverable: { ...manifest('review/system-architecture').deliverable, kind: 'review/prd' },
       }),
     ),
   });
@@ -823,15 +829,15 @@ test('every shipped work workflow is the first match for its own declared delive
     const kind = w.manifest.deliverable.kind;
     if (!kind.includes('/')) continue;
     const matches = matchWorkflows(reading({ kind: w.manifest.interactionClass, deliverable: { kind } }), CATALOG);
-    assert.equal(legacyId(matches[0]), w.manifest.id, `${kind} gives ${matches.map((m) => legacyId(m)).join(', ')}`);
+    assert.equal(bindingId(matches[0]), bindingOf(w), `${kind} gives ${matches.map((m) => bindingId(m)).join(', ')}`);
     assert.equal(matches[0]?.because, 'deliverable kind');
     assert.deepEqual(matches[0]?.skills, [...new Set(w.manifest.steps.flatMap((s) => (s.skill ? [s.skill.id] : [])))]);
   }
   for (const w of MATCHABLE.filter((x) => !x.manifest.deliverable.kind.includes('/'))) {
     const kind = w.manifest.deliverable.kind;
     const matches = matchWorkflows(reading({ kind: w.manifest.interactionClass, deliverable: { kind } }), CATALOG);
-    const at = matches.findIndex((m) => legacyId(m) === w.manifest.id);
-    assert.ok(at >= 0, `${w.manifest.id} is among the matches for ${kind}`);
+    const at = matches.findIndex((m) => bindingId(m) === bindingOf(w));
+    assert.ok(at >= 0, `${bindingOf(w)} is among the matches for ${kind}`);
     assert.equal(matches[at]?.because, 'deliverable kind');
     assert.ok(
       matches.slice(0, at).every((m) => m.deliverableKind.startsWith(`${kind}/`)),
@@ -842,17 +848,15 @@ test('every shipped work workflow is the first match for its own declared delive
 
 test('a family lists every kind under it in registry order, then the bare family; an exact kind leads its family', () => {
   const under = (family: string) =>
-    MATCHABLE.filter((w) => w.manifest.deliverable.kind.startsWith(`${family}/`) && w.manifest.triggers.includes('manual')).map(
-      (w) => w.manifest.id,
-    );
-  const bare = (family: string) => MATCHABLE.filter((w) => w.manifest.deliverable.kind === family).map((w) => w.manifest.id);
+    MATCHABLE.filter((w) => w.manifest.deliverable.kind.startsWith(`${family}/`) && w.manifest.triggers.includes('manual')).map(bindingOf);
+  const bare = (family: string) => MATCHABLE.filter((w) => w.manifest.deliverable.kind === family).map(bindingOf);
 
   const review = matchWorkflows(
     reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review' } }),
     CATALOG,
   );
   assert.deepEqual(
-    review.map((m) => legacyId(m)),
+    review.map((m) => bindingId(m)),
     [...under('review'), ...bare('review')],
   );
   assert.ok(under('review').length >= 10, 'every review/* workflow');
@@ -863,22 +867,24 @@ test('a family lists every kind under it in registry order, then the bare family
     CATALOG,
   );
   assert.deepEqual(
-    document.map((m) => legacyId(m)),
+    document.map((m) => bindingId(m)),
     under('document'),
   );
   assert.equal(document.length, 4, 'the four authoring workflows');
   assert.ok(
-    ['prd-authoring', 'proposal-authoring', 'rfc-authoring', 'revise-deliverable'].every((id) => document.some((m) => legacyId(m) === id)),
+    ['authoring/requirements-structuring', 'authoring/decision-framing', 'authoring/system-architecture', 'revise-deliverable'].every(
+      (id) => document.some((m) => bindingId(m) === id),
+    ),
   );
 
   const architecture = matchWorkflows(
     reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review/architecture' } }),
     CATALOG,
   );
-  assert.equal(legacyId(architecture[0]), 'architecture-decision-review');
+  assert.equal(bindingId(architecture[0]), 'review/system-architecture');
   assert.deepEqual(
-    architecture.slice(1).map((m) => legacyId(m)),
-    [...under('review').filter((id) => id !== 'architecture-decision-review'), ...bare('review')],
+    architecture.slice(1).map((m) => bindingId(m)),
+    [...under('review').filter((id) => id !== 'review/system-architecture'), ...bare('review')],
   );
   assert.ok(architecture.slice(1).every((m) => m.because === 'deliverable family'));
 
@@ -886,10 +892,10 @@ test('a family lists every kind under it in registry order, then the bare family
     reading({ kind: 'manage', stakes: { reversible: true, affects: [] }, deliverable: { kind: 'review' }, skill: 'security-privacy' }),
     CATALOG,
   );
-  assert.equal(legacyId(security[0]), 'security-privacy-review', 'a workflow binding the chosen skill leads its group');
+  assert.equal(bindingId(security[0]), 'review/security-privacy', 'a workflow binding the chosen skill leads its group');
   assert.deepEqual(
-    security.slice(1).map((m) => legacyId(m)),
-    [...under('review').filter((id) => id !== 'security-privacy-review'), ...bare('review')],
+    security.slice(1).map((m) => bindingId(m)),
+    [...under('review').filter((id) => id !== 'review/security-privacy'), ...bare('review')],
   );
 
   const prd = matchWorkflows(
@@ -916,10 +922,10 @@ test('other gives the general carrier first, then the workflows binding the chos
           w.manifest.triggers.includes('manual') &&
           w.manifest.steps.some((s) => s.skill?.id === skill),
       )
-      .map((w) => w.manifest.id);
+      .map(bindingOf);
   const flagship = matchWorkflows(v(FLAGSHIP).intake, CATALOG);
   assert.deepEqual(
-    flagship.map((m) => [legacyId(m), m.because]),
+    flagship.map((m) => [bindingId(m), m.because]),
     [
       [GENERAL_CARRIER, 'other: general carrier'],
       ...bound('system-architecture', MATCHABLE).map((id) => [id, 'binds chosen skill']),
@@ -932,7 +938,7 @@ test('other gives the general carrier first, then the workflows binding the chos
     CATALOG,
   );
   assert.deepEqual(
-    plain.map((m) => legacyId(m)),
+    plain.map((m) => bindingId(m)),
     [GENERAL_CARRIER, 'managed-outcome'],
   );
 });
@@ -941,17 +947,17 @@ test('maintain matches only workflows a schedule or an event can start, and othe
   const cron = matchWorkflows(v(STANDING).intake, CATALOG);
   assert.ok(cron.length > 0);
   assert.ok(
-    cron.every((m) => manifest(legacyId(m)).triggers.includes('schedule')),
-    cron.map((m) => legacyId(m)).join(', '),
+    cron.every((m) => manifest(bindingId(m)).triggers.includes('schedule')),
+    cron.map((m) => bindingId(m)).join(', '),
   );
-  assert.equal(legacyId(cron[0]), 'architecture-decision-review');
+  assert.equal(bindingId(cron[0]), 'review/system-architecture');
 
   const event = matchWorkflows(
     reading({ kind: 'maintain', deliverable: { kind: 'review' }, schedule: { event: 'source.refreshed' } }),
     CATALOG,
   );
   assert.ok(event.length > 0);
-  assert.ok(event.every((m) => manifest(legacyId(m)).triggers.includes('event')));
+  assert.ok(event.every((m) => manifest(bindingId(m)).triggers.includes('event')));
 
   const weekly = {
     kind: 'maintain',
@@ -963,12 +969,12 @@ test('maintain matches only workflows a schedule or an event can start, and othe
   const carried = matchWorkflows(reading(weekly), CATALOG);
   assert.equal(carried.at(-1)?.workflowId, GENERAL_CARRIER);
   assert.equal(carried.at(-1)?.because, 'other: general carrier');
-  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill' && manifest(legacyId(m)).triggers.includes('schedule')));
+  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill' && manifest(bindingId(m)).triggers.includes('schedule')));
   assert.ok(carried.length > 1);
 
   const manualOnly = catalogOf({ workflows: replaced(withManifest(GENERAL_CARRIER, { triggers: ['manual'] })) });
   const unscheduled = matchWorkflows(reading(weekly, manualOnly), manualOnly);
-  assert.ok(!unscheduled.some((m) => legacyId(m) === GENERAL_CARRIER), 'the carrier is matched only when it can be scheduled');
+  assert.ok(!unscheduled.some((m) => bindingId(m) === GENERAL_CARRIER), 'the carrier is matched only when it can be scheduled');
   assert.ok(unscheduled.every((m) => m.because === 'binds chosen skill'));
 });
 
@@ -978,18 +984,39 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
       kind: 'manage',
       stakes: { reversible: true, affects: [] },
       deliverable: { kind: 'review/architecture' },
-      workflowId: 'implementation-review',
+      workflowId: 'design-conformance',
     }),
     CATALOG,
   );
   assert.deepEqual(
-    named.slice(0, 2).map((m) => [legacyId(m), m.because]),
+    named.slice(0, 2).map((m) => [bindingId(m), m.because]),
     [
-      ['implementation-review', 'named'],
-      ['architecture-decision-review', 'deliverable kind'],
+      ['design-conformance', 'named'],
+      ['review/system-architecture', 'deliverable kind'],
     ],
   );
-  assert.equal(named.filter((m) => legacyId(m) === 'implementation-review').length, 1, 'a workflow is listed once');
+  assert.equal(named.filter((m) => bindingId(m) === 'design-conformance').length, 1, 'a workflow is listed once');
+
+  const domainNamed = matchWorkflows(
+    reading({
+      kind: 'manage',
+      stakes: { reversible: true, affects: [] },
+      deliverable: { kind: 'review/architecture' },
+      workflowId: 'review',
+      inputs: { domain: 'software-engineering' },
+    }),
+    CATALOG,
+  );
+  assert.deepEqual(
+    [bindingId(domainNamed[0]), domainNamed[0]?.because],
+    ['review/software-engineering', 'named'],
+    'a domain-keyed workflow named with its domain comes first',
+  );
+  assert.deepEqual(
+    domainNamed.filter((m) => m.workflowId === 'review').map(bindingId),
+    ['review/software-engineering'],
+    'the named domain is the only binding of that workflow listed',
+  );
 
   const eventOnly = catalogOf({ workflows: replaced(withManifest('publish-deliverable', { triggers: ['event'] })) });
   const fallback = matchWorkflows(
@@ -997,7 +1024,7 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
     eventOnly,
   );
   assert.deepEqual(
-    fallback.map((m) => [legacyId(m), m.because]),
+    fallback.map((m) => [bindingId(m), m.because]),
     [[GENERAL_CARRIER, 'other: general carrier']],
   );
 
@@ -1006,7 +1033,7 @@ test('a named workflow comes first; a manage reading nothing fits falls back to 
   const kinds = [...new Set(WORKFLOWS.map((w) => w.manifest.deliverable.kind)), 'other', 'review', 'document'];
   for (const kind of kinds) {
     for (const k of ['manage', 'maintain'] as const) {
-      const ids = matchWorkflows(reading({ kind: k, deliverable: { kind, describe: 'something' } }), CATALOG).map((m) => legacyId(m));
+      const ids = matchWorkflows(reading({ kind: k, deliverable: { kind, describe: 'something' } }), CATALOG).map((m) => bindingId(m));
       assert.ok(!ids.includes('remember'), `${k} ${kind} never matches remember`);
     }
   }
@@ -1034,7 +1061,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
     missing: [],
   });
   assert.deepEqual(workflowInputFor({ ...r.intake, period: null }, DIGEST).missing, ['period']);
-  const research = workflowInputFor({ ...r.intake, scope: 'payments' }, WORKFLOWS.find((w) => w.manifest.id === 'research-brief')!);
+  const research = workflowInputFor({ ...r.intake, scope: 'payments' }, binding('authoring/investigative-research'));
   assert.deepEqual(
     research.input,
     {
@@ -1045,7 +1072,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
       period: { semantics: 'evidence_window', relative: 'last_quarter' },
       sources: ['jira', 'platform'],
     },
-    'research-brief takes the period and the read sources too',
+    'the research brief takes the period and the read sources too',
   );
 
   const publish = WORKFLOWS.find((w) => w.manifest.id === 'publish-deliverable')!;
@@ -1059,7 +1086,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
 });
 
 test('explicit input wins over the reading’s inputs, which win over mapped fields; a conflicting destination or an undeclared key is refused', () => {
-  const prd = WORKFLOWS.find((w) => w.manifest.id === 'prd-authoring')!;
+  const prd = binding('authoring/requirements-structuring');
   const base = v({ ...REVIEW, deliverable: { kind: 'document/prd' }, inputs: { target: 'docs/from-inputs.md' } }).intake;
   assert.equal(workflowInputFor(base, prd).input.target, 'docs/from-inputs.md');
   assert.equal(workflowInputFor(base, prd, { target: 'docs/explicit.md' }).input.target, 'docs/explicit.md');
@@ -1117,7 +1144,7 @@ test('the kernel asks only what it can see is missing or contradicts itself; the
     ],
   });
   const prd = matchWorkflows(untargeted.intake, CATALOG)[0]!;
-  assert.equal(legacyId(prd), 'prd-authoring');
+  assert.equal(bindingId(prd), 'authoring/requirements-structuring');
   const asked = questionsFor(untargeted, prd, CATALOG);
   assert.deepEqual(asked.questions, [
     {
@@ -1176,8 +1203,7 @@ test('the kernel asks only what it can see is missing or contradicts itself; the
 });
 
 test('each missing input has one plain ask; the kernel-typed ones are asked by their type', () => {
-  const ask = (slot: string, w: RegisteredWorkflow = WORKFLOWS.find((x) => x.manifest.id === 'proposal-authoring')!) =>
-    slotQuestion(slot, w).ask;
+  const ask = (slot: string, w: RegisteredWorkflow = binding('authoring/decision-framing')) => slotQuestion(slot, w).ask;
   assert.equal(ask('target'), 'Which document, file, or system should this work on?');
   assert.equal(ask('audience'), 'Who is this for?');
   assert.equal(ask('decisionBy'), 'By when is the decision needed?');
@@ -1296,7 +1322,7 @@ test('the words never change what a reading matches or asks, and can only raise 
       const base = v(raw);
       const matches = matchWorkflows(base.intake, CATALOG);
       const first = matches[0] ?? null;
-      const workflow = first ? WORKFLOWS.find((w) => w.manifest.id === first.workflowId)! : null;
+      const workflow = first ? binding(bindingId(first)) : null;
       const shape = (r: ValidatedIntake) => {
         const m = matchWorkflows(r.intake, CATALOG);
         return {
@@ -1335,4 +1361,19 @@ test('the words never change what a reading matches or asks, and can only raise 
   } finally {
     cleanup();
   }
+});
+
+test('a named domain-keyed workflow carries a scheduled reading when any of its domains can, with no domain named', () => {
+  const scheduledResearch = withManifest('authoring/investigative-research', {
+    triggers: ['manual', 'schedule'],
+  });
+  const catalog = catalogOf({ workflows: replaced(scheduledResearch) });
+  const reading = {
+    ...STANDING,
+    words: 'Every Monday at 9, research what changed in churn last week',
+    deliverable: { kind: 'research/brief' },
+    workflowId: 'authoring',
+  };
+  assert.doesNotThrow(() => v(reading, 'classify', catalog));
+  assert.throws(() => v(reading, 'classify', CATALOG), /authoring cannot carry this maintain reading/);
 });

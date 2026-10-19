@@ -6,18 +6,17 @@ import { addWorkDependency } from './create-update.ts';
 
 export interface WorkExport {
   readonly format: 'construct-work-export';
-  readonly formatVersion: 1;
+  readonly formatVersion: 2;
   readonly exportedAt: string;
   readonly projectId: string | null;
   readonly work: readonly unknown[];
   readonly dependencies: readonly unknown[];
   readonly events: readonly unknown[];
-  readonly legacyIds: readonly unknown[];
   /** Durable work identity and its reason links; never permissions or live ownership. */
-  readonly graph?: { readonly entities: readonly Entity[]; readonly reasons: readonly Relation[] };
+  readonly graph: { readonly entities: readonly Entity[]; readonly reasons: readonly Relation[] };
 }
 
-/** Legacy claim events may contain a token; durable history never carries it. */
+/** Durable history excludes claim tokens. */
 function durableEventPayload(json: string | null): unknown {
   const payload = parseJson(json);
   if (!payload || typeof payload !== 'object' || !('token' in payload)) return payload;
@@ -37,7 +36,7 @@ export function exportWork(store: StateStore, at: string, projectId: string | nu
     .filter((e): e is Entity => e !== null);
   return {
     format: 'construct-work-export',
-    formatVersion: 1,
+    formatVersion: 2,
     exportedAt: at,
     projectId,
     graph: { entities, reasons },
@@ -47,8 +46,7 @@ export function exportWork(store: StateStore, at: string, projectId: string | nu
       claim_token: null,
     })),
     dependencies: store.db.prepare('SELECT * FROM work_dependencies ORDER BY created_at, id').all(),
-    // Claim events written before tokens were secrets carry the token in their
-    // payload; a snapshot keeps the event and drops the token.
+    // A snapshot keeps claim events and excludes their tokens.
     events: (
       store.db.prepare('SELECT work_id, at, kind, actor, expected_revision, payload_json FROM work_events ORDER BY id').all() as Array<{
         payload_json: string | null;
@@ -56,7 +54,6 @@ export function exportWork(store: StateStore, at: string, projectId: string | nu
     ).map((row) => {
       return { ...row, payload_json: toJson(durableEventPayload(row.payload_json)) };
     }),
-    legacyIds: store.db.prepare('SELECT legacy_id, work_id, source, created_at FROM work_legacy_ids ORDER BY created_at').all(),
   };
 }
 
@@ -71,8 +68,11 @@ export interface RestoreReport {
  * ownership are never restored.
  */
 export function restoreWork(store: StateStore, dump: WorkExport, at: string, projectId: string | null = null): RestoreReport {
-  if (dump.format !== 'construct-work-export' || dump.formatVersion !== 1) {
-    throw new Error('this is not a construct-work-export v1 snapshot');
+  if (dump.format !== 'construct-work-export' || dump.formatVersion !== 2) {
+    throw new Error('this is not a construct-work-export v2 snapshot');
+  }
+  if (!dump.graph || !Array.isArray(dump.graph.entities) || !Array.isArray(dump.graph.reasons)) {
+    throw new Error('this snapshot carries no reason graph; export it again from its project');
   }
   if (projectId !== null && dump.projectId !== null && dump.projectId !== projectId) {
     throw new Error(
@@ -122,11 +122,11 @@ export function restoreWork(store: StateStore, dump: WorkExport, at: string, pro
     // Restore only the graph closure needed by imported work. Other snapshot
     // entities cannot introduce unrelated project state or execution authority.
     const workEntityIds = new Set([...inserted.values()].map((row) => row.entity_id).filter((id): id is string => id !== null));
-    const reasons = (dump.graph?.reasons ?? []).filter((r) => workEntityIds.has(r.fromId));
+    const reasons = dump.graph.reasons.filter((r) => workEntityIds.has(r.fromId));
     if (reasons.some((r) => r.kind !== 'implements' && r.kind !== 'contributes_to'))
       throw new Error('work restore accepts only work reason relations');
     const requiredEntities = new Set([...workEntityIds, ...reasons.map((r) => r.toId)]);
-    for (const entity of dump.graph?.entities ?? []) {
+    for (const entity of dump.graph.entities) {
       if (!requiredEntities.has(entity.id)) continue;
       const existing = getEntity(store, entity.id);
       if (existing) {
@@ -153,7 +153,7 @@ export function restoreWork(store: StateStore, dump: WorkExport, at: string, pro
     for (const row of inserted.values()) {
       const entityId = row.entity_id ?? `ent-${row.id}`;
       let entity = getEntity(store, entityId);
-      if (!entity && (!dump.graph || row.entity_id === null))
+      if (!entity && row.entity_id === null)
         entity = addEntity(store, { id: entityId, kind: 'work_item', name: row.title, externalRef: `work:${row.id}`, at: row.created_at });
       if (!entity || entity.kind !== 'work_item' || entity.externalRef !== `work:${row.id}`)
         throw new Error(`snapshot work ${row.id} has no matching work entity`);
@@ -238,27 +238,7 @@ export function restoreWork(store: StateStore, dump: WorkExport, at: string, pro
       };
       if (!inserted.has(event.work_id)) continue;
       const payload = durableEventPayload(event.payload_json);
-      if (
-        !dump.graph &&
-        event.kind === 'admitted' &&
-        payload &&
-        typeof payload === 'object' &&
-        (payload as { basis?: string }).basis === 'serves'
-      )
-        conflicts.push(`${event.work_id}: legacy snapshot has no reason graph; relink the work reason`);
       recordEvent(store, event.work_id, event.at, event.kind, event.actor, event.expected_revision, payload);
-    }
-    for (const raw of dump.legacyIds) {
-      const l = raw as { legacy_id: string; work_id: string; source: string; created_at: string };
-      if (!inserted.has(l.work_id)) continue;
-      const existing = store.db.prepare('SELECT work_id FROM work_legacy_ids WHERE legacy_id = ?').get(l.legacy_id) as
-        | { work_id: string }
-        | undefined;
-      if (existing && existing.work_id !== l.work_id)
-        conflicts.push(`${l.legacy_id}: live legacy mapping differs from snapshot; kept live`);
-      store.db
-        .prepare(`INSERT OR IGNORE INTO work_legacy_ids (legacy_id, work_id, source, created_at) VALUES (?, ?, ?, ?)`)
-        .run(l.legacy_id, l.work_id, l.source, l.created_at);
     }
     return { imported, skipped, conflicts };
   });

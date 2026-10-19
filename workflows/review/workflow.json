@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "review",
   "title": "Review a domain",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "purpose": "Apply the bound domain method, preserving its inputs, checks and evidence obligations.",
   "interactionClass": "manage",
   "inputSchema": {
@@ -428,55 +428,6 @@
           "title": "Semantic review: incompatible commitments, cited to both texts"
         }
       }
-    }
-  },
-  "aliases": {
-    "architecture-decision-review": "system-architecture",
-    "delivery-plan-review": "program-delivery",
-    "experience-review": "experience-design",
-    "governance-issue-spotting": "governance-risk",
-    "implementation-review": "software-engineering",
-    "operational-readiness-review": "operations-reliability",
-    "product-requirements-review": "product-management",
-    "security-privacy-review": "security-privacy",
-    "strategy-execution-review": "strategy-research"
-  },
-  "legacyDigests": {
-    "architecture-decision-review": {
-      "version": "1.1.2",
-      "digest": "sha256:b80e494374368195eb428b70463618e11e578bfc7a8bf922264b94e7e364c77a"
-    },
-    "delivery-plan-review": {
-      "version": "1.0.3",
-      "digest": "sha256:d8a0f28287b39aa163f8a96bc9b1bae6d1628b1bf2a8f8fdd8ea7a1ebbb1b754"
-    },
-    "experience-review": {
-      "version": "1.0.3",
-      "digest": "sha256:06b69d3abfdc4ba5a75dbf1d1851bd38ae2829b64669e1d876bdb3bcd24822a7"
-    },
-    "governance-issue-spotting": {
-      "version": "1.0.3",
-      "digest": "sha256:889ca4eb6faa125984a0ac50513eb203b0284985ab7109f7e8f58d000ff3aad9"
-    },
-    "implementation-review": {
-      "version": "1.0.3",
-      "digest": "sha256:9b12ac1c989152fe153bf8a4f50c67f8d86b19806de687292e1e17a5a1a9992c"
-    },
-    "operational-readiness-review": {
-      "version": "1.0.3",
-      "digest": "sha256:eec8274b852da49849f7acf0cea9e6077f9731385a5ea246a1d4cf73f0f5edab"
-    },
-    "product-requirements-review": {
-      "version": "1.0.3",
-      "digest": "sha256:9b751de2397160610eab3923c0165da973b626dac7df3e8c70bee17a75899438"
-    },
-    "security-privacy-review": {
-      "version": "1.0.3",
-      "digest": "sha256:440aec249c90c445a3e84e4eedcce70a28bebde40a6180117baf68d6d4bdc2b8"
-    },
-    "strategy-execution-review": {
-      "version": "1.0.3",
-      "digest": "sha256:e1db8aa26015f34a4564e20edb454048be2ff115927fa7276a098bf7a428cb83"
     }
   }
 }

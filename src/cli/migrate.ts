@@ -1,5 +1,5 @@
 /**
- * cli/migrate.ts — upgrade a project's state database from an older format,
+ * cli/migrate.ts — upgrade a project's complete format-5 state database to format 6,
  * backing it up first. This is the only path that changes a store's format:
  * commands that read never do, and a server that finds an older store
  * reports it instead of upgrading it under another session's feet.
@@ -30,7 +30,7 @@ const STOP_SESSIONS = 'Stop every Construct session on this project first (close
 export const MIGRATE_SPEC: CommandSpec = {
   path: ['migrate'],
   gloss:
-    'upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first',
+    'upgrade this project’s state from format 5 to 6, after writing a backup beside it; stop every Construct session on this project first',
   group: 'Recover',
   positionals: [],
   flags: [{ name: 'force', gloss: 'upgrade despite live holders or unavailable holder inspection', takesValue: false }],

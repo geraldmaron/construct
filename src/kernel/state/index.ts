@@ -1,5 +1,5 @@
 /**
- * kernel/state/index.ts — Construct state format 5.
+ * kernel/state/index.ts — Construct state format 6.
  */
 
 export {
@@ -30,4 +30,4 @@ export * from './grants.ts';
 export * from './drift.ts';
 export * from './triggers.ts';
 export { StoreProjectError, bindStoreToProject, storeHasProject, storeProjectId } from './identity.ts';
-export { V2_REQUIRED_TABLES, migrateV2ToV3 } from './migrate.ts';
+export { isCompleteV5, migrateV5ToV6 } from './migrate.ts';

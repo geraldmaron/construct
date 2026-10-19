@@ -18,7 +18,7 @@ export * from './config.ts';
 export * from './constitution.ts';
 export * from './sources-file.ts';
 export * from './lock.ts';
-export * from './legacy.ts';
+export * from './unsupported-files.ts';
 export * from './discover.ts';
 export * from './initialize.ts';
 export * from './reset.ts';

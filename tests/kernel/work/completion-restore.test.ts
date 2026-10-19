@@ -218,7 +218,7 @@ test('snapshot preserves serves graph, leaves live reason conflicts unchanged, a
   const fx = freshStore();
   const restored = freshStore();
   const merged = freshStore();
-  const legacyStore = freshStore();
+  const graphlessStore = freshStore();
   try {
     const at = clock();
     let n = 0;
@@ -226,8 +226,8 @@ test('snapshot preserves serves graph, leaves live reason conflicts unchanged, a
     addEntity(fx.store, { id: 'metric', kind: 'metric', name: 'Claim latency', at: at() });
     fileWork(fx.store, { id: 'serving', kind: 'task', title: 'Improve claims', serves: 'metric', byPerson: false, at: at(), nextId });
     const dump = exportWork(fx.store, at(), 'project');
-    assert.equal(dump.graph!.entities.length, 2);
-    assert.equal(dump.graph!.reasons.length, 1);
+    assert.equal(dump.graph.entities.length, 2);
+    assert.equal(dump.graph.reasons.length, 1);
     restoreWork(restored.store, dump, at(), 'project');
     const shown = workStructure(restored.store, getWork(restored.store, 'serving')!);
     assert.equal(shown.serves[0]!.id, 'metric');
@@ -238,16 +238,13 @@ test('snapshot preserves serves graph, leaves live reason conflicts unchanged, a
     assert.ok(report.conflicts.some((c) => c.includes('metric')));
     assert.equal(getEntity(merged.store, 'metric')!.status, 'retired');
     assert.equal(getEntity(merged.store, 'metric')!.name, 'Live metric');
-    const { graph: _graph, ...legacy } = dump;
-    const legacyReport = restoreWork(legacyStore.store, legacy, at(), 'project');
-    assert.ok(legacyReport.conflicts.some((c) => c.includes('legacy snapshot has no reason graph')));
-    assert.notEqual(getWork(legacyStore.store, 'serving')!.entityId, null);
-    assert.equal(workStructure(legacyStore.store, getWork(legacyStore.store, 'serving')!).serves.length, 0);
+    const { graph: _graph, ...graphless } = dump;
+    assert.throws(() => restoreWork(graphlessStore.store, graphless as typeof dump, at(), 'project'), /reason graph/);
   } finally {
     fx.cleanup();
     restored.cleanup();
     merged.cleanup();
-    legacyStore.cleanup();
+    graphlessStore.cleanup();
   }
 });
 
@@ -363,5 +360,23 @@ test('reason relation identity collisions refuse restore atomically', () => {
   } finally {
     fx.cleanup();
     other.cleanup();
+  }
+});
+
+test('work exports use only the current snapshot format and refuse other versions before writes', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    createWork(fx.store, { id: 'one', kind: 'task', title: 'One', description: '', at: at() });
+    const dump = exportWork(fx.store, at(), null);
+    assert.equal(dump.formatVersion, 2);
+    assert.equal('legacyIds' in dump, false);
+    for (const formatVersion of [1, 3]) {
+      const unsupported = { ...dump, formatVersion } as unknown as typeof dump;
+      assert.throws(() => restoreWork(fx.store, unsupported, at()), /construct-work-export v2/);
+      assert.equal(fx.store.db.prepare('SELECT COUNT(*) AS n FROM work_items').get()?.n, 1);
+    }
+  } finally {
+    fx.cleanup();
   }
 });

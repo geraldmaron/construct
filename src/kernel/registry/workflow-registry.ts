@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { bundleDigest, type DigestFile } from './digest.ts';
 import { WORKFLOW_MANIFEST_FILE, type BundleOrigin, type RegisteredWorkflow } from './models.ts';
 import { createSkillRegistry } from './skill-registry.ts';
-import { bindWorkflow, workflowAlias } from './workflow-domains.ts';
+import { bindWorkflow } from './workflow-domains.ts';
 import { validateWorkflowManifest } from './validation.ts';
 
 /** `workflows/` beside the package root, whether running from src/ or dist/. */
@@ -89,14 +89,6 @@ export function createWorkflowRegistry(
         problems.push({ dir, message: result.problem });
         continue;
       }
-      const aliases = Object.keys(result.manifest.aliases ?? {});
-      const collision =
-        workflowAlias([...workflows.values()], result.manifest.id) ||
-        aliases.find((id) => id === result.manifest.id || workflows.has(id) || workflowAlias([...workflows.values()], id));
-      if (collision) {
-        problems.push({ dir, message: `workflow ${result.manifest.id} collides with a reserved workflow alias` });
-        continue;
-      }
       if (workflows.has(result.manifest.id) && origin === 'project') {
         problems.push({ dir, message: `project workflow "${result.manifest.id}" shadows a built-in workflow; rename it or remove one` });
         continue;
@@ -107,14 +99,12 @@ export function createWorkflowRegistry(
   return {
     list: () => [...workflows.values()].sort((a, b) => (a.manifest.id < b.manifest.id ? -1 : 1)),
     get: (id, domain) => {
-      const direct = workflows.get(id);
-      if (direct) return typeof domain === 'string' && direct.manifest.domains ? bindWorkflow(direct, domain, undefined, skills) : direct;
-      const alias = workflowAlias([...workflows.values()], id);
-      if (!alias || (domain !== undefined && domain !== alias.domain)) return null;
-      return bindWorkflow(alias.workflow, alias.domain, id, skills);
+      const w = workflows.get(id);
+      if (!w) return null;
+      return typeof domain === 'string' && w.manifest.domains ? bindWorkflow(w, domain, skills) : w;
     },
     file: (id, relativePath) => {
-      const w = workflows.get(id) ?? workflowAlias([...workflows.values()], id)?.workflow;
+      const w = workflows.get(id);
       if (!w || !w.files.includes(relativePath)) return null;
       return readFileSync(join(w.dir, relativePath));
     },
