@@ -207,5 +207,3 @@ another project is refused; work moves between projects as new items. Relationsh
 are restored after identities, so later-created parents and blockers are valid.
 Invalid cycles or conflicting relationship identities roll back the restore;
 skipped live items keep their own dependencies and history.
-Items imported from the retired tracker keep their old ids as aliases, so
-`construct work show <old-id>` still finds them; the import itself is gone.

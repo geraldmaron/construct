@@ -3,9 +3,9 @@
 This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
 alpha.32 code; static wiring and structural checks are not broad effectiveness
-qualification. [Release notes](../CHANGELOG.md) carry measured limits. The
-records of how it was built live in [`internal/`](internal/), separately and
-labeled as history, so a reader can tell which they are holding. A lint holds
+qualification. [Release notes](../CHANGELOG.md) carry measured limits.
+[`internal/`](internal/) holds the release evidence the release gate checks and
+the recorded skill runs, kept apart from the guides. A lint holds
 this list to the directory: a new file here is added below, which is the
 moment someone decides it is documentation rather than a record.
 

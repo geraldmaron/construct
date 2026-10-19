@@ -108,7 +108,7 @@ File operations must be non-interactive (`cp -f`, `mv -f`, `rm -f`,
 ## Architecture
 
 - `src/kernel/` — host-agnostic core. Only `kernel/paths.ts` may read env
-  or home. Storage is built-in `node:sqlite`. State format 5.
+  or home. Storage is built-in `node:sqlite`. State format 6.
 - `src/kernel/work/` — native bounded work ledger.
 - `src/hosts/` — host adapters: the MCP server, wiring for every supported
   host, Claude Code's hooks, source readers, and delegation workers.

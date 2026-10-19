@@ -302,7 +302,7 @@ record for nine domains. `authoring` runs gather, draft, challenge and record
 for PRDs, proposals, RFCs and research briefs. Start either with `input.domain`
 set to its bound skill id. `classify_request` returns the canonical workflow id,
 domain and mapped input together. `workflows list` exposes the domains and their
-input schemas, required inputs and alias table; `workflows show` with a domain
+input schemas and required inputs; `workflows show` with a domain
 shows the complete bound contract.
 
 Domain bindings retain each domain's validators, inputs, tiers, sources,
@@ -312,38 +312,15 @@ workflow-specific input schemas and step bindings live in the merged workflow,
 keyed by skill id. Domain is part of run identity, so two domains cannot reuse
 each other's run. It also scopes single-run concurrency independently per domain.
 
-The former ids remain aliases:
-
-| Former id | Workflow | Domain (skill id) |
-| --- | --- | --- |
-| `architecture-decision-review` | `review` | `system-architecture` |
-| `delivery-plan-review` | `review` | `program-delivery` |
-| `experience-review` | `review` | `experience-design` |
-| `governance-issue-spotting` | `review` | `governance-risk` |
-| `implementation-review` | `review` | `software-engineering` |
-| `operational-readiness-review` | `review` | `operations-reliability` |
-| `product-requirements-review` | `review` | `product-management` |
-| `security-privacy-review` | `review` | `security-privacy` |
-| `strategy-execution-review` | `review` | `strategy-research` |
-| `prd-authoring` | `authoring` | `requirements-structuring` |
-| `proposal-authoring` | `authoring` | `decision-framing` |
-| `rfc-authoring` | `authoring` | `system-architecture` |
-| `research-brief` | `authoring` | `investigative-research` |
-
-An alias infers its domain; a conflicting domain is refused. New starts through
-an alias record the canonical workflow id and inferred domain. Saved runs keep
-their frozen steps, including research's former `synthesize` step. The exact
-pre-merge versions and digests in `legacyDigests` permit those frozen plans to
-continue; other changed digests still require re-resolution. Existing triggers
-can keep their alias addresses. Historical host transcripts remain interpretable
-through the catalog's aliases and domain deliverable kinds.
+A domain-keyed workflow is addressed only by its id and a domain: `review`
+or `authoring` with `domain` set to the skill id. A run whose workflow bytes
+changed since it was bound waits for re-resolution.
 
 The other workflows cover project bootstrap, grounded portable outcomes,
 decision support, implementation with command verification, design conformance,
 source drift, adversarial deliverable review, standing review, revision and
-publication. The unused remember workflow was removed: the `remember` tool
-records directly and starts no run. See [catalog.md](catalog.md) and the
-[per-domain preservation record](internal/workflow-domain-diff.md).
+publication. The `remember` tool records directly and starts no run. See
+[catalog.md](catalog.md).
 
 ### Clock and executor are separate
 

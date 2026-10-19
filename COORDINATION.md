@@ -57,6 +57,11 @@ implementation and the opposite model acting as an independent reviewer.
    worktrees short-lived.
 6. **Single sources of truth.** This file is the coordination model; `HANDOFF.md` is live
    session state. Instructions live once (here), never copied into both agent files.
+7. **A delegate works under the lead's claim.** Construct is wired into both hosts, so
+   a delegate can see its tools. It never calls them (no `classify_request`,
+   `start_outcome`, `claim_work`, `submit_work`, or `work`): the lead holds the ledger
+   claim for the paths it assigns, and a delegate's own calls open runs and claims
+   nobody will close. The lead's brief says so.
 
 ## Model selection
 
@@ -66,7 +71,8 @@ registrations, and no `--model`/`--effort` on a `/codex:*` invocation). Cost sta
 Codex's default lives in `~/.codex/config.toml` (`model`), Claude's in its own settings.
 Pick by task: a cheaper/faster model for routine or mechanical delegate work, a stronger
 model only for deep review or genuinely hard implementation. If you must override for a
-single invocation, do it explicitly, sparingly, and note why in `HANDOFF.md`. This rides on
+single invocation, do it explicitly, sparingly, and note why in `HANDOFF.md`. Never use
+`gpt-6-astra`, as a default or an override. This rides on
 the depth-1 lead/delegate rule: the lead chooses the model for what it delegates; the
 delegate does not escalate on its own.
 

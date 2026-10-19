@@ -6,7 +6,7 @@
 
 A skill is a directory: `SKILL.md` (Agent Skills frontmatter and body),
 `construct.skill.json`, and optional `references/`, `assets/`, `scripts/`,
-`schemas/`, and `evals/`. The manifest carries only what something
+and `schemas/`. The manifest carries only what something
 enforces: id, title, semantic version, category, owner, the capabilities a
 host must provide (never tools), `maxTier` (the highest action tier a step
 may apply the skill at), `requiredValidators` (validators the deliverable
@@ -38,54 +38,19 @@ built-in id.
 
 ## Evals
 
-Each skill carries its evals in the Agent Skills shape
+Each skill is evaluated in the Agent Skills shape
 ([evaluating skill output quality](https://agentskills.io/skill-creation/evaluating-skills),
 [optimizing skill descriptions](https://agentskills.io/skill-creation/optimizing-descriptions)):
-
-- `evals/evals.json`: `skill_name` and `evals`, each case with `id`,
-  `prompt` (a realistic request), `expected_output`, `files`, and
-  `assertions` that can be checked from the output.
-- `evals/trigger-queries.json`: twenty `{query, should_trigger, split}`
-  entries, half that should load the skill and half near-misses that share
-  its words but need something else, on a fixed 12/8 train/validation split.
-  Descriptions are tuned on train and judged on validation.
-
-The suite checks only their shape. `node scripts/run-skill-evals.mjs
-triggers <skill>` measures trigger rates through a real Claude Code, and
-`outputs <skill>` runs each case with and without the skill for grading.
-Both use the person's own login and run by hand, not in CI.
+output cases with checkable assertions, and should- and shouldn't-trigger
+queries on a fixed train/validation split. Those evals, the intake corpus,
+and the live-run harness are maintainer-local work kept in an ignored
+`evals/` folder; they never enter git, the package, or an installed skill.
 
 Nothing in Construct matches a request's words to a skill. The host model
 reports its own reading to `classify_request`, which returns the workflows
 whose declared deliverable fits and the use-when text of the skills they
 bind, unranked, and the host model judges which skill applies. Whether it
-judges well is shown only by running the trigger queries above against a
-real host.
-
-Whether hosts read requests well is measured through real hosts, not by
-word overlap. The held-out corpus, `evals/intake/intake.json`, holds
-requests in ordinary language, some with earlier turns, each labeled with
-the readings its labelers would accept. Two model families labeled the 48
-cases from the typed-intake design work; the routing and authored cases
-carry Claude's labels alone, so `agreed` is false on them (see
-[release-verification.md](release-verification.md#live-intake-eval)). A
-hash of each case puts it in the tune or the test split; descriptions are
-tuned only on the tune split. `npm run evals:live -- run` drives Claude Code, Codex, and Cursor
-one request at a time against a sterile project, with Construct alone, among
-competing servers (on Claude Code also with tool search off), after a
-first-run init, and with a page that carries planted instructions. `npm run evals:live -- record` writes
-`evals/intake/intake-live.json`, scored by the rule fixed in code before any
-test-split run. The suite validates a committed record and recomputes its
-verdicts from the stored outcomes; `npm run evals:live -- check` fails when
-the record is missing, does not cover the current cases, or was made against
-different model-facing text (server instructions, tool descriptions and
-schemas, the operational skill, or skill and workflow text), so changing any
-of them means running it again. The corpus is committed; no record exists
-yet, so `check` fails and says that no record exists. Qualified release claims
-need `npm run evals:live -- check --cut`, which passes only on a full-scope
-record. Numbered experimental alphas use the separate finite-control tier in
-[the release policy](release-verification.md#experimental-alpha-tier);
-that tier does not establish full qualification.
+judges well is shown only by running trigger queries against a real host.
 
 Professional packs add `references/sources.md` with citations, what each is
 used for, review dates, and the date each source was last opened and what was
@@ -135,8 +100,8 @@ cannot raise Construct's authority by anything its text says; the resolver
 enforces each step's tier ceiling whatever the skill asks for.
 
 Before a skill or workflow ships, its manifest validates and agrees with its
-frontmatter, the registry index is current, its evals have the standard
-shape, a consuming workflow resolves against it, and any effectiveness claim
+frontmatter, the registry index is current, its maintainer-local evals have
+the standard shape, a consuming workflow resolves against it, and any effectiveness claim
 rests on a recorded run of its evals. Static conformance checks protocol and wiring;
 it cannot establish native effectiveness.
 

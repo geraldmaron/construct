@@ -11,37 +11,37 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 
 | Skill | Version | Category | When it applies |
 |---|---|---|---|
-| `adversarial-review` | 0.3.4 | method | Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. |
-| `construct` | 3.2.2 | operational | Use this whenever the person wants work done in a Construct-bound project: something produced, implemented, fixed, reviewed, kept up on a schedule, recorded, or handed to another agent, as an order or a question. |
-| `context-mapping` | 0.4.4 | method | Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. |
-| `decision-framing` | 0.3.4 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
-| `experience-design` | 1.0.4 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |
-| `governance-risk` | 1.0.5 | professional | Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. |
-| `intake` | 0.3.4 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
-| `investigative-research` | 0.3.6 | method | Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. |
-| `operations-reliability` | 1.0.4 | professional | Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. |
-| `product-management` | 1.0.5 | professional | Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. |
-| `program-delivery` | 1.0.4 | professional | Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it. |
-| `requirements-structuring` | 0.5.4 | method | Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like. |
-| `security-privacy` | 1.0.4 | professional | Defensive review of threat model, access, secrets, data handling, and privacy, with fixes. |
-| `software-engineering` | 1.0.4 | professional | Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability. |
-| `strategy-research` | 1.0.4 | professional | Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs. |
-| `system-architecture` | 1.0.4 | professional | Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths. |
-| `written-voice` | 0.5.3 | method | One plain, direct house voice for prose: what it says, for whom, and nothing decorative. |
+| `adversarial-review` | 0.3.5 | method | Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. |
+| `construct` | 3.2.3 | operational | Use this whenever the person wants work done in a Construct-bound project: something produced, implemented, fixed, reviewed, kept up on a schedule, recorded, or handed to another agent, as an order or a question. |
+| `context-mapping` | 0.4.5 | method | Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. |
+| `decision-framing` | 0.3.5 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
+| `experience-design` | 1.0.5 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |
+| `governance-risk` | 1.0.6 | professional | Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. |
+| `intake` | 0.3.5 | method | Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. |
+| `investigative-research` | 0.3.7 | method | Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. |
+| `operations-reliability` | 1.0.5 | professional | Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. |
+| `product-management` | 1.0.6 | professional | Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. |
+| `program-delivery` | 1.0.5 | professional | Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it. |
+| `requirements-structuring` | 0.5.5 | method | Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like. |
+| `security-privacy` | 1.0.5 | professional | Defensive review of threat model, access, secrets, data handling, and privacy, with fixes. |
+| `software-engineering` | 1.0.5 | professional | Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability. |
+| `strategy-research` | 1.0.5 | professional | Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs. |
+| `system-architecture` | 1.0.5 | professional | Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths. |
+| `written-voice` | 0.5.4 | method | One plain, direct house voice for prose: what it says, for whom, and nothing decorative. |
 
 ## Workflows
 
 | Workflow | Version | Class | Triggers | Steps | Purpose |
 |---|---|---|---|---|---|
 | `adversarial-deliverable-review` | 1.0.2 | manage | manual, event | gather → challenge → record | Challenge a finished deliverable independently of the run that produced it: the six mandatory challenges, findings by severity with the smallest fix stated, and exactly one verdict; the verdict is recorded on the deliverable and acceptance stays with the person. |
-| `authoring` | 2.0.0 | manage | manual | gather → draft → challenge → record | Apply the bound domain method, preserving its inputs, checks and evidence obligations. |
+| `authoring` | 2.0.1 | manage | manual | gather → draft → challenge → record | Apply the bound domain method, preserving its inputs, checks and evidence obligations. |
 | `decision-support` | 1.0.2 | manage | manual, schedule | plan → do → verify | Interpret, produce and check an outcome through the current host, with bounded gathering, checkpoints and explicit assurance. Chat delivery needs no file writer or code test runner. |
 | `design-conformance` | 2.0.3 | manage | manual, schedule | gather → deterministic → review → record | Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented. |
 | `guided-outcome` | 1.0.2 | manage | manual, schedule | plan → do → verify | Interpret, produce and check an outcome through the current host, with bounded gathering, checkpoints and explicit assurance. Chat delivery needs no file writer or code test runner. |
 | `managed-outcome` | 2.1.3 | manage | manual, schedule | plan → do → verify | The implementation path: plan the change, produce project files with cited evidence, run the project's own verification command, and hold the deliverable for independent semantic review. General research, decisions and chat artifacts use portable paths whose verification fits their outcome. |
 | `project-bootstrap` | 1.0.4 | manage | manual, schedule | discover → review → record | Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow. |
 | `publish-deliverable` | 1.0.2 | manage | manual | prepare → publish → record | Put a finished deliverable where its readers are (a wiki page, a doc, a tracker), through the host's own connector, after the person approves the exact write and clears the material for its audience when it rests on confidential or restricted sources; record where it went. |
-| `review` | 2.0.0 | manage | manual, schedule | gather → checks → review → record | Apply the bound domain method, preserving its inputs, checks and evidence obligations. |
+| `review` | 2.0.1 | manage | manual, schedule | gather → checks → review → record | Apply the bound domain method, preserving its inputs, checks and evidence obligations. |
 | `revise-deliverable` | 1.0.3 | manage | manual | gather → revise → challenge → record | Revise an earlier deliverable for a stated change (reviewer feedback, a stale-work finding, new material, a conversion to another form), keeping it linked to the version it revises, saying what changed and why, and holding the revision to the same grounding checks; challenged before it is handed back. |
 | `source-drift-review` | 1.0.3 | maintain | manual, schedule, event | refresh → detect → review → record | Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed. |
 | `standing-review` | 1.0.2 | maintain | schedule, event, manual | freshness → detect → conformance → deliver | The wrapper an external clock fires: check source freshness, run the deterministic drift checks, review conformance to the confirmed principles with every finding cited, and deliver a no-drift record, a cited drift report, or a concise blocked decision; stale or missing sources follow the declared policy. |

@@ -3,35 +3,32 @@
 Baton between Claude Code and Codex. Read at session start; update at session end.
 Roles and rules: see `COORDINATION.md`. One writer at a time; overwrite, don't log.
 
-**Control holder:** none after this session; alpha.32 awaits Gerald's go-ahead to push and tag.
-**Mode:** B (Claude leads; Codex implements bounded slices in worktrees, Claude reviews and commits).
+**Control holder:** none after this session.
+**Mode:** A (Claude leads; Codex takes bounded slices and independent review on its default model, never gpt-6-astra).
 
 ## What was done
-- 3.0.0-alpha.32 is prepared on local `main` (39a80bf4): version bumped, CHANGELOG section written,
-  release manifest recorded without native review (§48), smoke live record current and passing.
-- Codex and gpt-6-astra are out of use (Gerald, 2026-10-17): no gated Codex eval cell, and the
-  release manifest's `nativeReview` says unavailable under §48. The gate refuses a silent omission.
-- Merged today: workflow consolidation (§44), Codex 0.163 reviewer (§47, not run for alpha.32),
-  module split, shorter tool descriptions (measured before and after on Claude Code), claim-recovery
-  hint, `USER` kept for host children, the Codex eval-home fix and the code-mode fix.
+- Evals are maintainer-local: the skill evals, the intake corpus and live record, and the live-run
+  harness live in an ignored `evals/` folder with its own local git history, and are stripped from
+  this repository's history. Skills no longer ship or plant them (RESEARCH-DECISIONS 17).
+- Clean state (RESEARCH-DECISIONS 18): no compatibility code for earlier releases. State format 6
+  (`construct migrate` upgrades a format-5 store only), the Beads id map and workflow id aliases are
+  gone, the native reviewer keeps only its app-server profile, and the release gate pins no model.
+- Changes learned from Hermes Agent: entry tools load upfront on hosts that defer MCP tools,
+  outside text carries injection flags, the skills tool reads one file of a skill, Hermes gets a
+  120-second tool timeout, and the grounding hook runs on MCP tools only.
 
 ## Current state
-- Local `main` is 66 commits ahead of `origin/main`; nothing is pushed or tagged.
-- Gate on 39a80bf4: lint, typecheck, npm test 1,300 / 0, smoke, conformance 126 / 0,
-  `evals-live check` passing, `release:check --tier=experimental-alpha` passing.
-- All eval worktrees are removed; only the main checkout remains.
+- Gate on the cleanup branch: lint, typecheck, npm test, smoke, conformance (static) all pass.
+- A format-5 project store (this checkout's own) must run `construct migrate` once every
+  Construct session on it is stopped; the command backs the file up first.
 
 ## Next step
-1. On Gerald's word: push a `release/alpha.32` branch, open the PR to `main`, and after it merges
-   tag `v3.0.0-alpha.32` on the merge commit and push the tag (release.yml publishes under `alpha`).
-2. Then: work-f6a6a2ba (a Claude Code held-text reviewer) and work-51bcd5b9's live criterion (a
-   Claude scenario that plants a settled statement and a superseded document).
+1. Ledger: `construct work ready` for the remaining Hermes-derived items under work-59ca8350.
+2. Haiku rarely engages Construct for work under tool search even when the entry tools are loaded
+   (measured 2026-10-19); the lever is the model's judgment to engage, not discovery.
 
 ## Open questions
-- Backlog after triage: about 40 genuine items (sources, standing outcomes, hook unification, live
-  evidence, product-scale design). None blocks the alpha.
-- The reviewer's app-server session also reads `$CODEX_HOME/AGENTS.md`. Its controls passed, but a
-  dedicated CODEX_HOME would make it independent of the person's instructions too.
+- Whether to re-qualify the native semantic reviewer on Codex's current default model.
 
 ## Files owned / in-flight
 - None.

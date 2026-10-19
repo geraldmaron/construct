@@ -5,7 +5,7 @@
 
 # State model
 
-One SQLite database per project at `.construct/state/construct.sqlite`, format `construct-state` 5. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger. A complete store in format 2, 3 or 4 is upgraded only by `construct migrate`, which needs every Construct session on the project stopped and backs the file up first; a store in a newer format is refused with the instruction to upgrade Construct; any other file is refused unread.
+One SQLite database per project at `.construct/state/construct.sqlite`, format `construct-state` 6. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger. A complete store in format 5 is upgraded only by `construct migrate`, which needs every Construct session on the project stopped and backs the file up first; a store in a newer format is refused with the instruction to upgrade Construct; any other file is refused unread.
 
 ## Tables
 
@@ -40,7 +40,6 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 | `work_items` | id, kind, title, description, status, scope_json, premises_json, acceptance_json, risk_json, entity_id, parent_id, superseded_by, revision, claim_owner, claim_token, claim_until, created_at, updated_at, completed_at, reason, claim_session, claim_agent, claim_lane, claim_touched_at, handoff_json |
 | `work_dependencies` | id, from_id, to_id, kind, created_at |
 | `work_events` | id, work_id, at, kind, actor, expected_revision, payload_json |
-| `work_legacy_ids` | legacy_id, work_id, source, created_at |
 | `work_runs` | work_id, run_id, role, created_at |
 | `reviews` | id, subject_kind, subject_id, subject_revision, method, reviewer, evidence_json, objections_json, dispositions_json, unresolved_json, status, created_at, updated_at |
 | `run_bindings` | run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, policy_digest, frozen_at |

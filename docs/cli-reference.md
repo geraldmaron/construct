@@ -389,7 +389,7 @@ Reads only: yes.
 
 ### `construct work show <id>`
 
-one work item, including legacy-id lookup
+one work item
 
 Reads only: yes.
 
@@ -784,7 +784,7 @@ Reads only: no.
 
 ### `construct migrate`
 
-upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first
+upgrade this project’s state from format 5 to 6, after writing a backup beside it; stop every Construct session on this project first
 
 | Flag | Takes a value | Meaning |
 |---|---|---|

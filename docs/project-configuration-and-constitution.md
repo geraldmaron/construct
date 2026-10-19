@@ -23,13 +23,12 @@ committed files and uses its one store. Commands that write the committed
 files, such as `construct project refresh`, run only in the main checkout,
 and `construct project validate` notes when a worktree's copies differ.
 
-There is no home database or global project-state workspace. The retired
-settings-file format is not supported; the per-user presentation defaults below
-remain available for locale and color. A
-file from an earlier alpha is recognized by path or stamp, named exactly,
-and never parsed; `construct reset` shows what it would remove and removes
-only that when you confirm. A state database in format 2, 3 or 4 is different:
-stop every Construct session on the project, then run `construct migrate`,
+There is no home database or global project-state workspace. The per-user
+presentation defaults below set locale and color. A project file in a format
+this version does not read is recognized by its stamp, named exactly, and
+never parsed; `construct reset` shows what it would remove and removes only
+that when you confirm. A state database one format behind (format 5) is
+different: stop every Construct session on the project, then run `construct migrate`,
 which writes a backup beside it under `state/` and upgrades it. Read-only
 commands refuse an older store and name that step. A store written by a
 newer Construct is refused with the instruction to upgrade Construct, never

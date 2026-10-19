@@ -168,14 +168,15 @@ Surface: interactive. Reads only: yes.
 
 ### `skills`
 
-Skills. List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.
+Skills. List the skills available to this project, show one (its files, and its full text only when you ask), read one of its files by path, or check whether the ones a host needs on disk are current.
 
 Surface: both. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `status` | yes | list, show, or status. |
-| `id` | string | no | The skill id, for show. |
+| `action` | `list`, `show`, `file`, `status` | yes | list, show, file, or status. |
+| `id` | string | no | The skill id, for show and file. |
+| `path` | string | no | For file: one of the paths show lists, such as references/sources.md. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `start_outcome`
@@ -365,7 +366,7 @@ Surface: interactive. Reads only: no.
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `action` | `list`, `ready`, `offers`, `show`, `add`, `update`, `link`, `unlink`, `requalify`, `claim`, `check`, `handoff`, `prepare_accept`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | Use prepare_accept before recoverable accept. |
-| `id` | string | no | Work id or a preserved legacy id. |
+| `id` | string | no | Work id |
 | `title` | string | no | Title, for add and update. |
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
 | `description` | string | no | For add and update: what the work is, in enough detail to pick it up cold. |
@@ -441,14 +442,15 @@ Surface: both. Reads only: yes.
 
 ### `skills`
 
-Skills. List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.
+Skills. List the skills available to this project, show one (its files, and its full text only when you ask), read one of its files by path, or check whether the ones a host needs on disk are current.
 
 Surface: both. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `status` | yes | list, show, or status. |
-| `id` | string | no | The skill id, for show. |
+| `action` | `list`, `show`, `file`, `status` | yes | list, show, file, or status. |
+| `id` | string | no | The skill id, for show and file. |
+| `path` | string | no | For file: one of the paths show lists, such as references/sources.md. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `submit_work`

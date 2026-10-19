@@ -1,7 +1,0 @@
-{
-  "source": "src/hosts/mcp/instructions.ts",
-  "method": "Read exported strings directly and measure JavaScript string length, as scripts/generate-docs.mjs does.",
-  "contractCharacters": 483,
-  "interactiveCharacters": 1848,
-  "runnerCharacters": 282
-}

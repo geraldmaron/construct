@@ -1,38 +1,13 @@
-# Internal records (history)
+# Internal records
 
-Nothing in this directory describes the current product. These are dated
-records kept as evidence: the directive that set the architectural cutover
-in motion, the host trial transcripts and stakeholder-acceptance packets of
-the program that preceded it, the records of the later native-work cutover
-that replaced the external tracker, and recorded skill runs.
-RESEARCH-DECISIONS.md cites the directive: its sections 1 through 32 are the
-decision record of that earlier program and its section 33 records the
-architectural cutover. Current documentation is one level up, in docs/.
+Records that current tooling and documentation read. Nothing here describes
+how to use Construct; current documentation is one level up, in `docs/`.
 
-Raw evidence is not kept in the tree. The `evidence/` folders these records
-cite (transcripts, logs, JSONL captures) were removed on 2026-10-17 and stay in
-git history: `git show bb5943f0:<path>` prints one file, and
-`git checkout bb5943f0 -- docs/internal/<program>/evidence` restores a folder.
-What a release check reads stays here: each `releases/<version>.json`
-manifest, its run folder, and the two fresh-user observations in
-`releases/observations/`.
-
-- `cutover-directive.md` — the execution directive, verbatim.
-- `construct-cutover/` — the 2026-09-20 records of the native-work cutover:
-  the frozen mandate, baseline, findings, architecture, plan, source register,
-  deletion inventory, and verification report.
-- `host-trial-*.md` — dated transcripts of the earlier projection inside
-  Codex, Cursor, goose, nanobot, and pi.
-- `stakeholder-acceptance-phase-4.md`, `stakeholder-acceptance-phase-5.md`
-  — the earlier program's acceptance packets.
-- `skill-runs/` — recorded real-work runs of method skills.
-- `multi-agent-coordination/` — the 2026-09-24 audit of concurrent sessions,
-  worktrees, authority, host residue, templates, and professional capability
-  (237 verified findings), the approved plan, and the recommended design for
-  several agent sessions from any host sharing one project. Its plan and design
-  describe commands the program is building.
-- `multi-repo-sources.md` — the 2026-10-08 design for systems that span
-  several repositories: naming sibling repositories portably, checked
-  provenance for repositories read through a host connector, citing
-  cross-repository edges, and what each supported host can open. It
-  describes changes not yet built.
+- `releases/`: the experimental-alpha release records. Each
+  `releases/<version>.json` manifest names its evidence by path and SHA-256:
+  the run folder `releases/<version>-<timestamp>/` that
+  `npm run release:live` writes, and the fresh-user observations in
+  `releases/observations/`. `npm run release:check` reads the manifest for
+  the package version and verifies every file it cites.
+- `skill-runs/`: dated records of method skills run on real work, cited by
+  `skills/AUTHORING.md` and `skills/README.md`.

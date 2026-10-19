@@ -45,7 +45,7 @@ already use, recorded, cited, and handed back finished.
    same command, and shown by status and doctor. Init, install, library
    code, and tests never install or start one. A long-running or on-demand
    Construct process stays unlicensed until a recorded decision admits it
-   (`RESEARCH-DECISIONS.md` §29, §36).
+   (`RESEARCH-DECISIONS.md` §4).
 4. **Registries describe; the resolver binds.** Skills carry a Construct
    manifest beside their portable `SKILL.md`; workflows carry a manifest of
    typed inputs and DAG steps. Both are versioned and digested, locked per
@@ -126,17 +126,18 @@ each exercised path recorded, each untested path named.
    matches workflows by the deliverable each declares, and asks only what is
    missing. It checks the reading again before any run starts. If the host
    never calls, nothing is recorded. If it calls on a plain question, work
-   starts that nobody asked for. Mitigation: `npm run evals:live` drives
-   Claude Code, Codex, and Cursor one request at a time against a fresh
+   starts that nobody asked for. Mitigation: the maintainer's live intake
+   evals (kept out of the repository) drive Claude Code, Codex, and Cursor
+   one request at a time against a fresh
    project. The requests are held out, in ordinary language, and labeled by
    two model families. Each runs with Construct alone, among competing
    servers, on a project not yet set up, and with instructions planted in what
    a connector returns. Any change to what a host model reads from Construct
-   is not merged to staging or released until a fresh record covers it and is
+   is not merged to main or released until a fresh record covers it and is
    no worse than the accepted record beyond the noise between runs. That
    covers server instructions, tool descriptions and schemas, the operational
    skill, and the skill and workflow text Construct returns.
-   `npm run evals:live -- check` says whether the record covers the current
+   The qualified release tier checks that the record covers the current
    text. Word-overlap scores may only order options or raise rigor, are
    labeled lexical, and never veto. A host that cannot be driven headlessly here is
    listed as unmeasured, not passed.

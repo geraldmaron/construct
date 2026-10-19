@@ -6,8 +6,8 @@ A skill is a portable `SKILL.md` (Agent Skills format) beside a Construct
 manifest, `construct.skill.json`, that declares only what Construct
 enforces when it binds the skill into a workflow step: capability
 requirements (never tool names), the highest action tier it may be applied
-at, the validators its deliverable must pass, versioned dependencies, and
-evals. Everything else about the method lives in `SKILL.md`. The manifest
+at, the validators its deliverable must pass, and versioned dependencies.
+Everything else about the method lives in `SKILL.md`. The manifest
 and the frontmatter must agree on name and version.
 
 ## What ships
@@ -100,9 +100,9 @@ version bump fails the release check.
 
 ## Evals and skill impact
 
-Each skill ships `evals/evals.json` and `evals/trigger-queries.json` in the
-Agent Skills shape; [authoring](authoring-and-qualification.md#evals) says
-how they are written and run. The `skills` tool's show action reports lock
+Each skill is evaluated in the Agent Skills shape by maintainer-local evals
+that never ship; [authoring](authoring-and-qualification.md#evals) says
+what they cover. The `skills` tool's show action reports lock
 integrity only: whether the bytes are the ones the project locked. It never
 grants permission or claims a skill works; a run of its evals shows that.
 

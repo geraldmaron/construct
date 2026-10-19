@@ -1,10 +1,10 @@
 # Update pull requests for the pinned workflow actions and the npm tree. They
-# target staging, like every other change, and reach main through promotion.
+# target main, like every other change.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
-    target-branch: staging
+    target-branch: main
     schedule:
       interval: weekly
     groups:
@@ -13,7 +13,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /
-    target-branch: staging
+    target-branch: main
     schedule:
       interval: weekly
     groups:

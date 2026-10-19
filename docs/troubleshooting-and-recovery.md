@@ -25,10 +25,10 @@ checking out the commit that has them. `construct init` refuses to run over
 such a store, because a new project id would orphan it; `construct reset`
 discards the store instead.
 
-## A file from an earlier alpha
+## A project file in an unsupported format
 
-Init and doctor name any earlier-alpha settings file or format-1
-`project.json` they find and refuse to read it. `construct reset` lists
+Init and doctor name a `project.json` whose format stamp this version does
+not read, and refuse to read it. `construct reset` lists
 exactly what it would remove; `construct reset --confirm` removes those
 paths and recreates clean state, keeping the committed project files unless
 you pass `--include-project-files`. It refuses while another process has the

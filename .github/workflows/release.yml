@@ -72,13 +72,7 @@ jobs:
       # trusted publisher is not registered: that is registry-side
       # configuration and cannot be done from here.
       #
-      # --tag alpha keeps this off the default `latest` dist-tag, and that is
-      # load-bearing rather than tidy: this package is the
-      # predecessor's, whose `latest` is 2.1.1 and has real installs. `npm
-      # publish` moves `latest` to whatever it publishes unless told otherwise,
-      # so without this flag an alpha of a from-scratch rewrite would become the
-      # default install for everyone already on 2.x. It is also how STRATEGY's
-      # "no stability promise until the Phase 5 stakeholder-acceptance gate" is
-      # enforced by the registry rather than implied by a version number.
-      # `latest` moves only when 3.0.0 is promoted deliberately.
+      # --tag alpha keeps every alpha off the default `latest` dist-tag, which
+      # `npm publish` would otherwise move to whatever it publishes. `latest`
+      # moves only when 3.0.0 is promoted deliberately.
       - run: npm publish --provenance --tag alpha

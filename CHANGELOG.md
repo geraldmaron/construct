@@ -1,5 +1,41 @@
 # Changelog
 
+Each entry lists what a release changed that still describes Construct as it
+is now. Changes later removed or replaced are left out, and so are upgrade
+steps for releases an install can no longer upgrade from.
+
+## Unreleased
+
+### Breaking
+
+- State format 6. A complete format 5 store is upgraded once by
+  `construct migrate`, after every session is stopped; the command backs
+  the store up first. Older, foreign, or incomplete stores are refused
+  unread, and `construct reset` starts fresh project state.
+- The lookup of work by an id from the retired external tracker is gone;
+  the format 6 upgrade drops that id map.
+- The former review and authoring workflow ids no longer resolve. Start
+  `review` or `authoring` and name the domain.
+- Compatibility code for earlier releases is removed, including the prune
+  of eval files an earlier release planted.
+
+### Changed
+
+- Skills no longer ship or plant `evals/`. Each skill takes a patch version
+  so existing locks read outdated, not diverged. Evals are maintainer-local
+  and out of git.
+- Tool results that carry text from outside the project carry injection
+  flags, so the host can tell where untrusted text sits.
+- The `skills` tool reads one file of a skill.
+- `bootstrap` and `classify_request` load up front on hosts that defer MCP
+  tools.
+- The Hermes Agent entry sets `timeout: 120`, so a question shown to the
+  person is not cut off.
+- Claude Code's grounding hook runs on MCP tool calls only (`mcp__.*`),
+  not on every tool. `construct doctor` reports an install with the old
+  `*` matcher as stale, and `construct init --client=claude-code` repairs
+  it.
+
 ## 3.0.0-alpha.32 — 2026-10-17 (experimental)
 
 Hermes Agent is a supported host, nothing matches a person's words, and
@@ -7,11 +43,9 @@ review and authoring each run as one workflow keyed by domain.
 
 ### Breaking
 
-- Nine review workflows are now `review` and four authoring workflows
-  (PRD, proposal, RFC, research brief) are now `authoring`, both 2.0.0 and
-  keyed by `domain`. Every former id still starts the matching domain
-  through an alias, and saved runs keep their frozen contracts. The unused
-  `remember` workflow is gone.
+- Nine review workflows run as `review` and four authoring workflows (PRD,
+  proposal, RFC, research brief) run as `authoring`, both 2.0.0 and keyed by
+  `domain`. The unused `remember` workflow is gone.
 - A managed `classify_request` reading must carry `stakes` with `reversible`
   and `affects`. A reading without it fails with a typed error naming the
   field.
@@ -22,8 +56,8 @@ review and authoring each run as one workflow keyed by domain.
   calculation. `check_answer` accepts `setAside` and `superseded`.
 - `submit_work` and `heartbeat` no longer declare an `owner` input, and the
   `claim_work` and `claim_step` packets no longer return `owner`. A host
-  that still sends `owner` gets a typed input error; drop the field.
-- Trigger phrase lists, the lexical router and the lexical rigor floor are
+  that still sends `owner` gets a typed input error.
+- Trigger phrase lists, the lexical router, and the lexical rigor floor are
   gone. A skill manifest declares only what something enforces (`maxTier`,
   `requiredValidators`), and the resolver enforces both.
 - Construct ships no plugin. `construct init` plants the operational skill;
@@ -46,46 +80,31 @@ review and authoring each run as one workflow keyed by domain.
 - A receipt is the bytes it observed, and a session's lane is the checkout
   its host names in MCP roots, so a worktree session cites its own files.
 - The native semantic reviewer is pinned to Codex CLI 0.163.0 (profile
-  `codex-app-server-held-text-v2`). New message deliveries and notifications
-  refuse the review; `account/updated` passes only on subscription auth; the
-  only admitted warning is Codex's own fail-closed code-mode notice. The reviewer did not
-  run for this alpha; see Verification and limits.
+  `codex-app-server-held-text-v2`). New message deliveries and
+  notifications refuse the review; `account/updated` passes only on
+  subscription auth; the only admitted warning is Codex's own fail-closed
+  code-mode notice.
 - `doctor` fails only on a stale personal copy of the operational skill, and
   names the wiring that actually reaches Construct.
-
 - Tool descriptions say what each tool does and returns; field rules live on
-  their schema fields. `classify_request`, `work` and `sources` keep condensed
-  guidance their full schemas cannot hold.
-- A refused claim or takeover of work held by another agent of your own session
-  names the recovery: the session's main agent takes it back with a reason.
+  their schema fields. `classify_request`, `work`, and `sources` keep
+  condensed guidance their full schemas cannot hold.
+- A refused claim or takeover of work held by another agent of your own
+  session names the recovery: the session's main agent takes it back with a
+  reason.
 - A host child keeps `USER`, so Claude Code finds its Keychain login in
-  delegated and evaluated runs.
-- `work/service.ts` and `broker/tools.ts` are split into lifecycle and per-tool
-  modules with byte-identical `tools/list`.
-
-### Upgrade
-
-Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
-`construct skill update`, then reconnect. State remains format 5; no
-migration or credentials are required. Hosts or scripts that start a former
-review or authoring workflow id keep working through its alias.
+  delegated runs.
+- `work/service.ts` and `broker/tools.ts` are split into lifecycle and
+  per-tool modules with a byte-identical `tools/list`.
 
 ### Verification and limits
 
-Lint, typecheck, the full test suite (1,300 pass, 0 fail), packaged smoke and
-static conformance for every host (126 passed, 0 failed, 23 untested) pass. The
-smoke live intake record passes on Claude Code haiku in the crowded condition
-against the preregistered baselines: missed work 32/34 against 31/34 for
-staging-79562bbc, and 0/27 false writes. Before and after the description
-change, the same cell missed 30/34 and 32/34, which is within the margin.
-
-This alpha ran no native semantic review. Gerald took Codex and gpt-6-astra
-out of use on 2026-10-17, and the only qualified reviewer is the Codex
-held-text profile, so the release manifest records the review as unavailable
-(RESEARCH-DECISIONS §48) and the eval gate holds no Codex cell. A live run
-showing hosts fill the new typed `setAside`, `superseded` and `decision`
-fields is still open; a host that leaves one empty is refused with a typed
-recovery. Publish under `alpha` only; `latest` remains on 2.x.
+Lint, typecheck, the full test suite (1,300 pass, 0 fail), packaged smoke,
+and static conformance for every host (126 passed, 0 failed, 23 untested)
+passed. This alpha ran no native semantic review, and its release manifest
+records the review as unavailable. A live run showing hosts fill the typed
+`setAside`, `superseded`, and `decision` fields is still open; a host that
+leaves one empty is refused with a typed recovery.
 
 ## 3.0.0-alpha.31 — 2026-10-16 (experimental)
 
@@ -95,874 +114,314 @@ A method report may cite a listed file by any spelling that resolves to it.
 
 - A method obligation's evidence is accepted when it names the same file or
   recorded item as a reference in the method's own evidence list, however it
-  is spelled (relative, absolute, `./`-prefixed, `file:` or line-suffixed).
-  Distinct sources, different items and a directory against its descendant
-  stay refused, as does a reference that is not listed. The refusal now names
-  the reference and the listed ones. Case-only differences still do not match.
-- The native semantic reviewer now discards Codex's `turn/moderationMetadata`
-  notification unread, only for the review's own thread and turn, under the
-  same bounds as reasoning events. Codex 0.145.0 began sending it, and the
-  reviewer refused it, which failed every live native control. Its content is
-  not interpreted: a turn that finishes with a valid all-pass judgment is still
-  accepted whether or not it was moderated.
-
-### Upgrade
-
-Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
-`construct skill update`, then reconnect. State remains format 5; no migration
-or credentials are required.
-
-### Verification and limits
-
-The change passed lint, typecheck, the full test suite and packaged smoke
-locally, and independent read-only Codex reviews found one source-identity
-defect, which is fixed, and accepted the reviewer change. The three live native
-controls ran on Codex 0.145.0: the correct result completed, and the wrong
-calculation and injected-source results were rejected with drafts retained. The evidence resolution was probed against the real
-resolver for the spellings above only. The failure that prompted it was
-reported from another device and has not been reproduced from its payload.
-Broader host qualification is unchanged and unverified. Publish under `alpha`
-only; `latest` remains on 2.x.
+  is spelled (relative, absolute, `./`-prefixed, `file:`, or line-suffixed).
+  Distinct sources, different items, and a directory against its descendant
+  stay refused, as does a reference that is not listed. The refusal names
+  the reference and the listed ones. Case-only differences do not match.
+- The native semantic reviewer discards Codex's `turn/moderationMetadata`
+  notification unread, only for the review's own thread and turn. Its
+  content is not interpreted: a turn that finishes with a valid all-pass
+  judgment is accepted whether or not it was moderated.
 
 ## 3.0.0-alpha.30 — 2026-10-15 (experimental)
 
-Jira/Slack evidence and handoff recovery now preserve identity and authority
-across common copied formats, partial captures and lost acceptance responses.
+Jira and Slack evidence and handoff recovery preserve identity and authority
+across common copied formats, partial captures, and lost acceptance
+responses.
 
 ### Changes
 
-- Complete Markdown, autolink and Slack citation wrappers resolve to recorded
-  items. Recognized navigation fields normalize without collapsing comment,
-  review or unknown-query identities. Malformed text and excerpts fail clearly.
-- Shared UTF-8 source capture retains up to 256 KiB per item, preserving character
-  boundaries, redaction and explicit partial coverage. Jira rich-text extraction
-  preserves visible labels and marks unsupported content partial.
-- Review packets share identical held text across verified aliases, preserve
-  historical generations, use versioned locale-independent serialization and
-  carry actual command receipts. Native staged transport keeps the separate
-  2 MiB packet bound and fails closed on protocol or isolation errors.
-- Claim, takeover and acceptance share readiness/time validation. Expired tokens
-  cannot settle successor work; worktree moves preserve reservations atomically.
-  Filesystem aliases and changed reservation ancestry refuse unsafe writes.
-- Lost handoff acceptance responses recover only the same live generation using
-  a private pre-dispatch capability and immutable offer identity. CLI retention
-  is automatic on POSIX; Windows CLI acceptance remains keyless and explicitly
-  reports private-file recovery unavailable. Keyed MCP retries do not extend the target's expiry.
-- Installed coordination hooks use the existing bounded handler without loading
-  the general CLI graph; ordinary parsing and grounding behavior are preserved.
-- Shared host conformance covers recovery, output paths, deadlines and contract
-  parity. Public guides and generated references describe the same interfaces.
-
-### Upgrade
-
-Install `@geraldmaron/construct@alpha`, stop existing Construct sessions, run
-`construct init --client=<host>` and `construct skill update`, then reconnect.
-Use `construct doctor` to inspect installation. State remains format 5; no new
-migration or credentials are required. Existing runs retain frozen bindings.
-
-### Verification and limits
-
-The repair candidate passed the full local gate, packaged installation and
-static conformance. Independent scoped subagent validation and an exact native
-review passed. Experimental release controls accept the correct result and
-reject wrong calculations and injected sources with drafts retained. These
-finite controls do not qualify all hosts or production source adapters.
-
-Canonical instruction isolation and the full live cross-host matrix remain
-unverified; mandatory Claude/full-matrix acceptance was explicitly waived for
-this local release scope. A deterministic coordination-hook startup overrun was
-reproduced and repaired without increasing timing limits; attribution of earlier
-intermittent reset failures remains unproven. Windows
-filesystem durability and induced power-loss recovery remain untested.
-Publish under `alpha` only; `latest` remains on 2.x.
+- Complete Markdown, autolink, and Slack citation wrappers resolve to
+  recorded items. Recognized navigation fields normalize without collapsing
+  comment, review, or unknown-query identities. Malformed text and excerpts
+  fail clearly.
+- Source capture retains up to 256 KiB of UTF-8 per item, preserving
+  character boundaries, redaction, and explicit partial coverage. Jira
+  rich-text extraction keeps visible labels and marks unsupported content
+  partial.
+- Review packets share identical held text across verified aliases of one
+  item, keep historical generations, use versioned locale-independent
+  serialization, and carry actual command receipts. Native staged transport
+  keeps a separate 2 MiB packet bound and fails closed on protocol or
+  isolation errors.
+- Claim, takeover, and acceptance share readiness and time validation.
+  Expired tokens cannot settle successor work; worktree moves preserve
+  reservations atomically. Filesystem aliases and changed reservation
+  ancestry refuse unsafe writes.
+- A lost handoff acceptance response recovers only the same live generation,
+  using a private pre-dispatch capability and an immutable offer identity.
+  CLI retention is automatic on POSIX; Windows CLI acceptance reports
+  private-file recovery unavailable. Keyed MCP retries do not extend the
+  target's expiry.
+- Installed coordination hooks use a bounded handler without loading the
+  general CLI.
+- Shared host conformance covers recovery, output paths, deadlines, and
+  contract parity.
 
 ## 3.0.0-alpha.29 — 2026-10-14 (experimental)
 
-Source activation, evidence preservation and recovery now follow the same state
-contracts across CLI and MCP callers. Human CLI views group actionable status and
-distinguish installation checks from live connection or execution evidence.
+Source activation, evidence preservation, and recovery follow the same state
+contracts across CLI and MCP callers.
 
 ### Changes
 
-- Source additions reconcile current declarations under the write lock; rejected
-  additions preserve the file, and stranded retired declarations can be removed
-  individually. Source kinds remain immutable and late revoked reads are refused.
-- Declaration writes preserve all read/write combinations. Ambiguous legacy
-  top-level permission fields fail closed instead of silently changing access.
-- Unchanged reads avoid duplicate observed claims. Partial reads preserve unread
-  inventory and supersession without promoting it to witnessed evidence; complete
-  host reports can replace metadata while historical snapshots remain immutable.
-- State reset/migration refuse when holder inspection is unavailable unless an
-  explicit force is given. Skill inspection remains read-only. Work completion
-  enforces admission/dependencies, and restore preserves bounded lineage atomically.
-- Configured delegation waits for final supervisor IPC before settling validation;
-  absent, crashed or cancelled receipts still fail closed.
-- MCP connections recover after supported disk repairs without shrinking discovery
-  or changing their pinned project identity. Parser arity and structured config
-  errors now follow the command registry. Public guides match these contracts.
-
-### Upgrade
-
-Install the new alpha, stop existing Construct sessions, run
-`construct init --client=<host>` and `construct skill update`, then reconnect.
-Inspect `construct doctor`; its installation result does not prove live execution.
-State remains format 5. If `.construct/sources.json` has top-level `read` or `write`,
-choose both intended `capabilities.read` and `capabilities.write` booleans explicitly,
-remove the ambiguous top-level fields, and retry. Do not infer old permission intent.
-
-### Verification and limits
-
-This candidate passed lint, typecheck, 1,140 tests (one skipped) and packaged
-isolated smoke. Reconciled CLI recovery scenarios and static six-host conformance
-(97 passed, 19 untested) also passed. Three fresh native held-text controls accepted
-correct arithmetic and rejected incorrect arithmetic and an injected-source variant,
-preserving drafts without observed tools or fixture changes. These finite controls
-do not provide full readiness.
-
-The historical independent native candidate review failed and led to further
-provenance fixes; four subagents then found, fixed and cross-reviewed additional
-permission and metadata defects. Neither that history nor green local tests
-establish broad native qualification. Canonical isolation, fresh-user desktop
-readiness, production adapter coverage, executor qualification, measured skill
-benefit and the convergent setup/task interface remain open. Publish under
-`alpha` only; `latest` remains 2.1.1.
-
-See the [subagent review](docs/internal/command-remediation/SUBAGENT-REVIEW.md)
-and [reconciliation record](docs/internal/command-remediation/RECONCILIATION.md).
+- Source additions reconcile current declarations under the write lock;
+  rejected additions preserve the file, and stranded retired declarations
+  can be removed one at a time. Source kinds are immutable and late revoked
+  reads are refused.
+- Unchanged reads avoid duplicate observed claims. Partial reads keep unread
+  inventory and supersession without promoting it to witnessed evidence;
+  complete host reports can replace metadata while historical snapshots stay
+  immutable.
+- State reset and migration refuse when holder inspection is unavailable
+  unless force is given. Skill inspection is read-only. Work completion
+  enforces admission and dependencies, and restore preserves bounded lineage
+  atomically.
+- Configured delegation waits for final supervisor IPC before settling
+  validation; absent, crashed, or cancelled receipts fail closed.
+- MCP connections recover after supported disk repairs without shrinking
+  discovery or changing their pinned project identity. Parser arity and
+  structured config errors follow the command registry.
 
 ## 3.0.0-alpha.28 — 2026-10-13 (experimental)
 
-Construct now resolves portable research, decision, artifact, implementation and
-review paths through the current host. The kernel retains context admission,
-frozen execution contracts, evidence and the work ledger. No embedding model,
-external vector service or inference runtime is installed or invoked by default.
+Construct resolves portable research, decision, artifact, implementation,
+and review paths through the current host. No embedding model, external
+vector service, or inference runtime is installed or invoked by default.
 
 ### Changes
 
-- Portable intent captures outcome, audience, acceptance, constraints, assumptions
-  and prior work. General chat delivery no longer requires file writing or code
-  tests; verification follows the selected outcome.
-- A rebuildable SQLite FTS5 index ranks admitted passages and project history.
-  Bounded host query expansions and explicit relationships supplement exact lookup.
-  Optional supplied vectors require configured model/dimensions and exact content
-  digests. Missing vectors leave text retrieval operational.
-- Source reads expose required schemas before reporting evidence. Directory sources
-  retain bounded redacted supported text. Immutable snapshot citations preserve
-  historical evidence; revoked access and changed current support remain enforced.
-- Skill reports can bind material obligations to output sections and project
-  evidence, with procedure references separate. Reports alone establish no benefit.
-- Durable checkpoints preserve useful partial work. Delivery, deterministic checks,
-  semantic review and person acceptance are reported separately. The shared reviewer
-  contract is host-neutral; native adapter qualification remains explicit.
-
-### Upgrade
-
-Run `construct init --client=<host>` and `construct skill update`, then restart
-Construct sessions and inspect `construct doctor`. The operating skill is 3.1.0.
-State remains format 5; the derived index requires no canonical-state migration.
-Existing runs retain their frozen workflow and method bindings. Re-resolve an
-outcome to use the new paths, preserving previous drafts and completed work.
-
-### Verification and limits
-
-Lint, typecheck, the full suite (1,077 passed, one skipped), packaged isolated
-smoke and six-host static conformance (97 passed, 19 untested) passed. A bounded
-ordinary Codex decision trial selected the new path, retrieved prior context,
-read local code, repaired a citation report and completed all three steps with a
-grounded brief. It took 218 seconds and 13 Construct calls; efficiency needs work.
-
-The canonical native isolation canary still fails. That single delivery diagnostic
-does not qualify other outcomes or hosts, independent review, or causal skill
-benefit. Earlier failed cohorts remain failures. Production source adapters,
-executor qualification and the full live intake matrix remain open. Release uses
-the existing finite experimental-alpha controls, not the qualified tier. Publish
-only under `alpha`; `latest` remains on 2.1.1.
-
-See the [implementation record](docs/internal/alpha-audit-2026-10-13/portable/IMPLEMENTATION.md)
-and [follow-up validation](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md).
+- Portable intent captures outcome, audience, acceptance, constraints,
+  assumptions, and prior work. General chat delivery does not require
+  writing a file or running code tests; verification follows the selected
+  outcome.
+- A rebuildable SQLite FTS5 index ranks admitted passages and project
+  history. Bounded host query expansions and explicit relationships
+  supplement exact lookup. Optional supplied vectors require a configured
+  model and dimensions and exact content digests; without vectors, text
+  retrieval works.
+- Source reads expose required schemas before reporting evidence. Directory
+  sources retain bounded redacted text. Immutable snapshot citations keep
+  historical evidence; revoked access and changed current support stay
+  enforced.
+- Skill reports can bind material obligations to output sections and
+  project evidence, with procedure references kept separate.
+- Durable checkpoints keep useful partial work. Delivery, deterministic
+  checks, semantic review, and person acceptance are reported separately.
 
 ## 3.0.0-alpha.27 — 2026-10-10 (experimental)
 
-This alpha strengthens evidence, recovery and completion checks. It remains
-experimental: the reliable fresh-user experience and the full live intake
-release matrix are not established. Publish only under `alpha`; `latest`
-remains on 2.1.1.
+Stronger evidence, recovery, and completion checks.
 
 ### Changes
 
-- Managed completion requires an observed semantic review of the exact final
-  artifact, held sources and governing clarification answers. A passing
-  command or a producer's `passed: true` cannot substitute for that review.
-  Changed evidence, expired leases, cancellation and a replaced candidate
-  invalidate completion. Drafts remain available for recovery.
+- Managed completion requires an observed semantic review of the exact
+  final artifact, held sources, and governing clarification answers. A
+  passing command or a producer's `passed: true` cannot substitute for it.
+  Changed evidence, expired leases, cancellation, and a replaced candidate
+  invalidate completion. Drafts stay available for recovery.
 - Source changes use content and provenance, including same-timestamp
-  corrections. Scoped access, schema/unit mappings, reference traversal
-  budgets and incomplete coverage are explicit. API/MCP traversal requires
+  corrections. Scoped access, schema and unit mappings, reference traversal
+  budgets, and incomplete coverage are explicit. API and MCP traversal need
   an adapter and authorization; installation alone provides neither.
 - Context history is searchable and paged. Skills have versioned method
-  bindings and executed qualification evidence; missing native evidence is
-  unqualified. Research can carry unknowns and checkpoint its requested
-  file before final review.
+  bindings. Research can carry unknowns and checkpoint its requested file
+  before final review.
 - Managed artifact reservations avoid duplicate work claims. Abandoned
-  sessions can be recovered from observed process/session state, and lease
-  recovery is independent of validation retry budgets. Tool failures return
-  concrete repair guidance.
+  sessions can be recovered from observed process and session state, and
+  lease recovery is independent of validation retry budgets. Tool failures
+  return concrete repair guidance.
 - Startup guidance carries the request lifecycle, including a Cursor
   always-on rule. A bounded Codex executor can run provisioned scheduled
-  work; a saved schedule by itself cannot keep working after session exit.
-
-### Upgrade
-
-- Stop Construct sessions and run `construct migrate` for state format 5;
-  migration backs up the state first. Do not reset a store to upgrade it.
-- Re-run `construct init --client=<host>` and follow `construct doctor` and
-  `construct skill update` instructions. The operational skill is 3.0.4.
-- Existing managed runs without a frozen semantic contract cannot inherit
-  retroactive verification; re-resolve their outcome. The supported native
-  semantic reviewer currently requires Codex CLI 0.145.0 and existing
-  subscription access. Other hosts/versions preserve unverified drafts.
-
-### Verification and limits
-
-The recorded deterministic gate, packaged install, static six-host
-conformance and finite Codex reviewer trials are documented in the
-[implementation assessment](docs/internal/implementation-2026-10-09/SEMANTIC-REVIEW.md).
-Native review accepted a correct case and rejected incorrect arithmetic and
-a source-injection control. These are finite observations, not universal
-truth, isolation or injection-resistance guarantees.
-
-Fresh Codex/Cursor outcomes remain inconsistent. Artifact existence,
-semantic quality and managed lifecycle completion are scored separately;
-the latest Cursor artifacts failed the frozen independent rubric, while
-Codex's initial phase timed out without an artifact. Broad reviewer/host
-qualification, actual conditional specialist composition, production
-API/MCP traversal and the complete scheduling fault matrix remain open.
-General delegation stays disabled until configured and live-verified.
-The canonical full live intake record is absent, so full qualification
-remains blocked. The explicitly approved experimental-alpha tier requires
-all deterministic gates plus current bounded native evidence and limitations
-disclosure; it does not claim the full qualification gate passed. No V1–V9 completion or general release qualification
-is claimed.
-
-
-### Earlier documentation work in this candidate
-
-- **The documentation was reconciled against 3.0.0-alpha.26.** The guides,
-  README, glossary, and skill docs now cover typed intake, checked
-  grounding, portable host wiring, the work ledger's full action set, and
-  worktree claims, and no longer describe removed behavior. A new guide,
-  `docs/work-ledger.md`, explains filing, admission, claims, and handoffs.
-  The native-work cutover records moved to `docs/internal/construct-cutover/`
-  beside the other development records.
-- **Operational skill coverage, initially introduced in 3.0.1.** The `construct` skill names every `work`
-  action, the required `period.semantics` and the `stakes` field in
-  `classify_request`, the `outdates` and `replaces` fields of `remember`,
-  path checks and worktree claims, and where an acceptance question goes.
-  `construct doctor` counts a project's lock entry for it as outdated, and
-  `construct status` names it, until `construct skill update` locks the new
-  version.
-- **Correction to the alpha.26 known limitations.** A Construct dependency
-  hoisted to a monorepo's root gets the `npx --no-install construct` form
-  when the monorepo is a git repository, because init's project is the
-  repository root. Only a directory outside git whose dependency is hoisted
-  above it gets the PATH form.
+  work; a saved schedule by itself does not run after the session exits.
+- The documentation covers typed intake, checked grounding, portable host
+  wiring, the work ledger's full action set, and worktree claims.
+  `docs/work-ledger.md` explains filing, admission, claims, and handoffs.
 
 ## 3.0.0-alpha.26 — 2026-10-09
 
-It follows 3.0.0-alpha.25, which was published under `alpha`; alpha.25's
-changes are folded into this entry. It adds coordination between agent
-sessions working in one project, bounded delegation (off by default), the
-native work ledger, and grounding that is checked rather than trusted: hooks
-that enforce host habits, citations that must resolve, and quality checks on
-deliverables. It also adds typed intake: the host reports its own reading of
-each request, and Construct checks that reading instead of classifying the
-person's words. It publishes under `alpha` only; `latest` stays on the
-predecessor.
-
-### Upgrading from alpha.24 or alpha.25
-
-Each item applies to both releases unless it names one.
-
-- **State format 4.** Stop every Construct session on the project, then run
-  `construct migrate`. It backs the store up under its upgrade lock first,
-  and refuses while another process holds the store. Read-only commands
-  refuse an older store and name the migrate step. They never upgrade it.
-- **Project-authored workflows (breaking, from alpha.24).**
-  `evidence_refs_resolve` and `citations_present` now check that references
-  resolve. A workflow that relied on the old pass-through will see steps
-  sent back until its citations name real files, sources, items, records,
-  or web pages.
-- **Directory sources re-fingerprint once (from alpha.24).** Fingerprints
-  moved from size and mtime to content, so every directory source reports
-  one change on its next read; that first change opens no drift findings.
-- **Operational skill 3.0.0.** Run `construct doctor` after migrating and
-  follow its skill-update instruction before reopening agent sessions. An
-  installed copy you have not edited is replaced without `--force`,
-  including the 2.2.0 copy alpha.25 planted.
-- **First runtime dependency.** MCP stdio framing now uses
-  `@modelcontextprotocol/server` 2.0.0 (MIT), pinned exactly. Tool contracts
-  stay in Construct.
-- **Re-run init for each host you use.** Host MCP files written before
-  this release name this machine's Node and install, and `construct doctor`
-  reports one whose path no longer exists as broken. Run
-  `construct init --client=<host>` (comma-separate several, as in
-  `--client=claude-code,cursor`) and commit the rewritten files. They now
-  start `construct serve` from PATH, or `npx --no-install construct` when
-  Construct is a project dependency, and name no path on your machine, so
-  each teammate needs Construct on their PATH or as a project dependency.
-  `construct doctor` now fails when no host is wired to the project.
-- **Claude Code hooks leave the shared settings (from alpha.25).** Running
-  init for Claude Code moves Construct's hooks from `.claude/settings.json`
-  to `.claude/settings.local.json`, which stays on this machine, keeps your
-  own hooks in the shared file, and adds the local file to
-  `.git/info/exclude` when nothing ignores it. Commit the cleaned
-  `.claude/settings.json`. If git tracks `.claude/settings.local.json`,
-  init will not write it; stop tracking it and run init again. `doctor`
-  fails `host-hooks` while old hooks remain in the shared file.
-- **`classify_request` takes the host's typed reading (breaking).** `words`
-  (the person's request, verbatim) and `kind` are required, and work needs
-  a `deliverable`. A call that sends `text` gets a tool error saying to put
-  the words in `words`, beside the reading. Routing by the person's words
-  is gone: the word classifier, the upgrade of some answers to managed
-  work, and the ranked skill list. Hosts learn the new shape from the 3.0.0
-  skill and the server instructions; a script that calls the tool directly
-  must send the reading.
-- **`start_outcome` starts nothing while something is open (breaking).**
-  Pass the `intake` that `classify_request` returned, with the person's
-  answers applied. While a required input, a blocking question, or two
-  disagreeing destinations are open, it returns `started: false` with the
-  questions and creates no run; without an intake, a missing input also
-  starts nothing. A workflow the reading did not match is refused. The
-  command line and triggers still keep a blocked run.
-- **`evidence_witnessed` is renamed `evidence_recorded` (breaking, from
-  alpha.25).** A project workflow that still names `evidence_witnessed` no
-  longer resolves, because no shipped validator has that name; rename it.
-  `evidence_recorded` passes only when a citation holds content Construct
-  can check: a project file, or an item with non-empty recorded text.
-- **Citing a system the host reads needs a recorded read of that item
-  (breaking).** Under the default `policy.hostReads: require`, an item no
-  read named, a web page never reported, and a source never read do not
-  resolve, and a partial read no longer vouches for items it did not name.
-  Declare the system with `sources` action `declare`, report the items you
-  cite with action `report`, then cite them. Under `accept` such citations
-  resolve as unverified. Evidence counts gain an `unverified` key;
-  deliverables validated before this release have none.
-- **Restart runs of changed workflows and skills.** `managed-outcome` 2.0.0,
-  `design-conformance` 2.0.0, `research-brief` 1.1.0, and `prd-authoring`,
-  `rfc-authoring`, and `proposal-authoring` 1.1.0 change, and so do three
-  method skills that workflow steps bind: context-mapping 0.4.1 (bound by
-  most review workflows), governance-risk 1.0.2, and product-management
-  1.0.2. A run bound to an earlier version of its workflow, or whose next
-  step binds a skill that changed, stops at `re_resolve` when it is
-  claimed. Finish such runs before upgrading, or cancel them with
-  `construct run cancel <id>` and start again.
-- **Rule-outs and supersessions need the person (breaking, from
-  alpha.25).** Ruled-out terms and outdated documents are enforced only
-  from records in the person's own voice. Ones recorded before this
-  release, or relayed by an assistant, restrict nothing until the person
-  confirms them. A decision's
-  wording no longer marks a document outdated ("ADR-004 is outdated"); the
-  `outdates` field of `remember` does. To restore one, ask a session to
-  `remember` it again with `contradicts` or `outdates`, then approve it in
-  the host's prompt or with `construct inbox resolve <id>`.
-- **Only passing checks make a deliverable validated (breaking).**
-  `promote_deliverable` no longer offers `validated`, and `challenged` needs
-  `objections`: each objection the challenge raised and what was done about
-  it. An empty list says it found nothing.
-- **An approval covers one run (breaking).** An approval given in a run
-  covers that run alone, and a write outside the project is approved for
-  the destination it names, so expect the question again on the next run.
-  Standing grants still cover every run in their scope. A destination or
-  target given blank is refused until it is named.
-- **Only the person makes a project a side project (breaking).** A relayed
-  `decide` puts the question to the person, an agent's
-  `construct inbox resolve` is refused, and
-  `construct init --scale=side_project` off the person's own terminal is
-  refused before anything is written. Answer it at your own terminal.
-- **Bad tool input is a tool result (breaking for MCP clients).** A wrong,
-  missing, or stray argument returns an `isError` result with `error`,
-  `field`, and, where they apply, `allowed` and `example`, in both
-  `structuredContent` and the text content. JSON-RPC -32602 remains only for
-  a tool the server does not carry.
-- **`--skills-dir` adds a personal copy.** `construct init` plants the
-  operational skill in the project, where each wired host reads it;
-  `--skills-dir` now plants a personal copy as well, instead of in place of
-  that. A personal copy loads in every repository the host opens, and
-  `construct doctor` names the `construct skill remove` command for an
-  older one still there.
-- **Credential shapes are redacted from now on.** Stored source text,
-  titles, and step excerpts have credential shapes replaced by
-  `[redacted]`. Rows written before the upgrade are not rewritten, and the
-  first report after upgrading may record one change for an item whose
-  earlier text held a credential-shaped run.
+Coordination between agent sessions in one project, bounded delegation (off
+by default), the native work ledger, checked grounding, and typed intake.
+The changes of 3.0.0-alpha.25 are folded into this entry.
 
 ### Added
 
 - **Shared coordination across worktrees.** Every git worktree of a project
   uses the main checkout's one store. Claims are fenced to the session that
-  holds them. A claim can reserve the paths it changes. Claimed work passes
-  on only through an accepted handoff. Sessions learn what their peers hold
-  on the calls they already make. An opt-in pre-commit guard warns about
-  reserved paths and never blocks a commit. A claim can name the worktree
-  it edits in when that is not the session's own; its reservations then
-  record that worktree and its branch, and an overlap with work in another
-  worktree comes back as a merge risk naming where it is held.
+  holds them and can reserve the paths they change. Claimed work passes on
+  only through an accepted handoff. Sessions learn what their peers hold on
+  the calls they already make. An opt-in pre-commit guard warns about
+  reserved paths and never blocks a commit. A claim can name the worktree it
+  edits in; an overlap with work in another worktree comes back as a merge
+  risk naming where it is held.
 - **Bounded delegation, disabled by default.** The `delegate` tool starts,
   checks, cancels, triages, and integrates worker attempts. Workers get
   read-only snapshots and return scoped patches. Construct validates each
   patch in isolation, requires review, applies changes one at a time, and
   validates the combined result. The Claude, Codex, and Cursor adapters need
-  explicit executor and model settings plus operator-recorded live evidence.
-  Installing the package enables nothing. Windows execution is blocked until
-  process-tree controls exist.
+  explicit executor and model settings plus recorded live evidence.
+  Installing the package enables nothing. Windows execution is blocked
+  until process-tree controls exist.
 - **Native work ledger.** `construct work` and the `work` tool query, claim,
-  complete, and restore bounded work in Construct state. An external tracker
-  is not part of the operating contract.
+  complete, and restore bounded work in Construct state.
+- **Backlog admission.** Work enters the backlog with a reason: an admitted
+  parent item, or an active decision, requirement, initiative, or metric it
+  serves, or the person filing it from their own terminal. Work a session
+  files without one waits as proposed until a link gives it a reason or the
+  person runs `construct work admit`. Observations persist without becoming
+  work.
+- **Structured work items.** `work add` and the `work` tool take a parent,
+  the reason the work serves, blocking and related work, acceptance
+  criteria, risk, and premise sources. `work link`, `unlink`, `update`, and
+  `admit` change them later. An item with open children cannot be
+  completed or cancelled, and completing work with acceptance criteria needs
+  a reason saying how they were met. A source refresh that changes a premise
+  holds the work until `work requalify` records what was checked.
 - **Professional challenge on the ordinary path.** A managed outcome with
   architectural or irreversible consequences is challenged before it can be
-  accepted. A private helper rename is not. Selection reads the request and
-  the project's scale, not a magic word.
+  accepted.
 - **Governing memory stays live.** Remembering a decision, constraint,
   principle, outcome, or invariant creates a graph entity. A later
   invalidation, supersession, or contradiction shows as drift and blocks
   treating the work as a trusted finished outcome.
-- **Backlog admission.** Work enters the backlog with a reason: an admitted,
-  unfinished parent item, an active decision, requirement, initiative, or
-  metric it serves, or the person filing it from their own terminal. A
-  session that files work without one, outcomes included, gets it back as
-  proposed: listed, but never ready or claimable until a link gives it a
-  reason or the person runs `construct work admit`. Admitting an item admits
-  its proposed children. A session roots its own work by remembering the
-  outcome or decision behind it, recorded as relayed, and serving that. Open
-  work filed before this release stays open. Observations persist without
-  becoming work, and proposed statements wait in the inbox to be confirmed
-  or retired.
-- **Structured work items.** `work add` and the `work` tool take a parent,
-  the reason the work serves, blocking and related work, acceptance
-  criteria, risk, and premise sources. `work link`, `unlink`, `update`, and
-  `admit` change them later, `work show` prints them, and
-  `work list --parent` lists an item's children. An item with open children
-  cannot be completed or cancelled, and completing work that has acceptance
-  criteria needs a reason saying how they were met. Delegated attempts are
-  cancelled with their parent; a running one holds the parent open. A
-  source refresh that changes a premise holds the work until
-  `work requalify` records what was checked; editing its sources does not
-  clear that.
 - **Convention discovery with provenance.** ADR directories and architecture
   documents become governing proposals with locator, span, and content
-  digest. Quoted examples are not constraints. Caps report what they left
-  out.
-- **Written voice 0.5.0** ships a tell checker,
-  `skills/written-voice/scripts/voice-check.py`, and a catalog of the tells
-  it counts. The checker needs `python3`.
-
-- **Habits enforced, not hoped for.** `construct init --client=claude-code`
-  installs hooks: Jira and Atlassian tool results that contain issues from
-  a declared Jira project are recorded as host reads automatically; a reply
-  that names project facts without `check_answer` is sent back once
-  (`policy.answerCheck`); a session starts with a note of what waits. Hooks
-  fail open. Without hooks, `policy.hostReads: require` (default) makes a
-  citation into a never-read host source unresolvable. `construct status`
-  reports the last week's habits; `doctor` reports hook installation.
-- **Decisions that rule things out.** `remember` takes `contradicts` terms;
-  `settled_not_contradicted` checks answers and drafts against them.
+  digest.
+- **Written voice** ships a tell checker,
+  `skills/written-voice/scripts/voice-check.py`, which needs `python3`.
+- **Claude Code hooks.** `construct init --client=claude-code` installs
+  hooks that record Jira tool results as host reads, send back once a reply
+  that names project facts without `check_answer` (`policy.answerCheck`),
+  and open a session with a note of what waits. Hooks fail open. They live
+  in `.claude/settings.local.json`, which stays on this machine.
+- **Decisions that rule things out.** `remember` takes `contradicts` terms,
+  and `settled_not_contradicted` checks answers and drafts against them.
 - **Sensitivity and publishing.** Deliverables carry the highest
   sensitivity of what they cite. `publish-deliverable` requires clearance
   for confidential or restricted material, an approved write, and a
   recorded location.
 - **Skill impact.** `construct skill impact` and `project_context` topic
-  `quality` measure each skill version's first-pass rate, attempts,
-  waivers, and failing checks.
+  `quality` report each skill version's first-pass rate, attempts, waivers,
+  and failing checks.
 - **Owner routing.** The inbox names who decides each question from the
-  constitution's owners, and filters by owner.
+  constitution's owners.
 - **Plain answers can be checked.** `check_answer` runs the grounding
-  checks on an answer before it is given and records nothing; the
-  operational skill asks hosts to use it for facts about the project.
+  checks on an answer before it is given and records nothing.
 - **Systems the host reads are tracked.** `sources` action `report` records
   what the host read from a tracker or wiki; changes there flag the work
-  that cited them, quotes are checked against what was reported, and a
-  partial read never implies removal. `bootstrap` lists host-read sources
-  that need a report. Fixture and host-reported items now resolve as
-  reported, not witnessed.
-- **Research.** `research-brief` answers a question from project sources
-  and the web, with `sources_diverse` asking for two independent places.
-  A web page resolves as a reported citation once the host has declared a
-  web source and reported the page.
-- **Quality floors.** New validators: `excerpts_match`, `evidence_recorded`,
-  `artifacts_exist`, `numbers_grounded` (figures must come from cited
-  sources, or be derived by arithmetic that holds over cited figures),
-  `template_conformance`, `conflicts_declared`, `superseded_acknowledged`,
-  and `decision_ask_present`. `claim_work` tells the host what each check
-  needs.
-- **Authoring workflows.** `prd-authoring`, `rfc-authoring`, and
-  `proposal-authoring` run gather, draft, challenge, record with those
-  checks.
+  that cited them, and quotes are checked against what was reported.
+  `sources` action `declare` registers a system the person named, kept in
+  this machine's state as confidential and read-only.
+- **Quality floors.** Validators `excerpts_match`, `evidence_recorded`,
+  `artifacts_exist`, `numbers_grounded`, `template_conformance`,
+  `conflicts_declared`, `superseded_acknowledged`, `decision_ask_present`,
+  and `sources_diverse`. `claim_work` tells the host what each check needs.
 - **Jira fixtures.** `CONSTRUCT_JIRA_FIXTURES` gives `jira` sources a reader
-  over JSON exports for testing and evaluation; reads are recorded as
-  reported.
-
+  over JSON exports for testing; reads are recorded as reported.
 - **Typed intake.** The host reports its own reading of each request to
-  `classify_request`: the kind (answer, remember, manage, maintain, or
-  coordinate), the person's words, the deliverable they want back, and the
-  period, systems, destination, schedule, stakes, and open items it heard.
-  Nothing in Construct classifies the person's words. Construct checks the
-  reading, works out dates and source ids, names every workflow whose
-  declared deliverable fits, with what each still needs and the skills it
-  binds, returns only the questions that block, and records nothing. A
-  wrong reading comes back naming its field, the allowed values, and an
-  example. `start_outcome` checks the same reading again, so skipping
-  `classify_request` skips no check, and the run freezes it; each step
-  receives it in structured fields. STRATEGY's first named risk is now the
-  host's reading of the request, inferring the kind of request or the
-  workflow from the person's words is listed among what Construct does not
-  do, and RESEARCH-DECISIONS §35 records the decision.
-- **Portable host wiring for all six hosts.** Claude Code (`.mcp.json`),
-  Cursor (`.cursor/mcp.json`), VS Code (`.vscode/mcp.json`), OpenCode
+  `classify_request`: the kind, the person's words, the deliverable, and
+  the period, systems, destination, schedule, stakes, and open items it
+  heard. Nothing in Construct classifies the person's words. Construct
+  checks the reading, resolves dates and source ids, names every workflow
+  whose declared deliverable fits, and returns only the questions that
+  block. `start_outcome` checks the same reading again and the run freezes
+  it.
+- **Portable host wiring.** Claude Code (`.mcp.json`), Cursor
+  (`.cursor/mcp.json`), VS Code (`.vscode/mcp.json`), OpenCode
   (`opencode.json`), Codex (`.codex/config.toml`), and IBM Bob
-  (`.bob/mcp.json`) are each wired by file, and no file names a path on
-  your machine. In Codex's file, Construct edits only its own
-  `[mcp_servers.construct]` table, sets a 120-second tool timeout so a
-  question shown to the person is not cut off, and refuses, without
-  touching the file, a form it cannot read safely. Re-running init leaves an
-  unchanged host file byte for byte. `doctor` checks that each wired host's
-  command can start (`host-launch:<host>`).
+  (`.bob/mcp.json`) are each wired by a file that names no path on your
+  machine. In Codex's file Construct edits only its own
+  `[mcp_servers.construct]` table and sets a 120-second tool timeout.
+  Re-running init leaves an unchanged host file byte for byte. `doctor`
+  checks that each wired host's command can start.
 - **Plain init connects a host.** Without `--client`, `construct init`
-  wires the host it runs inside, the hosts already wired in this project,
-  or the only agent host found on this machine; with several found at your
-  own terminal it asks once which you use. Otherwise it names what it
-  found, wires none, and says no agent session can reach Construct until
-  `construct init --client=<host>` runs. For each wired host it plants the
-  operational skill in the project skills directory that host reads (one
-  copy per directory) and prints the host's one-time step.
-- **Declare a named system from chat.** `sources` action `declare` (id,
-  kind, and an optional purpose and locator) registers a system the person
-  named, so what the host reads there can be reported and cited. A declared
-  source stays in this machine's state, never in `.construct/sources.json`,
-  and is confidential, informative, and read-only. Directory and git sources
-  stay with the person, because they let Construct read files itself.
-  `construct source add <id>` commits a declared source under the same kind
-  and keeps what was read from it.
+  wires the host it runs inside, the hosts already wired, or the only agent
+  host found, and plants the operational skill where each wired host reads
+  it.
 - **Typed periods and sources.** A workflow input can be a `period` or
-  `source_ids`. A period is relative, a quarter, a year, or from/to dates.
-  It is worked out from the calendar once, when the run is created, with
-  labeled assumptions (calendar quarters, Monday weeks, the timezone used),
-  and frozen on the run. The same window asked on another day is the same
-  run; another window is new work. `within_period` refuses evidence dated
-  after the period unless the output lists it under `outsidePeriod` with
-  why, and `named_sources_read` needs something cited from each named
-  source, or the source listed under `unread` with why. The deliverable
-  carries period and source coverage, and `check_answer` takes an optional
-  period. A manifest declares at most one period, a non-empty `dedupeKey`
-  must include its period and source ids, and every step that checks
-  citations must name `within_period`. A standing trigger refuses a fixed
-  window and works a relative one out at each firing, in its own timezone.
-  Project manifests that use these types need alpha.26.
-- **The general carrier hands back what it made.** `managed-outcome` 2.0.0
-  runs plan, do, and verify; the record step, whose deliverable id the host
-  could not know, is gone, and the carrier can be scheduled. Every step
-  receives the request, target, period, and source ids. The do step returns
-  summary, findings, changes, and artifact, and is checked against the
-  period, the named sources, grounded figures, and the files it says it
-  wrote. The last step's deliverable carries what it returned, every input
-  it was handed, its evidence, its sensitivity, provenance counts, and
-  period and source coverage.
-- **Live intake eval runner and corpus.** `npm run evals:live`
-  (`scripts/evals-live.mjs`: preflight, label, run, e2e, record, check)
-  drives Claude Code, Codex, and Cursor one request at a time against a
-  fresh fixture project, under the default, crowded, no-tool-search,
-  fresh-init, and injected conditions. The scoring rule is fixed in advance
-  in `src/kernel/skills/routing.ts`; a record keeps a copy of it and is
-  refused when it differs, and a verdict needs both baselines (staging and
-  alpha.25) and three runs per case. `scripts/host-cli.mjs` is the one way
-  those hosts are invoked, and `conformance --live` uses it too.
-  `skills/evals/intake.json` holds 285 requests; 95 form the held-out test
-  split: 27 not work, 42 work, and 26 ambiguous, 8 of them with an
-  instruction planted in what a connector returns. The suite checks every
-  gold reading with `classify_request`'s own validator. The word-overlap
-  router floors now test only the router, on a frozen catalog under
-  `tests/fixtures/`; `skills/evals/live-judge.json` and
-  `skills/evals/routing.json` are gone. The live runs have not been
-  performed (see Known limitations).
+  `source_ids`. A period is resolved once, when the run is created, with
+  labeled assumptions, and frozen on the run. `within_period` and
+  `named_sources_read` check citations against them.
+- **The general carrier hands back what it made.** `managed-outcome` runs
+  plan, do, and verify, and the last step's deliverable carries what it
+  returned, its inputs, evidence, sensitivity, provenance counts, and period
+  and source coverage.
 
 ### Changed
 
 - **Only the person approves.** Accepting a deliverable, finalizing, and
   approving an outward or destructive action need the person on every
   surface. An answer relayed by a model is recorded as relayed, with its
-  channel. An editor's or agent host's terminal is never the person.
+  channel.
 - **Verification and review fail closed.** Empty, null, failed, and
-  old-revision evidence cannot pass. A step's declared outputs are the
-  contract its validators check. Frozen run bindings block silent
+  old-revision evidence cannot pass. Frozen run bindings block silent
   definition drift.
-- **Skill qualification follows the content digest.** The same version with
-  different bytes does not inherit an earlier quality claim.
-- **Source refresh records observed items** with content digests, separate
-  from inventory fingerprints.
-- **An MCP server answers the handshake at once,** binds when the store's
-  lock clears, and reports a project it cannot bind instead of exiting.
-- **Init says what it stored.** Unanswered profile fields are unknowns, not
-  sourced proposals. Flags that fill a field retire the matching unknown.
-
-- **Grounding is checked, not trusted.** Evidence references now resolve
-  against the project as it stands (files inside the project or a directory
-  source, declared sources and the items they reported, deliverables, and
-  Construct's own records). Before this, `evidence_refs_resolve` passed
-  whenever it was given nothing to resolve against, which was always, and
-  `citations_present` accepted any non-empty string; a run citing a file
-  that did not exist could finish "validated". Both now fail closed.
-  Citations carry provenance: witnessed (Construct opened it) or reported (a
-  system only the host reads). `submit_work` returns the counts and a
-  validated deliverable records them for the whole run.
-- **What the person settles governs.** A supersession the person confirms
-  is enforced like a document header, and the person's confirmed decisions
-  and constraints reach every step that reads.
+- **Grounding is checked, not trusted.** Evidence references resolve
+  against the project as it stands. Citations carry provenance: witnessed
+  (Construct opened it), reported (a system only the host reads), or
+  unverified.
 - **Revisions, not restarts.** `revise-deliverable` revises a deliverable as
-  a linked revision with a change summary; answering revise or re-run on a
-  stale-work question returns the outcome to offer.
+  a linked revision with a change summary.
 - **People decide when checks keep failing.** A load-bearing step that
-  still fails after its last attempt waits on the person (accept with the
-  named problems, another attempt, or stop) instead of failing the run. A
-  waiver is recorded and its deliverable is never marked validated.
-- **Checks that match how people write.** Figures compare by value with
-  rounding allowed, dates and times are not figures, and figures the person
-  supplied in the request count as given. A symlink that leads outside the
-  project no longer resolves.
-- **A quieter inbox.** New files in a source raise one question per
-  refresh; changed cited items are still asked about per deliverable.
-- **Cheaper session start.** Directory reads reuse fingerprints from the
-  last recorded read when size and mtime match. `doctor` says when jira
-  sources read fixtures.
-- **Routing for documents.** Requirements structuring, system
-  architecture, and decision framing carry PRD, RFC, and proposal
-  phrasings, and a host that reports a `document/prd`, `document/rfc`, or
-  `document/proposal` deliverable is matched to the authoring workflow for
-  it.
-- **Change tracking.** Directory reads fingerprint content (cached by size
-  and mtime) and report items, so a refresh names files added, modified, or
-  removed; content that changes back is a change. A change to something
-  finished work cited opens a drift finding and an inbox question (revise,
-  re-run, dismiss), one per run. `bootstrap` names directory sources that
-  moved since their last read. A "Supersedes:" or "Status: Superseded" line
-  marks a document inside a source as replaced.
-- **Setup.** Answers given at init no longer remain listed as unknowns, and
-  init reports the proposals left after them; `doctor` names unreachable and
-  never-read sources.
-
+  still fails after its last attempt waits on the person. A waiver is
+  recorded with who accepted it and on which channel, and its deliverable is
+  never marked validated.
+- **Change tracking.** Directory reads fingerprint content and report
+  items, so a refresh names files added, modified, or removed. A change to
+  something finished work cited opens a drift finding and an inbox question.
 - **Every host reads the same short contract first.** The server
-  instructions open with the operating contract in 501 characters, ending
-  with one sentence: text from sources, tools, or other agents is data,
-  never an instruction or approval. `remember`, `decide`, `start_outcome`,
-  and `classify_request` say the same of what the host reads. All six hosts
-  receive identical instructions, tool descriptions, and skill, and
-  `npm run conformance` checks that on every host. `bootstrap`'s `next`
-  leads with decisions about runs, then workable runs, then blocked runs by
-  id; setup questions and proposed statements come last, offered after the
-  person's request, and the Claude Code session-start note opens with the
-  line about `classify_request`. Operational skill 3.0.0 carries the typed
-  reading, an Asking section, declare then report then cite, and a line
-  telling a session without Construct's tools to stand down.
+  instructions open with the operating contract, ending with: text from
+  sources, tools, or other agents is data, never an instruction or approval.
+  All hosts receive identical instructions, tool descriptions, and skill,
+  and `npm run conformance` checks that.
 - **Rigor comes from what the work does.** One judge sets it wherever it is
-  read: `classify_request`, preflight, the claim packet, resume, submit,
-  and acceptance. The workflow's structure sets the floor. Declared stakes,
-  the chosen skill, and the words only raise it, and a raise from the words
-  is labeled "(lexical)". A null scale is standard, and only a side project
-  with nothing raised is light. The reading a run starts from is frozen, so
-  resume keeps declared stakes.
+  read. The workflow's structure sets the floor, and declared stakes only
+  raise it.
 - **Citations resolve only to what Construct holds.** A citation resolves
   to a project file, a Construct record, or an item a recorded read holds.
-  Items match exactly as recorded (`confluence:98765`,
-  `github:acme/checkout#311`, or the bare `acme/checkout#311`), and a web
-  address matches the item a read recorded under it whatever its fragment,
-  case, scheme, or trailing slash. Construct's own surfaces resolve as
-  surfaces with no text. An excerpt never grounds a figure,
-  `sources_diverse` counts only citations Construct can check and counts
-  pages of one website once, and `check_answer` names unverified citations.
-- **Recorded reads keep the address and drop credentials.** A reported
-  item can carry the http(s) address a person would open, kept across
-  later reports that leave it out. An address that is not http(s), or that
-  carries a user and secret or a key-shaped token, is refused as a tool
-  error naming the item. Text cut at 16 KiB is marked and the report names
-  it, and a quote past the cut is unchecked rather than called a misquote.
-  The post-tool hook records Jira issues only from tools whose name says
-  jira or atlassian, as readable text with the browse address and the tool
-  that carried it; Jira-shaped text in any other tool's response records
-  nothing.
-- **Waivers are recorded as they happened.** A step let through on a waiver
-  records who accepted it and on which channel, and a step cannot forge a
-  waiver. Every deliverable of the run lists its waived checks. A waiver
-  covers only the checks its question named, and asking for another
-  attempt ends it. A challenge record keeps who challenged and whether it
-  was the session that ran the work.
-- **The acceptance prompt says what Construct checked.** The question
-  before a deliverable is accepted or made final starts with the move, then
-  lists Construct's facts one per line: waived checks and who answered
-  them, the checks that passed, how much of the evidence Construct opened
-  itself, a verification the assistant reports running, the highest
-  sensitivity cited and how many citations carry no label, declared and
-  unregistered systems, period coverage, named sources nothing was cited
-  from, and the challenge record. The assistant's own description comes
-  last, quoted as the assistant's and marked as not checked. The prompt is
-  cut at 1,500 characters, and `construct inbox show` prints the whole. An
-  open question that no longer matches its deliverable is withdrawn and
-  asked again.
-- **A plan's blocking questions wait for the person.** A plan step that
-  returns blockers raises one question for the person, and the run waits;
-  `claim_work` hands back that question instead of the next step. Every
-  later step receives each question with its answer, who answered, and on
-  which channel, and the run's input is never rewritten. A deliverable
-  cannot be accepted or made final while its run has an open question.
-- **Every record says whose voice it is in.** A statement's voice comes
-  from the channel it arrived on: the person's own, relayed by an
-  assistant, Construct's inference, or no record. `remember` records what
-  only adds in one call; `replaces`, `contradicts`, and `outdates` raise one
-  approval only the person can give, and relayed text written as a
-  rule-out or supersession is refused with the remedy. Steps see the
-  person's records as settled, and the rest on a separate line, quoted, as
-  information to check with them.
-- **An approval names where the work goes and what it rests on.** The
-  question for a write outside the project names the action, the
-  destination (with the declared source, its address, and its
-  sensitivity), the most sensitive material the run rests on, how many
-  citations have no known sensitivity, the checks waived earlier in the
-  run, that Construct cannot see where the connector writes, and what the
-  approval covers. Who the work is for comes last, quoted as the
-  assistant's.
-- **Setup answers land wherever the person gives them.** An answer to a
-  setup question reaches the profile from `decide`,
-  `construct inbox resolve`, and the host's prompt alike. A scale answer is
-  understood by its id or by the question's own words for it; anything
-  else is refused with the choices listed, and `init --scale` accepts the
-  same words. Discovery's guess at the scale is shown with the question,
-  and the profile stays unset until the person answers.
-- **A corrected start replaces the blocked run.** Started again with the
-  same input, a blocked run is checked again where it stands. Started with
-  corrected input, a new run is created and the blocked one is cancelled,
-  naming the run that replaced it (`superseded`). A start that hands back
-  an existing run names the inputs it gave differently (`differs`), and
-  `claim_work` on a blocked run says why it is blocked.
-- **Checks read what a step wrote.** `numbers_grounded` reads only
-  documents a step wrote and never lets a document ground itself;
-  configuration such as `postgres:16` or `PORT=8443` grounds the figures it
-  sets, and dates, times, years, and digits inside identifiers ground
-  nothing. `artifacts_exist` accepts an honest empty changes list, and
-  `decision_ask_present` finds an ISO `decisionBy` written as "Oct 15" or
-  "16 October". A deliverable's sensitivity is null when nothing it cites
-  carries a label, and its body counts the citations of unknown
-  sensitivity.
+  An excerpt never grounds a figure.
+- **Recorded reads keep the address and drop credentials.** An address that
+  is not http(s), or that carries a user and secret or a key-shaped token,
+  is refused. Credential shapes in stored text are replaced by `[redacted]`.
+- **The acceptance prompt says what Construct checked**, one fact per line,
+  with the assistant's own description last and marked as not checked.
+- **A plan's blocking questions wait for the person**, and every later step
+  receives each answer with who gave it and on which channel.
+- **Every record says whose voice it is in**: the person's own, relayed by
+  an assistant, Construct's inference, or no record. Rule-outs and
+  supersessions take effect only in the person's own voice.
+- **An approval covers one run** and names where the work goes and what it
+  rests on. Standing grants still cover every run in their scope.
+- **A corrected start replaces the blocked run**, naming the run that
+  replaced it.
+- **Bad tool input is a tool result.** A wrong, missing, or stray argument
+  returns an `isError` result with `error`, `field`, and, where they apply,
+  `allowed` and `example`.
 
 ### Fixed
 
-- `construct init` no longer gives a project a new id when its project files
-  are missing but its store remains. The store records its project's id,
-  and every binding, `construct migrate`, and `construct doctor` check it.
-- Commands run in a main checkout whose current commit lacks the project
-  files now say to restore them, instead of suggesting `construct init`.
+- `construct init` no longer gives a project a new id when its project
+  files are missing but its store remains.
 - `status` and `doctor` read a store whose state directory this user cannot
-  write, when its write-ahead log is empty or a running session has the
-  store open. Otherwise they say what access the read needs.
-- A step lease that expires inside another session's call is recorded as the
-  kernel's act, not that session's. The holder that walked away is named.
-- The `work` tool stored a session's title as the description of work it
-  added. It now keeps the description it is given.
-- A hook able to answer a host prompt for the person is found however it is
-  written: hook files are read as JSON, so an escaped event name counts, a
-  file that cannot be read or parsed counts, and the check runs before every
-  question and again when its answer arrives, so a hook added while the
-  server runs stops the answer counting as the person's. Before, the check
-  matched raw text once at startup.
-
-### Known limitations
-
-- The Claude Code hooks were exercised with Claude Code-shaped event
-  payloads against a scratch project, not inside a live Claude Code session.
-- Two Claude Code hook packs share `construct hook` and one writer of the
-  machine-local `.claude/settings.local.json`: coordination
-  (`construct hooks install --host=claude-code`) and grounding
-  (`construct init --client=claude-code`). Both work; they are not yet one
-  pack, and other hosts get neither until a live probe verifies their hook
-  surfaces.
-
-- Delegation is not live-verified across Claude, Codex, and Cursor. Its six
-  directions are covered by synthetic MCP tests only.
-- The live intake runs have not been performed. No host or model was run
-  for typed intake: no baseline was measured and no live record exists,
-  so `npm run evals:live -- check` fails until one is made. STRATEGY keeps
-  any change to what a host model reads from Construct out of staging and
-  out of a release until a fresh record covers it, so these runs, made by
-  hand on subscriptions as docs/release-verification.md describes, come
-  before this alpha is merged to staging or cut, and
-  `npm run evals:live -- check --cut` must pass at the cut. The corpus's
-  routing and authored cases carry Claude's labels alone (`agreed` is false
-  on them); the Codex labeling pass comes before the first full record.
-- Live host conformance is not part of CI or the release workflow. The
-  static conformance suite passes.
-- Not yet checked against live hosts: the directory OpenCode, Codex, and
-  Bob start a server in (their entries rely on it being the project
-  folder), each host's approval and trust prompts, whether Cursor,
-  OpenCode, and VS Code read `.claude/skills`, and whether Claude Code reads
-  `.claude/settings.local.json` from a worktree.
-- A Claude Code session in a git worktree runs without the grounding hooks,
-  because init writes only the main checkout's settings.
-- The hooks' launcher names the Node that last served the project. After a
-  Node upgrade the hooks do nothing until a server starts and repoints it,
-  and `doctor` reports them stale until then.
-- A project whose Construct dependency is hoisted to a monorepo root gets
-  the PATH form, and a teammate's global `construct init` after another's
-  `npx construct init` rewrites the committed host file to the other form.
-- The Jira hook's tool match also covers Confluence and Rovo tools served
-  through the Atlassian connector, so Jira-shaped text in a Confluence page
-  fetched that way is recorded as a Jira read.
-- Redaction also replaces long hyphenated identifiers that hold digits,
-  commit SHAs, and words with `sk-` inside them; a quote that starts partway
-  into such a run can read as a misquote.
+  write, when that is safe, and otherwise say what access the read needs.
+- A step lease that expires inside another session's call is recorded as
+  the kernel's act, not that session's.
+- A hook able to answer a host prompt for the person is detected however it
+  is written, before every question and again when its answer arrives.
 
 ## 3.0.0-alpha.24 — 2026-09-02
 
-- **Skill routing by the person's words.** `classify_request` now ranks
-  every skill against the request (retrieval over descriptions, activation
-  phrases, and each skill's labeled cases) and hands the host a banded list
-  with each skill's use-when text; the host model chooses, the ranking only
-  orders. The operational skill tells the session to call it for anything
-  that is not a plain question and never to ask the person to name a skill.
-  The lexical activation judge and the `judge: model` case marking are
-  gone. Every description was rewritten with triggers in ordinary language
-  within the published budget, and a frontmatter parser defect that kept
-  only the first line of a wrapped plain-scalar description (so the registry
-  held about sixty characters for seven method skills) is fixed.
-- **Measured, not asserted.** `skills/evals/routing.json` holds requests
-  written after the catalog was final and never used to tune it; the tests
-  assert the router's floors on it (top-1 at least 35%, top-5 at least 75%,
-  measured 2026-09-02 at 26/68 and 55/68) and leave-one-out on the labeled
-  cases (139/152 top-1). `npm run evals:live` records a subscription model's
-  picks from the shipped descriptions in `skills/evals/live-judge.json`.
-  Measured 2026-09-02 with Codex (GPT-5 family, no family shared with the
-  author of the cases) on the held-out set: the previous descriptions had
-  the model load the right skill for 37 of 74 requests and decline to load
-  any for 21 situations the packs cover; the rewritten descriptions score
-  73 of 74 in that harness and 74 of 74 in the recorded run. The cases and
-  the descriptions share an author, so that agreement is an upper bound.
-- **Quiet on Node 22.** Node 22 prints an experimental warning for
-  `node:sqlite` on every command; the launcher now drops that one warning
-  and no other, so stderr carries only what the person can act on. Found
-  by the release workflow, whose smoke merged the warning into a JSON
-  capture; the smoke now parses stdout alone.
+The rewrite. Construct became a project-bound operating layer for agent
+hosts, with one project contract and one state universe.
 
-## 3.0.0-alpha.23 — 2026-09-02
-
-Architectural cutover. No backward compatibility with any prior alpha: state
-format 2, project config format 2, no migration; files from an earlier alpha
-are recognized by path or stamp and refused unread, and `construct reset`
-names exactly what it would remove.
-
-- **One project contract and one state universe.** `.construct/` holds
-  `project.json`, `constitution.json`, `sources.json`, `registry.lock.json`,
-  optional `skills/` and `workflows/`, and `state/construct.sqlite` as the
-  only runtime database. The home database and `.construct/settings.json`
-  are gone. Configuration resolves through five tiers and `construct config
-  explain` shows every tier's offer.
+- **One project contract.** `.construct/` holds `project.json`,
+  `constitution.json`, `sources.json`, `registry.lock.json`, optional
+  `skills/` and `workflows/`, and `state/construct.sqlite` as the only
+  runtime database. Configuration resolves through five tiers, and
+  `construct config explain` shows every tier's offer.
 - **Progressive discovery and the constitution.** Init reads the project's
-  own files, proposes with provenance, asks three questions, and composes
-  the committed constitution from confirmed material only.
+  own files, proposes with provenance, and composes the committed
+  constitution from confirmed material only.
 - **Sources, authority, identity, organization.** Authority per claim type;
   snapshots by digest; identities never merge while ambiguous; ownership,
   reporting lines, and membership from any source are proposals until
@@ -977,826 +436,106 @@ names exactly what it would remove.
   resolver that names every reason a workflow cannot run.
 - **The workflow service and triggers.** Idempotent runs, leased steps with
   fencing tokens, per-step policy gates, validators, retry, resume without
-  repeating work, cancellation, no-data and stale-data policies, and
-  standing outcomes fired by an external clock under an idempotency key
-  with cron and CI recipes.
-- **One typed broker.** Seventeen tool definitions drive the MCP tool list,
-  the interactive and headless surfaces, the tests, and the reference; host
-  wiring for Claude Code, Cursor, VS Code, and OpenCode.
-- **The command line is an object surface.** init, status, doctor, config,
-  project, source, skill, workflow, run, inbox, staff, serve, reset,
-  completion, version, help; help, completions, and the documentation lint
-  derive from one registry; every read accepts `--json`.
-- **Seven method skills requalified, nine professional packs added,
-  sixteen built-in workflows.** Packs are obligations, doctrine with cited
-  sources and review dates, procedure, templates, checks, fixtures, and
-  limits; the strategy review refuses velocity as capacity; governance
-  labels everything research and issue-spotting, never advice.
+  repeating work, cancellation, and standing outcomes fired by a clock under
+  an idempotency key.
+- **One typed broker.** Tool definitions drive the MCP tool list, the
+  interactive and headless surfaces, the tests, and the reference.
+- **The command line is an object surface.** Help, completions, and the
+  documentation lint derive from one registry, and every read accepts
+  `--json`.
+- **Method and professional skills and built-in workflows**, with doctrine
+  cited by source and review date; governance output is labeled research
+  and issue-spotting, never advice.
 - **Drift detection.** Deterministic findings from the context graph with
-  evidence, affected obligations, confidence, and repair paths, run by the
-  kernel itself inside workflows; lessons are proposed, never admitted by a
-  run.
-- **Documentation as a product contract.** A rewritten user set, references
-  generated from the command, broker, configuration, catalog, and state
-  definitions with a CI check, and every documented command executed in
-  tests. STRATEGY, GLOSSARY, and RESEARCH-DECISIONS rewritten to the settled
-  state.
+  evidence, affected obligations, confidence, and repair paths; lessons are
+  proposed, never admitted by a run.
+- **Documentation as a product contract.** References generated from the
+  command, broker, configuration, catalog, and state definitions with a CI
+  check, and every documented command executed in tests.
 - **Proof.** Security fixtures (forbidden keys, symlinked and oversized
-  project files, terminal escaping, scoped approvals) and deletion gates
-  that fail when any retired name returns to product code or a current
-  guide. The packaged smoke drives the whole loop over the served MCP
-  surface: setup questions answered through `decide`, a remembered
-  decision, a managed workflow claimed and submitted to completion, and a
-  deliverable promoted to final. `npm run conformance` reports every
-  supported host as passed, failed, or untested with the reason; live host
-  calls run only with `--live` outside a host session. Static conformance
-  for this version, run 2026-09-02 from inside a Claude Code session:
-  claude-code, cursor, vscode, opencode, and codex pass every credential-free
-  check (codex is not wired by a project file; bob is not installed here);
-  live host calls were not exercised for any host and are recorded as
-  untested.
-- **Removed.** The 37-verb surface, the home store, the keyword implication
-  map and namer, lens and persona packs, tuned-family matrices, host spawn
-  adapters and per-host probes, connectors bound to the old store, and their
-  tests, fixtures, and scripts.
+  project files, terminal escaping, scoped approvals), deletion gates that
+  fail when a retired name returns, a packaged smoke over the served MCP
+  surface, and `npm run conformance` reporting every host as passed, failed,
+  or untested with the reason.
+- **Quiet on Node 22.** The launcher drops Node 22's experimental warning
+  for `node:sqlite` and no other, so stderr carries only what the person can
+  act on.
 
 ## 3.0.0-alpha.22 — 2026-09-01
 
-Dogfood polish: structural watches are operable again, divergence gaps are
-named, sweeps stay bounded, and composed documents disclose voice overrides.
-
-- **`construct watch` restored.** Declare watches with `watch add`; run due
-  sweeps with `watch --due` on your own schedule (cron or launchd). See
-  `docs/scheduled-operation.md`.
-- **Half-watched divergence relations are named.** `source relations` and
-  post-sweep `--due` report when a relation is divergence-inert because one end
-  has no active watch; `watch add` states which relations became checkable.
-- **Divergence sweeps bound history reads.** `--due` no longer rescans each
-  watch's full firing history on every edge touch.
-- **Composed markdown discloses voice overrides.** When a run used a non-house
-  voice, the document body carries a visible override line instead of the
-  house-voice attribution.
-- **Open-weight promotion path recorded.** RESEARCH-DECISIONS §32: development
-  org-harness promotion runs on subscription-reachable hosts, not local Ollama.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.21 — 2026-09-01
 
-Dogfood alpha for Gerald. No external-tester program and none planned;
-acceptance is recorded outcomes he runs and reads. Carries the post-clean-slate
-hardening that landed after `3.0.0-alpha.20`.
-
-- **No external-tester gate.** STRATEGY Phase 5 and the README state Gerald
-  dogfood as the only acceptance surface; recruited testers are not a
-  requirement and are not waiting in the wings.
-- **Release recipe names skill-pack regeneration.** Bumping the version without
-  `construct skills pack` fails `lint-skill-pack-skew` (version-only skew
-  tested); see `docs/internal/release.md`.
-- **Live Jira/GitHub connectors are stated as deferred.** Survey, decide,
-  reconcile, and docs say adapter code exists but no shipped path constructs a
-  transport yet; prefer host MCP / `--live=` until a recorded probe wires them
-  (`construct-a9yx` tracks the live path).
-- **`shares telemetry` reaches privacy** on the device-posture/EDR outcome
-  pattern; compliance for that class stays a namer/embedding problem
-  (RESEARCH-DECISIONS §31).
-- **`source relate --as=supersedes` states the withhold**, and
-  `source relations` prints each edge's ground-assembly effect.
-- **Estimative judgments resolve once** (`happened` / `did_not_happen` /
-  `unresolvable`); overdue horizons nudge via `inbox`; calibration prints
-  counts and refuses a Brier rate below the §1 n-floor
-  (`construct inbox judgments|resolve-judgment|calibration`).
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.20 — 2026-09-01
 
-Clean-slate reconciliation complete through Phase J (`construct-cki1`). No
-compatibility entitlement with prior alphas. Project-local format-v1 state;
-interactive work is session-bound MCP after `construct init`; headless `work`
-is claim/submit/`--pin` only. Keyword staffing, wire, cleanup, naming_cache,
-standing/watch/schedule/daemon product verbs, and deep package exports are
-gone. Operational `construct` skill is the only auto-install; method skills
-use progressive disclosure; lens packs stay explicit.
-
-- **Provenance rebuild.** This release is tagged `v3.0.0-alpha.20` and
-  published with npm provenance (`gitHead`). Do not trust registry
-  `3.0.0-alpha.19` (no gitHead, no matching git tag).
-- **CI runs the real gate on every PR/push:** lint, typecheck, full `npm
-  test`, sterile read-only HOME, packaged-install smoke.
-- **Release verdict:** READY FOR NEW ALPHA (recorded on the epic and in
-  `docs/internal/clean-slate-release-verdict.md`).
-- **Unknown verbs name themselves.** `construct cleanup` (and any other
-  retired or mistyped verb) prints `unknown command` and exits 2 instead of
-  only dumping the grouped help — the packaged smoke proves the refusal.
+Tagged `v3.0.0-alpha.20` and published with npm provenance. The registry's
+3.0.0-alpha.19 has no matching git tag. Nothing else this release added
+remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.18 — 2026-08-25
 
-The experience shell, reshaped. Six isolated-environment walks of the install
-path (as an operator, an agent-session resident, a terminal-first dev, an
-embedded engineer, a multi-client consultant, and an automation context) found
-where what Construct does diverges from what a user reasonably expects and what
-best-in-class tools do. This release closes those gaps. The engine and its
-security posture were already sound; these are the surfaces around it.
-
-- **Bare commands are safe again.** `work`, `skills`, and `wire` no longer act
-  on a bare invocation: `work` with no `--run` (or `--all`) prints usage and
-  dispatches nothing rather than spending on every queued task; `skills` writes
-  only through `skills pack`; `wire` previews and needs `--yes`. Typing a command
-  to see what it does no longer mutates state or spends money.
-- **`--help` works everywhere, and unknown flags are refused.** Every verb takes
-  `--help`/`-h` and prints its own usage without acting — `outcome --help` no
-  longer records a run named "--help". An unknown flag on a verb that does not
-  take free text is rejected rather than silently ignored, so a typo fails closed.
-- **`construct help` is a map, not a wall.** The 39 verbs are grouped by task
-  with a one-line gloss each and the spine (`outcome → work → show → inbox →
-  verdict`) called out first, so the model is legible from the CLI itself.
-- **Client work stops pooling silently.** A repo can bind its workspace in
-  `.construct/settings.json`, and `source add`/`outcome` warn before landing in
-  the shared `default` workspace with nothing bound — closing the confidentiality
-  footgun where two clients' ground could mix by forgetting a flag.
-- **One place to see and set configuration.** `construct settings` shows every
-  setting — file-backed and store-backed — each labeled with where it lives, and
-  `settings set <key> <value>` writes it; `mode`/`consent`/`trust` remain as
-  aliases. Trust state resolves against the home store, so it stays correct even
-  under `state: local`, and a malformed project settings file degrades to the
-  home store with a clean notice instead of a stack trace.
-- **From installed to first outcome.** `doctor` ends with a next step, and a new
-  `construct init` confirms the host you are in, offers to wire MCP with your
-  consent, and prints the spine. A new `construct status` answers "where am I" in
-  one view — latest run, task counts, open decisions, pending proposals, host.
-- **Read verbs behave for scripts.** `show`/`log`/`plan` exit non-zero on a
-  not-found id (a real-but-empty run still exits 0), and a failed task no longer
-  renders as "success".
-- **The docs stop implying Claude Code is required.** A host-independence audit
-  confirmed there is no such dependency in the code — opencode is the default,
-  host selection is even-handed, and dispatch through codex was validated live
-  (RESEARCH-DECISIONS §28). The examples now use a host placeholder and lead with
-  `construct wire`, and four shipped verbs the README had omitted are documented.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.17 — 2026-08-25
 
-The host you are already in runs the work, the machine keeps less than you
-feared, and a repo can carry its own Construct posture — plus the security
-sweep that had to land before any of it could be trusted.
-
-- **The session you are in is the one that runs the work.** Construct now
-  detects the agent host it was invoked from (Claude Code, Cursor, and their
-  markers) and defaults dispatch and every relayed command to that host instead
-  of to OpenCode. A host it cannot spawn (Bob, goose, nanobot) is named
-  projection-only rather than silently swapped. `construct wire` writes the
-  ambient host's MCP config for you, so `construct serve` is reachable without a
-  hand-edit. The incident that prompted this — an agent inside a Bob session
-  told to run work on a host the user was not in — no longer happens.
-- **Host-pull execution (flagged prototype, off by default).** Where a host
-  cannot be spawned, it may claim a ready task and run it on its own capacity,
-  submitting a draft through the token-scoped role seam. Completion stays
-  kernel-owned: the host produces a draft and can never advance it to final;
-  promotion still turns only on recorded verdicts. The bearer never leaves the
-  server. This is the one STRATEGY change this cycle (commitment 1, Phase 2;
-  RESEARCH-DECISIONS §§26–27), made because the community record backed holding
-  the rest of the strategy and changing exactly this seam.
-- **A repo can declare its Construct posture, and it is inert until you trust
-  it.** `.construct/settings.json` carries preferences (host, locale, ground
-  hints — never consent), resolved through a git-config-style ladder with the
-  source of each value printed. A committed file does nothing until ratified per
-  content hash via `construct trust`, with controls drawn from the 2025–2026
-  config-trust attacks: the hash is over raw bytes, the gate runs before any
-  effect, symlinks are refused, discovery never crosses a repo boundary, and
-  consent keys have no file parser at all. Opt-in `state: local` roots the store
-  inside the repo — refused unless the path is both git-ignored and untracked.
-- **Deliverables localize; the record never does.** Prose renders for a locale
-  (default American English); the work log, store rows, and timestamps stay
-  byte-identical whatever locale a run rendered in.
-- **Read verbs speak JSON, and the CLI grew completions.** `--json` on `log`,
-  `inbox`, `show`, `source list`, `lessons`, and `plan` emits the stored record;
-  exit codes are a documented contract; `construct completions` generates
-  zsh/bash completion from the verb table itself.
-- **Security sweep (fifteen findings, audited and remediated).** The store and
-  its backups are created owner-only, not world-readable; erasure reclaims the
-  bytes, not only the rows; a decision the outward-write ladder trusts now
-  carries whose hand made it, so a model-relayed approval cannot pass for a
-  human's, and consent no longer fails open on an undeclared source or a
-  model-chosen action; the prompt and terminal escapes cover the whole
-  invisible-character class (bidi, zero-width, Unicode tag characters), including
-  the lesson-poisoning challenger prompt; host stderr and connector errors are
-  stripped of credential shapes before they are stored; the pre-commit scanner
-  knows the connector's own token shape and `.gitignore` refuses dotenv files;
-  extracted document text is written owner-only and cleaned up; the Jira site is
-  validated before the credential is sent to it; and the publish workflow pins
-  its actions to commit SHAs while holding least-privilege tokens.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.16 — 2026-08-25
 
-What a source is, how two of them stand to each other, and how sure a finding
-is allowed to sound — three things a run previously had no way to say.
-
-- **A wish list and the record no longer enter a dispatch as the same kind of
-  thing** (construct-oxyk). A source carried a locator and nothing about how far
-  to trust it, so the 2027 aspiration and the signed agreement reached a role
-  identically. `construct source describe` (and `source add`) now take
-  `--authority` — `source-of-truth`, `working`, `aspirational`, `archive` — plus
-  a free-text `--relevance` and a `--sensitive` flag, stored in
-  `source_declarations` at schema version 18. What the user typed travels: roles
-  are told it before they read, and a citation into a described source renders
-  its tier where a reader sees it, so a memo resting on an aspirational plan
-  reads as one. The label beside a citation is the description as it stands, not
-  as it stood at authoring — demote a plan and the work resting on it stops
-  looking settled — while what the roles were actually told at dispatch stays in
-  the work log. Nothing writes a declaration except the command: a tier nobody
-  typed does not exist. `--sensitive` also narrows consent, so standing approval
-  for low-risk outward writes stops covering a change made against that source.
-- **Two sources can stand in a declared relationship, and ground assembly honors
-  it** (construct-4u0o). `construct source relate|relations|unrelate` records
-  `governs`, `depends-on`, `feeds`, `supersedes`, `covers-same-initiative` and
-  `contradicts` in `source_edges` at schema version 19, and each word changes
-  what a run is built from rather than only annotating it. Ground is partitioned
-  along the edges: sources that govern, feed, depend on or contradict each other
-  reach the same role together; sources declared to cover one initiative are
-  spread across roles so nobody pays twice for one view; a superseded source is
-  kept out of any dispatch carrying its replacement. A finding resting on both
-  sides of an edge has to name the boundary it crossed. Watches read the edges
-  too, so a sweep that sees one end move while the other stands still raises that
-  as its own decision, naming the relationship — the difference between a file
-  changing and a plan no longer following the strategy it is held to. A model may
-  propose an edge (`construct propose relation`), and a proposal is all it is
-  until `construct decide` says otherwise: standing consent never covers one,
-  because a relationship reshapes every later run's ground.
-- **A likelihood and a confidence are two statements, and neither is allowed to
-  stand in for the other** (construct-98ac). "We are fairly confident this is
-  likely" hides which hedge is about the world and which is about the evidence,
-  so the two are separated at the type level. A likelihood is a whole number the
-  model assigns; the seven-band word is derived from it by arithmetic the code
-  owns, never picked by the model, and `renderLikelihood` will not print the word
-  without the range beside it. A likelihood may be stated only at moderate
-  confidence or above — below that the constructors have nowhere to put one, and
-  the honest shape is the evidence and agreement terms, what is missing, and what
-  observation would raise confidence. Every stated likelihood lands in
-  `estimative_judgments` (schema version 20, append-only) with its resolution
-  criterion and horizon written at the moment of the judgment, and the
-  `estimative-form` challenge checks the form of what shipped. What it does not
-  hold yet is resolutions, so the honest statement is that judgments are logged
-  and no calibration figure exists. Whether the separation makes a model better
-  calibrated is unmeasured; this ships as structural discipline and the log that
-  makes the question answerable.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.15 — 2026-08-24
 
-- **The skills ship inside the package that claims to carry them**
-  (construct-g69g). `files` was `bin`, `dist`, written at the Phase 0 bootstrap
-  before any skill existed, so a registry install delivered the whole skills CLI
-  and none of the skills: `construct skills list` answered that this install
-  carries no skill files, and `--host` had nothing to plant. The tarball now
-  carries `skills/`, and the claim is held by the consumer path rather than by
-  the files field: `scripts/smoke-packaged-install.sh` packs, installs into a
-  scratch project, lists the skills, plants one, and fails unless the planted
-  file is byte-identical to the one this repository ships. That check earns its
-  place because the path from the built `dist/` back to `skills/` resolves
-  relative to the module, so the checkout and the package could disagree
-  silently, and only a packaged install can tell them apart.
-
-  This overrules the recommendation of the 2026-08-20 decision-framing run,
-  which argued for staying git-only and whose verdict was `proposed`. The
-  decision was the decider's to make and the record is left standing, including
-  the objection it recorded against itself: every npm consumer has already
-  chosen to trust the tooling, and was getting nothing unless they separately
-  learned a second command existed. The cost the record named is real and is
-  accepted rather than argued away: a package carries the skills as of its
-  release while git carries them as of now, which is why `skills installed`
-  reports a planted skill as current or diverged, and why the pointer to
-  `npx skills add geraldmaron/construct` stays in both READMEs.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.14 — 2026-08-24
 
-Host reach for the portable skills, and one more host written down honestly.
-
-- **A host is reached by its name, not by remembering where it keeps skills**
-  (construct-nmjm). `construct skills install|installed|uninstall` took only
-  `--dir`, defaulting to Claude Code's directory, so every other host was
-  reachable only by a user who had memorized its path. `--host` now names them:
-  `claude`, `bob`, `opencode`, `cursor`, `codex`. The table lives in
-  `kernel/paths.ts`, the one module allowed to read home, and each entry carries
-  the vendor page it came from and the date that page was read. Two of those
-  paths were not what secondhand sources said: Codex reads `~/.agents/skills`
-  rather than a directory of its own (https://learn.chatgpt.com/docs/build-skills,
-  read 2026-08-24), and that same `.agents/skills` is a shared convention Cursor
-  and OpenCode also document reading, so one install there reaches three hosts.
-  `--dir` and `--host` together are refused naming both flags, because a silent
-  winner between two directories is how a skill lands somewhere nobody looks.
-- **An expectation nobody has run against a binary says so in its type**
-  (construct-0uaa). IBM Bob is pinned as a probe target (`src/hosts/bob/pin.ts`,
-  `npm run probe:bob`), the way goose and pi are. It differs from them in the one
-  way that matters: no `bob` binary was reachable to probe (`command -v bob`
-  failed 2026-08-24), so `PINNED_VERSION` is null and `Expectation` is a
-  discriminated union where a documented claim must carry its source URL and read
-  date and cannot be read as a measured one. All seven expectations are
-  documented, from IBM's own pages. The probe refuses with exit 2 and says a
-  refusal is an unknown result rather than a pass. `bob --version`'s output shape
-  is recorded as an open question instead of a guess. Probe target only: Bob is
-  metered, and development model calls come from the Claude Code and Cursor
-  subscriptions.
-- **Seven descriptions a host lists before it loads any of them fit the one
-  published budget** (construct-mdf1). A host offers every skill it can see by
-  description before a single one loads, and Codex publishes a budget for that
-  list: 2% of the context window, or 8000 characters when the window is unknown,
-  after which it shortens descriptions and then drops skills, silently. The
-  shipped set measures 6081 of those 8000 characters, and `lint-skill-spec.mjs`
-  now fails past the budget rather than discovering it on someone else's machine.
-  It went into that script rather than a new one, which already checked the
-  per-field rules. What it does not prove travels with it in the script's own
-  output: every check here reads host documentation, so a skill that passes is
-  documented to load, not observed to.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.13 — 2026-08-22
 
-The release that makes the version number mean something again, plus the last of
-the delivery backlog.
-
-`3.0.0-alpha.12` was published to npm at 2026-08-21T06:09Z and then kept being
-worked: sixty-nine commits touched `src/` under the same version string, so the
-tarball on the registry and the code this repository called alpha.12 were
-different things and nothing said so. Everything below the alpha.12 heading that
-landed after that timestamp ships here for the first time.
-
-- **A document is written in the voice its deliverables were** (construct-5on7).
-  `construct work --voice` shaped every deliverable and wrote the instruction to
-  the append-only work log, and composing bound the house voice regardless — so a
-  user got their voice in the parts and Construct's in the whole. `compose` reads
-  the override back from the run's own record. A per-command `compose --voice`
-  was rejected for the reason the recorded host and model are already not
-  retyped: a value the user has to re-state to keep is one the system can
-  silently lose, and losing this one is invisible, because the document reads
-  perfectly well in the wrong voice. Two sub-decisions are pinned by tests — a
-  run worked twice takes the later instruction, ordered by the log's own sequence
-  rather than caller-supplied timestamps, so a skewed clock cannot decide which
-  voice a document is written in; and an instruction that did not survive leaves
-  the house voice standing rather than binding an empty one.
-- **A pin claim measured under one provider does not hold for another that skips
-  validation** (construct-smgc). The goose pin's eight expectations were measured
-  against a local Ollama backend; running the probe against its subscription-backed
-  default found six unchanged and two provider-dependent. An unrecognised
-  `--model` produces goose's catchable error text under ollama and nothing at all
-  under claude-code, whose shelled-out CLI does not validate the flag, so the
-  error-text pattern-match is not a way to detect a bad model everywhere.
-  `--no-session` leaves ollama's request log advancing and claude-code's
-  untouched, so that log's freshness is not a signal of request activity
-  everywhere. Both claims now state each provider's measured behavior with its
-  date, and the probe skips a provider nobody has measured rather than failing it.
-- **A keeper that only runs when everything succeeded is not a keeper**
-  (construct-8naa). The pre-commit tracker keeper was trailing lines, on the
-  reasoning that it must run after the beads section it undoes — but that section
-  exits the hook itself on its own failures, having already re-exported and staged
-  the tracker. The commit aborted and the staging survived, and the next commit's
-  gate read it as the author's own staging and kept it: the exact misattribution
-  the keeper exists to prevent, arriving through the keeper not running. It is an
-  EXIT trap now, armed ahead of the beads section, and the staged-by-the-author
-  answer moved from a file under `.git` into the hook's own shell.
-- **`docs/` is documentation and `docs/internal/` is the record.** Eighteen
-  development records — dated probe transcripts, acceptance packets, judging
-  rubrics, design decisions, measurement runs — moved out of the directory a user
-  reads. None were deleted: they are the evidence commitment 15 demands, and
-  deleting them would leave the claims they support standing on nothing. A
-  content heuristic was measured as the gate and rejected on its numbers (13 of 16
-  records caught, three missed, one false positive on a real guide); the gate is
-  instead that `docs/` is a closed set, held to the index in `docs/README.md` in
-  both directions, so a new file fails the build until someone decides which it
-  is. The heuristic survives as a hint printed beside the failure.
-- **The tracker export's instability was upstream and already fixed**
-  (construct-acm8). Eight consecutive exports were byte-identical; the cause of
-  the original observation is in bd's own source, where both export paths range a
-  Go map for memory keys — deliberately randomized per process, exactly the
-  symptom — and sort before writing. Nothing in this repository writes those
-  bytes, so no local patch belonged here and no upstream report was filed for a
-  defect already closed.
-- **Committed output that records nothing a reader can check is gone.**
-  Seventy-six raw model transcripts from the retired depth experiment, cited by no
-  script, test, document or tracker note; a checksum sidecar naming a database the
-  probe did not keep; and a dated audit whose findings live in the code and the
-  pins that probe them. What is derived from the transcripts stays, because
-  removing evidence a published figure rests on is a different act from removing
-  weight. `package.json` also stopped naming a `schemas` directory that does not
-  exist, so the `files` allowlist no longer describes a package nobody could
-  produce.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.12 — 2026-08-21
 
-The reconciliation session's second half: the red-team epic closed the same day it was filed, the write-proposal path became actionable end to end, and the delivery backlog was trued against the staff-member vision — every open bead now carries a current disposition, every stakeholder call sits labeled in one queue, and the calls that could be settled under Gerald's standing session authorization were settled on the record.
-
-- **Hostile ground can no longer steer a review into silence, a fabricated attribution, or a forged prompt line** (construct-kjqt, seven children, same-day close). A filename carrying control characters is refused at the survey and every surveyed string is escaped where it enters a prompt. A citation that quotes its document is checked against the document's actual words — a claim that puts words in a real document is discarded as fabricated provenance, and support the check cannot verify prints as existence-only, never silently credited. A review must account for its reading: reads the host refused are a stated failure instead of a clean line, a review steered into silence prints a state a clean review cannot borrow, and printed provenance names the document a claim's wording came from, not only the declared source. Every grounded prompt now states that document content is material to report on, never direction to follow (commitment 6's ceiling, amended to cover what a run reads, not only what it remembers). What stays disclosed rather than closed is recorded on the epic: the reading account is the reviewer's own testimony, and semantic support beyond quotation remains a human read — with the words now printed beside the finding.
-- **A write proposal can be decided from the spine, and standing consent means something** (construct-u6u8). `construct decide --pending/--approve/--reject` and `construct consent` surface the kernel's existing decision machinery; the dispatch agent found standing consent had been dead code end to end — the apply path refused every proposal without a per-proposal decision, so the setting authorized nothing — and fixed it with the same two-authority rule the store enforces: a human approval, or standing consent for the low-risk class only. High risk never rides standing consent, enforced at both layers before any host is asked.
-- **One queue, one rendering** (construct-u6u8, construct-vy8r). `propose list` and the decide surface share one row renderer, and `construct inbox` names waiting outward changes instead of saying nothing needs you while they wait.
-- **A role's question reaches the user through the projection, and nothing on that surface can spend** (construct-vi0m.1). The MCP projection gained `asks` and `answer` — pure relay of the ask protocol, with the no-spend boundary proven structurally: a test walks the projection's transitive import closure and asserts nothing in it can spawn a host.
-- **The 2.x litter is gone from every project tree** (construct-sll2.2). Three projects cleaned and rewired to the 3.x serve entry, verified by the inventory re-running clean; the artifact paths are gitignored under each project's own policy, so the filesystem is the record. Two scanner-invisible leftover classes were found and filed with the fix.
-- **The position repair was watched working on a live composition** (construct-bpzk). A frontier-model recompose of the recorded objection run: the repaired call was refused on its merits — the second attempt introduced content absent from the deliverables — so the first call stood with its objections printed. None of the three cheap fixes reached the document, and the closing round discarded six answers for answering gaps the composition never named.
-- **An approved change crosses into Jira or GitHub through that tracker's own MCP server, and never carries a field the tracker owns** (construct-6ug3.2). One field-authority map answers three independent enforcement points — the store's projection write, the applier prompt's may-set/never-set lists in each vendor's own words, and the recorded proposed→decided→applied trace whose second line proves the host is never reached without a verdict. The mirror marks in-sync only after the host reports the change landed, and that state is the model's testimony, said so rather than dressed as a receipt.
-- **A redline to a document is a proposal under the same consent gate as a ticket** (construct-6ug3.4). Replace words, insert words, or author a whole document — each recorded as an immutable proposal whose parts (kind, document, anchor, both sides of the change) sit beside the change text a person approves. All three kinds file at high risk: struck words are not on the page afterwards, and a workspace's one standing consent must never publish model-written prose that a later run cites as ground.
-- **Tracker drift is one decision, never a silent overwrite** (construct-6ug3.3). `construct reconcile` reads caller-supplied live tracker state against the recorded projections and raises each domain-owned disagreement as a deduplicated inbox decision; without live state it reports what the record holds, labeled unverified this run, instead of guessing.
-- **A standing watch points at external ground and produces only inbox decisions** (construct-vi0m.3). Declared per source with a cadence, swept by a cron-invoked verb that surveys structurally, records every firing, and raises a decision only when the snapshot changed — nothing resident, proven by a test that the process tree is untouched, and no model spend on any sweep.
-- **Model text is printed to the terminal, never executed by it** (construct-ryad). Every control byte in model-derived text renders as a visible escape at all 117 print sites — a reply can no longer erase the provenance line above it or make a link lie about its target. The posture is recorded in the helper's own doc: the trust in question is the ground's, not the host's, and the forgeable surfaces were precisely the honest ones.
-- **The shape chooser's miss rate is measured, and its silence now says so** (construct-isen.4). On forty blind-authored asks the keyword chooser misses 0.625 (Wilson 95% [0.470, 0.758]) — not because the phrase lists misfire but because they fire on one ask in five and the rest fell silently into the review default. The fall-through now discloses itself; no keyword was tuned, and the model-asked chooser that already ships is the measured answer for hosted runs.
-- **An exec one-pager is a shape, not a truncated review** (construct-isen.5). Decision first, one page, altitude framing — what changes, what it costs, whose call — reachable from ordinary wording through every path including keywords, where a document-type name outranks a bare decision word beside it.
-- **`construct skills` manages the installed suite** (construct-rqt9). list, install (names or `--all`), installed, uninstall — state inferred from disk with byte-identity by checksum, never a manifest; the default directory matches the Agent Skills convention, verified against it; a packaged install with no skill files says so and names the installer.
-- **Host recipes for the official tracker and docs MCP servers** (construct-6ug3.7), every version, endpoint, and count either primary-source-cited with an as-checked date or explicitly tagged unverified — including the registry caution that only a vendor's own namespace is evidence an entry is official. **Docs sources say what they point at** (construct-472j.2): `provider:container:id` locators, validated at declaration, with the read-row auditability check in code. **A second review names what changed since the first** (construct-472j.3) over the append-only read record — added, removed, newly unreadable — and says plainly that content-level change is unverified rather than claiming it either way.
-- **The connector gate exists before the first connector** (construct-dr48.5). Lint fails red on kernel, hosts, scripts, or bin importing `src/connectors/**`, and on a connector importing anything but the kernel — per the seam design's own edges, with the CLI deliberately unscanned as the explicit opt-in surface.
-- **The bead-reference gate reads all of scripts/** (construct-zgqm) — its glob had silently skipped 26 of 33 files, and the debt the blind spot hid is paid. **Source files are plain text again** (construct-v9kz): two literal NUL key separators had made grep classify both files binary and skip them. **The 2.x inventory sees what it missed** (construct-wpue): bare `construct.mdc` rules and orphaned manifest sidecars, eight leftovers removed, final run clean across ten projects. **A consumer install is one documented path** (construct-xnqa.1), proven by doctor running green in both consumer apps.
-
-Two parallel lines of the same project reconciled — a direction branch and main had each landed real work the other could not see, including four beads implemented twice because a 2026-08-16 session's commits were believed lost when they were on main all along. The merge kept the newer seam where both sides did the same bead and grafted in each side's unique work. The reconciliation surfaced a sharper failure than divergence: the tracker database had silently reverted twelve closes and dropped a filing, and the reconcile could not see it because it only checked main. Both drift classes now have guards.
-
-- **Reconcile detects a close the tracker database lost** (construct-tgni). The git history of `.beads/issues.jsonl` is swept across local refs (last 200 touching commits, truncation reported); any bead the current export shows open that an earlier revision recorded closed — or any id it recorded filed and the export no longer carries — is reported warn-only. A dated `REOPENED` note excuses a deliberate reopen. Comparing the tracker only against main's commit messages had printed "the tracker and the repo agree" over a 13-record regression; the sweep found all of it on its first run.
-- **Reconcile opens by saying where the checkout stands** (construct-4ddb). Ahead/behind main and upstream, plus the bead ids named by commits on the unmerged other side, so a session sees what already has commits before re-executing it. Warn-only, local refs only, never a fetch; being ahead is the designed state and is not divergence. Four beads were implemented twice for want of this.
-- **Findings become write proposals without retyping** (construct-6ug3.1). `construct propose --run=<id> --source=<id>` reads a finished deliverable's numbered issues and what-follows items and files each as a write proposal against a declared source, carrying the finding's citation (`deliverable:<task>#L<n>`) as justification. Tier follows the action — comment/label low, create/update high — and a finding that reports rather than instructs becomes a comment. Mechanical, so no model call and re-running files nothing twice. Zero external writes and no apply path by construction: a proposal moves only through a recorded decision. Offered at the end of `compose`; `construct propose list` shows the queue.
-- **The extraction ladder's per-filetype claims are backed by recorded probe runs** (construct-472j.1). Dated runs against real minimal files for pdf, docx, xlsx, pptx, images, and diagrams. Diagram/vector formats (starting with `.svg`) get an honest, dedicated refusal instead of the generic "convert to PDF/DOCX/text" message that was never a path a diagram had — and were found to be silently invisible to a directory survey, now surveyed and refused loudly.
-- **The work summary reads like a colleague's note** (construct-wcvf). `construct work`'s "issues across roles" summary renders each issue through the publish-view claim renderer, so `[unverified]`/`[unowned]` read as plain sentences instead of record-form tags. Print-time only; the stored deliverable keeps its markers.
-- **A dense-over-MoE preference note, surfaced at dispatch** (construct-ecz.2). Two independently measured MoE families (`gpt-oss:20b`, `nemotron-3-super-120b-a12b`) held their JSON shape clean and missed the composed dispatch-shape depth check; that caution now prints alongside the throughput floor. An audit recorded the other two 2026 small-model lessons (explicit schema injection, side-effect-only harness checks) as already present with citations.
-
-### Security
-
-- **A red-team fixture and recorded run establish what the review flow does with hostile ground** (construct-472j.4). Of six attack shapes, one is neutralized by the citation screen (a citation naming a document the survey never found). The rest reach the model as bare text: Construct never holds the ground's content — injected sentences arrive as the host's own file-read output, so no layer Construct controls could mark them. A review steered into silence prints the same line as a clean one, and a fabricated attribution to a document that really is in the ground survives the screen. Commitment 6's provenance ceiling covers lessons and has no counterpart here. No fixes in this change; the seven gaps are tracked under one epic (construct-kjqt).
-
-A same-day fan-out over the delivery backlog: eighteen beads dispatched to worktree-isolated agents in parallel, each merged and re-gated on the integration branch as it landed rather than trusted on its own report. Excluded on the same pass, with reasons recorded on each bead rather than silently dropped: an attorney review no agent can perform, three beads needing Gerald's live credentials or interview, two structurally gated on his own verdicts or spend approval, and three container epics with no buildable work left in them.
-
-- **The CLI is no longer one file.** `src/cli/index.ts` (construct-1wh0) went from 6,717 lines to 189 — a verb table and nothing else — split into some two dozen per-verb modules, with kernel-grade logic (grounding, the note loop, gap-closing) moved behind the seam so the sterile test harness can reach it without a CLI in front. Verified as a pure structural move: the gate ran after every extraction step, and 93 command invocations were diffed byte-for-byte between the pre- and post-split commits. Landing this after three other beads had already added features to the old monolithic file forced a large manual merge — each of those features (below) was re-ported into its new home by hand and re-verified against the CLI-level tests that exercise it, not merely recompiled.
-- **Jira and GitHub connectors exist as direct-host adapters, and a selection ladder chooses between them and a host's own MCP tools** (construct-dr48.2, .3, .4). Both connectors pin their vendor's behavior as named, probed expectations (`src/connectors/jira/`, `src/connectors/github/`) the way `hosts/opencode/pin.ts` already does; applying is reachable only through the kernel's existing decision gate, and no tracker-owned field can enter a payload. Neither connector has touched a real Jira project or GitHub repository — that half of each bead's acceptance is deliberately unmet, held for an explicit go-ahead. `src/kernel/connectors/ladder.ts` wraps the seam's pure `choosePath` with real execution and one work-log entry per read or write naming which path answered — host MCP, connector, or an honest, specific refusal. Building the Jira connector also surfaced and fixed a real gap in the connector-gate lint (construct-dr48.5): it had forbidden a connector from importing even its own sibling files.
-- **The tracker's MCP tool names are checked against the real server, not published prose** (construct-vis0), and found stale on the first check: GitHub renamed `get_issue`/`create_issue`/`update_issue` to `issue_read`/`issue_write` (method-distinguished), caught by a live, read-only probe and fixed in the recipe. **`construct reconcile` gained `--absorb`**, wiring the previously-dead `syncProjections` path so a tracker-owned change stops being reported as `reconciling` on every run once it's explicitly adopted into the stored mirror (construct-1szn). **The lost-record sweep gained its own adjudication vocabulary** (two new directions, `lost-close` and `missing-filing`, read the same way the existing four are) and its revision cap moved from a 200-commit count to a 30-day window — the old cap was already missing 50 ever-filed and 26 ever-closed ids on this repo's own history (construct-ytv8). **`construct watch` now surfaces lost records and checkout divergence as findings**, not only the two-proposition reconcile, closing the exact drift class evidence.ts's own header warned about (construct-4t4w).
-- **A write proposal's action can be corrected or delegated, and duplicate tracker issues triage on standing consent.** A proposal's inferred action (comment/label/create/update) can now be overridden per row or, where a host is already paid for, proposed by a model instead of the bare keyword read — disclosed either way, never silently (construct-53da). Extraction reads each composition shape's own follow-up section instead of only review's "what follows" — decision/what-happens-first, spec/requirements, rfc/tradeoffs, adr/consequences — validated against the shapes' actual sections rather than assumed (construct-clfu). `construct propose triage` dedupes a tracker source's issues by title similarity and carries out its low-risk findings (label, comment) immediately under a workspace's actual standing consent, through the same apply seam a human's own decisions use; a proposed close-as-duplicate never rides that path (construct-6ug3.6). A prioritization deliverable now fails a slot check if a ranking carries neither cited data ground nor an explicit labeled assumption — built standalone, since no real consumer-app deliverable exists yet to bind it to (construct-xnqa.4).
-- **Line-scoped ground evidence was measured on the model namer, not only the deterministic router** (construct-9phl, RESEARCH-DECISIONS.md §23). On the outcome section 20 recorded, admitting the line rescued every family that missed the concern from the outcome alone — but across 26 measured cells the same admission cost two concerns it would otherwise have reached, and the width curve section 20 found does not replicate. Keeping both consultations rather than substituting one for the other reaches more than either alone. Nothing adopted, nothing reversed; the panel's own selection bias and noise floor are reported alongside the finding.
-- **The multi-family probe matrix cleared its acceptance bar**: nine dated per-model records across five families (construct-101), including a genuine floor-record finding (this Ollama build rejects any request carrying a `tools` parameter) kept rather than discarded. The `gpt-oss:20b` floor record now carries two dispatch-shape findings from a persona panel — it never uses a domain template's headed sections, and its honest citations don't match the bracket syntax the material protocol expects (construct-zh4w). A github source's locator convention is now stated and validated (`owner/repo`) the way the docs kind's already is (construct-yc0l). A new lint rule flags bare interpolation of model-derived fields into a CLI print site, built empirically off the 117 existing `escapeForTerminal` call sites rather than tuned by exemption (construct-f7vu). A dead store in compose's shape fallback, computed and immediately discarded, is gone, and the doc comment that described the discarded behavior as real is corrected (construct-9j67).
-
-Three beads worked to a close, and a sweep of what the repository was carrying that no reader could check.
-
-- **A document is written in the voice its deliverables were** (construct-5on7). `construct work --voice` shaped every deliverable and wrote the instruction to the append-only work log, and composing bound the house voice regardless — so a user got their voice in the parts and Construct's in the document. `compose` reads the override back from the run's own record. A per-command `compose --voice` was rejected for the reason the recorded host and model are already not retyped: a value the user has to re-state to keep is one the system can silently lose, and losing this one is invisible, because the document reads perfectly well in the wrong voice. Two sub-decisions are pinned by tests — a run worked twice takes the later instruction, ordered by the log's own sequence rather than caller-supplied timestamps, so a skewed clock cannot decide which voice a document is written in; and an instruction that did not survive leaves the house voice standing rather than binding an empty one.
-- **A pin claim measured under one provider does not hold for another that skips validation** (construct-smgc). The goose pin's eight expectations were measured against a local Ollama backend; running the probe against its subscription-backed default found six unchanged and two provider-dependent. An unrecognised `--model` produces goose's catchable error text under ollama and nothing at all under claude-code, whose shelled-out CLI does not validate the flag — so the error-text pattern-match is not a way to detect a bad model everywhere. `--no-session` leaves ollama's request log advancing and claude-code's untouched, so that log's freshness is not a signal of request activity everywhere. Both claims now state each provider's measured behavior with its date, and the probe skips a provider nobody has measured rather than failing it.
-- **The tracker export's instability was upstream and is already fixed** (construct-acm8). Eight consecutive exports were byte-identical, and the cause of the original observation was found in bd's own source: both export paths build the memory-key list by ranging a Go map, whose iteration order is deliberately randomized per process — exactly the symptom of only memory lines moving — and sort it before writing. That fix predates the observation in the installed version. Nothing in this repository writes those bytes, so no local patch belongs here and no upstream report was filed for a defect already closed.
-- **Committed output that records nothing a reader can check is gone.** Seventy-six raw model transcripts from the retired depth experiment, cited by no script, test, document or tracker note; a checksum sidecar naming a database the probe did not keep, unverifiable since the moment it was written; and a dated audit whose three findings live in the code and in the pins that probe them. What is derived from the transcripts stays — the scored and judged files a documented command re-derives the published discrimination figures from, and every run any text names by hand — because removing evidence a published figure rests on is a different act from removing weight.
-
-## 3.0.0-alpha.11 — 2026-08-13
-
-alpha.10 shipped the disclosure that a composed document's sources had all failed their gates. Reading the run behind it showed the disclosure was the whole response: ten structural verdicts failed, not one deliverable promoted, and the run composed a strategy from all five and delivered it. Every check was right and nothing consumed any of them. This release is the difference between a system that reports its findings and one that acts on them, and the several places that difference turned out to live.
-
-- **An ask for an ADR gets an ADR, not a review memo** (construct-isen.1). Composition already had review, decision, spec, and RFC. An architecture decision record asked in those shapes came back without status, so yesterday's proposal and last year's accepted record looked the same. The fifth shape carries context, the decision, status, consequences, and alternatives-considered; form guidance is named so it cannot inherit review form by falling through. Signals stay as tight as RFC's: "the ADR is out of date, note that" is still a review.
-- **Leftover 2.x `construct sync` artifacts are listed before they are removed** (construct-sll2.1). A read-only walk of a project tree names each leftover by class (cursor rule, MCP entry, GitHub agent/prompt, Construct-named skill) and the generation marker that identified it. The rewrite checkout and `node_modules` are skipped. Cleanup that starts from this manifest is a later step.
-
-- **Construct is the speaker; the role is framing and attribution** (construct-v4yz). Assignment and all four host adapters used to open "you are acting as the privacy role" and then also bind house voice, so a model was asked to sound like two things. Identity is now Construct on every prompt that produces reader-facing prose — assignment, composition, closing, and Construct's own call — and the role names whose obligation was answered. `construct show` and `construct ask` render through the publish view (markers become sentences) and name the playbook template plus the framing concern; empty required slots are disclosed the way composition already discloses empty sections. Issue numbering stays on issue-spotting templates; a PRD or strategy review is a document, filled as prose, tables, and diagrams under the same claim kinds composition already had. Commitment 17 no longer calls templates aspiration.
-- **A composed document is prose-led by shape, not a bullet dump** (construct-1kgh). The composer used to say most claims are bullets. Paragraph is now the stated default; each of the four shapes names its own form (RFC, spec/PRD, decision, review); a fifth shape cannot inherit review form by falling through. Session PDFs still need a real figure; mermaid is for the screen.
-- **Talk to Construct through hosts you already have** (construct-33va). No Construct-owned chat UI. OpenCode stays the execution pin; MCP presence reaches Claude Code, Codex, Cursor, and nanobot. Cursor's predecessor path (`lib/mcp/server.mjs`) is not the rewrite — the rewrite is `construct serve`. Nanobot dogfood lives at `~/.nanobot-blackstory/`, pointed at the checkout when PATH lags.
-- **Held run-derived lessons have a spine** (construct-wwaq). `construct decide` already distilled and held them; they vanished after the printout. `construct lessons` lists them and `construct lessons --admit=<id> --by=<name>` records the human admission, thin wrappers over the existing gate. Run-derived lessons still never auto-admit.
-- **The org-harness eval corpus is not a source of strategy** (construct-ewr3). A Construct-as-subject RFC cited the 18F fixture's agreements.md because those files sit inside the checkout. Path-prefix against the repo root would have allowed them. Citing `fixtures/org-harness*` now fails claims-cited unless the dispatch was licensed to that corpus.
-
-- **A gate that finds the work unfinished sends it back, once** (construct-aotn). The reader who is told five deliverables named documents nobody opened now holds the document, the list, and the same license the roles had. A failing deliverable goes back to its author with the verdicts that caught it and is checked again — one round, the stop rule research and closing already carry. Every one of these checks can be passed without doing anything, so the repair names the cheap fix belonging to each failing check and refuses it by name, and the record keeps first attempt and second apart: a source that passed only after being sent back is reported as such, or a run that repaired itself to green would compose a stronger assurance than the un-repaired run gave, bought by grading its own corrections.
-- **A repair that traded one failure for another is not a repair** (construct-aotn). Found by running the round against the repository it was built for. Told that citations and ground exhaustion had failed, four of five roles rewrote to answer those two and dropped the scope diff, pre-mortem and strongest objection nobody had complained about — gates fixed, gates broken, net zero, with a repair round's worth of extra assurance behind it. The instruction already asks for the whole deliverable back and a prompt cannot hold that, so a second attempt is admitted only when the failures it leaves are a strict subset of the ones it was sent back for.
-- **A question naming something searchable in the ground is work, not a question** (construct-jkvi). Ground exhaustion's gate is path-shaped and the cop-out is question-shaped. "Confirm whether `commitCanonicalWrite`'s merge branch calls `assertNoCrossSourceProfileAggregation`" passed every check the brief declared, because it names a symbol rather than a file; four of five items in one document's "what happens first" were searches inside a repository the run held a license to read. The trigger is a conjunction — the sentence hands something back AND names something a search of the declared ground would settle. A question about intent, funding, or what a person decided names no such thing and is never flagged, because a gate that dragged honest questions back would teach roles to stop asking.
-- **A closing answer is screened on what it owes, not on a deliverable's headings** (construct-wdqo). Four of six closing answers were discarded for having no labelled pre-mortem, no scope diff, or no strongest objection — sections that mean something in a memo and nothing in a two-sentence answer to who owns a tracked gap. The run held the answers, failed them on a heading, and printed "the gap stands" against questions it had just closed. A challenge now declares what it can be asked of, sourcing or deliverable, so the catalog owns the distinction and no caller keeps a copy that can drift.
-- **A role reading its scope declaration as permission not to open a file it found** (construct-wvk6). Three of the five left questions open by deciding code was not their material; one grepped for a tracked issue, found the line, and declined to open it because that document sat outside what it had reviewed. The survey ranks prose first and says so; the license has always been the root. The grounded protocol now states that source files, schemas and migrations under a declared root are evidence exactly as documents are, that the reporting bound is about what a role reports and never about what it may read, and that a document opened but never cited is indistinguishable from one never opened.
-- **"No document states this" is a fact about the material, not an answer** (construct-swo3). Asked to decide what earns the next block of work and what stops being funded, all five roles reported that no release boundaries and no budget document exist in the material, and stopped — while the material held the epic's bead list and a target already exceeded twofold. One role made the call in its finding and then listed the same question as unresolved. A colleague asked to choose when nothing on file chooses does not report that nothing on file chooses. Bounded on both sides: a proposal is marked as one and never dressed as a finding, and what a person intends or will spend or will accept stays theirs.
-- **The record keeps the markers; the reader gets sentences** (construct-e48a). `[unverified]` is what the citation gate counts and it is also the wrong register on the way out — it reads as a disclaimer where the underlying sentence is a colleague pointing at soft ground. Rendering is a publish-time view and never a migration: the stored deliverable keeps every marker, the challenges keep reading the marked text, and only the copy a person receives changes. Held by a test that the same claim passes the same gate before and after rendering, and by its converse. `--record` hands back the stored form.
-- **Nine issues closed rather than left standing** (construct-7xrz, bl07, wei, aig, m2s, c9jh, zta, n5zj, v98). Two roles contradicting each other about the same referent — one saying a change still has to happen, the other that it already has — now surface as a contested pair above the claims, never resolved by arrival order. Ground exhaustion stops telling a role it left work undone when what was missing was the citation marker. A long stance qualifier is cut inside the conflict tally and kept whole on the position, since collapsing to the bare stance word counts a conditional proceed among the plain ones. An expired lease reads as stopped rather than as work in flight. A denial flood is counted where the run state is already printed. `--ceiling` bounds what this invocation spends rather than everything the store has ever spent, and says the figure is a reported cost rather than a bill — a comment in the Claude adapter asserted the opposite outright, which is how an estimate reached a written report as an amount charged. The operations and measurement rubric lines are settled against the `[unowned]` rule without amending the rubric, since one reinterpreted after seeing the deliverables it judges is no longer pre-committed. The reconcile reads the whole commit message, so a commit landing four beads no longer reports three of them missing. And a role's write surface can be revoked per task, with a reason, on the append-only record — the only lever before this was rotating the install-wide signing secret, which takes down every run in flight.
-- **The catalog's precision conditions stay out of the router** (construct-9933, `RESEARCH-DECISIONS.md` §21). Re-derived free from the committed arms: `implicatedWhen` clauses move the over-rate 0.376 to 0.377 and cost 0.225 of out-of-family miss, and no configuration tested beats the shipped router on both axes. Closed as a measured non-improvement rather than left open as a defect. The deciding reason is which axis this project may trade: an over-rate costs a call and a deliverable the reader can ignore, a miss is a concern nobody raised and the reader cannot detect it.
-- **A documented bare flag that had never been read** (construct-e48a). `splitFlags` accepted only `--key=value`, so `--no-close` and `--record` fell through to the positionals and were read as whatever came first — for `compose`, the run id.
-
-## 3.0.0-alpha.10 — 2026-08-13
-
-A strategy document produced by alpha.9 was read by its stakeholder and judged not to be a strategy document. Every claim in it was true, cited, and attributed; three claims had been refused before he saw them; the gaps it could not close were listed. It was well-built and it was not the thing that was asked for. What that turned out to mean, traced through this tree, is that Construct behaved as a reviewer reporting what it noticed rather than as a contributor finishing the job — at three levels at once, in ways that had nothing to do with strategy.
-
-- **A question you can name the file for is work, not an open question** (construct-kpkv.1). A grounded role climbed from its declared sources straight to asking the user, with no rung for the case that dominates: the answer is inside a root it was just licensed to read, it can name the path, and it writes the question down as open instead of opening the file. One document did this five times, each time naming the file that would have settled it. The licence block now carries the rung, with research's stop rule — one read per question, and what survives it is genuinely open and says which document failed to settle it. The gate is structural and unconditional: a path named in a deliverable is cited, or carries the reason it could not be read, or it is work the role could have done. A dispatch with no declared roots passes saying so.
-- **Naming what nobody answered, and then going and answering it** (construct-kpkv.2). The composed document ended with the questions it could not answer and that list was the last thing the run did with them. The gaps now go back to the roles once: each is shown the list and asked which its own material settles — not which it could give a view on — with the ground still licensed to it. Closing none is a legitimate reply and the prompt says so, because a round that cannot come back empty is a generator rather than a check. Three refusals hold it to arranging: an answer to a gap the composition never named is discarded; an answer is held to the challenges its author's brief already owed, so an uncited paragraph cannot inherit the credibility of the checked ones beside it; and a gap two roles answer differently is reported contested rather than settled by arrival order.
-- **The reader's own acceptance lines, carried into the run that has to meet them** (construct-kpkv.5). The acceptance rubric — what a professional in each reading role requires before calling a deliverable adequate — was committed before any judging so it could not be tuned to pass what it grades, and then graded fixture organizations and nothing else. A real run could violate lines the project had agreed to and promote anyway. The concern-keyed sections now declare themselves on that concern's brief; only those, because the earlier reader-only blocks name no concern and binding them would be inventing a requirement. Only must-lines with a distinctive surface form are free gates, and the rest carry the reason no presence test can hold them. A lint holds the rubric and the enforcement to each other in both directions.
-- **A document composed from deliverables that failed their gates, saying so before the claims** (construct-kpkv.6). Found by judging the recorded run rather than reasoning about it: five deliverables, every one failing its citation gate, none promoted — and the document composed from all five reported what the composer discarded, asserted that nothing was added by the composing, and never mentioned that not one source had passed. Both statements true; together an assurance about the material that nobody made. The states were already recorded. Disclosure rather than refusal, and above the claims rather than beneath them, since a reader who learns this at the end has already believed them.
-- **A decision ask coming back in the shape of a review** (construct-kpkv.3). Composition had one shape, which is the right shape for a review and was also the answer to "decide what we commit to and what we stop investing in". The shape now follows from the ask: the kernel chooses, not the composer, because a composer picking its own headings is choosing what the document argues; the default is unchanged; and a section the deliverables cannot fill is reported empty, which now tells a reader both that nothing was placed there and that the ask wanted something this material does not carry. The chooser declines the words that go both ways and takes `--shape` to override.
-- **The rest went unread, and 3,895 of them were source files** (construct-kpkv.4). A prose-ranked survey over a repository reported listing 40 of 6,055 documents and that the rest went unread — true, and it reads as more of the same. The survey now reports what kind of thing the cap dropped, so a role knows it was shown the design documents and not the implementation, and can use the licence it already has.
-- **A guard that has never been able to fire is not a guard** (construct-o5dk). `openStore` inserted a schema version when none was recorded and refused one from the future, and never updated — so a store created at version 4 still claimed 4 ten bumps later, and the protection could not fire for any store predating a bump, which is every real store. Verified live before the fix: a released binary opened a store carrying schema-14 tables and read runs a build ten versions ahead had written, silently. The recorded version now follows what the store carries; refusal in the other direction is unchanged and tested beside it.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.9 — 2026-08-13
 
-The last gap between "three roles answered" and "you have an answer". Closes the ingestion and grounding epic: seventeen children, of which eight were the gaps modelled from four usage questions, three were regressions the program's own adversarial review caught before shipping, and three were found by dispatching a real outcome against this repository rather than reasoning about whether it would work.
-
-- **A run's several deliverables can be composed into one document** (construct-edmi.17). A run implicating three concerns returned three deliverables, each rightly declining the whole; synthesis merged their *issues* and nothing wrote the document, so composing was left to the reader silently — which reads as the system having answered when it has not. `construct compose --run=<id> --host=…` arranges them under one discipline: it may arrange what the roles established and may not add to it. Every claim names the deliverable it came from; an attribution to a role that produced none is refused structurally, and each role is then shown its own work beside the claims drawn from it and asked which it does **not** support — per role rather than per claim, so coverage is identical and cost is bounded by the number of concerns rather than by how much the composer wrote. What fails either check is removed rather than footnoted, and a run with one deliverable composes nothing and says why: a paraphrase of a checked deliverable is an unchecked one.
-- Proven on the run that motivated it. Both screens fired on real output: one claim was attributed to the composer itself and refused, and product-scoping's own deliverable rejected a claim that had firmed up a condition it stated more weakly. The composition's `what nobody answered` section then reported that "what Construct is uniquely good at" — the first thing the outcome asked for — was answered by no deliverable at all, which is exactly the gap RESEARCH-DECISIONS 19 predicted composing would otherwise hide.
-- A section that receives no claims is dropped from the document and named in the report. Silently omitting it lets a composition that never stated an answer read like one that had nothing more to add.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.8 — 2026-08-13
 
-Three findings from running alpha.7 for real rather than reasoning about it, and the erasure answer alpha.7 filed and did not give. The strategy question that prompted the live run is settled in RESEARCH-DECISIONS 19: the gap behind "write me a strategy" is not a missing playbook but a missing composition, and an authoring role would assert the scope and sequence two other roles were dispatched to establish.
-
-- **A run whose roles cannot open its ground is refused, not reported done** (construct-edmi.15). Found by running the strategy validation for real: a workspace declared a repository, the survey walked 120 documents, the roles were licensed the root — and the host was dispatched from a different directory, so every file read failed and `work` reported three tasks done. Ungrounded deliverables, a record saying grounded. `work` now compares the licensed roots against the directory the roles will actually run in and refuses before a model call is spent, naming both ways out: `--dir=<root>` fixes the common case, `--allow-distant-ground` is for a host the operator knows reaches wider, and taking it is recorded as a choice rather than a silence. Containment is by path segment, not prefix — a check that says `/work/app` contains `/work/application` passes exactly the run it exists to stop.
-- **A role can no longer be nudged into logging a read it never made** (construct-edmi.16). The same run had a role record an external read whose locator was "no external source used" and whose detail explained it was satisfying the tool's logging habit. A provenance list containing declarations of having read nothing is worse than an empty one; the tool now says it is called only when the role actually went outside, and that not calling it is the normal case.
-- **Append-only is not an answer to a person asking to be forgotten** (construct-edmi.14). Records and notes hold facts about named people and organizations, which is exactly what an erasure request is about, and "the store is append-only" describes why it could not answer rather than answering. Deletion is now refused everywhere except inside an erasure, which unlocks it for the length of one transaction; what survives is a row carrying the fact, the count and the stated reason, and no content of its own — an erasure log that quoted what it erased would be the leak it exists to close. `construct record erase` removes the subject and every value its fields ever held, then lists the notes that still say the name **without touching them**: a note naming two subjects is evidence about both, and taking it for one would destroy the other's record with nobody having asked. `construct record erase-note` is the deliberate second step, and it means citations into that note stop resolving — correct, because a fact justified by words that no longer exist should not go on presenting itself as justified. An erasure with no stated reason is refused, and the fact of an erasure is not itself erasable.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.7 — 2026-08-13
 
-Four questions were asked of the system — ingest a file or a directory; point it at repos and have it write strategy; point it at a documents repository and have it find what conflicts; feed it customer notes and have it keep records current — and modelled against the code. Two were already answered. The eight gaps behind the other two are closed here (construct-edmi). The rule underneath all of them: ground Construct has not actually read is not ground, and a conclusion whose provenance is silence reads exactly like one whose provenance is a document.
-
-### Ground
-
-- **A surveyed document that cannot be read as text is extracted, not just listed** (construct-edmi.1). The extraction ladder was wired to a dropped note and nowhere else, so a declared directory of PDFs grounded a run in filenames while its read rows said listed-not-extracted. The survey now runs every unreadable document it listed through the same ladder, materializes the text under the cache root, and records a complete read naming the rung that produced it; a document no rung can reach stays partial carrying the ladder's own reason. The role reads the extraction and cites the original — an extraction is a rendering of licensed evidence, not evidence of its own, so nothing about what a run may cite changes.
-- **A repository read for its surfaces is not one read for its code** (construct-edmi.5). A source now carries how it should be walked — prose-first, code-first, or unranked, with its own cap — declared alongside it (`construct source add --emphasis=code --cap=200`). Binary ranks last under every emphasis. A source nobody shaped is walked exactly as before. The partial read row names the ranking that dropped the rest, because prose-first and code-first leave different gaps.
-- **`construct notes` accepts a directory** (construct-edmi.4). Each document lands as its own note and is reasoned over separately, sharing one Docling probe and one survey. A document that cannot be read never ends the batch: its refusal is printed with the ladder's remediation and written to the log, and a batch fails only when every loop in it failed.
-
-### Drift
-
-- **A disagreement between documents nobody read is a recollection, not an observation** (construct-edmi.2). The drift producer was handed source ids and locators and asked what contradicts in "the documents you know of"; the screen then checked only that the cited source was declared. The declared sources are now surveyed before the producer is asked, the prompt names the documents each holds, and a citation into a surveyed source must name a document that survey found. A bare basename resolves when exactly one listed document carries it and not when two do. A source nobody could survey is exempt rather than refused — there is no listing to check against, and a check against a listing that could not be taken is a refusal wearing one.
-- **`construct review`** (construct-edmi.3): read a workspace's declared ground and report what disagrees inside it, with no note to occasion the question. It asks for no memory deltas and no outward proposals — both justify themselves by citing a note line, and a pass with no note cannot cite one.
-
-### Provenance
-
-- **Research a role did outside the declared ground leaves a row, or it did not happen** (construct-edmi.6). A role dispatched into a host with web access reads standards and documentation no declared source holds, and that reading produced no row anywhere: a deliverable resting half on a declared repository and half on the open web carried provenance for one half and silence for the other, and the fabricated-provenance gate, which looks only at declared sources, saw nothing wrong. A third grant on the role token (`record_external_read`) records what the host reports reading, stored apart from the source reads because Construct walked one and never saw the other. Nothing fetches and nothing is verified; a locator with nothing taken from it is refused.
-
-### Records
-
-- **A customer is a subject with a history, not a domain string** (construct-edmi.7). Facts a note taught became workspace lessons keyed by free text, so "Acme moved its renewal to Q3" could not be listed, superseded per subject, or told apart from another client's fact under the same word — and the only isolation available was one workspace per customer, which also isolates the memory you wanted shared. Records are named subjects whose fields are append-only: the current value is the most recent row and the rows before it are how it got there. Every field carries the note citation that taught it; an uncited value is refused. Fields are never set by hand — they arrive through the context loop, from notes, citing lines. `construct record add|list|show`.
-- **An approved outward write nobody carries out is a decision, not a change** (construct-edmi.8). `construct decide --apply=<id> --host=…` hands the approved words to the host and records only what it reported succeeding. A rejected proposal is never attempted; a host that could not be asked records nothing, because an unknown is not a failure to apply; a reply with no boolean throws rather than defaulting either way. A host with no way to reach the system says so, and the proposal stays approved and unapplied.
-
-### Caught by adversarial review, before the release
-
-The program's own review found four defects in the work above. Three are fixed here; the fourth is filed.
-
-- **A command that was three model calls became six hundred** (construct-edmi.11). Directory ingest made `notes` cost N documents times densify-produce-challenge, with no bound and no estimate — the user learned the size of it from the bill. Bounded by note count (`--max-notes`, default 25), and the batch states what it is about to spend before spending it; notes past the limit keep their rows with the command that takes them. Deliberately no money ceiling: the one `ask` and `work` enforce sums the tasks table and the context loop creates no tasks, so a `--ceiling` here would read a number this command never moves. A bound in name only is worse than an honest count.
-- **A host that dispatches read-only cannot carry a change out** (construct-edmi.12). `decide --apply` went through the same seam every role uses — `--mode plan` on cursor, `-s read-only` on codex, both probed — so apply there could only ever report that it could not, while the surface offered all four hosts. Hosts now declare `outward-write` from the posture their own pins record, and the apply surface refuses a host without it before spending a call. For the two that have it the declaration is the warning as much as the permission: claude and opencode pass no sandbox flag, so an apply there runs with whatever reach the user's install grants, and the command says so before dispatching.
-- **One client's fields have no business in another client's prompt** (construct-edmi.13). The loop showed the producer every record the workspace kept, so a workspace holding several clients put one client's field values into the prompt reasoning over another's notes — a leak no gate downstream would catch, because nothing about it is a citation. A note is now scoped to the subjects it names, deterministically: an update must name the record it changes, so a subject the note never mentions is one it cannot determine anything about. The notes fixture named no client and passed anyway; it names one now, and a second proves it never reaches the prompt.
-- **Records cannot be erased** (construct-edmi.14, open at this tag). Append-only by trigger like every other evidence table — but unlike the work log, records hold facts about named people and organizations, which is what an erasure request is about. Filed with the decision it needs rather than papered over; answered in alpha.8.
-
-Also corrected: the extraction-path comment claimed re-surveying reuses the extraction. It does not — every survey re-extracts and overwrites, which is right, because a document that changed between runs would otherwise ground the second run in the first run's words.
-
-### Guidance
-
-- **One workspace, or one per client?** Records hold several subjects inside one workspace, but declared sources, engagement mode and workspace memory stay workspace-wide. Use a workspace per client engagement whenever their material may not mix; records inside one shared workspace are for subjects that may legitimately see each other's documents. Documented in `docs/first-run.md` with the cost of each mistake (construct-edmi.10).
-
-### Consolidated
-
-- One grounding pass where `ask` and `work` had two copies; one document walk shared by survey and ingest; one observation parser for both drift passes; one drift writer for both surfaces; one host-flag parser; one list of dispatchable hosts. The per-note context loop became its own function, which is what let the batch ingest exist.
-- Schema versions 11, 12 and 13 add `source_shapes`, `external_reads`, and `records` + `record_fields`. All additive and all new tables: this schema is created, never altered, so a column added to an existing table would silently not exist in a store that already has one.
-- The CLI test harness isolates the cache root as well as the data root, because a pass that extracts can now write outside the fixture.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.6 — 2026-08-11
 
-The host roster doubles, and both new seats spend a subscription instead of an API key. Every lens now names the standards its method descends from, doctor reports whether a host is actually reachable, and the first family measured through a subscription host got an honest no from the promotion gate. The standing rule these changes serve: a model family nobody optimized for still functions — labeled best-effort, never refused — and that rule is now verified live on three hosts.
-
-### Hosts
-
-- **Codex CLI adapter** (construct-5wv9). `--host=codex` dispatches through the user's own `codex` binary, authenticated however the user already signed in — on the measured machine, a ChatGPT subscription. Ten pinned expectations probed live (`npm run probe:codex`), among them the two that shape accountability: an unknown model is refused by the backend rather than silently substituted (the inverse of the Claude host's recorded fallback hazard), and usage reports tokens with no cost field, so subscription spend reads as unmeasured, never free. Dispatch runs `codex exec` ephemeral, user-config-ignored, read-only sandboxed, from a chosen environment.
-- **Cursor CLI adapter** (construct-i1eh). `--host=cursor` dispatches through `cursor-agent`, the second subscription seat and the first multi-vendor one: a single binary serving claude, gpt, gemini, kimi and more, so family membership is the named model's fact and an unnamed model honestly belongs to no family. Nine pinned expectations probed live (`npm run probe:cursor`). Two are load-bearing: `-p` alone grants the dispatched agent write and shell access, so every dispatch runs in `--mode plan` — probed read-only, a requested file write became a proposal and no file appeared — and workspace trust is granted per invocation, scoped to the task directory. A host refusal (auth expiry, plan limits) surfaces the host's own first stderr line into the work log instead of a bare exit code.
-- **Doctor reports host reachability** (construct-p8vn). The README used to admit doctor could not check that a host is present; now it reports one line per host — found, version against the adapter's pin, auth state — using the one auth probe per host that costs nothing and prompts nobody. Report-only by design: a missing host is information, because serve-only use is legitimate. The probes spawn hosts with the same deliberately-chosen environment dispatch uses, after the first wiring proved an XDG-respecting host would otherwise create the very directories doctor promises not to touch.
-- **Version drift is visible where it matters**: the presence row prints installed against pinned (the machine that cut this release shows the Claude CLI drifted ahead of its pin, which is exactly the sentence a user should read before trusting a run).
-
-### Lenses
-
-- **Every lens names what its method stands on** (construct-pp4v). A lens that claims best practice without naming whose practice is asserting, not citing. Each role lens now carries a committed standards record — OWASP ASVS and NIST SSDF for security, WCAG 2.2 for accessibility and experience, Google SRE for operations, GQM for measurement, NIST CSF 2.0 for compliance, ASC 606/IFRS 15 for commerce, the FTC substantiation policy and endorsement guides for marketing claims, ADR practice for system design — spoken at dispatch with the instruction to cite the standard where it speaks and verify what it currently says before quoting it. Lenses with no defensible primary standard (product, strategy, program, legal, engineering) state the reason instead of padding: an authoritative-looking citation nobody could defend is worse than an honest absence. Parity is tested in both directions. Observed downstream the same day: a commerce dispatch citing IFRS 15 by paragraph in a real deliverable.
-- **The README's coverage arithmetic was stale** (construct-alpy): it said thirteen of fifteen concerns carry a lens when all fifteen do. A coverage report that undercounts its own coverage is still a false report; corrected.
-
-### Measured
-
-- **The gpt family stays best-effort, and the gate is why** (construct-sutw). First family measured through a subscription host: four composed dispatch-shape runs on `gpt-5.6-sol` through the codex endpoint, the tuned family's exact six-lens-plus-notes recipe on the byte-identical prompt. One full pass in four — provenance and cross-reference rungs stable 4/4, distractors clean on every run, but the risk-synthesis plant lands 2/4 and one run dropped a delta. A pass that lands once in four is not a pass with a rate, so `TUNED_FAMILIES` is unchanged and the runs are the record (`fixtures/org-harness/runs/2026-08-11-gpt-5.6-sol-codex-*`, promotion doc updated). The harness runner gained `--endpoint codex` so hosted-subscription families run the same committed prompt as every other family.
-- **Unoptimized families verified functioning, live, on three hosts**: gemini and kimi through cursor (refused only by the plan's own monthly limit, loudly, with the host's sentence on the log), composer-2.5 through cursor and the codex default through codex (both delivered full multi-role runs with a `model-untuned-best-effort` note per dispatch). The label is the only difference between a tuned dispatch and an untuned one.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.5 — 2026-08-11
 
-The audit's wiring gaps closed: the machinery that already existed starts reaching the dispatch. The staff reads its own memory, every concern carries a practitioner's lens, seat mode means something, decision-class work must state the case against itself, an unfilled section becomes a question instead of a silence, and a ground of PDFs stops being invisible.
-
-### Wired
-
-- **The workspace's memory reaches every dispatch** (construct-8ohc). The lesson store — admission gate, challenge-before-admit, supersede-not-accumulate — was read by exactly one surface, the notes loop, so a lesson the staff had already paid to learn shaped nothing it did. The plan now records the workspace it was built from, and every `work` and `ask` dispatch opens with the workspace's admitted operational lessons as standing context cited `[cite:lesson]` — never evidence, and a lesson the material now contradicts is worth saying so about. Which lessons were briefed is on the work log, and an unadmitted lesson is proven to stay out.
-- **Every concern carries a lens** (construct-3i7y). commerce-tax and marketing-claims were the last two catalog domains routing with no posture, no question set, and no slots. The commerce lens names obligations where money moves and carries the tax-professional label; the brand lens holds every public claim to substantiation that exists on the day it publishes. A completeness test makes the next hole a failing build; the engineering lens's deliberately empty list stays the one recorded exception.
-- **Seat mode does something** (construct-3ngn). `plan.mode` had zero downstream readers — seat and team dispatched identically while the walkthrough promised proposals, never faits accomplis. A seat-mode dispatch now tells every role: one seat on a human team, the user's tracker is the system of record, every change a proposal to a named human owner, never "done", "applied", or "decided". Projecting proposals into the actual tracker is filed against the recorded substrate (construct-ncfp).
-- **Decision-class deliverables must state the case against themselves** (construct-bewb). `strongest-objection` sat in the challenge catalog with a working structural check and no brief ever declared it. strategy-alignment, system-design, and product-scoping briefs declare it now: a recommendation that never states its strongest objection has been agreed with, not challenged. The check stays structural — presence under a heading — and whether the objection is genuinely the strongest remains the substantive question, gated on the second tuned family as before.
-- **An unfilled required section becomes a question, not a silence** (construct-x467). The acquisition ladder had zero consumers; a deliverable missing a required slot promoted silently. The coordinator now detects unheaded required sections at settle and raises **one** inbox decision per deliverable naming every missing section, shipping the assumed default the draft stands on — asking never blocks a draft. One per deliverable because the first wiring raised one per gap and a single run of terse deliverables put twenty-four near-identical questions in the inbox; a flood is how an inbox stops being read. The question surface is exempt: an answer owes no template.
-- **Binary documents stop being invisible** (construct-0p4c). The survey skipped everything outside plain text, so a directory of PDFs grounded a run as zero documents — not a small ground, an invisible one. Binary documents are surveyed, marked, ranked after the text a role can definitely open, and recorded as partial listed-not-extracted reads, so the gap warning fires and unread content is unknown rather than absent.
-- **Remediation names commands that exist** (construct-n1j4). Three extraction-ladder strings told a stuck user to run `construct install --with-docling`, a command the predecessor had and this CLI does not. Each now names working recourse, a guard test fails the build if any src/ string ever names a construct subcommand the CLI does not dispatch, and the v2 golden records the divergence as deliberate.
-- **Dead v2 ports got their decision** (construct-5wrv). The intake classifier with its four preset tables and the twelve-rung production-completion ledger were tested, exported, and consumed by nothing. Deleted with the decision recorded: the densifier superseded the classifier, challenges plus template slots superseded the evidence ledger. The promotion axis pins the retired ladder's vocabulary as a literal so the two axes can never converge on a shared word.
-- **Scheduled operation is documented against what exists** (`docs/scheduled-operation.md`): cron around `outcome && work` is safe because re-runs resume rather than duplicate, the spend ceiling is total, and decisions batch to the inbox instead of blocking. A first-class standing outcome — in-store cadence, no daemon, firing stays external — is filed as construct-6s58.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.4 — 2026-08-11
 
-A run can be grounded in material it names, and the surfaces that decide what it reads stop disagreeing with each other. Three defects found by running the product rather than testing it: a workspace flag that meant something on one command and nothing on the next, a ten-minute wall the caller could neither move nor see coming, and a measurement instrument that could reject a mixed-tier run but not separate one.
-
-### Fixed (2026-08-11, the two usability defects Case 0 found, and the attribution the refusal could not supply)
-
-- **A workspace is reachable from the command that uses it** (construct-0i6). `construct source add`, `source list`, `mode` and `ask` all took `--workspace`; `construct outcome` passed the literal `default` to the planner at every call site. The plan is what records `sourcesDeclared` and what `work` grounds from, so a source declared on any other workspace could never reach a run, and the only way to change ground was to retire and re-declare in place — mutating the record every other run is read against. `outcome` now takes the flag and plans against that workspace's sources and engagement mode. The plan line names the workspace whenever it is not the default one, because a workspace with nothing declared on it and a workspace nobody consulted otherwise print the same sentence.
-- **The invocation limit is declared, settable, and met before it is spent** (construct-arr). It was one constant for every model, enforced inside the adapter and discovered by paying it: a 35b-class local model over 40 surveyed documents failed all four grounded dispatches at exactly 600,000 ms, ten minutes per role, having produced nothing. The adapter now declares `invocationTimeoutMs` rather than hiding it, `--timeout=<minutes>` sets it on `outcome`, `ask`, `notes` and `work`, and `work` refuses a limit at or past its lease — a task still running when its lease expires is dispatched again and paid for twice. `src/hosts/floors.ts` carries dated per-model throughput observations, and a grounded dispatch that meets one prints it before dispatching, with the model it was measured on, the evidence, and both ways out. The caution states its own reach: it fires on locally-served models because what was measured is consumer hardware, and it names the model that produced the observation, because a measurement on a neighbouring model is not a prediction about this one.
-- **A mixed-tier run can now be separated, not only rejected** (construct-5l8l). Recording an arm on the Claude host now requires `--namer-model`, and the refusal comes *before* the run rather than after it: without a pinned model the session default answers, so a run that would be refused at the end is a run whose entire cost was spent to be told so — real money on that host. This is not retroactive and §18 now says so: four of the five arm records in `fixtures/namer-arms/` carry `model: null` and were verified single-tier by what the envelopes reported, not by a pin. They stand on a single-valued `modelsRan` and per-outcome answers on file; they could not be recorded today, and a future arm earns the stronger guarantee. The mixed-tier refusal landed 2026-08-10 — a run whose `modelsRan` set has more than one entry leaves the arm file untouched — but the per-outcome record carried no per-consultation attribution, so the answers a second tier produced could not be told from the first tier's after the fact. Each consultation is now attributed to the model that served it, bound per async context rather than to a shared variable (four consultations run at once on the Claude host, and a "last model seen" would file one outcome's answer under another outcome's model). The refusal stands and the evidence survives it: a refused run writes its per-consultation attribution to a sibling `.mixed.json`, which is evidence about what happened and can never be mistaken for an arm to compare against. The local path now attributes what the response says answered rather than what was requested, which is the same question the Claude path's `modelRan` answers, and reads `OLLAMA_HOST` like ollama's own clients. All three properties are gated by a test that drives the script end to end against a stub speaking ollama's wire shape: half a second, no model calls, and deterministic. The live run it replaced took 35 minutes and died on transport before it reached the record — the wrong instrument for a property that is bookkeeping.
-
-### Measured (2026-08-10, eighth entry: the regression was half instrument, and the half that was real was the other half of the change)
-
-- **Two arms of a prompt change are a paired question, and the instrument was answering an unpaired one** (construct-8p1). Section 10 printed four aggregate rates per run and discarded the per-outcome answers, so comparing two prompts meant reading two independent proportions off two runs whose intervals overlap almost entirely — 0.624 carries [0.522, 0.715]. Both arms score the same outcomes against the same gold, so the unit is the (outcome, expected label) pair, which is what `miss = missed/expected` already counts, and the comparison is McNemar on the discordant pairs. Arms are now recorded per outcome with a fingerprint of the prompt that produced them, and matched on outcome text rather than position.
-- **The instrument was measuring the keyword arm and reporting it as the namer's** (construct-rxah). `createHostNamer` answers with a bare array normally and with a `NamerReply` object when a malformed first reply was repaired; `escalate.ts` unwraps that and the measurement script did not, so every repaired outcome counted as a namer *failure* and fell back to keywords. Six of 126 on the first baseline. The keyword arm misses far more out-of-family, and a longer prompt provokes more malformed replies, so the contamination scaled with the very thing under test. **RESEARCH-DECISIONS §17's 0.624 is 0.548 on the fixed instrument** — the regression was real and roughly a quarter smaller than the figure it was reverted on.
-- **The tier was never pinned, and one run was served by two of them** (construct-5l8l). The Claude path passed no model, so the session default served each run and could drift mid-run; `claude-sonnet-5` and `claude-opus-5` both answered one 126-consultation arm. Every arm in §18 is verified single-tier. Both defects were already being *printed* — printing is not refusing, because a warning dies with its terminal while the record file outlives it and compares like a clean arm, so a run with any failure or more than one tier now leaves the record untouched and says why.
-- **Five arms separated what the catalog conditions actually cost** (§18). `implicatedWhen` clauses buy **no precision at all** — 58 of them move the over-rate 0.376 to 0.377 — while costing 0.225 of out-of-family miss. `notImplicatedWhen` clauses buy precision that scales with dose (0.376 → 0.353 → 0.321 → 0.190) and cost recall far more gently — though only the two largest doses are distinguishable from the baseline, and the dose ladder must not be quoted without that (see the last bullet in this entry). Of the three causes §17 handed forward, two are refuted: the exclusions account for ~0.04 of a ~0.27 regression, and the "do not reach" instruction is byte-identical in the shipped arm and the arm that regressed, so a constant cannot explain a difference. That one was answered without spending a run, which is the argument for laddering arms instead of testing each hypothesis against the shipped path alone.
-- **The front door carries what the fixed instrument measures** (construct-cuvk). The README quoted miss 0.301 (28/93) and over 0.188 (15/80) from a run that predates construct-rxah. Re-derived from the recorded clean single-tier run — no new consultations, because the per-outcome answers were kept this time — the same shipped configuration reads **miss 0.280 (26/93, [0.199, 0.378])** and **over 0.374 (40/107, [0.288, 0.468])**. The miss moved two labels and is noise. The over-rate is roughly double and its denominator differs (107 surfaced against 80), so 0.188 is not a number the current script can produce: it is replaced rather than reconciled, and §10's "lowest over-rate measured anywhere in this document" no longer holds. §10 and §17 both carry the correction beside their original figures. The adoption that rests on §10 is unaffected — A0 is byte-identical across runs and B still dominates it on miss.
-- **Accepted (2026-08-10).** Gerald took the recommendation on the recorded figures: the revert stands, and what is adopted with it is the reason. Not that the exclusions were too broad and not that the "do not reach" line costs the recall — both refuted — but that inclusion-condition text buys no precision at this tier and costs 0.225 of out-of-family miss. §3's finding therefore stands open as a defect rather than a fixed one: the precision knowledge this project has bought still sits in comments the router never reads, and handing the router everything is now measured as the wrong way to fix that.
-- **The revert stands, on a better reason than the one it was taken on.** No configuration tested beats the shipped router on both axes; the two that buy precision pay recall, and this project's promise is stated on recall. What is not claimed: that those two cost nothing. Their p-values are 0.61 and 0.33, which on 168 label-pairs means this corpus cannot tell, not that they are equivalent — both moved the wrong way and neither is exonerated.
-
-### Measured (2026-08-10, seventh entry: five real outcomes, and what running them broke)
-
-- **One stakeholder-packet case per concern the base-org work added, run end to end on the tuned family with no role name typed** (construct-gzk, construct-9xq). Nine deliverables across five runs, every declared challenge answered, twenty-two structural verdicts, four decisions raised and left in the inbox where they belong. Recorded in `docs/internal/stakeholder-acceptance-phase-5.md` as Cases 2-6, each with what was typed in full, what routed and why, the deliverable state, and the honesty flags that traveled with it.
-- **Case 0 is a failure and it is recorded first.** The cheapest host could not do this at all: a local 35b family named the concerns well and in seconds, then every grounded dispatch died at the pinned ten-minute host timeout having produced nothing. The surface reported total failure as total failure, printed the recorded error per role, and said a failed task is terminal because the host owns retries. Two tracker items came out of it — the capability floor itself (construct-arr) and the fact that the obvious workaround, a bounded ground on its own workspace, is unreachable because `construct outcome` hardcodes `default` while `construct source add` takes `--workspace` (construct-0i6).
-- **The cases found real defects in their own repository**, each filed the same day: a store that is one deletable file with no external copy (the append-only triggers protect rows from rewriting, not the file from `unlink`); `construct log` reporting a leased task as still running without comparing its deadline to now; a denial flood recorded and surfaced nowhere an operator looks; a capability token with no revocation short of rotating the secret every run shares, carrying a `nonce` nothing ever reads; and a ten-minute promise in the walkthrough that has never been timed.
-- **Running the cases broke the machinery reading them, twice.** A framed conflict showed the security role's position with no citation while its deliverable cited three files — the framing parsed the role's reply rather than its submitted draft, which is the same defect `deliverableTextOf` was written to fix for the challenge checks and the stance parser never was (construct-f1u, fixed with the live shape as its regression test). And a sentence-long stance qualifier bled into the decision's tally and made the question unreadable (construct-wei). Both were found by `scripts/check-conflict-quality.mjs` on its first live run, which is the argument for building the instrument before the plant.
-- **The persona panel is weaker than the last one and says so in its second paragraph** (construct-nn4). Eleven deliverables judged against rubrics committed before any of them existed: seven accept, four reject. The judge shares a model family with every producer — the judge likeliest to miss the failures that family makes — so it is recorded as a rubric application rather than as independent review, and the reading depth per row is stated. All four rejections are one line: the deliverables wrote `[unowned]` with the reason, which the work-product rule now requires and the pre-committed rubric forbids. Not rescored — a rubric reinterpreted after meeting the deliverables it judges is not pre-committed — and filed as a dated amendment decision instead (construct-zta).
-
-### Added (2026-08-10, the question surface and the rungs under it)
-
-- **`construct ask`: a question is a run whose plan has one step** (construct-9gb). Phrasing a question as an outcome pays a four-role fan-out, four deliverables, a stance from each and a decision framed out of their disagreement, which is the wrong weight for "what does our roadmap say about X" — and a user who pays it once stops asking. The new surface keeps every discipline that makes an answer trustworthy: the same catalog choosing who answers, the same declared sources surveyed and recorded before the dispatch, the same work log, the same citation challenge. It drops what only means something with a second role present — no stance is asked for, because a stance nothing will ever be weighed against is a position recorded for no one. Two things it refuses to become: the complete surface (every concern the question touched is recorded, the unanswered ones named on screen) and a review (a question landing in a high-tier concern says so, names the licensed professional, and states what one grounded pass can and cannot tell you, before the answer).
-- **Research is a rung with rules, and the rules reach the role** (construct-b1c). The acquisition ladder had named research since the plan schema was written and never said what the word meant, so four defaults filled the gap and all four were bad. The protocol now licenses a capability and never a tool, so the same sentence is true on a host with web access and on one without; a research claim carries `[research: …]` or `[unverified]`, kept a separate marker from `[cite: …]` because the user's own material and the open web are not the same quality of evidence; primary-over-aggregator is a posture with a disclosure rather than a ban; and research is one pass, then the ask ladder. `fixtures/research-trap/` plants the trap and `scripts/check-research-discipline.mjs` scores four recorded runs in four directions.
-- **The org map is generated from the catalog** (construct-6gi). `docs/org-map.md` gives each seat its concern, the sections its deliverable must fill, the challenges it must answer, what it escalates rather than decides, and the limit it states about itself. It is generated and the gate regenerates and compares, because a hand-written map of a catalog is accurate the day it lands and wrong the first time a concern gains a section, and never looks wrong from outside.
-
-### Fixed (2026-08-10, qualifications that reached nobody)
-
-- **The limits label and an owner reach the deliverable body** (construct-z34). The dispatch already recorded that an unvalidated model family produced a deliverable, and that a run fell below the capability floor its brief declared; both facts lived in the work log and nowhere a reader goes. A role with a lens carries a labeling rule of its own — a lens-less role, which is what the panel finding was written against, carried nothing, so its deliverable read exactly like one from a validated family. `construct show` and the answer surface now print those limits beside the text they qualify. Separately, `workProductDirective` asked every issue for the step that resolves it and never for who takes it: every issue now names an owner or writes `[unowned]` and says who would have to decide.
-- **A conflict framing that names the sides and stops hands the work back** (construct-ej6). Commitment 11 as amended says every inbox decision ships as a risk assessment; the ask path has carried that shape since it was written and the conflict path never did. The framing now states what silence costs — holding, because holding can be undone tomorrow and proceeding cannot — as the cost of silence rather than a preference, naming the roles that argued each way so the default has an author. Measured on the concern pair the machinery was not built against (strategy argues speed, architecture argues reversibility) with four recorded runs in `fixtures/conflict-quality/`; the case that matters is one-voice, where one role declares, the other stays silent, nothing is framed, and the run reads as clean.
-
-### Measured (2026-08-10, sixth entry: teaching the router its own precision lessons made it worse)
-
-- **The catalog gained `implicatedWhen`/`notImplicatedWhen` as data the namer reads, the §10 gate was re-run, and the change was held out of the shipped path** (construct-jor, construct-8p1). Every precision lesson this project has learned sat in comments addressed to whoever next edited the catalog, one layer away from the namer making the decision — a real defect, and the fix for it is recorded in `RESEARCH-DECISIONS.md` §17 along with the decision on where ownership facts come from at all (component-to-team is a registry fact and refused for coverage; outcome-to-concern has no registry and cannot have one, because the promise is that a user is not ambushed by a domain they did not know existed).
-- **On the same tier and the same corpora, out-of-family miss went 0.301 to 0.624.** The keyword arm is byte-identical across both runs, which rules out corpus drift and points the difference at the catalog and the prompt; A1 moved the same way, and A1 and B share only the namer. The change still clears the letter of the adoption gate against the zero-model fallback (0.624 against 0.634, over 0.186 against 0.469) by a margin one label wide with almost entirely overlapping intervals. Over-rates are **not** comparable across the two runs — the script's over denominator changed — so miss is the only axis that decides it, and it decides against.
-- **It was reverted rather than shipped or quietly dropped.** The README states 0.301 as what the shipped router does, so landing the change would have made a measured claim false. The mechanism survives the result; the wording does not, and construct-8p1 carries the three hypotheses to separate.
-
-### Measured (2026-08-10, fifth entry: the roles converge, and that is a finding about the roles)
-
-- **The plants were rewritten and it changed nothing, which is what makes the result trustworthy.** Nine new plants, one per role carrying a depth claim, each keyed to territory only its owner asks about (displaced work, a promise made twice, a restriction blocking another workstream, what is hard to undo, who is woken at 3am, where a person gets stuck, what an attacker gains, what cannot be observed, who authored a record), drafted by authors kept away from the key and the failed plants, and committed before the sweep that graded them. Off-lens findings went from 18 to 19. Three roles improved sharply, three got worse.
-- **A judge pass then established the collisions are real.** Given each plant's `gist` as committed before any run, an independent clean-context pass judged 41 of 50 credited claims to genuinely state the planted mechanism. The nine refusals were concentrated on the older plants whose document pairs carry two mechanisms. So the roles are not tripping over shared vocabulary; asked different questions over the same material they return the same findings and name the same mechanisms.
-- **On judged credits, zero of ten plants isolate their role.** Seven are genuinely earned by roles that do not own them; three are missed by their own role. `CP1`, the one plant that isolated on the first sweep, did not reproduce: the second compliance run earned it with a claim asserting the two proposals move identity in opposite directions, close to the inverse of the planted mechanism, and the judge refused it.
-- **Three explanations have now been tested and rejected**: keyword brittleness (fixed, no change), unbounded output volume (bounded, no change), and badly keyed plants (rewritten, no change). What remains untested is the corpus itself. It is 22 documents from one project's sync and hydration work, narrow enough that convergence may be a property of the material rather than of the roles. That is the live hypothesis and it is recorded as such rather than assumed.
-- **`--judged` on the discrimination check** counts a collision only when a judge confirmed the colliding claim states the plant's mechanism, so the two instruments compose instead of arguing.
-
-### Measured (2026-08-10, fourth entry: the pinned host has no structured-output surface)
-
-- **Ollama's and OpenRouter's JSON-mode / schema support is unreachable from `opencode run` on the pinned host, and the namer and densifier are asking for JSON in the prompt alone because there is nowhere else to ask.** Investigated rather than assumed: `opencode run --help` and `opencode --help` list no response-format, json-schema, or structured-output flag — `--format json` controls only how the CLI writes its own NDJSON transcript, never what is asked of the provider. Reading the packaged 1.15.4 binary confirms why a config route does not exist either — both the `ollama` and `openrouter` entries in OpenCode's own provider config route through the same `@ai-sdk/openai-compatible` chat provider, which only emits an outgoing `response_format` from a per-call parameter that `run`'s text/tool-calling agent loop never populates (that parameter belongs to a structured-object call shape the running agent's own reply does not take), and that provider's per-model `options` schema recognises `user`, `reasoningEffort`, `textVerbosity`, and `strictJsonSchema` only. Recorded as a named, probe-checked expectation (`run-carries-no-response-format` in `src/hosts/opencode/pin.ts`, checked statically by `scripts/probe-opencode-conformance.mjs` with no model or network involved) rather than left implicit. `src/hosts/jsonrepair.ts`'s one corrective retry is compensating for a real host gap, not parser slack, and stays the only lever until a future OpenCode version grows a flag or a providerOptions key that actually reaches `response_format`.
-
-### Measured (2026-08-10, third entry: bounding what a role reports helps the product and does not rescue the measurement)
-
-- **A second full eleven-lens sweep, same corpus and same family, with ownership made binding.** The dispatch previously said only that findings outside a role's lens belong to someone else, which is advice; the candidate rule tells the role to name which of its own slots a finding fills and to drop it if it fills none. Both sweeps are recorded in `fixtures/org-harness/runs/` (`*-claude.json` unbounded, `*-bounded.json` bounded) with their scores and discrimination matrices.
-- **The product result is a clear improvement.** Claims fell from 190 to 106 across the eleven lenses (44% fewer), and findings earned by roles that do not own them fell from 55 to 29 (47% fewer). No role that reached its own planted finding stopped reaching it. Same recall on a role's own ground, roughly half the noise, and a deliverable of eight to twelve findings rather than twenty-three.
-- **The measurement result is that nothing changed.** Not one plant's verdict moved: still exactly one of thirteen lens-discriminating, the same ten collisions, the same two missed by their owner. Volume was a plausible explanation for the collisions and it is now a refuted one. The plants are the defect, so replacing them is the only path to a depth claim.
-- **The bound ships, because it was measured before it shipped** (construct-b1q). `ROLE_OWNERSHIP_BOUND` lives in `src/kernel/run/grounding.ts`, reaches every deepened dispatch through the lens directive, and the fixture-organization prompt imports it rather than holding a copy. Finding it absent from the product was its own small defect of the same shape as the notes-drop one: the instrument was measuring a scope discipline the shipped dispatch never carried. A test asserts both state it verbatim.
-
-### Measured (2026-08-10, second entry: the sweep that retracted the depth claims)
-
-- **A full eleven-lens sweep on the tuned family shows the pack-depth measurement was measuring corpus coverage, not lens depth.** Every lens was dispatched once, clean context, from the committed per-lens prompt over the fixture organization, on Claude — the one tuned family, and the first time the harness has been run on it per-lens. All eleven runs are recorded in `fixtures/org-harness/runs/` as `2026-08-10-<lens>-claude.json` with their scores beside them. Rung 0 is clean in all eleven: no fabricated citation, no uncited claim, no shortened path anywhere in the sweep.
-- **Of the thirteen planted role findings, one is lens-discriminating.** `scripts/check-plant-discrimination.mjs` (`npm run harness:discrimination -- --suite claude`) builds the matrix from the recorded score files and asks of each plant which lenses earned it. Ten were earned by lenses that do not own them — `X3` by eight non-owners, `C1` and `SA2` by nine each — and two (`SD1`, `OP1`) were missed by their own lens. Only `CP1`, the compliance plant, was produced by its owner and by nobody else. The per-run scorer had no way to see this, because discrimination is a property of a sweep and it only ever sees one run.
-- **The consequence is a retraction, not a caveat.** "At depth" was defined as the owning lens hitting its plant, and six README rows rested on it; on this evidence that rule cannot separate a lens that contributed a finding from a run that swept the corpus and collected it on the way past. The README now reports isolated / found-not-isolated / missed per row, and states that the earlier column overstated what was measured. The two depth verdicts recorded in the entry below keep their as-run scores — a recorded run is never rescored to fit a later rule — but they no longer support the sentence they were quoted for.
-- **The volume objection was tested and does not rescue the old rule.** Claude produces 13–23 claims per run against the local family's 3–6, so collisions could have been an artifact of over-broad runs. On the sparse five-lens local sweep `C1` was still earned by three of five lenses and `SD1` by two. Volume amplifies the collision; it does not create it.
-- **`SA2` restates `C1`** (construct-o15). The strategy-alignment plant and the pre-existing product conflict plant name the same mechanism over the same document pair, and `SA2`'s keyword sets are supersets of `C1`'s, so any claim earning one earns the other with no additional reasoning. The strategy pack's recorded hit was therefore never evidence of strategy-lens depth.
-- **A partial sweep can prove a collision but never the absence of one**, so the checker reports a clean incomplete sweep as inconclusive rather than as a pass. Without that rule, sweeping two lenses would be the cheapest way to declare depth.
-
-### Added (2026-08-10, base org coverage)
-- **The base org: five concerns a cross-functional team owns become routable, deepened, and templated** (construct-alo, construct-gzw, construct-sqx, construct-xh7, construct-phe, construct-nmh). `strategy-alignment` asks whether the bet is worth what it displaces; `system-design` asks whether the shape of the system survives the change; `operations` asks who answers when it breaks and how anyone finds out; `user-experience` asks whether people can find, understand, and finish what they came for; `measurement` asks whether the claim about behavior can be observed at all. Each ships a catalog domain, a lens (posture, question set, extra slots, escalation ladder), and a deliverable template with named slots. The `security` domain, which routed for months with no lens behind it, gains one with a defensive-review-only ceiling. The `analyst` and `engineering` lenses had shipped at Phase 4 "depth" while pointing at no domain at all, so neither could ever be dispatched: analyst now routes through `measurement`, and engineering's empty domain list is recorded as deliberate and permanent — the hosts are the engineers — with a test that no lens is ever again silently unreachable.
-- **Rubrics for the new personas, committed before any of them is judged** (construct-nn4). `docs/internal/persona-acceptance-rubrics.md` gains Director/VP, architect, support, designer, analyst, and security-engineer rubrics, written while every one of those packs is still unmeasured.
-- **The org tree is on the front door** (construct-6gi). The README maps each seat on a human team to the concern that covers it and states, per row, whether that concern is at measured depth or merely routing. Breadth that has not passed a harness-plant run says so.
-
-### Measured (2026-08-10, base org coverage)
-- **Two of the five new concerns passed their depth measurement; three did not, and the README says which.** Clean-context single-lens runs over the fixture organization on an untuned local family (`qwen3.6:35b`), each recorded in `fixtures/org-harness/runs/` with its score beside it. `system-design` hit its planted reversibility defect on the first attempt. `strategy-alignment` hit on the second, after its plant was retired for keying on a phrase quoted from the document instead of on the mechanism — the first run's miss stands recorded, because a key is never edited to make a recorded run pass. `operations` and `user-experience` missed their plants outright, which is the honest state of those two lenses. `security` is unmeasured for a different reason: both its plants restate a mechanism the corpus already documents elsewhere, so a run that reasons correctly cites a different valid pair and scores a miss — the plant is a paraphrase rather than a plant, and re-rolling it until it went green was declined.
-
-### Fixed (2026-08-10, base org coverage)
-- **A keyword carrying punctuation or an internal stopword could never fire, and two shipped ones never did** (construct-ekv). Text went through a tokenizer that splits on every non-alphanumeric character while a keyword was split on whitespace alone, so any keyword containing a hyphen, slash, or apostrophe stayed one part that could equal no token. Separately, adjacency was judged against the raw token run, so a keyword with an internal stopword — "hard of hearing" reduces to hard+hearing — could never be consecutive in the sentence it was written for, scored below the adjacency bonus, and sat under the signal floor. `accessibility`'s "hard of hearing" and `marketing-claims`'s "send to everyone" had been dead this whole time. Both causes are fixed at the source, and a standing test now fires every catalog keyword in a sentence containing it verbatim. One predecessor golden case is deliberately superseded, with the reasoning recorded in the test header: v2 withheld the adjacency bonus from a phrase that appears verbatim in the text, and preserving that was preserving a bug.
-- **A lens ceiling never reached the dispatch** (construct-83y). `RoleLens.ceiling` states a role's depth limit, and the assignment rendered posture, questions, escalation, labels, and jurisdictions but not the ceiling. It went unnoticed because the only lens carrying one was `engineering`, which nothing routes to. The security lens made it live, and a stated limit the role never reads is not a limit.
-- **Postconditions keyed to names no dispatch emits are gone** (construct-j5k). Five predecessor rules named `reviewer`, `security`, `debugger`, `operations`, and `designer`. Three of those are real or planned catalog domains, so the rules silently attached themselves to briefs whose deliverables could never carry the fields they demanded — a `security` dispatch was inheriting a threat-model-timestamp obligation from a system that no longer exists. The rules and their golden corpus are deleted, the registry is caller-replaceable like the domain catalog, and a standing test refuses any registration that is not a dispatchable domain.
-
-### Documentation (2026-08-10, base org coverage)
-- **The strategy says what the code does** (construct-a8j). STRATEGY Phase 4's pack list named a "technical program manager" that was never built and read as if pack depth and the two-tuned-family criterion were settled; both are now recorded unmet with the lens names the code actually ships. A dated Phase 5 amendment records Gerald's acceptance of the first packet case and the lifting of the no-new-roles hold for base org coverage — along with what was not lifted, which is the standard those packs are measured against. The README's version and pack-count claims are corrected.
-
-### Added
-- **A role handed documents is told how to use them** (construct-7ww). Two rules about material contradict each other and only one can be true of a given dispatch: a role with nothing was already told that the files around it are not evidence, because it may be running inside this tool's own package or the user's codebase. A role that was *given* documents is in the opposite position, and until now nothing said so. `src/kernel/run/grounding.ts` holds the grounded half — what was read, at what coverage, and how to work it: the findings worth a dispatch combine two documents that never cite each other; prefer ones that collapse if either is removed; name mechanisms in the material's own vocabulary rather than a looser paraphrase; where a document already states a conclusion, cite the documents whose combination produced it rather than the one reporting it; cite both when a finding rests on two. `assignmentFor` swaps it in for the no-material rule when a dispatch carries documents, never both, and the coordinator fills it from what the store recorded the run actually read. A source that could not be read travels with the rest, named as a gap, because its silence would otherwise read as coverage.
-
-### Fixed
-- **The instrument stops grading a prompt the product never sends** (construct-7ww). The fixture-organization runs score grounded synthesis, and the synthesis protocol they scored lived only in `scripts/org-harness-producer-prompt.mjs`. Rendering the shipped assignment and probing it for the instrument's own strings found every one absent: the two-document heuristic, the collapse test, the corpus-vocabulary rule, the cite-both rule, and the cross-reference/conflict/risk taxonomy. Rungs 1 and 2 were therefore measuring depth no user could receive, and tuning them would have moved a number and nothing else. The script now imports the kernel export instead of keeping a copy, and its docblock states what it shares (lens depth and synthesis discipline, both from `src/`) against what stays local (the JSON envelope and citation format, which are the eval's output contract). A test renders the prompt through the script and asserts the kernel text appears verbatim, so the copy cannot come back quietly.
-
-### Added (2026-08-10)
-- **The grounded protocol is no longer dormant: a run over declared sources actually reads them** (construct-818). `construct work` surveys each pending run's declared local ground before any dispatch — `src/hosts/sources.ts` walks a directory or git checkout deterministically, prose ranked ahead of code, capped at 40 documents with the remainder recorded as a partial read — and `src/kernel/run/sourcereads.ts` writes the SourceRead rows once per run, unreachable sources first-class. `materialFor` answers from evidence, roles receive the named documents, and remote kinds (`github`, `jira`, `docs`, git URLs) record unreachable with the reason rather than vanishing.
-- **Ground the user pointed at is evidence, not contraband** (construct-x32). A grounded dispatch licenses reading past the survey inside the declared roots — the assignment says so, and the citation gate judges by the same roots: a cited code path under a declared root passes `claims-cited`, everything outside keeps failing as the tool's insides or an undeclared tree. `sources-read` in the work log records licensed roots beside listed documents.
-- **A role that lacks a user-held fact asks for it instead of only assuming** (construct-a2t). The ASK/ASSUMING protocol travels in every assignment; the kernel — never the role — turns a declared ask into one inbox decision carrying the question and the reversible default that stands unanswered. At most one open ask per run (the rest are logged), the deliverable ships on its stated assumption either way, and every answer reaches later dispatches of the run as a settled decision cited `[cite:user answer]`.
-- **product-scoping delivers a product requirements document** (construct-2ue): users-and-problem, in-scope, out-of-scope, and success-measures required, phasing optional, so a PRD review's questions are checkable slots. program-sequencing gains milestones.
-
-### Fixed (2026-08-10)
-- **The plan's source field is named for what it holds** (construct-blo): `sourcesDeclared`, with every surface saying declared, and reads happening — and being recorded — at work time.
-- **A checker no longer fails the heading its own template dictates** (construct-5ww): hyphens flatten in label detection, so a deliverable's `## out-of-scope` section satisfies `scope-diff`. Found live by the first grounded dispatch, which passed `claims-cited` citing its ground by path and failed `scope-diff` for following the template.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.3 — 2026-08-06
 
-The untuned path stops being merely honest about neglect and starts being engineered: the everyday setup may be a free hosted or local open-weight model, and this pass makes that path work as well as what we control allows, then measures it.
-
-### Added
-- **A malformed reply gets one corrective retry before the fallback fires.** The namer and densifier reprompt once with the model's own reply and the parser's complaint (`src/hosts/jsonrepair.ts`) — the community-measured highest-ROI repair for small open-weight models — and a repaired answer is recorded (`namer-retried` in the work log, stated on screen) rather than reading as a clean first turn. Reasoning-model `<think>` blocks are stripped before any brace wins the outermost-object scan, and both prompts now forbid fences and think-blocks explicitly. Measured honestly: the retry does not rescue `qwen3.5:4b` on the namer (both trials fell through even with the correction — that model is below the namer's floor), while the densifier now passes clean on the same model.
-- **A model's capability floor is a recorded artifact, not a per-run discovery.** `scripts/probe-model-contract.mjs` runs the namer and densifier contracts against any provider/model through the pinned OpenCode host and writes a dated per-model result to `fixtures/model-floors/` — clean, repaired, fell-through, and unmeasured kept distinct, because a rate-limited host is not evidence about a model. The free-tier caveat is in the artifact itself: OpenRouter's free catalog churned five of six planned models out from under this session's first matrix run, so results are dated and per-model, never generalized to a tier.
-- **The promotion gate is written down** (`docs/model-family-promotion.md`): contract floor clean, all four org-harness rungs on the dispatch shape with distractors clean, and a stated stability rate — then and only then a family joins `TUNED_FAMILIES`. The harness runner reaches hosted families over the same byte-identical prompt (`--endpoint openrouter`).
-- **Persona acceptance rubrics precede the judging** (`docs/internal/persona-acceptance-rubrics.md`): what an engineer, product manager, operations, legal, compliance, and R&D leadership reader each require before calling a deliverable adequate for the role Construct fills, committed before any deliverable was scored against them.
-
-### Fixed
-- **A citation naming the tool's own scaffolding is refused** — the citation-provenance class's third shape. A live run cited `[domain catalog]` as the authority for Polish labor law and the GDPR fine ceiling; the catalog holds a name, a one-line concern, and keywords. The facts were roughly right and the provenance invented, which is worse than uncited. `findScaffoldingCitations` refuses bracketed and `CITE:`-stance citations naming the catalog, lenses, playbook, work log, or keyword map, validated against the stored live deliverables: it flags the three that invented provenance and passes the two that cited honestly.
-- **The log shows the reason it recorded.** Failure and degradation entries (`namer-failed`, `model-untuned-best-effort`, `model-floor-degraded`, `extraction-refused`, `role-failed`, `dispatch-halted`, `voice-overridden`, and the new `namer-retried`) render their stored detail as a one-line clause instead of a bare action name — the reason used to survive only in the terminal that produced it.
-
-## 3.0.0-alpha.2 — 2026-08-06
-
-Phase 4 in one release: the six role packs stop being prompt folklore and ship as committed data, the model matrix learns to say which families it has actually validated, and the spine gains the surfaces a run needs to be readable — `serve`, `watch`, `waive`, `verdict`, and challenges that are checked rather than merely declared. The routing inversion is adopted on measured figures, so a capable host model names the implicated domains and the keyword map is demoted to the zero-model fallback.
-
-Two things to read before installing it. Legal and compliance output stays dogfood-only, and the legal pack declares **no covered jurisdiction** until a licensed attorney accepts its corpus, so everything it finds is flagged for licensed review rather than asserted. And the phase gates changed shape: the external-subject gates are removed and the cross-user claim they would have licensed is withdrawn outright, so nothing in this release claims to work for anyone other than its author. `latest` still points at the predecessor's `2.1.1`; this is `@alpha` and promises no stability.
-
-### Added
-- **A role's depth is committed data, not prompt folklore** (construct-uge, construct-kbm, construct-jx6, construct-1iy, construct-sni, construct-x5f, Phase 4). The six role packs ship as lenses in `src/kernel/plan/lenses.ts` — posture, question set, deliverable slots, escalation ladder, and where it has weight, standing labels (compliance and legal are dogfood-only until a licensed reviewer accepts them; legal declares no covered jurisdiction until an attorney does, so everything is flagged rather than asserted) and the engineering ceiling (cross-references only; the hosts are the engineers; the limit is the invariant). A lens's slots merge into its domains' playbook templates so depth is checkable sufficiency, and every dispatch assignment speaks the lens before the work. The fixture-organization producer prompt is now generated from the lenses by `scripts/org-harness-producer-prompt.mjs` — a scored run whose prompt lives only in a session transcript cannot be reproduced or compared, and what a run is told is now exactly what dispatches are told. Three scored clean-context runs are on record: the first passes all four rungs with every role's planted finding hit; the other two each trip one keyword (recorded as-run — run-to-run vocabulary variance is a known instrument property, and one substantive-hit-wrong-words finding earned a dated keyword amendment under the recorded relabel precedent). The tuning direction the runs measured: generic prompting missed the compliance and TPM plants twice; the lens questions are what reached them — but reaching them is not yet holding them. Across five lens runs the TPM plant lands 2 of 5 and the compliance plant 3 of 5, and on the producer prompt as it finally ships the TPM plant has missed twice running, so the program pack is reopened: its criterion is two consecutive hits on the artifact that ships, and the two hits it was closed on came from a prompt that has since changed. The rate is stated here rather than smoothed, and the fix belongs in the lens questions, never in the answer key's keywords. Resolved the same day by fixing the instrument's shape and the lens, not the key: the monolith prompt made ~30 lens obligations compete for one pass's attention, which is not the shape the product ships — construct augments one host agent per dispatch, one lens at a time — so the fixture harness gained a per-lens dispatch mode composed the way the spine aggregates deliverables (`--lens`/`--notes` on the prompt script, `compose-org-harness-run.mjs`, composedOf recorded in each run). On that shape, with two generic collision-question tunings (name every OTHER planned or requested workstream a restriction collides with; an open request is planned work for this purpose), the TPM plant lands 5 of 5 and the compliance plant 4 of 5 across the recorded dispatch runs — four full composed runs all passing every rung with both distractors clean, plus per-lens rate dispatches, all in `fixtures/org-harness/runs/`. The program pack re-closed on two consecutive full-pass runs of the artifact that ships; the compliance pack's 4/5 travels with any claim about its depth. Correlated-error caveat throughout: plants and runs share a model family. Read those rung passes with the distractor result beside them: all three lens runs wrote up both of the corpus's planted parked/undecided items as settled memory deltas, which the pre-lens prompt did not do. The generated prompt had dropped the discipline that a delta records only what the notes settled, and the answer key held its two distractors as prose that gated nothing — so a run could fabricate agreement twice and still show four rung passes. Both halves are fixed: the rule is back in the producer prompt, and the distractors are encoded as machine-checked DX1/DX2 reported on every score. The check is reported rather than gating, because the recorded runs were scored without it and a gate applied backwards would rewrite their results.
-- **An unmeasured model family is best-effort, never assumed tuned** (construct-ch5, construct-vy8, Phase 4). `src/hosts/tuning.ts` records which families the producer prompts are validated against, with the date and the evidence named per family; adapters answer through a `modelTuning` seam so the kernel never learns vendor model strings. Every dispatch on an untuned or tuning-silent family writes a `model-untuned-best-effort` work-log entry carrying the degradation note, and `doctor`/`version` print the matrix stamp with its tuned-on dates, so an aging matrix reads as aged instead of current. The Claude family is the first tuned entry, gated on the scored lens runs above. The label is earned, not theoretical: the same lens prompt on a weaker tier missed five of the eight planted findings the Fable runs hit. The open-weight candidate stays best-effort on measurement rather than on suspicion (construct-fdl): `qwen3.6:35b` was re-run on the shape the product actually dispatches — seven clean-context per-lens dispatches composed the way the spine aggregates deliverables, which is how the Claude family is measured, and which the local runner can now produce (`--lens`/`--notes` on `run-org-harness-ollama.mjs`). It improved on its earlier monolith score (X3 gained, a perfect 1.00 substantive-claim ratio, and both notes-drop distractors clean where they previously failed) and still does not pass: rungs 0 and 3 pass, rung 1 misses X1, rung 2 misses R2, and the two awareness plants TP1 and CP1 both miss. So it stays out of `TUNED_FAMILIES`, keeps its degradation note, and Phase 4's "two tuned families" criterion is recorded as unmet rather than rounded up. Run and score are committed under `fixtures/org-harness/runs/`.
-- **A binary document either extracts through a rung this install can run, or is refused with the ladder's own remediation** (construct-3kt, Phase 4). Source reading in the notes door goes through the kernel-planned extraction ladder, executed by `src/hosts/extract.ts`: native text through the sync rung, Docling only behind a probe that asked the binary to identify itself (`scripts/probe-docling.mjs` records the admission gate's state; on this machine it is UNAVAILABLE, which is a recorded state, not a failure). A refusal carries the reason and remediation to stderr and, when a run is named, lands as an `extraction-refused` work-log entry stating the fallback path — garbage bytes recorded as prose is the failure mode this replaces.
-- **A check that cannot read its subject never reports a pass** (construct-ikg, Phase 3). Regenerating the first-run artifact caught the third instance of one failure mode: a verdict recorded about something other than the deliverable. A role called `submit_draft` with a JSON object rather than prose — its keys were the challenge ids from its own assignment, read as a response schema — and string coercion turned the whole deliverable into the literal seven characters `[object Object]`. The citation check passed on that, because a string with no amounts, percentages, or dates has nothing untagged in it. The scope check failed, but not because the role skipped the work: its `cannot_determine` key held exactly what that check looks for. Both verdicts were about a coerced object. A second role submitted prose wrapped in a JSON envelope, so its record was a serialized wrapper. Now: one envelope is unwrapped, because it is the same deliverable wearing a wrapper; anything else is reported unreadable and every declared challenge is recorded unanswered with that reason, so the deliverable stays at `draft` — which is what "nobody answered these" has always meant. The reply is deliberately not a fallback when a draft exists but cannot be read, since checking the summary instead would be the same error in a new place. Prose that merely opens with a brace is left alone.
-
-- **A citation that points at code is not a citation** (construct-wt6, construct-m0t, Phase 3). On an isolated run an employment-law question was answered by reading this tool's own installed package, citing a module of keyword definitions as the authority. The role had ambient filesystem access and no material of its own, so it reached for the nearest readable thing — and the deliverable came back looking sourced, which is worse than looking unsourced, because a citation is the unit of trust here. In a user's own repository the nearest readable thing is their code, so this reproduced wherever Construct ran. Two halves, failing independently: every assignment now states what the role may treat as evidence (the outcome and what it knows; not the files around it; `[unverified]` and what would settle it when a source is missing), and the citation challenge fails a `[cite:…]` whose body is a source path. Re-running the same outcome on the same local model, the role that previously cited a module now reports "CITE: none — Polish-law claims are [unverified]". Filenames in prose are left alone: a user's own `agreement.pdf` is a legitimate thing to cite.
-  The re-run surfaced a second failure of the same class and it is fixed here too: the structural challenges read the role's reply text while the deliverable of record is the submitted draft, which the write surface tells roles in as many words. One role submitted a full deliverable and replied with a two-line summary; another submitted a draft and replied with nothing at all. The citation check was passing a summary while the thing anyone would rely on went unread. Challenges now run against the submitted draft when there is one, and fall back to the reply otherwise.
-
-- **The challenges reach the path people actually use** (construct-gws, Phase 3). The challenge catalog was reachable only by a hand-written brief: every brief the spine produced declared nothing, so every deliverable came back at `draft` with an empty outstanding list. That reads as "nothing is pending" and it meant "nobody required anything" — the worse of the two, because the state looked like a control that had never been applied. An isolated first-run simulation made the cost concrete, returning confident statutory claims from a small local model with nothing asking for a source. Spine briefs now declare the two challenges commitment 13 leaves unconditional: a citation or `[unverified]` tag on every claim, and a scope diff against the brief. Both are answerable for free, so this costs nothing per run and holds a deliverable at `challenged` when it asserts facts it did not source. The three conditional challenges — strongest objection on load-bearing decisions, pre-mortem on plans, legal issue-spot on heat-flagged deliverables — are deliberately absent and say so in the code: nothing in the spine yet decides whether an outcome is a decision, a plan, or hot, and declaring them anyway would either burn a model call per deliverable or leave a challenge that can never be answered and so never promotes.
-- **A waiver is the user's alone, per deliverable, and it is logged** (construct-h66.3, Phase 3). Commitment 13's last sentence had no implementation, which left a challenge nothing could satisfy as a dead end with no stated way past it — the condition under which people disable checks wholesale. `construct waive --task=<id> --challenge=<id> --reason="…"` sets one challenge aside on one deliverable, and the shape is the control: there is no `--all`, no config key, and no way to waive a challenge for future work, because a waiver that outlives the deliverable it was granted for is the global off-switch arriving under another name. A reason is required, and a waiver without one is refused and the refusal recorded. `waived` was already in the verdict vocabulary and nothing could write it; it now rides the same single verdict path, so there is still exactly one place a challenge outcome is recorded. Promotion reports the waived challenges alongside the state, so a deliverable that reached `final` because someone waived its legal pass never reads identically to one that survived it.
-- **Challenges are checked, not just declared** (construct-h66.2, Phase 3). Briefs could name challenges and promotion derived its state from recorded verdicts, but nothing ran them: a brief could require `pre-mortem` and the requirement was satisfied by nobody noticing, which is worse than not declaring it because the declaration reads as a control. `src/kernel/challenge/catalog.ts` names five challenges with the question each asks, and gives four of them a free deterministic check for the presence of the work: a labelled strongest objection, a labelled pre-mortem, every load-bearing claim tagged (reusing `verify/claims.ts` rather than writing a second matcher), and a stated gap between the brief and the deliverable. The coordinator runs them when a deliverable lands and records the results as the same verdicts promotion already reads, attributed to `construct:structural` so nobody mistakes a free check for a judgement. Two refusals are the load-bearing part: a structural pass claims the work was *shown* and says so in its detail, never that the argument is good; and a declared challenge with no structural form — `legal-issue-spot` — is recorded as unanswered rather than passed, so a deliverable never promotes on the strength of the checks that happened to be cheap. The role is now told which challenges it will be held to, with each question, before it writes; holding work to an obligation nobody stated was the same defect the voice's citation rule fixed.
-- **The first standing watch: `construct watch`** (construct-h66.1, first Phase 3 work). A watch is an outcome that never closes, and it is deliberately not a second subsystem: its run is an ordinary run, its observations land in the same append-only work log, and its findings surface in the same decision inbox as a conflict between two roles. No watch table, no scheduler, no daemon — something outside decides when to look, exactly as something outside decides when to `work`. The first watched ground is Construct itself (commitment 16 made operational): drift between the strategy, the tracker, and the repo now arrives as inbox decisions instead of waiting for a session to remember the reconcile ritual. Two properties make it usable rather than noisy. A finding is raised once, keyed by watch and finding, so the second sweep that sees the same divergence writes nothing and a resolved decision never returns; and every sweep records itself even when it finds nothing, because a watch that only speaks when unhappy is indistinguishable from a watch that stopped running. Each finding is a risk assessment in the shape amended commitment 11 requires — the pattern that fired, the evidence actually checked, what is at stake down each branch, which branch is the reversible default, and the concern that would normally have caught it — rather than an alert that hands the user back the work they were delegating. The judgement is not re-derived: `kernel/tracker/session-drift.ts` already decides what drifted, and the repo-evidence gathering moved to `src/hosts/repo/evidence.ts` so the reconcile script and the watch ask this repository the same question in one implementation instead of two. Verified against the real repository: the first sweep raised its 17 standing findings, the second raised none.
-- **A first-run walkthrough, with every command in it actually run** (construct-07d). The Phase 2 audit found the whole program funnels through one gate — construct-r67.10, one external person running one real outcome — and that what stood between that gate and a person was documentation rather than code. `docs/first-run.md` takes someone from install to a delivered result and a recorded verdict in about ten minutes, covering both the CLI and the in-host projection path, saying plainly which step costs money and that `doctor` does not yet check host reachability. README is refreshed to match what shipped: `serve`, `verdict`, `--domains`, and `--host` were all absent from the first thing an external reader opens. The friction-recording path is stated in the walkthrough itself, so the person running it can record what went wrong without being coached through it. *(The gate that motivated this file — one external person running one real outcome — was removed on 2026-08-05 with the rest of the external-subject design; the walkthrough outlived it and is now the on-ramp for the stakeholder-acceptance runs.)*
-- **Construct sounds like itself, on every artifact** (construct-r67.21). The voice is defined once, as nine rules in `src/kernel/voice/voice.ts`, and it covers register rather than only vocabulary: lead with the finding and then tell the story so a reader can follow how you got there; write like a person explaining it to a colleague who stepped away, contractions included, with no corporate throat-clearing; plain words with the hype vocabulary named outright; complete sentences and real paragraphs; commas and colons doing the work an em dash was being asked to do; language any reader can see themselves in (they/them when pronouns are unknown and never guessed from a name, people described by what is relevant to the work, no ableist or sports-metaphor shorthand); say what you could not determine in the same voice as what you could; and never invent a fact, number, date, source, or quotation. That last rule teaches the `[cite:…]`/`[unverified]` notation that `src/kernel/verify/claims.ts` has always checked deterministically and that no role was ever shown, which made it a rule enforced against someone who was never told it. The dispatch instruction changed with it: "Be brief" became "keep it as short as it can be while still letting the reader follow how you got there", since the old wording argued with the storytelling rule. `docs/example-deliverable.md` is the worked example, and it passes the real no-fabrication check rather than claiming to. It is bound into every role's assignment before the role writes anything, identically for every role, because identity is not a per-role option. The predecessor's approach is deliberately not ported: it scanned finished artifacts for banned words and failed them afterwards, which caught the vocabulary and none of the register and told the author nothing until the work was done. The user override is `construct work --voice="…"`, carried into the assignment in the user's own words — it replaces the house block rather than layering on it, since two voice blocks is a role asked to sound like two things — and every dispatch it shapes writes a `voice-overridden` work-log entry naming the instruction and its source. Silence in that log means Construct sounded like itself.
-- **A role is told why it was engaged** (construct-r67.18). Every implication already carried its evidence and dispatch dropped it, so a role began work knowing neither which concern fired nor what was cited. Briefs now carry an optional `engagement` (concern, evidence, provenance), populated from the implication and rendered into the assignment verbatim, with the provenance said plainly — keyword signals are labelled as signals, a namer's reason as a model's reason, a user's naming as the user's. Validation refuses a half-engagement: evidence claimed with nothing cited is worse than none. The `role-dispatched` log entry records what was passed, so a deliverable can be read against the evidence the role actually received.
-- **A user who already knows what to ask for may name the staff** (construct-r67.19). `construct outcome --domains=privacy,security` skips the keyword map and the namer entirely — no inference, no model, no cost — but not the catalog: a named domain passes the same gate a model's proposal does, and a domain nobody defined is an error listing the catalog rather than a role invented on the spot. Provenance is its own value (`InferredBy` gains `user`), visible in the run report and the work log, because a user's own choice is not an inference and the record must not show it as one. Naming domains alongside `--host` is a usage error rather than a model consulted for an inference that will not happen. The inferred path is untouched.
-- **A verdict can be recorded from inside the host** (construct-r67.24). Inside an MCP host is where a user reacts to what surfaced, so the projection gains a `verdict` tool (confirm/dismiss/missed) recording `mcp:<client>` as the source. The rule itself moved out of the CLI into `src/kernel/implication/verdict.ts` so both surfaces enforce one rule rather than filling one corpus by two standards: confirm and dismiss apply only to domains the run actually surfaced, and a domain that never appeared can only be `missed` — accepting otherwise would manufacture agreement in the corpus the routing measurements are computed from.
-- **`construct serve` — the spine projected into any MCP host** (construct-r67.17). One stdio MCP server (`src/hosts/mcp/projection.ts`) makes Construct present inside whatever MCP-speaking host the user already works in — Claude Code, Codex, VS Code agent mode, OpenCode — with no per-editor build. Seven tools: catalog, record_outcome, work_log, run_status, inbox, decide, validate_brief. The inversion applies inside the host without a subprocess: the calling model has already read the user's words, so record_outcome accepts its proposed domain namings and runs them through the unchanged kernel admission gate — catalog membership, a stated reason, dedup — with the reply naming what was not admitted, the work log recording `mcp:<client>` as the consulted host, and an empty namings array standing as a real answer. Deliberately absent, and tested by name: no dispatch (spending stays on `construct work` behind its ceiling) and nothing that advances draft → challenged → final (role writes stay on the token-scoped role server). The newline JSON-RPC framing is extracted to `src/hosts/mcp/jsonrpc.ts` and shared with the role server rather than written twice. Smoked end to end from inside Claude Code headless: run-20260805060156645 recorded a real outcome with three model-named domains admitted through the gate.
-
-### Changed
-- **The external-subject gates are removed, and the claim they would have licensed is withdrawn** (construct-nd5, construct-8ep, Gerald's decision 2026-08-05). Gerald will not recruit external testers; he evaluates the surface himself against test cases the session runs and checks the outcomes. So every phase exit — Phase 2's "one external person" and Phase 5's sequential twenty-user gate alike — becomes a stakeholder-acceptance gate: the session runs real outcomes end to end through the shipped surface, records them as a reviewable packet, and Gerald accepts or rejects what he reads. The honest half of this change is what it costs. Self-evaluation is not a sample from the population "external users," so *"works for more than 70% of users"* is withdrawn outright rather than restated at lower confidence, and any wording implying a rate across users is now a defect. `RESEARCH-DECISIONS.md` §9 keeps its arithmetic and gains a supersession note at the top so nobody quotes a retired gate as live; the sequential machinery in `intervals.ts` stays shipped and tested, because §1's rate intervals use it and any future external gate would. What preserves the measured claims through this is that measurement independence was never located in the evaluator: the corpora are authored by minds that never saw the catalog, the org-harness answer key is committed before any run and never edited to fit one, and scoring is structural. Stakeholder acceptance rides on top of that evidence and is never cited as measurement.
-- `STRATEGY.md` — four dated amendments naming the through-line (construct-r67.23, inferred from Gerald's 2026-08-05 brain dump, confirmed by Gerald, grounded in RESEARCH-DECISIONS.md §11). The North star states it: Construct makes the obvious obvious — the tacit awareness a seasoned cross-functional team carries, externalized as explicit, evidence-backed, overridable risk awareness; awareness informs, only the user blocks. Commitment 11 makes every inbox decision a risk assessment with a contracted shape (trigger pattern, validated evidence, stakes per branch, reversible default, and the role that would normally have caught it). Commitment 9 bars routing from ever consuming a model's self-reported confidence — only measured rates and human labels, the externally documented miscalibration finding agreeing with §6's internal one. Phase 4 orders pack depth by gap value: awareness packs first, engineering thin permanently. No runtime code changed; the amendments bind future work.
-- **The routing inversion is shipped** (construct-4jq, accepted by Gerald 2026-08-05 on the §10 figures). `construct outcome --host=<opencode|claude>` now consults that host's model on every outcome as the primary namer; the keyword map answers only with no host named (recording stays free) or when the namer fails — and a failure is stated on screen and as a `namer-failed` work-log entry, never silently substituted. `--escalate` is removed outright (no pre-3.0.0 compat) and errors with the replacement; a namer that names nothing is reported as its answer, not second-guessed by keywords, because that union was never measured. The escalation vocabulary followed the behavior: `mapImplicationsNamed`/`startRunNamed`, the `naming_cache` table (old `escalation_cache` tables are simply unused), `implication-named` log entries, and the similarity shortlist no longer rides the shipped path — the figures were taken on the full catalog, which also mooted the SHORTLIST_K 4-vs-8 contradiction (construct-2jb.14). The 0.15 absolute miss target is retired for §10's relative per-tier dominance gate: it sat inside the §2 annotation floor's interval and nothing measurable could pass it.
-- **Committed code no longer references tracker bead ids, and a lint keeps it that way** (Gerald's rule, 2026-08-05; construct-r67.22). Roughly 130 references across src, tests, and scripts were reworded to state their invariant in plain language; lineage lives in the commit-message trailer and the tracker. `scripts/lint-no-bead-refs.mjs` joins `npm run lint`; the tracker tooling and the labeling kit stay exempt as data — one labeling-kit id is a deterministic shuffle seed whose bytes decide which outcomes a finished study drew. Root documents keep their dated bead lineage; they are the drift record, not code.
-- `RESEARCH-DECISIONS.md` §10 — the routing inversion measured live (construct-r67.15). Three configurations over the same corpora and admission gate, 126 consultations through the shipped Claude adapter seam. On wording authored by minds that never saw the catalog, namer-first beats the shipped escalate behavior on both axes at once (pooled fresh+unspent miss 0.301 vs 0.398, over 0.188 vs 0.325) and keywords-only trails at 0.634 miss; on the map's own tuning family the ordering reverses, which is memorization, not generalization. Four caveats travel with any quote: sonnet-tier only, one consultation of 126 fell back, subscription cost is unmeasured not free, same-family agreement is an upper bound. Adoption is not this entry — it is Gerald's decision on construct-4jq, where the recommendation now sits.
-- `STRATEGY.md` — four dated amendments from the 2026-08-05 team-in-a-box direction review (construct-r67.20). A standing watch joins the end-state: an outcome that never closes, watching designated ground (doc repos, work trackers) and surfacing divergence and contention as inbox decisions on the same spine — dogfooded first on Construct itself in Phase 3 (construct-h66.1), external ground behind the Phase 4 gates. Commitment 17 added: artifacts speak in Construct's voice unless a recorded user override says otherwise (construct-r67.21 defines and binds it). "What is killed" gains decision-theory modeling ahead of a consuming decision — measurement stays the discipline, modeling without a customer dies, and construct-2jb.10/.11 died with the amendment.
-- `STRATEGY.md` — five dated amendments from the routing-architecture adversarial review (construct-r67.16). Host-embedded operation is a first-class deployment shape: the spine projected into the user's own agent host (Claude Code, Codex, VS Code agent mode, OpenCode) through one MCP surface, thin in Phase 2 and dogfood-scoped (tracked as construct-r67.17), breadth held behind the Phase 4/5 gates. Routing direction inverts on the evidence — keyword miss 0.663 [0.556, 0.755] on wording the catalog was never tuned against, against a 0.15 target with a structurally proven dictionary ceiling: where a capable host model is present it becomes the primary namer of implicated domains under the kernel's admission gates, the keyword map demoted to zero-model fallback and evidence layer. Nothing is adopted yet: the inversion is measured first (construct-r67.15) and adopted, if the figures support it, on construct-4jq. Release policy stated plainly in the preamble: no backwards compatibility with anything pre-`3.0.0`; the sole backward obligation remains `construct cleanup`.
-- `GLOSSARY.md` — two bindings added ahead of the code that will use them: **projection** (the spine made present inside an agent host; presence, never execution or completion) and **namer** (whatever names implicated domains when consulted; proposes, never certifies).
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.1 — 2026-08-05
 
-Two defects in what the CLI tells you about a run. Both were found by running the published alpha against real outcomes, and neither was caught by the 1,436-test suite or the ten-outcome dogfood — they are failures of what the surface *says*, not of what it does.
-
-### Fixed
-- **A run where every task failed now states the recourse on the invocation that failed, not the one after it** (construct-j32). The guidance existed and was correct; it lived only on the nothing-left-to-work path, so it printed on a *second* `construct work` against an already-settled run — and the first invocation gave nobody a reason to run a second. Found on a live run whose every task failed with `Missing Authentication header` and said nothing further. "A missing credential" now joins the listed dispatch-side causes, since that is what produced it. The spend footer no longer reports a reassuring `0 of 10.00 ceiling` when nothing completed: that reads as "this was cheap" when the true statement is that nothing ran.
-- **`construct log` now says where a run stands, not only what it did** (construct-7zu). A failed task writes no event past `capability-issued` — and neither does one still executing, so a healthy run and a dead one ended at the identical line, and telling them apart meant opening `construct.db` by hand. A run in flight now reports its live lease and its deadline, and steers you away from re-running `work`, which was the dangerous instinct: re-running against live leases. The event stream itself is untouched and stays append-only; this is a footer reading current task state, mutating nothing and polling nothing.
-
-### Changed
-- The agreement-study instrument reports intervals rather than a point verdict (construct-eib). `compute-alpha.mjs` bootstraps over units and prints 95% intervals on both Krippendorff's α and the implied error floor, and states the probability the floor lies below the target instead of a bare above/below. On the real two-coder study the point estimate and the interval disagree — floor 0.1235 against a 0.15 target, interval [0.0521, 0.2071], which contains it — so the verdict is now `UNSETTLED` with "probable, not demonstrated" and a note that narrowing it takes more units, not more resamples. Writing its test found a bias in the resampler: resamples whose α was undefined (perfect agreement, De = 0) were dropping their perfectly well-defined floor of 0, pushing the lower bound up and making the study look more pessimistic than the data.
+Nothing this release added remains; 3.0.0-alpha.24 replaced it.
 
 ## 3.0.0-alpha.0 — 2026-08-04
 
-The first published build of the rewrite. Installable as `npm i @geraldmaron/construct@alpha`; `latest` stays on the predecessor's `2.1.1` and nothing about an existing 2.x install changes.
-
-### Added
-- **Published via npm trusted publishing (OIDC), with no long-lived token** (construct-506.4). The release workflow authenticates with a short-lived token the runner mints from `id-token: write`, checked against a trusted publisher registered on the package. `NODE_AUTH_TOKEN` and the `NPM_TOKEN` secret are gone from the publish path. Provenance is attached: the published version carries a SLSA v1 attestation, so the "unable to find the source commit" warning that applies to `2.1.1` does not apply here.
-- Package metadata now declares `homepage`, `bugs` and `keywords` alongside `repository`. Without them the alpha would have published with *fewer* links than the `2.1.1` it supersedes — a regression hiding inside a rewrite. `repository.url` matching the GitHub repository exactly is also a hard requirement of trusted publishing, not a nicety.
-
-### Fixed
-- **The blocker was the credential, not the package name** (construct-506.4). Two releases were scoped around an `E404` read as "this token may not *create* a package". Publishing to the package the token already owned then returned `E403`, and the same publish succeeded on its first attempt over OIDC with no other change. The token was never able to write, and npm's August 2026 restriction of tokens that bypass 2FA is the likely reason. Recorded because the project twice answered a credential problem with a naming decision: `STRATEGY.md`'s amendment paragraph and this file's Changed entry below both carry corrections rather than rewrites.
-
-### Fixed (during the phase)
-- `construct cleanup` no longer deletes the Construct that is running (construct-a5q). v3 resolves its own directories from the same XDG variables under the same application name, so `~/.local/share/construct` is at once a predecessor trace and the successor's home — and cleanup removed it wholesale, taking the store that holds every work log entry, task row and raised decision, plus the capability secret. The append-only triggers guard writes, not unlink. It was unreachable until now only because cleanup had only ever run where the predecessor was the only Construct; the window opens the moment v3 is installed. Ownership is decided by a file the successor writes and the predecessor never did (`construct.db`, `capability-secret`) rather than by a version, which would record whoever wrote last instead of who owns the directory. Removal is refused loudly rather than deleting around the successor's files, since the predecessor's file list inside a shared directory is not knowable and anything selective would be guessing. The summary stopped overstating itself in the same change: an item that keeps is now counted as kept, so "removed 1" can no longer mean nothing was deleted.
-- `construct cleanup` no longer removes things it did not install, and now sees things it was missing (construct-7pp, construct-mei, construct-lqs). All three were found by the mandatory dry-run before the cutover, not after it, and each was verified against this machine's real files rather than a fixture.
-  - It deleted the **entire** `hooks` block from `.claude/settings.json` whenever any hooks existed, then deleted the file because emptying it left nothing behind — while its own description promised it "preserves any user-added keys". Run in this repo it would have taken the fabrication lint and both `bd prime` hooks, none of them a predecessor trace. Hooks are now matched by the launcher they invoke (`.construct/run.mjs`), partial removal is real, and a file is deleted only when cleanup is what emptied it.
-  - It found MCP registrations by a hardcoded id list, `['memory','cass']`, while the predecessor registers as `construct-mcp` — so it walked past a connected, tool-serving endpoint and called the machine clean. Matching is now on the command an entry *runs*, which also keeps the successor safe now that both share a package name.
-  - `~/.construct` was in no scope at all, because `.construct` was only ever resolved relative to the working directory. That is 676MB of predecessor traces and vector indexes here, and the cutover's "zero detected traces at machine scope" would have passed with all of it on disk. It is now a machine-scope item at ask-risk, reporting its real size.
-
-- A role is now told about the write surface it holds, and the role write surface works on OpenCode as well as Claude (construct-ghu, construct-nv0). These were one defect wearing two bead ids. The OpenCode adapter accepted `context.roleEnv` and ignored it, so a run dispatched there had no write surface at all; and `assignmentFor()` never mentioned `submit_draft` or `append_work_log` on any host, so even where the surface existed nobody was invited to use it. A live four-role run finished 4/4 with zero drafts submitted for exactly that reason, and because both host registrations had been proven by probes that pass an explicit "call submit_draft" instruction, the gap survived two beads closing honestly: a probe demonstrates plumbing, not that a real dispatch flows through it. The assignment now names the two tools and what each is for when a dispatch holds them, and says plainly that holding none is normal when it does not — silence being the worst of the three, since a role given tools on one run and none on the next cannot tell. The text is host-agnostic and tested to stay that way: it names no registration mechanism and gives the tool names unprefixed, because Claude shows `mcp__construct__submit_draft` where OpenCode shows `construct_submit_draft`. Proven by a real dispatch rather than a probe — run `run-20260804205800193`, OpenCode on a local 35b model, both roles calling `submit_draft` unprompted and both drafts landing attributed to their roles.
-- Two findings recorded rather than papered over. OpenCode has no `--strict-mcp-config` equivalent and **server isolation is not achievable** on it: both `OPENCODE_CONFIG` and `OPENCODE_CONFIG_DIR` merge with the operator's own registrations rather than replacing them, measured as one declared server yielding ten. The Claude adapter's guarantee that a role's reach is exactly two writes does not hold there, and it is now a named, probed pin expectation re-measured on every conformance run instead of a sentence someone has to remember. Not theoretical: a probe model hunting for `submit_draft` reached the *predecessor's* still-registered MCP server instead. Separately, `role-serve` resolves Construct's store through the XDG variables while the adapter deliberately strips those for the host — and the server is launched by the host, so under isolation it connected and wrote to the wrong database with nothing failing loudly. Construct's own directories are now carried explicitly to Construct's own process on both adapters.
-
-### Changed
-- The published identity is the predecessor's after all: the npm package is `@geraldmaron/construct` at `3.0.0-alpha.0`, not `@geraldmaron/construct-engine` at `0.0.0` (construct-3fr). The code is still a rewrite sharing nothing with 1.x/2.x; what changes is that the rewrite continues the package rather than starting a second one beside it. A separate name bought a clean lineage that was mostly cosmetic — the predecessor's 48 published versions stay public either way, since `construct-legacy` is archived rather than deleted — and appeared to cost the release: the repository's npm token is scoped to `@geraldmaron/construct`, and npm answers `E404` when a token may not *create* a package, so the first alpha looked blocked on minting a credential for a name that existed only to keep the two apart. **That half of the reasoning did not survive contact and is corrected above** — the token could not write the package it already owned either, so the name was never what stood in the way. The `latest`-tag argument, which follows, was always the load-bearing one and is unaffected. `0.x` also turned out to be the weaker way to say "nothing is promised yet". `npm publish` moves the `latest` tag to whatever it publishes unless told otherwise, so `0.0.0` on a package whose `latest` is `2.1.1` would have made a from-scratch rewrite the default install for everyone already there. Alphas publish under `--tag alpha`, which cannot move `latest` at all, so the Phase 5 second-user gate is now enforced by the registry rather than implied by a number — `latest` stays on `2.1.1` until `3.0.0` is promoted deliberately. Nothing is erased: the predecessor's versions cannot be unpublished (npm allows it within 72 hours, and afterwards only below 300 weekly downloads with no dependents and a single maintainer, none of which hold), and will be deprecated with a pointer rather than removed. The `construct` CLI command name is unchanged, as it always was.
-- README's cleanup coverage note corrected while renaming: Docker container/image and macOS LaunchAgent removal are ported (they landed in construct-506.1.1), so the sentence saying they were not is gone.
-
-### Added
-- `RESEARCH-DECISIONS.md` — third standing document (construct-2jb): the quantitative basis for the system's decisions, every figure regenerated by `scripts/measure-decisions.mjs`. Headline findings: `MIN_SIGNAL` is inert (every floor 0–10 yields identical output; the whole-keyword evidence filter is the real gate), the keyword `contract` fires four times with zero correct, 116 of 207 catalog keywords have never fired, escalate-on-silence reaches 1 of 6 observed misses, and the Phase 5 gate at 5/5 licenses only "succeeds more than 48% of the time".
-- `kernel/metrics/intervals` — Wilson and Clopper–Pearson intervals, McNemar's exact test, and one-sample sizing, so no rate is quoted without its width (construct-2jb.1). Test expectations are published closed forms, never the module's own output.
-- `kernel/implication/similarity` — embedding-similarity shortlist seam for escalation (construct-2jb.12, foundation). Measured before written: AUC 0.750 on a free local model, and all six keyword-missed labels rank in the top 4 of 10 domains by similarity where escalate-on-silence reaches one. Yields candidates for a namer to judge, never implications — geometry is not a citation. Embedder injected like Paths and the namer; host wiring remains on the bead.
-- `kernel/implication/harvest` — every real run becomes labeled corpus (construct-2jb.13, foundation). User verdicts (confirmed/dismissed/missed per domain) fold deterministically into fixture-shaped outcomes with provenance and explicit negative labels, which no authored corpus has. Converts the burned-on-commit problem into spent-per-catalog-version. Store and CLI wiring remain on the bead.
-
-### Corrected
-- The Phase 2 dogfood's empty decision inbox is settled as a model artifact, not a dead path (construct-185). construct-r67.9 ran 22 tasks across nine domains, including deliberately conflict-shaped pairings, and raised zero decisions; its caveat (c) offered two readings and could not choose. Re-running the same conflict-shaped outcomes on a larger free local model answers it: all 11 deliverables declared a parseable stance, and one run produced a genuine hold/proceed split that raised a decision, framed both sides with their citations, and resolved end to end through `construct decide`. The framing path is live and correct. But the two readings were never mutually exclusive per outcome, which is what the caveat got wrong: two of the three conflict-shaped outcomes correctly raised nothing on the stronger model too, because every role said hold or unclear and a unanimous hold is a report rather than a decision. What does not change is that r67.9 itself still provides no live evidence for the inbox path — the evidence exists now, but a different bead on a different model produced it, so any coverage claim resting on that dogfood must still say the decision half was unexercised there. Two defects surfaced while establishing this and are filed rather than folded in silently: conflict framing is derived from the tasks settled in the current invocation, so a process that dies between settlement and framing loses the decision permanently with no later invocation able to re-derive it; and a hedged `proceed with conditions` is flattened by first-word extraction into an unqualified `proceed`, which reports a role as taking a plainer position than it wrote.
-- Two claims recorded on construct-4jq are withdrawn as unsupported by their sample size (construct-2jb.2): "the 0.15 target is not met" rested on 3 misses of 10 labels, whose 95% interval [0.108, 0.603] contains the target; and the 0.400 → 0.300 "improvement" is one label changing state (McNemar p = 1.0). The bead's *opening* finding stands — the pre-escalation 4/10 interval [0.168, 0.687] excludes 0.15 — as does the structural argument, now measured directly. The dated correction lives in the bead's notes.
-- Repository bootstrap: TypeScript (erasable-syntax-only) source tree, `node --test` suite running natively via type-stripping, no build step required for development.
-- `kernel/paths` — the sole module permitted to read environment or home directory; every other module receives an injected `Paths`.
-- `kernel/verify/claims` — tier-1 deterministic no-fabrication check (load-bearing claims must carry a citation or an explicit `[unverified]` tag).
-- Sterile test fixture builder (`tests/harness/sterile.ts`) rooting every filesystem-touching test in a real tmpdir.
-- Parity lints: no committed absolute paths (`scripts/lint-no-absolute-paths.mjs`), glossary discipline against `GLOSSARY.md` (`scripts/lint-glossary-parity.mjs`).
-- Packaged-install smoke test (`scripts/smoke-packaged-install.sh`): build, pack, install into a scratch project, run the CLI — the consumer experience, tested before any consumer exists. It exercises the spine (outcome, log, inbox, decide) and not just `doctor`/`version`, because the spine is the only path that opens `node:sqlite` and writes to the state dir — exactly the packaging-defect class the script exists to catch. It also runs the CLI against a state dir it cannot write, so a permissions failure is caught as a sentence rather than a stack trace.
-- CI: test + lint + typecheck, a read-only-`HOME` sterile run, and the packaged-install smoke, as three separate jobs.
-- `construct doctor` and `construct version` — the first two CLI commands.
-- `construct cleanup` — detects and removes predecessor (v2) traces on a project checkout and a user's machine: the `.construct/launcher/` directory, manifested `.claude/agents/`+`.claude/commands/` files, Construct-managed keys in `.claude/settings.json`/`.mcp.json`, the `.construct/` state dir and scaffold files (`AGENTS.md`, `plan.md`), a Construct-set `core.hooksPath`, the XDG state/data/cache dirs, `config.env`, the lib symlink, the local Postgres compose file, and memory-MCP registrations in Claude/OpenCode/Codex configs. `--dry-run`, `--yes`/`--yes --all` (auto- vs ask-risk), `--scope=project|machine|all`, `--keep-state`. Ported from construct-legacy's `lib/uninstall/uninstall.mjs`, including the Docker postgres container/image removal and the macOS LaunchAgent unload.
-- `kernel/store` — the SQLite storage substrate (via built-in `node:sqlite`, adding no dependency), serving all three Phase 2 consumers from one shape: the tracker projection mirror, the append-only work log, and the decision inbox. Append-only is enforced by database triggers rather than by caller discipline (commitments 14 and 15); a store written by a newer schema is refused rather than silently used; timestamps and paths are injected, so the substrate reads neither the clock nor the environment.
-- `kernel/tracker/reconcile` — the predecessor's reconciliation ported on top of that substrate, made clock-free (v2 defaulted `reconciledAt` to `new Date()`). The field-authority rule is now enforced through real persisted state: a tracker-owned change is absorbed into the snapshot, a domain-owned change is reported as drift and never clobbered, and an issue deleted from the tracker marks its projection drifted without deleting domain work.
-- `hosts/opencode` — the first host adapter, behind the kernel's host seam (commitment 1). `execute(role, task, tools)` becomes `opencode run --format json`; the transcript is reduced to a deliverable carrying the text, the tool calls (successes and failures separately), and per-run token and cost totals summed across every step, which is the number the coordinator's spend ceiling will be enforced on. Adapters live in `src/hosts/`, not `src/kernel/`: the kernel defines the seam and stays ignorant of who executes. Nothing here reimplements a host capability — no session store, no retry policy, no tool broker, no model routing (STRATEGY risk 4).
-- The OpenCode host version is pinned (`src/hosts/opencode/pin.ts`) and every behavior the adapter depends on is written down there as a named expectation. `npm run probe:opencode` checks them against a live binary and fails loudly on drift rather than letting a host upgrade change behavior silently. One expectation is declared unprobed with its reason: it describes a race, and reproducing a race confirms it while failing to reproduce proves nothing, so a check that can only ever confirm would be worse than none. `npm run capture:opencode` re-records the parser fixtures from a real host. Both default to local Ollama models so re-verification costs nothing. Capturing the fixtures from the real host immediately corrected two wrong assumptions written from a `2>&1` transcript — OpenCode sends notices to stderr, not stdout, and does set a non-zero exit code on a failed run.
-- `hosts/claude` registers the role write surface, so a real model reaches it (construct-r67.14). Given a dispatch's role environment, the adapter writes an MCP configuration naming `construct role-serve` and passes it to `claude` with `--strict-mcp-config` and an allow-list of exactly the two role tools. The configuration goes to a 0600 file inside a 0700 per-invocation directory and only the *path* reaches the command line: `--mcp-config` also accepts inline JSON, and inline JSON rides argv, which is world-readable through `ps` — the exact channel `kernel/run/roleenv.ts` exists to avoid. The file is removed on every exit path, timeout and throw included. Measured, not asserted: `npm run probe:claude:mcp` seeds a sterile store, runs a live haiku session that calls `submit_draft`, and checks the store the server wrote rather than the model's account of itself — the draft lands attributed to the role, and the bearer appears in no file of the host's own session store, no stdout, and no argv. Probing corrected two guesses: the result envelope carries no server list at all, so the strict-config expectation is measured indirectly (the model is asked to enumerate its tools) and recorded as the weaker check it is; and `--mcp-config` turns out to be variadic — it ate a following `mcp list` as two more config paths — which is now its own pinned expectation, because getting that argv shape wrong would swallow the prompt.
-- `kernel/implication` — the implication map: an outcome in the user's own words to the domains it implicates but never named. "Launch a paid beta to EU users next month" reaches privacy, commerce-tax, product-scoping and program-sequencing without any of the four being mentioned. Every implication carries the signals that produced it and a score, so the inference can be argued with rather than taken on faith; a partial word match is never cited as a signal. An outcome that implicates nothing says so instead of going quiet. Held to a measured miss-rate gate against a labelled corpus rather than a claim that it works.
-- The implication map no longer surfaces a domain it cannot cite evidence for (construct-4jq). The signal floor is a SUM and partial matches are summable, so six keywords containing the word "data" scored privacy at 18 on an outcome that said "data" once — clearing a floor documented as "one whole signal must fire" while citing nothing. Catalog verbosity had become score: the more multi-word keywords a domain happened to list, the more partial credit one incidental word earned it. A domain now needs at least one whole-keyword match to be implicated at all, which makes the floor mean what its comment says and makes every implication carry the evidence its type promises. Pinned as an invariant across every corpus, not as a case, because the defect was structural.
-- Keyword matching folds simple English plurals in both directions (construct-4jq). The prefix rule runs one way — a keyword stem reaches its own inflected forms — so a keyword written plural could never match a singular token: "students" missed "a letter asking how we handle student records". A catalog author's arbitrary choice of number was deciding whether a domain fired, and the implication catalog had been paying for it by hand, listing "contractor" and "contractors", "employee" and "employees", "refund" and "refunds". Folding is exact-only after singularizing and guards short words and double-s endings, so it does not reopen the substring false-positive class the prefix rule replaced ("rag" reaching "storage"). This is a matcher fix rather than a dictionary addition, which is the distinction construct-4jq turns on.
-- `product-scoping` no longer lists "users" and "customers". They appear in almost any sentence a business writes, and they conscripted that domain into runs with no scoping question in them — "encrypt customer passwords" pulled in product-scoping on the word "customer" alone, which number folding made reachable in the singular too. Removing them cut the over-rate on the held-out set from 0.245 to 0.140, below where it started, and cost exactly one labeled-set match that was resting on the same weak word. Who the work is for is not evidence of what is in scope. The labeled corpus was left alone rather than revised to keep its 0.000 — rewording a corpus so a change looks good is the same circularity in reverse.
-- `kernel/implication/escalate` — a model is consulted only when the keyword map is silent (construct-4jq). The deterministic pass runs first and unescalated, so the common case does no I/O and costs nothing. Escalation is scoped to the one failure that actually breaks the spine: a partially-implicated outcome still queues tasks and still reaches a human, but an outcome implicating NOTHING queues nothing and tells the user their outcome touched no domain, which is a confident wrong answer. The namer is injected exactly like Paths and the clock, so the kernel imports no adapter and knows no vendor. It cannot invent: a named domain outside the catalog is discarded, a naming with no stated reason is suppressed on the same bar the keyword path uses, and a namer that throws degrades to silence rather than to a guess. How an implication was reached travels with it (`inferredBy`), and an escalated one cites the model's stated reason, because a model-stated inference is no more arguable-with than a keyword-derived one unless it says why.
-- A third outcome corpus (`tests/kernel/implication/fixtures/fresh-outcomes.json`), and the number that motivated the above. `labeled-outcomes.json` was written alongside the catalog and scores 0.000; `held-out-outcomes.json` was written to escape that and scored 0.632 until construct-gsf tuned the catalog to 0.026, at which point it stopped being held out. Ten outcomes authored during the Phase 2 dogfood, before reading the keyword lists, score 0.400 against a 0.15 target. The gap between 0.026 and 0.400 is the tuning, not the map. The corpus is committed in an explicitly BURNED state and its miss rate is reported rather than enforced — enforcing it would be a standing instruction to tune against it, which is exactly how the held-out set was spent. Closing the remaining gap needs an approach whose accuracy does not depend on dictionary coverage; adding the missing words would be the third turn of the same circularity.
-- `construct outcome --escalate` — the escalation seam, wired so silence actually escalates in a real run (construct-2fu). `kernel/implication/escalate` shipped tested and measured but nothing called it, so an outcome implicating nothing still queued nothing. Four decisions were made explicitly rather than absorbed into the wiring. **Escalation is opt-in, never opt-out:** recording an outcome stays free and pure, because a model charge at the moment a user writes down an intention is the least expected charge in the product; when the keyword map is silent the CLI prints the exact `--escalate` command, so the dead end becomes a signposted choice instead of a wall — the stall is fixed without spending the user's money for them. **`outcome` grows the same `--host`/`--model`/`--binary` flags as `work`**, and supplying one without `--escalate` is a usage error rather than a silent no-op, because a flag that is quietly ignored is a flag that lies. **The cache is the store, not a per-process Map** (schema version 4, additive): the same outcome does not pay twice across invocations, which is the only place "pay once" was ever going to matter. It is write-once and guarded by a trigger — an escalated implication cites a model's stated reason, and evidence that can be quietly rewritten is not evidence. A cached miss is cached too, so the expensive failure is not the one case that re-pays every run. **How an inference was reached is on the record twice:** an escalated run writes an `implication-escalated` entry naming the host consulted (whether or not it named anything — an escalation that cost money and produced silence is exactly the entry a user needs), and every `domain-implicated` detail carries `inferredBy`, which `construct log` surfaces on the line. Keyword entries stay unannotated so the free path never advertises a cost it did not pay. The namer itself is a host-layer adapter (`hosts/namer.ts`) written against the `HostAdapter` seam rather than against a vendor, so both hosts get escalation from one implementation; every failure path throws, because escalate.ts turns a throw into honest silence while an empty return would claim the model considered the catalog and named nothing. Demonstrated on a real run against a free local model: "A journalist asked whether our recycling claim is accurate" — silent to keywords — escalated to `marketing-claims` with a stated reason and queued a task, and the repeat of the same outcome was served from the store in 4.5s against the first run's 86s, with no model call. That is the `marketing-claims` miss class construct-4jq recorded, reached without adding a single keyword.
-- `kernel/brief` — the brief schema, and dispatcher satisfaction of what a brief declares it needs. A role states its requirements; the dispatcher either satisfies them or the brief does not go out. This is what stops a role being asked to work from context nobody checked it had.
-- `kernel/run/coordinator` — the bounded run coordinator: dispatch at a chosen concurrency, per-task rows in SQLite, leases with recovery of tasks an earlier process abandoned, idempotency, and a global spend ceiling enforced on host-reported cost. The ceiling is total recorded spend on the machine, not per invocation — ten runs of nine dollars is exactly what a per-run cap misses. A host that reports no cost is called out rather than counted as free, because saying "under the ceiling" about spend nobody measured is the claim commitment 15 exists to forbid. Not a pool: durability, recovery and deduplication live in the task rows, where they survive the process dying.
-- `kernel/run/accountability` — the work log answers what was reviewed, what was flagged, and what needs a licensed human. A tax or legal deliverable comes back marked issue-spotting only, naming the profession whose review it still needs (commitment 12).
-- `kernel/run` decision inbox — roles that disagree produce one framed decision rather than a silent winner. Both positions are shown with their citations, an uncited stance is marked `[unverified]`, and nothing recommends. The framing is the product; arbitrating between two domains is the user's call.
-- `kernel/capabilities` + `kernel/run/rolewrite` — per-role capability tokens (commitment 14). A role's token is a signed bearer string scoped to one run and one task, granting draft submission and work-log append and nothing else. There is no argument that widens the grant set: adding a third grant is a code change with a reviewer attached. Completion state stays derived rather than set, so there is no setter for a role under completion pressure to reach.
-- `kernel/completion` — the twelve-rung production ladder and the draft/challenged/final reliance axis, settled as two ladders measuring different things rather than one reconciled into the other. Production evidence (what has been done to a deliverable, can it be re-verified) is not reliance (has it been adversarially challenged, may anyone act on it yet). Nothing maps between them, and pretending otherwise is how a deliverable that survived no challenge reads as finished.
-- The spine, wired into the CLI: `construct outcome` records what you want and queues the work, `construct work` dispatches it to a host, `construct log` reads back the append-only record, `construct inbox` shows what needs you, `construct decide` resolves it. Five commands, one substrate.
-- `scripts/hooks/repo-gate.mjs` — runs the same npm scripts CI runs and prints the failing check's own output, at the point the defect is written rather than after the push. It never blocks: exit is 0 on every path, including the ones where the gate itself cannot run (a missing toolchain is reported as unrunnable, not as a defect). The predecessor's crashing hook wedged whole sessions, which taught everyone to disable hooks, which left no gate at all — a gate people turn off is worth less than one that only talks.
-- `hosts/claude` — the second host adapter, and therefore the first proof that host independence is real rather than asserted: `construct work --host=claude` runs the same tasks through the Claude Code CLI (`claude -p --output-format json`), pinned and conformance-probed like OpenCode (`npm run probe:claude`; costs ~$0.02, unlike the free local OpenCode probe, and says so). A structural parity gate (tests/hosts/parity.test.ts) fails by name if either host's deliverable stops answering the questions the other's answers. Capturing the real envelopes immediately earned its keep, again: on the pinned CLI, `--model` is a preference, not a constraint — an unknown model name was silently served by the opus default at thirteen times the requested tier's price. The deliverable now carries `modelRequested`/`modelRan`, and kernel accountability flags the mismatch as a `model-drift` concern in the work log rather than trusting the flag. On this host the spend ceiling genuinely binds: cost arrives as real dollars with a positive turn count, not as the zero-out-of-zero a local model reports.
-- The role write surface, served over MCP (`construct role-serve`) with a capability token minted per dispatch — commitment 14's missing half. The coordinator now mints a token scoped to exactly one run and task on every dispatch, expiring with the task's own lease, and delivers it as environment for the role's serving process (`kernel/run/roleenv.ts`) — never through the assignment text, which crosses into the host as an argv and lands in its transcript store. The model-side tools (`submit_draft`, `append_work_log`) carry no credential, run, or task arguments at all: the serving process attaches all three on the kernel side of the stdio boundary, so a role cannot leak, retype, or redirect what it never holds. The signing secret lives next to the store, created private on first dispatch (`kernel/capabilities/secretfile.ts`); a process that only verifies can never invent one, so a misconfiguration reads as one line instead of an endless stream of forgery denials. Repeated denials are recorded un-collapsed on purpose: the flood is the evidence, and the lease-bound expiry caps the window. The Claude host now launches that server (see below), so the surface is reachable; the OpenCode side is not wired yet, and until a host wires it a role there has no write surface, which is safe rather than broken.
-
-### Fixed
-- Isolating construct's state no longer blinds a host to its own configuration (construct-wl8). Both adapters spawned their host by inheriting `process.env` wholesale, and the hosts resolve their own directories from the same XDG variables construct does — so pointing construct at a scratch state dir the documented way silently re-pointed the HOST's provider registry and credentials at that same empty directory. Measured: `construct work --host=opencode --model=ollama/qwen3.5:4b` failed every task with "Model not found: ollama/qwen3.5:4b" while the model existed and `opencode models` listed it; the message named the model, which was correct, rather than the environment, which was the cause. Adapters now hand the host a deliberately-chosen environment (`hosts/environment.ts`) with those variables dropped, the same discipline `hosts/claude/mcpconfig.ts` already applies to the role environment: decide what crosses the boundary instead of letting everything cross by default. All four are dropped rather than only `XDG_CONFIG_HOME`, because OpenCode keeps provider auth under `XDG_DATA_HOME` — the original measurement called data isolation harmless only because it was taken on a local model that needs no auth. Dropping rather than rewriting is the honest operation: once construct is launched with the variable set, nobody recorded what it "should" have been, and dropping makes the host fall back to exactly the configuration it would have read had construct never been isolated. `CONSTRUCT_HOST_INHERIT_XDG` puts the host back under the isolation for anyone whose whole shell genuinely runs under a custom XDG root. Verified as a controlled pair on a real run, not asserted: with all four isolated, the previously-failing command now settles 2 of 2 tasks, and the same run with the escape hatch on fails 2 of 2 with the original "Model not found". The host behavior it works around is now a named, probed expectation (`provider-registry-follows-xdg-config-home`), which the probe checks as a pair — the ambient root must list models AND an empty one must list fewer — because checking only the empty root would pass vacuously on a machine with no providers registered at all.
-- The store opened without a busy timeout, so the moment two processes legitimately write it at once — a coordinator settling tasks while a role's write surface appends — the second writer would throw SQLITE_BUSY instead of waiting the few milliseconds the first needs to commit.
-- The OpenCode adapter's invocation timeout could silently never fire. The timer was `unref`'d, so on an otherwise idle event loop it did not hold the loop open and never ran — turning the timeout into a suggestion and letting `invoke()` hang forever, which is the exact situation a timeout exists for.
-- A store the CLI could not open crashed with a Node stack trace naming `node:sqlite`, and `construct doctor` reported a state dir it could not write as healthy. `openStore` now raises a typed `StoreUnavailableError` carrying the path and a reason in words for every way the environment can refuse it — unwritable directory, full disk, a file that is not a database, a future schema — and the CLI turns exactly that class into one line. Every other throw keeps its stack, because a defect that reads as a tidy one-liner is a defect nobody reports. `doctor` gained a `store` check that asks whether the store would open without creating it as a side effect of being asked.
-- A cold OpenCode data dir could fail a real task. The first thing to open OpenCode's database migrates it, and that first open is unreliable — measured both ways on the pinned version: two concurrent runs lose on `PRAGMA journal_mode = WAL`, and a single run alone lost on `CREATE TABLE project`. `init()` now spends a disposable `opencode stats` on the migration instead, which reads the same database and calls no model. Warming is best-effort; when it does not confirm, a first-run gate arms so at most one invocation meets a cold database.
-
-### Context
-This repository supersedes `construct-legacy` (the v2 codebase, archived). See STRATEGY.md for the rebirth rationale and the full phase plan.
+The first published build of the 3.0.0 line, released through npm trusted
+publishing (OIDC) with a provenance attestation and no long-lived token.

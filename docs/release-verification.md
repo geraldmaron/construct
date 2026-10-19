@@ -77,8 +77,12 @@ an injected source is rejected with no observed tool use or fixture changes.
 Each 180-second-bounded invocation uses the existing subscription and the
 version-pinned read-only reviewer. Unsupported profiles fail; no fallback,
 API key, model-made success flag or arbitrary command substitutes for evidence.
-Run `npm run release:live` outside CI after freezing runtime and invocation
-code. It retains full prepared bundles, native public observations and failures.
+Run `npm run release:live -- --reviewer-model=<model>` outside CI after
+freezing runtime and invocation code; the manifest records that model as
+`reviewerModel`, and the gate holds every case to it. A release that runs no
+native review passes `--without-native-review` instead and says so in its
+manifest. It retains full prepared bundles, native public observations and
+failures.
 
 `npm run release:check -- --tier=experimental-alpha` validates the exact
 package version, candidate surface digest, seven-day evidence freshness,
@@ -108,94 +112,12 @@ remain unchanged and available. Experimental release cannot move `latest`.
 
 ## Live intake eval
 
-For broader readiness qualification, `npm run release:check -- --tier=qualified`
-requires the unchanged full-scope `evals:live -- check --cut` contract. Ordinary
-`npm run evals:live -- check` still accepts a passing smoke or full record.
-The experimental-alpha exception below is a separate release tier, not a full
-record or a relaxation of these qualification standards. The
-record names each host, its version, the model, and the hosts left
-unmeasured. `check` passes a smoke or full record. It fails when
-`evals/intake/intake-live.json` is absent or is a baseline-scope record,
-when the corpus or the model-facing text changed since it was recorded, when
-a gated cell is missing, or when a verdict fails. Claude Code and Codex are
-always measured; only Cursor, VS Code, OpenCode, and Bob may be listed as
-unmeasured.
-
-The full runs behind a qualifying record are a release step, driven through
-authorized host access on subscriptions only. No current full qualifying record
-exists. Diagnostic trials and finite experimental controls do not substitute
-for that matrix; `check --cut` fails until its required evidence is present.
-
-The corpus, `evals/intake/intake.json`, is committed, and the suite checks
-every gold reading with classify_request's own validator. Two model families
-labeled only its 48 cases from the typed-intake design work, which stay in
-the tune split. The routing cases and the authored cases carry Claude's
-labels alone, so `agreed` is false on them, and exact kind and
-blocking-question agreement are scored only on agreed cases. Before the
-first full record, run `node scripts/evals-live.mjs label --labeler=codex`,
-widen each case's accept sets where Codex reads it differently, and set
-`agreed` where the two families match on kind and deliverable kind. The
-labels land in `.tmp-evals/labels/`; merging them is a hand edit, and it
-changes the corpus digest, so it comes before the runs.
-
-The smoke subset below makes a record `check` accepts: the two smoke cells,
-each against the candidate and both baselines. The staging baseline is a
-`git archive` of 79562bbc with this tree's `node_modules` linked in; the
-alpha.25 baseline is the published tarball, extracted.
-
-```bash
-mkdir -p .tmp-evals/servers/alpha.25
-git archive --prefix=staging-79562bbc/ 79562bbc | tar -x -C .tmp-evals/servers
-ln -s "$PWD/node_modules" .tmp-evals/servers/staging-79562bbc/node_modules
-npm pack @geraldmaron/construct@3.0.0-alpha.25 --pack-destination .tmp-evals/servers
-tar -xzf .tmp-evals/servers/geraldmaron-construct-3.0.0-alpha.25.tgz -C .tmp-evals/servers/alpha.25 --strip-components=1
-STAGING=.tmp-evals/servers/staging-79562bbc
-ALPHA=.tmp-evals/servers/alpha.25
-
-node scripts/evals-live.mjs preflight --host=claude-code
-node scripts/evals-live.mjs preflight --host=codex
-node scripts/evals-live.mjs run --host=claude-code --model=haiku --condition=crowded --split=test
-node scripts/evals-live.mjs run --host=claude-code --model=haiku --condition=crowded --split=test --server=$STAGING --label=baseline:staging-79562bbc
-node scripts/evals-live.mjs run --host=claude-code --model=haiku --condition=crowded --split=test --server=$ALPHA --label=baseline:alpha.25
-node scripts/evals-live.mjs run --host=codex --model=gpt-6-astra --condition=default --split=test
-node scripts/evals-live.mjs run --host=codex --model=gpt-6-astra --condition=default --split=test --server=$STAGING --label=baseline:staging-79562bbc
-node scripts/evals-live.mjs run --host=codex --model=gpt-6-astra --condition=default --split=test --server=$ALPHA --label=baseline:alpha.25
-node scripts/evals-live.mjs record --scope=smoke
-npm run evals:live -- check
-```
-
-A full record needs every gated cell, each run the same three ways
-(candidate, staging, alpha.25), three runs per test case:
-
-- Claude Code on `haiku`, `sonnet`, and `opus`, each in `default`,
-  `crowded`, `no-tool-search` (the crowded stubs with tool search off, the
-  setting where Haiku sent a remember request to a competing stub),
-  `fresh-init`, and `injected`.
-- Codex on `gpt-6-astra` in `default`, `crowded`, `fresh-init`, and
-  `injected`. Tool search is a Claude Code setting, so Codex has no
-  `no-tool-search` cell.
-- Cursor on `composer-2.5` in `default` and `crowded` when the person opts
-  in, because its runs use the person's own quota.
-
-This is the live-eval matrix plus the `fresh-init` and `injected`
-conditions on Claude Code and Codex. Every candidate cell needs both
-baseline cells for the same host, model, and condition, and every cell
-holds exactly three runs of each test case; `check` names any cell that
-does not. A run still invalid after its rerun leaves its case incomplete,
-and an incomplete case keeps the verdict from passing. Then run
-`node scripts/evals-live.mjs e2e --host=claude-code --model=sonnet`,
-`node scripts/evals-live.mjs record --scope=full`, and
-`npm run evals:live -- check --cut`. Baseline cells carry over from an
-earlier record while the corpus is unchanged; candidate cells carry over
-only while the model-facing text is unchanged too. When two batches hold
-the same cell, `record` refuses and asks for `--batches`.
-
-Cursor runs need `--allow-cursor-state`, the person's opt-in, because they
-touch `~/.cursor`. Until `preflight --host=cursor` passes its isolation
-checks (only Construct and the stubs are visible, and a wired tool the
-allow list leaves out is denied), Cursor runs skip outward-act cases and
-refuse the injected condition. Traces stay in `.tmp-evals/`, which git
-ignores.
+The qualified tier rests on a live intake record that only the maintainer
+holds. The skill evals, the intake corpus and its live record, and the
+harness that runs them are maintainer-local work in an ignored `evals/`
+folder, never in git or the package. `npm run release:check` at the
+qualified tier loads that harness and says so when it is absent; the
+experimental-alpha tier below does not use it.
 
 ## Live host conformance
 
