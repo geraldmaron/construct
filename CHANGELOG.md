@@ -4,7 +4,11 @@ Each entry lists what a release changed that still describes Construct as it
 is now. Changes later removed or replaced are left out, and so are upgrade
 steps for releases an install can no longer upgrade from.
 
-## Unreleased
+## 3.0.0-alpha.33 — 2026-10-19 (experimental)
+
+Evals leave the package and the repository's history, Construct carries no
+compatibility code for earlier releases, and hosts that defer MCP tools find
+its entry tools up front.
 
 ### Breaking
 
@@ -16,8 +20,14 @@ steps for releases an install can no longer upgrade from.
   the format 6 upgrade drops that id map.
 - The former review and authoring workflow ids no longer resolve. Start
   `review` or `authoring` and name the domain.
-- Compatibility code for earlier releases is removed, including the prune
-  of eval files an earlier release planted.
+- Compatibility code for earlier releases is removed. A `project.json` in a
+  format this version does not read is refused by its stamp, and
+  `construct reset` shows what it would remove.
+- A workflow manifest refuses any top-level field the loader does not read.
+- The native semantic reviewer keeps only its app-server profile. A reviewed
+  release names its reviewer model in the manifest (`reviewerModel`), and the
+  release gate holds every reviewed case to it; no model is pinned in code.
+- Work exports carry their reason graph; a snapshot without one is refused.
 
 ### Changed
 
@@ -31,6 +41,8 @@ steps for releases an install can no longer upgrade from.
   tools.
 - The Hermes Agent entry sets `timeout: 120`, so a question shown to the
   person is not cut off.
+- Delegated workers run read-only for every role; an implementation worker
+  returns a diff that Construct applies.
 - Claude Code's grounding hook runs on MCP tool calls only (`mcp__.*`),
   not on every tool. `construct doctor` reports an install with the old
   `*` matcher as stale, and `construct init --client=claude-code` repairs
