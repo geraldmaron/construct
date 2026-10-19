@@ -5,7 +5,7 @@ It stores admitted context and work, resolves versioned methods and workflows,
 and keeps delivery, verification, review and your acceptance separate. Your host
 provides the model, tools and sandbox.
 
-**Experimental: 3.0.0-alpha.32.** Available under npm’s `alpha` tag; `latest`
+**Experimental: 3.0.0-alpha.33.** Available under npm’s `alpha` tag; `latest`
 remains on the 2.x line. Installation and static host wiring are tested;
 broad host effectiveness, canonical native isolation and measured skill benefit
 remain unqualified. See [verification and limits](#verification-and-limits).

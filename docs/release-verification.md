@@ -20,7 +20,7 @@ documentation examples, the scenario tests, the drift fixtures, and the
 broker protocol. `smoke` packs the package, installs it into a scratch
 project, and runs init, status, doctor, config, source add and refresh,
 workflow run, run show, inbox, run cancel, serve over stdio, skill install
-and verify, reset, and a refused retired command from packaged bytes under
+and verify, reset, and a refused unknown command from packaged bytes under
 an isolated home, and proves no per-user database appears.
 
 ## Cutting an alpha

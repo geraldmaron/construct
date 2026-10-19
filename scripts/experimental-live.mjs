@@ -75,7 +75,7 @@ async function main() {
   };
   if (withoutReview)
     manifest.limitations.hostSupport =
-      'No native semantic reviewer ran for this alpha: Codex is out of use, and no other host has a qualified held-text reviewer profile. Semantic correctness of managed deliverables is unreviewed; static wiring is not live parity.';
+      'No native semantic reviewer ran for this alpha: the Codex held-text profile has no model qualified for it, and no other host has a qualified held-text reviewer profile. Semantic correctness of managed deliverables is unreviewed; static wiring is not live parity.';
   // These observations are deliberately failures. They preserve the current product limitation.
   for (const [path, summary] of [
     [

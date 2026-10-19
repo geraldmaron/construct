@@ -2,7 +2,7 @@
 
 This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
-alpha.32 code; static wiring and structural checks are not broad effectiveness
+alpha.33 code; static wiring and structural checks are not broad effectiveness
 qualification. [Release notes](../CHANGELOG.md) carry measured limits.
 [`internal/`](internal/) holds the release evidence the release gate checks and
 the recorded skill runs, kept apart from the guides. A lint holds

@@ -1,0 +1,34 @@
+{
+  "format": "construct-experimental-alpha-v1",
+  "tier": "experimental-alpha",
+  "version": "3.0.0-alpha.33",
+  "surfaceDigest": "b3de2d664da9cd55858d05ed319732bb418ec5c045687977c26942babc39a002",
+  "broadQualification": false,
+  "createdAt": "2026-10-19T16:19:53.481Z",
+  "limitations": {
+    "freshUser": "Fresh Codex and Cursor ordinary-prompt journeys are inconsistent: artifact correctness and managed completion remain unqualified; retained failures are not passes.",
+    "hostSupport": "No native semantic reviewer ran for this alpha: the Codex held-text profile has no model qualified for it, and no other host has a qualified held-text reviewer profile. Semantic correctness of managed deliverables is unreviewed; static wiring is not live parity.",
+    "sourceAdapters": "Production API/MCP traversal, unknown schemas, complete access-scope coverage and changed-source outcomes are not generally qualified by these local synthetic cases.",
+    "composition": "Versioned method bindings and local qualification controls do not establish actual conditional specialist composition for arbitrary outcomes.",
+    "executor": "Persisted schedules require a real provisioned executor after session exit; the full timing, retry, idempotency and permission fault matrix remains open.",
+    "fullQualification": "The full live intake matrix remains absent. Claude subscription authentication and canonical Codex isolation are blocked. Experimental evidence cannot support broad readiness, stable or full qualification claims."
+  },
+  "cases": [],
+  "freshUserObservations": [
+    {
+      "path": "docs/internal/releases/observations/fresh-cursor-semantic-assessment.json",
+      "sha256": "66a11a5b0bc9edf3b0d2e800ec56354cc519275e76595b2374ad1357bd77473c",
+      "summary": "Latest bounded Cursor artifacts failed the frozen independent rubric and its managed lifecycle remained unfinished; phase-scoped support judgments have limited coverage."
+    },
+    {
+      "path": "docs/internal/releases/observations/fresh-codex-incomplete-observation.json",
+      "sha256": "a4d3533a96172cbd100c5b478c2535e8851d05bcf77f7a6c3dfb350fc1e0b47b",
+      "summary": "Latest Codex initial phase timed out without an artifact, and the changed phase had no result or completion receipt; no additional timeout or success is inferred."
+    }
+  ],
+  "nativeReview": {
+    "status": "unavailable",
+    "decision": "RESEARCH-DECISIONS §16",
+    "reason": "No native semantic reviewer was run for this alpha: the held-text reviewer profile needs a Codex model the maintainer has chosen and qualified for it, and none was. No deliverable this alpha validates carries a semantic-review verdict."
+  }
+}
