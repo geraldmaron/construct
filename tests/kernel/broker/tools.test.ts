@@ -441,3 +441,29 @@ test('bootstrap keeps the requested lifecycle ahead of setup, without giving a h
     }
   }
 });
+
+test('skills file returns one listed file of a skill as text, and refuses any path show does not list', async () => {
+  const fx = brokerFixture();
+  try {
+    const shown = (await call(fx, 'skills', { action: 'show', id: 'decision-framing' })) as { files: string[] };
+    assert.ok(shown.files.includes('references/sources.md'));
+    const read = (await call(fx, 'skills', { action: 'file', id: 'decision-framing', path: 'references/sources.md' })) as {
+      path: string;
+      text: string;
+    };
+    assert.equal(read.path, 'references/sources.md');
+    assert.ok(read.text.length > 0);
+    for (const path of ['../construct/SKILL.md', '/etc/hosts', 'references/missing.md', 'references'])
+      await assert.rejects(call(fx, 'skills', { action: 'file', id: 'decision-framing', path }), ToolInputError, path);
+    await assert.rejects(call(fx, 'skills', { action: 'file', id: 'decision-framing' }), ToolInputError);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('only the entry tools ask a deferring host to load them upfront', () => {
+  const upfront = TOOLS.filter((t) => (mcpTool(t)._meta as Record<string, unknown> | undefined)?.['anthropic/alwaysLoad'] === true).map(
+    (t) => t.name,
+  );
+  assert.deepEqual(upfront.sort(), ['bootstrap', 'classify_request']);
+});

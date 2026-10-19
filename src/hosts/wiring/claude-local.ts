@@ -178,8 +178,10 @@ function hostHookCommand(stateDir: string, host: 'claude-code', event: 'session-
 
 /** Claude Code event → Construct grounding hook event, with the tool matcher for tool events. */
 export const GROUNDING_HOOKS: readonly { readonly hostEvent: string; readonly event: string; readonly matcher?: string }[] = [
-  // Every tool: a Jira read can come from any connector's tool name. The handler ignores Construct's own tools.
-  { hostEvent: 'PostToolUse', event: 'post-tool', matcher: '*' },
+  // MCP tools only: a read of an outside system reaches Claude Code through a connector, under any
+  // server's name. Built-in tools never carry one, and each call here starts a process and opens the
+  // project, so the hook stays off them. The handler ignores Construct's own tools.
+  { hostEvent: 'PostToolUse', event: 'post-tool', matcher: 'mcp__.*' },
   { hostEvent: 'Stop', event: 'stop' },
   { hostEvent: 'SessionStart', event: 'session-start' },
 ];

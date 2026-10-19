@@ -82,7 +82,12 @@ export function loadDelegationConfig(configDir: string): DelegationConfig {
   };
 }
 
-export function commandFor(executor: Executor, model: string, _role: Role, directory: string): string[] {
+/**
+ * The executor's command line. It is the same for both roles: every worker
+ * runs read-only in its snapshot, an implementation worker returns a diff that
+ * Construct applies, and the runtime holds each role to its own output.
+ */
+export function commandFor(executor: Executor, model: string, directory: string): string[] {
   if (executor === 'codex')
     return [
       'exec',
@@ -203,7 +208,7 @@ export async function executorStatus(
     const receipt = JSON.parse(readFileSync(configured.receipt, 'utf8')) as Record<string, unknown>;
     const digest = createHash('sha256').update(readFileSync(binary)).digest('hex');
     const argsDigest = createHash('sha256')
-      .update(JSON.stringify(commandFor(executor, configured.model, role, '<checkout>')))
+      .update(JSON.stringify(commandFor(executor, configured.model, '<checkout>')))
       .digest('hex');
     const version = await probe(binary, ['--version'], env);
     const roles = receipt.roles as Record<string, Record<string, unknown>> | undefined;

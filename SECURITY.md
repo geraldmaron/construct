@@ -24,4 +24,15 @@ the `alpha` dist-tag. Nothing in the alpha line is promised stable.
 - The state store and the project files Construct writes.
 
 Vulnerabilities in an agent host (Claude Code, Cursor, VS Code, OpenCode,
-Codex, IBM Bob) belong with that host's maintainers.
+Codex, IBM Bob, Hermes Agent) belong with that host's maintainers.
+
+## How outside text reaches a model
+
+Everything Construct hands a host that came from outside the person (context
+search hits, another agent's handoff or result, a recorded source
+observation) arrives wrapped as `{origin, trust: "data", content}`. When that
+content holds an instruction-shaped passage (an override of earlier
+instructions, a claimed role or approval, an exfiltration request, markup
+that hides text, or invisible characters), the wrapper adds `flags`, each
+naming the family, where it sat, and the passage. Flagging never removes or
+rewrites the content; the text stays data either way.

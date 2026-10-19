@@ -346,7 +346,9 @@ one Construct project: `init` refuses to point an entry that already serves
 another project at this one, and says to run Hermes for this project with
 its own `HERMES_HOME`. The entry marks `construct` as `trust: untrusted`, so
 Hermes asks before every Construct tool that changes something and runs the
-read-only ones without asking. Construct edits only its own
+read-only ones without asking, and sets `timeout: 120`, the same per-call
+budget Codex gets, so a step that waits on the person outlasts that wait
+on every host. Construct edits only its own
 `mcp_servers.construct` block and refuses a file it cannot read safely (tabs,
 a byte-order mark, several documents, an indented or non-key top level, the
 servers written inline, or a `construct` entry with nested settings) rather
@@ -407,11 +409,10 @@ the project. After a Node upgrade the hooks do nothing until a server starts
 and repoints it, and `construct doctor` reports them stale until then.
 Every hook exits 0 and never blocks a session on its own failure, and
 `CONSTRUCT_HOOKS=off` silences them. Re-running `init` rewrites a hook that
-differs from what it writes now, and moves hooks an earlier release put in
-the shared `.claude/settings.json` out of it, leaving your own hooks there.
-`construct doctor` reports whether the hooks are installed, and fails when
-they are stale: old ones still in `.claude/settings.json`, an entry that
-differs, or a launcher that names a Node or Construct that is gone.
+differs from what it writes now and never writes the shared
+`.claude/settings.json`. `construct doctor` reports whether the hooks are
+installed, and fails when they are stale: an entry that differs, or a
+launcher that names a Node or Construct that is gone.
 `construct status` shows over the last week how many answers were checked,
 how many unchecked ones were caught, how many host reads were recorded, and
 how many checks were waived.

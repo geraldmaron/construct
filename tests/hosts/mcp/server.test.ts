@@ -591,3 +591,24 @@ test("a lazy server hears the host's roots before it binds, so the project opens
     fx.cleanup();
   }
 });
+
+test('the instructions a host caches are the same bytes on every initialize, before and after tool calls', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const instructions = async (id: number) =>
+      ((await handle({ jsonrpc: '2.0', id, method: 'initialize', params: {} })) as { result: { instructions: string } }).result
+        .instructions;
+    const first = await instructions(1);
+    await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
+    await handle({
+      jsonrpc: '2.0',
+      id: 3,
+      method: 'tools/call',
+      params: { name: 'remember', arguments: { kind: 'note', text: 'cache stays' } },
+    });
+    assert.equal(await instructions(4), first);
+  } finally {
+    fx.cleanup();
+  }
+});

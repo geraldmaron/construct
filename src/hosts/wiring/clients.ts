@@ -274,13 +274,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     format: 'yaml',
     serversKey: 'mcp_servers',
     documentation:
-      'https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp (user-level ~/.hermes/config.yaml under mcp_servers; HERMES_HOME moves it; trust: untrusted asks before any tool without readOnlyHint)',
+      'https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp (user-level ~/.hermes/config.yaml under mcp_servers; HERMES_HOME moves it; trust: untrusted asks before any tool without readOnlyHint; timeout is per tool call, 300 seconds unless set)',
     entry: (launch, projectRoot) => ({
       command: launch.command,
       args: serveLine(launch, 'hermes', `--project=${projectRoot}`),
       cwd: projectRoot,
       trust: 'untrusted',
       enabled: true,
+      timeout: 120,
     }),
     bound: boundTo('hermes'),
   },

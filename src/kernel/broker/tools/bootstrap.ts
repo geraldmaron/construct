@@ -19,6 +19,7 @@ export const bootstrap = define<Record<string, never>, unknown>({
     'Call once at the start of a session for the project binding, how complete its setup is, open questions, source and registry health, what this session may do, open decisions, active runs and the recommended next action. Ask project_context for details.',
   surface: 'both',
   readOnly: true,
+  entry: true,
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   validate(raw) {
     closed(raw, this.inputSchema);

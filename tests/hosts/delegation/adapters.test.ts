@@ -6,17 +6,15 @@ import { authentication, commandFor, executorStatus, loadDelegationConfig, parse
 import { safeEnvironment } from '../../../src/hosts/delegation/workspace.ts';
 import { fakeExecutor, repository } from './support.ts';
 
-test('all adapters use native structured execution without permission bypass or fallback', () => {
+test('all adapters use native structured execution, read-only for every role, without permission bypass or fallback', () => {
   for (const executor of ['claude', 'codex', 'cursor'] as const) {
-    for (const role of ['implement', 'review'] as const) {
-      const args = commandFor(executor, 'explicit-model', role, '/fixture/checkout');
-      assert.ok(args.includes('explicit-model'));
-      assert.doesNotMatch(args.join(' '), /--bare|--force|--yolo|--trust|--approve-mcps|dangerously|bypassPermissions|--fallback/);
-    }
+    const args = commandFor(executor, 'explicit-model', '/fixture/checkout');
+    assert.ok(args.includes('explicit-model'));
+    assert.doesNotMatch(args.join(' '), /--bare|--force|--yolo|--trust|--approve-mcps|dangerously|bypassPermissions|--fallback/);
   }
-  assert.ok(commandFor('claude', 'fixture-model', 'review', '/fixture').includes('Read,Glob,Grep'));
-  assert.ok(commandFor('codex', 'fixture-model', 'review', '/fixture').includes('read-only'));
-  assert.ok(commandFor('cursor', 'fixture-model', 'review', '/fixture').includes('ask'));
+  assert.ok(commandFor('claude', 'fixture-model', '/fixture').includes('Read,Glob,Grep'));
+  assert.ok(commandFor('codex', 'fixture-model', '/fixture').includes('read-only'));
+  assert.ok(commandFor('cursor', 'fixture-model', '/fixture').includes('ask'));
 });
 
 test('subscription identity must be proven; unknown and API modes do not qualify', () => {

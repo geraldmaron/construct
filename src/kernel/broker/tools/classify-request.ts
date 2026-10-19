@@ -21,6 +21,7 @@ export const classify = define<Record<string, unknown>, unknown>({
   description: CLASSIFY_DESCRIPTION,
   surface: 'interactive',
   readOnly: true,
+  entry: true,
   inputSchema: INTAKE_SCHEMA,
   validate(raw) {
     try {

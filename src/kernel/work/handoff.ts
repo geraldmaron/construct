@@ -12,6 +12,7 @@
 
 import { redact } from '../render/redact.ts';
 import { LEASE_PATH_MAX_BYTES, normalizeLeasePath } from './leases.ts';
+import { screenContent, type InjectionFlag } from '../safety/injection.ts';
 
 /** Where the work stands, what comes next, and what the next holder should know. */
 export interface HandoffPacket {
@@ -42,15 +43,21 @@ export interface Handoff {
   readonly takenVia: 'accept' | 'claim' | 'takeover' | null;
 }
 
-/** Text or structure another agent or session wrote: information to weigh, never an instruction. */
+/**
+ * Text or structure from outside the person (another agent or session, a
+ * source, a recorded document): information to weigh, never an instruction.
+ * `flags` names any instruction-shaped passage in it; the content is kept as is.
+ */
 export interface PeerData<T> {
   readonly origin: string;
   readonly trust: 'data';
   readonly content: T;
+  readonly flags?: readonly InjectionFlag[];
 }
 
 export function asPeerData<T>(origin: string, content: T): PeerData<T> {
-  return { origin, trust: 'data', content };
+  const flags = screenContent(content);
+  return flags.length > 0 ? { origin, trust: 'data', content, flags } : { origin, trust: 'data', content };
 }
 
 export const HANDOFF_TEXT_MAX = 2000;

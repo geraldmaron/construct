@@ -5,8 +5,8 @@
  * loads only when a step selects the skill.
  */
 
-import { existsSync, readdirSync, readFileSync, lstatSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, lstatSync, realpathSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { listShippedSkills, readShippedSkill, type ShippedSkill } from '../skills/bundle.ts';
 import { bundleDigest } from './digest.ts';
 import { SKILL_MANIFEST_FILE, type BundleOrigin, type RegisteredSkill } from './models.ts';
@@ -115,7 +115,16 @@ export function createSkillRegistry(input: SkillRegistryInput = {}): SkillRegist
     file: (id, relativePath) => {
       const s = skills.get(id);
       if (!s || !s.files.includes(relativePath)) return null;
-      return readFileSync(join(s.dir, relativePath));
+      // Read only a regular file that still resolves inside the skill folder; a link swapped in since loading is refused.
+      const path = join(s.dir, relativePath);
+      try {
+        const root = realpathSync(s.dir);
+        const real = realpathSync(path);
+        if (!real.startsWith(`${root}${sep}`) || !lstatSync(path).isFile()) return null;
+        return readFileSync(real);
+      } catch {
+        return null;
+      }
     },
     portableOnly: () => portable,
     problems: () => problems,

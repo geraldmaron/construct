@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { satisfies, highestSatisfying, parseVersion, compareVersions } from '../../../src/kernel/registry/semver.ts';
 import { bundleDigest } from '../../../src/kernel/registry/digest.ts';
@@ -651,19 +651,15 @@ test('the shipped skills and workflows load, agree with their frontmatter, and r
   }
 });
 
-test('a manifest that still lists trigger phrases is refused, so nothing grows a second vocabulary', () => {
-  for (const key of ['activation', 'standDown']) {
+test('a workflow manifest carries only the fields the loader reads, and any other key is refused with the list', () => {
+  for (const key of ['activation', 'standDown', 'aliases', 'legacyDigests', 'whatever']) {
     assert.throws(
-      () => validateSkillManifest(skillManifest('s', '1.0.0', { [key]: ['when asked'] }), 's/construct.skill.json'),
-      new RegExp(`"${key}" is not read; the host model reads the SKILL.md description`),
-    );
-    assert.throws(
-      () => validateWorkflowManifest(workflowManifest('w', '1.0.0', [step('a')], { [key]: ['when asked'] }), 'w/workflow.json'),
-      new RegExp(`"${key}" is not read; a workflow is matched by the deliverable it declares`),
+      () => validateWorkflowManifest(workflowManifest('w', '1.0.0', [step('a')], { [key]: [] }), 'w/workflow.json'),
+      new RegExp(`"${key}" is not a workflow manifest field; the fields are format, `),
+      key,
     );
   }
 });
-
 test('a skill manifest carries only fields something enforces, and any other key is refused with the list', () => {
   for (const key of ['outcomes', 'escalation', 'qualityGates', 'actionTiers', 'deliverableTypes', 'observedOn', 'whatever']) {
     assert.throws(
@@ -850,4 +846,24 @@ test("a validator on a step that does not consume the skill's output does not sa
       ),
     /"skillDependencies\[0\]\.maxTier" is not read; a dependency carries only id and range/,
   );
+});
+
+test('a skill file read follows only a regular file still inside the skill folder', () => {
+  const { root, cleanup } = tmp();
+  try {
+    const dir = writeSkill(join(root, 'project'), 'notes', '1.0.0', { references: { 'a.md': 'inside' } });
+    writeFileSync(join(root, 'outside.md'), 'outside', 'utf8');
+    const skills = createSkillRegistry({ builtinDir: join(root, 'builtin'), projectDir: join(root, 'project') });
+    assert.equal(new TextDecoder().decode(skills.file('notes', 'references/a.md')!), 'inside');
+    rmSync(join(dir, 'references', 'a.md'));
+    symlinkSync(join(root, 'outside.md'), join(dir, 'references', 'a.md'));
+    assert.equal(skills.file('notes', 'references/a.md'), null, 'a file swapped for a link is refused');
+    rmSync(join(dir, 'references'), { recursive: true });
+    mkdirSync(join(root, 'elsewhere'));
+    writeFileSync(join(root, 'elsewhere', 'a.md'), 'outside', 'utf8');
+    symlinkSync(join(root, 'elsewhere'), join(dir, 'references'));
+    assert.equal(skills.file('notes', 'references/a.md'), null, 'a folder swapped for a link is refused');
+  } finally {
+    cleanup();
+  }
 });

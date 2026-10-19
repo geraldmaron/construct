@@ -115,7 +115,7 @@ else {
           role,
           {
             argsSha256: createHash('sha256')
-              .update(JSON.stringify(commandFor(executor, 'fixture-model', role as 'implement' | 'review', '<checkout>')))
+              .update(JSON.stringify(commandFor(executor, 'fixture-model', '<checkout>')))
               .digest('hex'),
             permissionBoundary: true,
             noMcp: true,

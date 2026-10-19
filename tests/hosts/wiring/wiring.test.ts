@@ -219,6 +219,7 @@ test('hermes is wired in its user-level config under HERMES_HOME, names its proj
       cwd: project,
       trust: 'untrusted',
       enabled: true,
+      timeout: 120,
     });
     assert.deepEqual(launchOf('hermes', project, env), {
       command: 'construct',

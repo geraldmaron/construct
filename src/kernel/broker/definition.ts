@@ -98,6 +98,11 @@ export interface ToolDefinition<C, I, O> {
    * key safeguards on MCP's destructiveHint then treat it accordingly.
    */
   readonly destructive?: boolean;
+  /**
+   * The tool a host must see without searching: the entry to every request.
+   * Hosts that defer MCP tools behind a search keep this one loaded.
+   */
+  readonly entry?: boolean;
   readonly inputSchema: JsonSchema;
   validate(raw: Record<string, unknown>): I;
   run(ctx: C, input: I): Promise<O> | O;
@@ -174,5 +179,9 @@ export function mcpTool(def: ToolDefinition<unknown, unknown, unknown>): Record<
     description: def.description,
     inputSchema: def.inputSchema,
     annotations: { title: def.title, readOnlyHint: def.readOnly, destructiveHint: def.destructive === true, openWorldHint: false },
+    ...(def.entry ? { _meta: { [ALWAYS_LOAD]: true } } : {}),
   };
 }
+
+/** The tools/list `_meta` key that asks a host which defers MCP tools to load this one upfront (Claude Code). */
+export const ALWAYS_LOAD = 'anthropic/alwaysLoad';

@@ -138,7 +138,7 @@ export function createDelegationDriver(options: {
       const outcome = await run(
         execution.id,
         configured.binary,
-        commandFor(execution.assignment.executor, configured.model, execution.assignment.role, execution.snapshot.directory),
+        commandFor(execution.assignment.executor, configured.model, execution.snapshot.directory),
         execution.snapshot.directory,
         prompt,
         remaining,
