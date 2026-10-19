@@ -5,9 +5,9 @@ skill, optionally with `references/`, `scripts/`, and `assets/` for long
 templates, helpers, and examples. Beside it, `construct.skill.json` is
 Construct's manifest (id, version, category, capabilities, the highest
 tier it may act at, the validators its deliverable must pass, and
-dependencies: only what the resolver enforces), and `evals/` holds checks of the skill's own text. When a skill
+dependencies: only what the resolver enforces). When a skill
 applies is said once, in the `SKILL.md` description, and the host model
-judges it. A host that reads only `SKILL.md` ignores both.
+judges it. A host that reads only `SKILL.md` ignores the manifest.
 
 ## What's here
 
@@ -126,7 +126,8 @@ Three ways to get a skill into your agent:
 Method folders are designed to be used without the Construct runtime. Dated
 [standalone skill records](../docs/internal/skill-runs/) document earlier trials;
 they do not show the current version works on every host. A recorded run of
-the skill's evals (`scripts/run-skill-evals.mjs`) does, for the host it ran on.
+the skill's evals, which are maintainer-local and never ship, does, for the
+host it ran on.
 
 ## Limits
 

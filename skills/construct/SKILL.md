@@ -12,7 +12,7 @@ description: >-
   plainly and record nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.2.2
+  version: 3.2.3
   source: geraldmaron/construct
 ---
 

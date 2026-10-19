@@ -3,8 +3,7 @@
  * into a host's skills directory byte for byte.
  *
  * A skill folder is SKILL.md plus optional references/, scripts/, assets/,
- * schemas/, and evals/. Planting copies exactly those bytes; verifying
- * compares them. An installed copy that differs is either this package's own
+ * and schemas/. Planting copies exactly those bytes; verifying compares them. An installed copy that differs is either this package's own
  * earlier release of the skill, which planting replaces, or a copy someone
  * changed, which planting leaves alone unless forced. The registry (which
  * resolves versions and digests) builds on this; beyond a SKILL.md's name,
@@ -19,34 +18,9 @@ import { compareVersions, parseVersion } from '../registry/semver.ts';
 
 export const SKILL_FILENAME = 'SKILL.md';
 export const OPERATIONAL_SKILL = 'construct';
-export const SKILL_BUNDLE_DIRS = ['references', 'scripts', 'assets', 'schemas', 'evals'] as const;
+export const SKILL_BUNDLE_DIRS = ['references', 'scripts', 'assets', 'schemas'] as const;
 /** The `metadata.source` every skill this package ships carries in its SKILL.md. */
 export const SHIPPED_SKILL_SOURCE = 'geraldmaron/construct';
-
-/**
- * SHA-256 of every SKILL.md this package shipped for a skill before that
- * skill carried `metadata.source`, by skill name and then version. An
- * installed SKILL.md with exactly these bytes is this package's own release.
- */
-const RELEASES_WITHOUT_SOURCE: Readonly<Record<string, Readonly<Record<string, readonly string[]>>>> = {
-  construct: {
-    '1.0.0': [
-      'b7f447b9a99871b5261d547a97ecca1e1e7363e17300bcd610faaa5fd61ed685',
-      '41655e16db0e7bde773794704a57db457c179fe6d1b8e6c3154ffa616d6685c6',
-    ],
-    '2.0.0': [
-      '4ac07a5eb23ca4c956ef9cb89bcf3745336a9474e734567cb2702e189a8d01c8',
-      'ef60120c2ebd5c5ce60ed2363678b29189821d3a7f6557286ee4e9f4efcacd6c',
-      'e5f6facf477b1508114ee9d8d849f3a384136208ca885a53ca39bd5af358bab9',
-    ],
-    '2.1.0': ['7e18c3aab73d66c66258dbef672bc1364003f210a64d23f184db76c1e69fe70e'],
-    '2.2.0': [
-      '64d4d8fdb421ed089c148f712cf3090e0e221ee272d652f3fe6bba272979ded0',
-      '51b336e795a413bd520553358004c15e271609d1f1b462fe49cf30d5530dd610',
-    ],
-    '2.3.0': ['ae1228d4e6ce6717234399adc9a3c24d45f3c60b03ff5ae7373227f66789fa5b'],
-  },
-};
 
 /** `skills/` beside the package root, whether running from src/ or dist/. */
 export function shippedSkillsDir(): string {
@@ -155,9 +129,9 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
 /**
  * The version of an installed SKILL.md that is this package's own earlier
  * release of `skill`, or null. It must name the same skill, carry a lower
- * version than the one shipped now, and either carry this package's source
- * or be byte-identical to a release that carried none. A copy at the shipped
- * version or later, or from anyone else, is not an earlier release.
+ * version than the one shipped now, and carry this package's source. A copy
+ * at the shipped version or later, or from anyone else, is not an earlier
+ * release.
  */
 function earlierRelease(skill: ShippedSkill, installed: Uint8Array): string | null {
   const fm = frontmatter(decoder.decode(installed));
@@ -166,9 +140,7 @@ function earlierRelease(skill: ShippedSkill, installed: Uint8Array): string | nu
   const wasVersion = parseVersion(was);
   const nowVersion = parseVersion(skill.version);
   if (!wasVersion || !nowVersion || compareVersions(wasVersion, nowVersion) >= 0) return null;
-  if (fm['metadata.source'] === SHIPPED_SKILL_SOURCE) return was;
-  const digest = createHash('sha256').update(installed).digest('hex');
-  return RELEASES_WITHOUT_SOURCE[skill.name]?.[was]?.includes(digest) ? was : null;
+  return fm['metadata.source'] === SHIPPED_SKILL_SOURCE ? was : null;
 }
 
 /** How the installed copy compares with the shipped one. */

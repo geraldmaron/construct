@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "written-voice",
   "title": "Written voice",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "category": "method",
   "owner": "geraldmaron/construct",
   "capabilities": [

@@ -1,7 +1,8 @@
 /**
  * host-cli.mjs — how Construct's scripts drive a real host CLI: the
  * environment it runs with, its arguments, and how its event stream reads.
- * The live intake runner and `conformance --live` both use it, so a host is
+ * The maintainer-local live intake runner (evals/, never in git) and
+ * `conformance --live` both use it, so a host is
  * invoked one way. The flags are the ones the 2026-10-08 probes ran with on
  * claude 2.1.250, codex-cli 0.145.0 and cursor-agent 2026.09.26; where this
  * module departs from them, the comment at the flag says why.
@@ -13,15 +14,16 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { safeEnvironment } from '../src/hosts/delegation/workspace.ts';
-import { PREREGISTRATION } from './live-evals.ts';
 import { codexProviderArgs } from '../src/hosts/codex-provider.ts';
 import { REVIEW_DISABLED_FEATURES, disableReviewMcp } from '../src/hosts/semantic-review.ts';
 export { CODEX_PROVIDER_KEYS, codexProvider, codexProviderFromConfig, codexProviderArgs } from '../src/hosts/codex-provider.ts';
 
 /** Hosts the live runner can drive headlessly here. */
 export const EVAL_HOSTS = ['claude-code', 'codex', 'cursor'];
+
+/** The turn and spend ceiling every scripted host run carries. */
+export const HOST_RUN_LIMITS = Object.freeze({ maxTurns: 20, claudeBudgetUsd: 1 });
 
 /** The command each host installs. */
 export const HOST_BINARY = { 'claude-code': 'claude', codex: 'codex', cursor: 'cursor-agent' };
@@ -32,9 +34,6 @@ export const PROJECT_SKILLS_DIR = {
   codex: join('.agents', 'skills'),
   cursor: join('.agents', 'skills'),
 };
-
-export const TAP = fileURLToPath(new URL('./evals-live-tap.mjs', import.meta.url));
-export const STUB = fileURLToPath(new URL('./evals-live-stub.mjs', import.meta.url));
 
 function known(host) {
   if (!EVAL_HOSTS.includes(host)) throw new Error(`unknown host ${String(host)}; use one of ${EVAL_HOSTS.join(', ')}`);
@@ -57,16 +56,6 @@ export function constructEnv(home, base = process.env) {
 /** The server command for one run: this node, the named server's launcher, bound to the run's project and host. */
 export function serverCommand(server, host, project) {
   return [process.execPath, join(server, 'bin', 'construct.mjs'), 'serve', `--client=${host}`, `--project=${project}`];
-}
-
-/** The same command behind the stdio tap, which logs every frame to `log`. */
-export function tapCommand(log, command) {
-  return [process.execPath, TAP, log, ...command];
-}
-
-/** A stub server's command; `spec` is the path of its JSON spec. */
-export function stubCommand(spec) {
-  return [process.execPath, STUB, spec];
 }
 
 /** A stdio MCP entry as the JSON host files hold it. */
@@ -214,9 +203,9 @@ export function hostArgs(host, opts) {
       'project,local',
       '--no-session-persistence',
       '--max-turns',
-      String(PREREGISTRATION.maxTurns),
+      String(HOST_RUN_LIMITS.maxTurns),
       '--max-budget-usd',
-      String(PREREGISTRATION.claudeBudgetUsd),
+      String(HOST_RUN_LIMITS.claudeBudgetUsd),
       '--allowedTools',
       allowed.join(' '),
     ];

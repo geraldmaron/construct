@@ -10,7 +10,7 @@ description: >-
   goes to governance.
 license: Apache-2.0
 metadata:
-  version: 1.0.4
+  version: 1.0.5
   source: geraldmaron/construct
 ---
 # Security and privacy

@@ -53,7 +53,6 @@
     "registry:index": "node scripts/generate-registry-index.mjs",
     "docs:generate": "node scripts/generate-docs.mjs",
     "conformance": "node scripts/conformance.mjs",
-    "evals:live": "node scripts/evals-live.mjs",
     "release:check": "node scripts/release-gate.mjs",
     "release:live": "node scripts/experimental-live.mjs",
     "format": "biome format --write"

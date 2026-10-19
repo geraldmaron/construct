@@ -36,6 +36,8 @@ tarball_path="$scratch/$tarball"
 echo "== every packed module has a source =="
 orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' | while read -r m; do [ -f "src/$m.ts" ] || echo "dist/$m.js"; done)"
 [ -z "$orphans" ] || fail "the tarball ships compiled modules with no source (a stale dist)" "$orphans"
+shipped_evals="$(tar -tzf "$tarball_path" | grep -E '(^|/)evals/' || true)"
+[ -z "$shipped_evals" ] || fail "the tarball ships evals, which are maintainer-local" "$shipped_evals"
 
 echo "== installing into a scratch project =="
 project="$scratch/project"
@@ -88,6 +90,7 @@ node -e 'const fs=require("node:fs"); const h=JSON.parse(fs.readFileSync(".const
 [ -f "$project/.claude/skills/construct/SKILL.md" ] || fail "init did not plant the operational skill in the project" "$init_out"
 cmp -s "$project/.claude/skills/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
+[ ! -e "$project/.claude/skills/construct/evals" ] || fail "init planted evals into the project's skills"
 [ ! -e "$HOME/.claude/skills/construct" ] || fail "init planted a personal copy that would load in every repository"
 expect_contains "init" "$init_out" "Next, in Claude Code:"
 grep -q '^\.construct/state/$' "$project/.gitignore" || fail "init did not ignore .construct/state/"
@@ -342,12 +345,12 @@ confirm_out="$(npx --no-install construct reset --confirm 2>&1)" || fail "reset 
 expect_contains "reset --confirm" "$confirm_out" "Fresh state"
 [ -f "$project/.construct/project.json" ] || fail "reset removed the committed project file without being asked to"
 
-echo "== unknown and retired commands are refused =="
+echo "== unknown commands are refused =="
 set +e
-retired_out="$(npx --no-install construct ask 'ship a thing' 2>&1)"
-retired_status=$?
+unknown_out="$(npx --no-install construct ask 'ship a thing' 2>&1)"
+unknown_status=$?
 set -e
-[ "$retired_status" -ne 0 ] || fail "a retired verb should be unknown after the cutover"
-expect_contains "retired verb" "$retired_out" "unknown command"
+[ "$unknown_status" -ne 0 ] || fail "an unknown verb should be refused"
+expect_contains "unknown verb" "$unknown_out" "unknown command"
 
 echo "smoke-packaged-install: pass"

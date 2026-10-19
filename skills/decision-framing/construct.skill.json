@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "decision-framing",
   "title": "Decision framing",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "category": "method",
   "owner": "geraldmaron/construct",
   "capabilities": [

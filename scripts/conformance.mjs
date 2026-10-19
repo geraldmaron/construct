@@ -43,7 +43,7 @@ import { launchOf } from '../src/hosts/wiring/wire.ts';
 import { readTomlServerTable } from '../src/hosts/wiring/merge-toml.ts';
 import { mergeYamlServerBlock, readYamlServerBlock } from '../src/hosts/wiring/merge-yaml.ts';
 import { EVAL_HOSTS, codexProviderFromConfig, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment } from './host-cli.mjs';
-import { cursorSnapshot, restoreCursor } from './evals-live.mjs';
+import { cursorSnapshot, restoreCursor } from './host-surface.mjs';
 import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
 import { PERSON_ASKED_ONLY } from '../src/kernel/broker/tools.ts';
 import { readShippedSkill } from '../src/kernel/skills/bundle.ts';
@@ -220,6 +220,8 @@ function checkDocumentedConfig(host, project, env) {
       problems.push('workspace interpolation does not bind the project');
     if (host.id === 'vscode' && entry.cwd !== '${workspaceFolder}') problems.push('workspace cwd is missing');
     if (host.id === 'codex' && !(entry.tool_timeout_sec > 60)) problems.push('host timeout must exceed the person prompt wait');
+    if (host.id === 'hermes' && entry.timeout !== 120)
+      problems.push('the entry does not carry the same tool timeout as Codex (timeout: 120)');
     if (host.id === 'hermes' && ![project, realpathSync(project)].some((p) => entry.args?.includes(`--project=${p}`)))
       problems.push('the user-level entry does not name the project it serves');
     if (host.id === 'hermes' && entry.trust !== 'untrusted') problems.push('the entry does not ask before write tools (trust: untrusted)');
@@ -238,7 +240,7 @@ async function checkProtocolProfiles(host, project, env) {
   // Version/capability variations are adversarial simulations, not claims
   // about what any particular installed host version currently advertises.
   const profiles = [
-    { name: 'legacy without elicitation', protocolVersion: '2024-11-05', capabilities: {} },
+    { name: '2024-11-05 client without elicitation', protocolVersion: '2024-11-05', capabilities: {} },
     {
       name: 'current with optional capabilities',
       protocolVersion: '2025-06-18',
@@ -279,7 +281,7 @@ async function checkProtocolProfiles(host, project, env) {
     problems.length ? 'failed' : 'passed',
     problems.length
       ? problems.join('; ')
-      : 'legacy/current/newer proposals; optional capabilities; initialized notification; text/structured error parity and recovery; actual host not executed',
+      : 'older/current/newer protocol proposals; optional capabilities; initialized notification; text/structured error parity and recovery; actual host not executed',
   );
 }
 

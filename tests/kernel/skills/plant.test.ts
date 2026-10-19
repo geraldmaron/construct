@@ -9,17 +9,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { OPERATIONAL_SKILL, plantSkill, readShippedSkill, skillState, type ShippedSkill } from '../../../src/kernel/skills/bundle.ts';
 import { run } from '../../../src/cli/index.ts';
 import { capture, inProject } from '../../cli/support.ts';
-
-const RELEASED_2_2_0 = readFileSync(new URL('./fixtures/construct-2.2.0-SKILL.md', import.meta.url));
-/** The operational SKILL.md exactly as published 3.0.0-alpha.25 planted it: version 2.2.0, no source line. */
-const RELEASED_ALPHA_25 = readFileSync(new URL('./fixtures/construct-2.2.0-alpha.25-SKILL.md', import.meta.url));
-const ALPHA_25_DIGEST = '51b336e795a413bd520553358004c15e271609d1f1b462fe49cf30d5530dd610';
 
 function operational(): ShippedSkill {
   return readShippedSkill(OPERATIONAL_SKILL)!;
@@ -34,68 +29,6 @@ function install(dir: string, name: string, bytes: Uint8Array | string): void {
 function withVersion(skill: ShippedSkill, version: string): string {
   return new TextDecoder().decode(skill.files[0]!.bytes).replace(/^(\s+version:\s*)\S+$/m, `$1${version}`);
 }
-
-test('the operational skill exactly as an earlier release shipped it, with no source line, is outdated and replaced without --force', () => {
-  const fx = sterile();
-  try {
-    const skill = operational();
-    install(fx.root, skill.name, RELEASED_2_2_0);
-    assert.equal(skillState(skill, fx.root).state, 'outdated');
-    const planted = plantSkill(skill, fx.root);
-    assert.equal(planted.outcome, 'planted');
-    assert.match(planted.why, /2\.2\.0 is an earlier release/);
-    assert.equal(skillState(skill, fx.root).state, 'current');
-  } finally {
-    fx.cleanup();
-  }
-});
-
-test('the operational skill exactly as alpha.25 planted it is an earlier release, and plantSkill and init replace it without --force', async () => {
-  assert.equal(createHash('sha256').update(RELEASED_ALPHA_25).digest('hex'), ALPHA_25_DIGEST);
-  const skill = operational();
-  const fx = sterile();
-  try {
-    install(fx.root, skill.name, RELEASED_ALPHA_25);
-    const before = skillState(skill, fx.root);
-    assert.equal(before.state, 'outdated', before.why);
-    const planted = plantSkill(skill, fx.root);
-    assert.equal(planted.outcome, 'planted');
-    assert.equal(planted.found, 'outdated');
-    assert.match(planted.why, /upgraded: 2\.2\.0 is an earlier release/);
-    assert.equal(skillState(skill, fx.root).state, 'current');
-  } finally {
-    fx.cleanup();
-  }
-  await inProject(async (ctx, box) => {
-    const dir = join(box.home, 'skills');
-    install(dir, skill.name, RELEASED_ALPHA_25);
-    const upgraded = await capture(() => run(['init', `--skills-dir=${dir}`], ctx));
-    assert.equal(upgraded.code, 0, upgraded.err);
-    assert.match(upgraded.out, /operational skill: planted .*upgraded: 2\.2\.0 is an earlier release/);
-    assert.equal(skillState(skill, dir).state, 'current');
-  });
-});
-
-test('the alpha.25 copy with one byte changed is someone’s edits: diverged, and left alone without --force', () => {
-  const skill = operational();
-  const edited = Uint8Array.from(RELEASED_ALPHA_25);
-  const at = Buffer.from(edited).indexOf('# Construct in this session') + 2;
-  assert.ok(at > 1, 'the fixture carries the heading the edit lands in');
-  edited[at] = 'c'.charCodeAt(0);
-  assert.equal(edited.byteLength, RELEASED_ALPHA_25.byteLength);
-  assert.notEqual(createHash('sha256').update(edited).digest('hex'), ALPHA_25_DIGEST);
-  const fx = sterile();
-  try {
-    install(fx.root, skill.name, edited);
-    assert.equal(skillState(skill, fx.root).state, 'diverged');
-    const refused = plantSkill(skill, fx.root);
-    assert.equal(refused.outcome, 'refused');
-    assert.equal(refused.found, 'diverged');
-    assert.deepEqual(new Uint8Array(readFileSync(join(fx.root, skill.name, 'SKILL.md'))), edited, 'left as it was');
-  } finally {
-    fx.cleanup();
-  }
-});
 
 test('an earlier release that carries this package’s source line is outdated and replaced without --force', () => {
   const fx = sterile();
@@ -114,10 +47,7 @@ test('a copy someone changed, one at or past the shipped version, or one from an
   const skill = operational();
   const shipped = new TextDecoder().decode(skill.files[0]!.bytes);
   const cases: Array<[string, string]> = [
-    [
-      'an edited earlier release with no source line',
-      new TextDecoder().decode(RELEASED_2_2_0).replace('# Construct in this session', '# Construct, the way I like it'),
-    ],
+    ['an earlier version with no source line', withVersion(skill, '0.0.1').replace(/^\s*source:.*\n/m, '')],
     ['an edit at the shipped version', shipped.replace('# Construct in this session', '# Construct, the way I like it')],
     ['a later version', withVersion(skill, '9.0.0')],
     ['another skill’s name', withVersion(skill, '1.0.0').replace(/^name: construct$/m, 'name: someone-else')],
@@ -144,10 +74,10 @@ test('init replaces an earlier release of the operational skill, and for a chang
   await inProject(async (ctx, box) => {
     const dir = join(box.home, 'skills');
     const skill = operational();
-    install(dir, skill.name, RELEASED_2_2_0);
+    install(dir, skill.name, withVersion(skill, '0.0.1'));
     const upgraded = await capture(() => run(['init', `--skills-dir=${dir}`], ctx));
     assert.equal(upgraded.code, 0, upgraded.err);
-    assert.match(upgraded.out, /operational skill: planted .*upgraded: 2\.2\.0 is an earlier release/);
+    assert.match(upgraded.out, /operational skill: planted .*upgraded: 0\.0\.1 is an earlier release/);
     assert.equal(skillState(skill, dir).state, 'current');
 
     install(dir, skill.name, new TextDecoder().decode(skill.files[0]!.bytes).replace('# Construct in this session', '# Mine now'));
@@ -190,11 +120,17 @@ test('doctor gives the operational skill’s next step: init to connect the host
       /ok {3}operational-skill: current in .*\.claude\/skills \(read by claude-code\)/,
     );
 
-    install(dir, skill.name, RELEASED_2_2_0);
+    install(dir, skill.name, withVersion(skill, '0.0.1'));
     const outdated = await capture(() => run(['doctor'], inClaude));
     assert.match(outdated.out, /FAIL operational-skill: outdated .*`construct init --client=claude-code` plants/);
 
-    install(dir, skill.name, new TextDecoder().decode(RELEASED_2_2_0).replace('# Construct in this session', '# Mine now'));
+    install(
+      dir,
+      skill.name,
+      withVersion(skill, '0.0.1')
+        .replace('# Construct in this session', '# Mine now')
+        .replace(/^\s*source:.*\n/m, ''),
+    );
     const diverged = await capture(() => run(['doctor'], inClaude));
     assert.match(
       diverged.out,
@@ -212,7 +148,7 @@ test('doctor fails health for a stale personal copy of the operational skill, na
     const inClaude = { ...ctx, env: { ...ctx.env, CLAUDECODE: '1' } };
     assert.equal((await capture(() => run(['init', '--client=claude-code'], ctx))).code, 0);
     const personal = join(box.home, '.claude', 'skills');
-    install(personal, OPERATIONAL_SKILL, RELEASED_ALPHA_25);
+    install(personal, OPERATIONAL_SKILL, withVersion(operational(), '0.0.1'));
     const doctor = await capture(() => run(['doctor'], inClaude));
     assert.equal(doctor.code, 1, 'a stale copy that loads in every repository is a failure, not a note');
     assert.match(
@@ -227,4 +163,8 @@ test('doctor fails health for a stale personal copy of the operational skill, na
     assert.equal(removed.code, 0, removed.err);
     assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /personal-skills/);
   });
+});
+
+test('no shipped skill carries evals', () => {
+  assert.ok(!operational().files.some((f) => f.relativePath.startsWith('evals/')));
 });

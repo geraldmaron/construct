@@ -10,7 +10,7 @@ description: >-
   to security-privacy.
 license: Apache-2.0
 metadata:
-  version: 1.0.5
+  version: 1.0.6
   source: geraldmaron/construct
 ---
 # Governance and risk
