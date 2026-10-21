@@ -262,6 +262,17 @@ test('the architecture diagram request runs end to end through the tools: period
       findings,
       changes: ['docs/architecture.md'],
       artifact: 'docs/architecture.md',
+      methods: [
+        {
+          id: 'system-architecture',
+          disposition: 'applied',
+          why: 'Mapped evidence-backed system boundaries in the diagram.',
+          evidence: ['docker-compose.yml'],
+          obligations: [
+            { obligation: 'State cited system boundaries and relationships', section: '/findings', evidence: ['docker-compose.yml'] },
+          ],
+        },
+      ],
     };
 
     writeFileSync(join(root, 'docs', 'architecture.md'), diagram());

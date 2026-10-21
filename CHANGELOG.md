@@ -4,9 +4,33 @@ Each entry lists what a release changed that still describes Construct as it
 is now. Changes later removed or replaced are left out, and so are upgrade
 steps for releases an install can no longer upgrade from.
 
+## Unreleased
+
+- Private planning, session handoffs, historical model assessments and local
+  project/host configuration are no longer tracked in the product checkout.
+  Public guides, portable agent instructions and sterile regressions remain.
+- Historical experimental release execution is retired. Delivery uses required
+  public source inputs under `construct-public-source-v2`; missing inputs fail
+  explicitly. Earlier source-bound receipts remain historical evidence.
+
+## 3.0.0-alpha.34 — 2026-10-21 (local delivery candidate)
+
+- Ordinary questions stand down. Bounded reversible local tasks can use direct
+  request-rooted ledger claims without creating a workflow or remembered fact.
+- Bound calculations recover through the same contract in answer and workflow
+  checks. Operands cite their own held excerpts; results are claim-scoped and
+  arithmetic success grants no semantic verdict. Unbound alpha inputs are refused.
+- Classification consistently selects one carrier, preserving explicit choices
+  and exact deliverable intent. Alternative method catalogs stay deferred.
+- Duplicate source content cannot manufacture location diversity. Assurance
+  presentation distinguishes structural checks, execution, semantics and acceptance.
+- Delivery checks require exact-package evidence for Claude Code and Codex;
+  other hosts remain live-unmeasured. Normal checks need no private eval corpus.
+
 ## 3.0.0-alpha.33 — 2026-10-19 (experimental)
 
-Evals leave the package and the repository's history, Construct carries no
+Evals leave the current package and main tree; historical tags still retain
+older material. Construct carries no
 compatibility code for earlier releases, and hosts that defer MCP tools find
 its entry tools up front.
 

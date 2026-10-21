@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -64,6 +64,48 @@ const resolve = createEvidenceResolver({
 });
 test.after(() => rmSync(root, { recursive: true, force: true }));
 
+test('mirrors of identical held content do not establish distinct source locations', () => {
+  const check = (second: string) =>
+    runValidators(['sources_diverse'], {
+      output: {},
+      expectedKeys: [],
+      resolvableRefs: new Set(),
+      evidence: [{ ref: 'a' }, { ref: 'b' }],
+      resolve: (ref) => ({
+        ref,
+        kind: 'item',
+        provenance: 'reported',
+        itemRef: `https://${ref}.example/document`,
+        text: ref === 'a' ? 'One upstream document.' : second,
+      }),
+    })[0]!;
+  assert.equal(check('One upstream document.').ok, false);
+  assert.match(check('One upstream document.').problems.join(' '), /distinct source location/);
+  assert.equal(check('A different held document.').ok, true);
+});
+
+test('overlapping source copies cannot make diversity depend on citation order', () => {
+  const refs = {
+    a: { itemRef: 'https://one.example/a', text: 'Original content.' },
+    b: { itemRef: 'https://two.example/a', text: 'Original content.' },
+    c: { itemRef: 'https://one.example/b', text: 'Different content.' },
+  };
+  for (const order of [
+    ['a', 'b', 'c'],
+    ['b', 'a', 'c'],
+    ['c', 'a', 'b'],
+  ]) {
+    const result = runValidators(['sources_diverse'], {
+      output: {},
+      expectedKeys: [],
+      resolvableRefs: new Set(),
+      evidence: order.map((ref) => ({ ref })),
+      resolve: (ref) => ({ ref, kind: 'item', provenance: 'reported', ...refs[ref as keyof typeof refs] }),
+    })[0]!;
+    assert.equal(result.ok, true);
+  }
+});
+
 function run(names: string[], partial: Partial<ValidationSubject>) {
   const results = runValidators(names, { output: {}, expectedKeys: [], evidence: [], resolvableRefs: new Set(), resolve, ...partial });
   return Object.fromEntries(results.map((r) => [r.validator, r.problems]));
@@ -104,17 +146,53 @@ test('grounded figures pass; a derived figure needs arithmetic that holds over c
   const evidence = [{ ref: 'docs/metrics.md' }];
   assert.deepEqual(run(['numbers_grounded'], { output: { summary: 'ok', artifact: 'docs/prd.md' }, evidence }).numbers_grounded, []);
   const good = run(['numbers_grounded'], {
-    output: { summary: 'target 0.8M', derivations: [{ value: '0.8M', expression: '1.6M * 50%' }] },
+    output: {
+      summary: 'target 0.8M',
+      derivations: [
+        {
+          id: 'target',
+          claim: 'target 0.8M',
+          value: '0.8M',
+          expression: '1.6M * 50%',
+          operands: [
+            { value: '1.6M', ref: 'docs/metrics.md', excerpt: '1.6M' },
+            { value: '50%', ref: 'wiki:okrs', excerpt: 'reduce 429s by 50%' },
+          ],
+        },
+      ],
+    },
     evidence: [...evidence, { ref: 'wiki:okrs', excerpt: 'reduce by 50%' }],
   });
   assert.deepEqual(good.numbers_grounded, []);
   const wrong = run(['numbers_grounded'], {
-    output: { summary: 'target 0.9M', derivations: [{ value: '0.9M', expression: '1.6M * 50 / 100' }] },
+    output: {
+      summary: 'target 0.9M',
+      derivations: [
+        {
+          id: 'target',
+          claim: 'target 0.9M',
+          value: '0.9M',
+          expression: '1.6M * 50 / 100',
+          operands: [{ value: '1.6M', ref: 'docs/metrics.md', excerpt: '1.6M' }],
+        },
+      ],
+    },
     evidence,
   });
   assert.ok(wrong.numbers_grounded!.some((p) => p.includes('comes to')));
   const ungrounded = run(['numbers_grounded'], {
-    output: { summary: 'x', derivations: [{ value: '3M', expression: '1.5M * 2' }] },
+    output: {
+      summary: 'x',
+      derivations: [
+        {
+          id: 'x',
+          claim: 'x',
+          value: '3M',
+          expression: '1.5M * 2',
+          operands: [{ value: '1.5M', ref: 'docs/metrics.md', excerpt: '1.5M' }],
+        },
+      ],
+    },
     evidence,
   });
   assert.ok(ungrounded.numbers_grounded!.some((p) => p.includes('1.5m')));
@@ -302,7 +380,7 @@ test('figures in a document a step wrote are grounded only by something else it 
     evidence: [{ ref: 'docker-compose.yml' }],
   }).numbers_grounded!;
   assert.deepEqual(invented, [
-    'the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it',
+    'the figure "420ms" appears in no cited source; cite where it comes from, or supply a bound derivation with id, claim, value, expression and source-bound operands',
   ]);
   const inArtifact = run(['numbers_grounded'], {
     output: { summary: 'latency', findings: ['see the note'], changes: [], artifact: 'docs/latency.md' },
@@ -317,7 +395,7 @@ test('figures in a document a step wrote are grounded only by something else it 
   assert.deepEqual(
     viaLink,
     [
-      'the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it (citing docs/latency-link.md, which this step wrote, grounds nothing in it)',
+      'the figure "420ms" appears in no cited source; cite where it comes from, or supply a bound derivation with id, claim, value, expression and source-bound operands (citing docs/latency-link.md, which this step wrote, grounds nothing in it)',
     ],
     'a link to the artifact is the artifact',
   );
@@ -434,7 +512,7 @@ test('cited text gives the figures configuration sets, never a date, a year, or 
   assert.deepEqual(
     keyed,
     [
-      'the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it',
+      'the figure "420ms" appears in no cited source; cite where it comes from, or supply a bound derivation with id, claim, value, expression and source-bound operands',
     ],
     'a ticket key grounds no latency',
   );
@@ -592,7 +670,7 @@ test('review findings: a derivation that only says where a figure came from is n
     output: { summary: 'Northwind is worth $2.4M', derivations: [{ value: '$2.4M', from: 'the finance team' }] },
     evidence: [{ ref: 'docs/metrics.md' }],
   });
-  assert.ok(described.numbers_grounded!.some((p) => p.includes('gives no expression')));
+  assert.ok(described.numbers_grounded!.some((p) => p.includes('bound derivation')));
   writeFileSync(join(root, 'docs', 'big.md'), `# Big\n${'x'.repeat(1024 * 1024 + 10)}\n`);
   assert.deepEqual(run(['artifacts_exist'], { output: { artifact: 'docs/big.md' } }).artifacts_exist, []);
   writeFileSync(join(root, 'docs', 'blank.md'), '   \n');
@@ -817,4 +895,27 @@ test('named_sources_read needs something cited from each named source, or the so
       unread: [{ source: 'wiki', why: 'not signed in' }],
     },
   );
+});
+
+test('template severities and unknown labels cannot evade per-finding citations', () => {
+  const check = (severity: unknown, citations?: unknown, material = false) =>
+    runValidators(['no_uncited_material_findings'], {
+      output: { findings: [{ severity, citations, material }] },
+      expectedKeys: [],
+      evidence: [{ ref: 'docs/metrics.md' }],
+      resolvableRefs: new Set(),
+      resolve,
+    })[0]!;
+  const template = readFileSync(new URL('../../../skills/software-engineering/assets/implementation-review.md', import.meta.url), 'utf8');
+  assert.match(template, /\[fatal \| serious \| minor\]/);
+  for (const severity of ['fatal', 'serious', 'high', 'material', 'critical', 'blocker', 'Fatal', ' SERIOUS ', 'new-level', '']) {
+    assert.equal(check(severity).ok, false, String(severity));
+    assert.equal(check(severity, ['docs/metrics.md']).ok, true, String(severity));
+  }
+  for (const severity of ['minor', 'low', 'info']) {
+    assert.equal(check(severity).ok, true);
+    assert.equal(check(severity, undefined, true).ok, false);
+  }
+  for (const severity of [null, 0, {}, []]) assert.equal(check(severity, ['docs/metrics.md']).ok, false);
+  for (const citations of [['missing.md'], ['docs/template.md'], [null], ['']]) assert.equal(check('fatal', citations).ok, false);
 });

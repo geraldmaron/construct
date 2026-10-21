@@ -122,10 +122,16 @@ export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContex
           say('no skill-bound steps have run yet');
           return 0;
         }
+        say('Bound-step check friction; application is host-reported. These counts do not measure skill effectiveness.');
         for (const r of rows) {
           const pct = r.steps ? Math.round((100 * r.firstPass) / r.steps) : 0;
           say(
-            `${esc(r.skill)}@${esc(r.version)}  ${String(r.steps)} step(s), ${String(pct)}% passed first time, ${String(r.meanAttempts)} attempts on average, ${String(r.waived)} waived, ${String(r.failedOrStopped)} failed or stopped`,
+            r.steps
+              ? `${esc(r.skill)}@${esc(r.version)}  ${String(r.steps)} step(s), ${String(pct)}% passed first time, ${String(r.meanAttempts)} attempts on average, ${String(r.waived)} waived, ${String(r.failedOrStopped)} failed or stopped`
+              : `${esc(r.skill)}@${esc(r.version)}  no bound steps; supplemental reports only`,
+          );
+          say(
+            `  latest accepted host reports per run: ${String(r.applicationReports.applied)} applied, ${String(r.applicationReports.skipped)} skipped, ${String(r.applicationReports.deferred)} deferred, ${String(r.applicationReports.unreported)} unreported; ${String(r.observedExecutionSteps)} bound step command(s) observed (not method effectiveness)`,
           );
           if (r.failingChecks.length)
             say(

@@ -265,8 +265,8 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
     readsClaudeSkills: false,
     firstRun: [
       'Run `hermes skills trust` in this folder so Hermes loads the project skills in .agents/skills.',
-      'Start hermes in this folder, or from the gateway; the entry names this project, so the working directory does not matter.',
-      "Approve construct's write tools when Hermes asks; the entry marks the server untrusted, so every tool that changes something asks first.",
+      'The MCP server is pinned to this project; separately set the Hermes session workspace (or cron workdir) to this trusted folder so its project skills can load.',
+      "Approve construct's write tools through an available Hermes approval surface; trust remains untrusted. Unattended sessions without an approver cannot assume writes are available.",
       'One Hermes profile serves one Construct project. For a second project, run Hermes with its own HERMES_HOME.',
     ],
     relativePath: join('~', '.hermes', 'config.yaml'),

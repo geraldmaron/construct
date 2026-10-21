@@ -1,3 +1,4 @@
+import { parseDerivations, verifyDerivations, DERIVATION_EXAMPLE, type BoundDerivation } from '../../workflow/derivations.ts';
 import { type ClaimCheck, claimChecks, assessClaims } from '../../workflow/claim-support.ts';
 import { closed, obj, list, record, str, ToolInputError } from '../definition.ts';
 import { type ResolvedPeriod, checkSlot, resolvePeriod, type PeriodSpec } from '../../registry/slots.ts';
@@ -11,6 +12,7 @@ import { CITATION_ITEM, citationsInput } from './citations.ts';
 
 interface CheckAnswerInput {
   claims: ClaimCheck[];
+  derivations: BoundDerivation[];
   answer: string;
   citations: { ref: string; excerpt?: string }[];
   period?: Record<string, unknown>;
@@ -34,12 +36,18 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
   description:
-    'Before stating facts about this project in a plain answer, pass the answer and what it rests on; Construct returns what is unsupported: citations that name nothing real, quotes that do not match, figures not from what was cited, superseded or settled material stated as current, and sources updated after the period the answer covers. It starts nothing and records only that a check happened and how it went.',
+    'For an explicit evidence check or an answer relying on Construct-held evidence or governed project statements, pass the answer and what it rests on; Construct returns what is unsupported: citations that name nothing real, quotes that do not match, figures not from what was cited, superseded or settled material stated as current, and sources updated after the period the answer covers. It starts nothing and records only that a check happened and how it went.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
+      derivations: {
+        type: 'array',
+        description:
+          'Bound arithmetic only: {id,claim,value:string,expression,operands:[{value:string,ref,excerpt}|{value:string,derivationId}],decimalPlaces?:0–12}. Exact claim text scopes each result. Constants: 0,1,2,3,4,7,10,12,24,52,60,100,365,1000. Arithmetic never establishes semantic support.',
+        items: { type: 'object' },
+      },
       answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
       historicalEvidence: {
         type: 'array',
@@ -71,6 +79,12 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
   },
   validate(raw) {
     closed(raw, this.inputSchema);
+    let derivations: BoundDerivation[];
+    try {
+      derivations = parseDerivations(raw.derivations);
+    } catch (e) {
+      throw new ToolInputError((e as Error).message, { field: 'derivations', example: [DERIVATION_EXAMPLE] });
+    }
     const citations = citationsInput(raw, 'citations');
     const period = obj(raw, 'period', { optional: true });
     const outsidePeriod = list(raw, 'outsidePeriod').map((e) => {
@@ -87,6 +101,7 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
     });
     const setAside = list(raw, 'setAside').filter((x): x is string => typeof x === 'string');
     return {
+      derivations,
       historicalEvidence,
       superseded,
       setAside,
@@ -97,7 +112,7 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
       ...(outsidePeriod.length ? { outsidePeriod } : {}),
     };
   },
-  run(ctx, { answer, claims, citations, period: spec, outsidePeriod, historicalEvidence, superseded, setAside }) {
+  run(ctx, { answer, claims, derivations, citations, period: spec, outsidePeriod, historicalEvidence, superseded, setAside }) {
     // A period is checked and worked out at the moment of asking, before anything is recorded.
     let period: ResolvedPeriod | null = null;
     if (spec) {
@@ -117,11 +132,12 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
     const output = {
       historicalEvidence,
       summary: answer,
-      derivations: claimSupport.results.flatMap((r) => (r.derivation ? [r.derivation] : [])),
+      derivations: [...derivations, ...claimSupport.results.flatMap((r) => (r.derivation ? [r.derivation] : []))],
       ...(outsidePeriod ? { outsidePeriod } : {}),
       ...(superseded.length ? { superseded } : {}),
       ...(setAside.length ? { setAside } : {}),
     };
+    const arithmetic = verifyDerivations({ derivations: output.derivations, texts: [answer], evidence: citations, resolve });
     const results = runValidators(checks, {
       output,
       expectedKeys: [],
@@ -154,6 +170,7 @@ export const checkAnswer = define<CheckAnswerInput, unknown>({
     return {
       ok: problems.length === 0,
       assurance: 'structural',
+      arithmetic: { results: arithmetic.results, semanticSupportVerified: false },
       semanticSupportVerified: false,
       claimSupport,
       limits:

@@ -1,3 +1,4 @@
+import { deliverableAssurance } from '../../state/deliverables.ts';
 import { closed, str } from '../definition.ts';
 import { askedOf } from '../../workflow/asked.ts';
 import { define } from './shared.ts';
@@ -50,6 +51,7 @@ export const runStatus = define<{ runId: string }, unknown>({
         id: d.id,
         kind: d.kind,
         trust: d.trustState,
+        assurance: deliverableAssurance(d),
         verification: d.verification,
         body: d.body,
       })),

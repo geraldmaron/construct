@@ -92,8 +92,7 @@ function hitsInInlineSpans(text, fences) {
  */
 function checkable(file) {
   const rel = relative(ROOT, file).replaceAll('\\', '/');
-  if (['CHANGELOG.md', 'RESEARCH-DECISIONS.md', 'STRATEGY.md', 'GLOSSARY.md'].includes(rel)) return false;
-  if (rel.startsWith('docs/internal/')) return false;
+  if (['CHANGELOG.md', 'GLOSSARY.md'].includes(rel)) return false;
   return true;
 }
 

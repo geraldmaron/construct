@@ -143,3 +143,39 @@ export function methodReceipts(
   }
   return { receipts, problems };
 }
+
+export interface RequestedMethod {
+  readonly id: string;
+  readonly version: string;
+  readonly digest: string;
+  readonly binding: 'workflow' | 'supplemental';
+}
+
+/** Explicit host-selected method; deliverable matching never silently substitutes for it. */
+export function requestedMethodBinding(id: string | null, registry: SkillRegistry, boundIds: readonly string[]): RequestedMethod | null {
+  const skill = id ? registry.get(id) : null;
+  return skill
+    ? {
+        id: skill.manifest.id,
+        version: skill.manifest.version,
+        digest: skill.digest,
+        binding: boundIds.includes(skill.manifest.id) ? 'workflow' : 'supplemental',
+      }
+    : null;
+}
+
+/** Latest explicit successful report wins; an unreported assignment does not erase an earlier report. */
+export function latestMethodReport(id: string, reports: readonly MethodReceipt[]): MethodReceipt | null {
+  return reports.filter((r) => r.id === id && r.status !== 'unreported').at(-1) ?? null;
+}
+
+export function requestedMethodProblems(required: RequestedMethod, report: MethodReceipt | null): string[] {
+  const remedy = `Report methods:[{id:"${required.id}",disposition:"applied"|"skipped",why:"reason",evidence:[ref]}] on this submission; applied also needs obligations:[{obligation,section:"/outputKey",evidence:[ref]}]. Reports are host assertions, not proof of application.`;
+  if (!report || report.status === 'reported_deferred')
+    return [`Requested method ${required.id} is ${report?.status ?? 'unreported'}. ${remedy}`];
+  if (report.digest !== required.digest || report.version !== required.version)
+    return [`Requested method ${required.id} changed; checkpoint and re-resolve the work against current skill bytes.`];
+  if (report.status === 'reported_applied' && !report.obligations?.length)
+    return [`Requested method ${required.id} has no application obligations. ${remedy}`];
+  return [];
+}

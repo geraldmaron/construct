@@ -43,8 +43,9 @@ Each skill is evaluated in the Agent Skills shape
 [optimizing skill descriptions](https://agentskills.io/skill-creation/optimizing-descriptions)):
 output cases with checkable assertions, and should- and shouldn't-trigger
 queries on a fixed train/validation split. Those evals, the intake corpus,
-and the live-run harness are maintainer-local work kept in an ignored
-`evals/` folder; they never enter git, the package, or an installed skill.
+and any live-run harness are private research kept outside this checkout,
+the package and installed skills. Sterile deterministic regressions needed to
+reproduce product behavior belong in the normal test suite.
 
 Nothing in Construct matches a request's words to a skill. The host model
 reports its own reading to `classify_request`, which returns the workflows
@@ -95,14 +96,14 @@ construct workflow validate
 The `skills` tool's show action reports whether a skill's bytes are the ones
 the project locked: `current`, `unlocked`, `outdated`, `blocked`, `diverged`
 (the same version with different bytes), or `missing`. That is integrity,
-never quality: how well a skill works is shown by running its evals. A skill
+never quality: measured host observations can support only their stated scope. A skill
 cannot raise Construct's authority by anything its text says; the resolver
 enforces each step's tier ceiling whatever the skill asks for.
 
 Before a skill or workflow ships, its manifest validates and agrees with its
-frontmatter, the registry index is current, its maintainer-local evals have
-the standard shape, a consuming workflow resolves against it, and any effectiveness claim
-rests on a recorded run of its evals. Static conformance checks protocol and wiring;
+frontmatter, the registry index is current, and a consuming workflow resolves
+against it. Any effectiveness claim needs a bounded recorded observation with
+its uncertainty; private datasets and raw model runs are not build prerequisites. Static conformance checks protocol and wiring;
 it cannot establish native effectiveness.
 
 ## Grounding and quality checks
@@ -135,7 +136,7 @@ counts.
 | `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
 | `superseded_acknowledged` | a superseded document is used without saying so |
 | `decision_ask_present` | a proposal has no decision section naming who decides and by when (a `decisionBy` date such as 2026-10-16 is found as written or as "October 16", "Oct 16" or "16 October") |
-| `sources_diverse` | research rests on fewer than two independent places that hold content (pages of one website count once) |
+| `sources_diverse` | research has fewer than two locations with different held content (exact copies deduplicate; pages of one website count once); source independence remains unverified |
 | `within_period` | a cited item was updated after the period the run covers ends, and the output does not list it under `outsidePeriod` with why it belongs |
 | `named_sources_read` | a source the run names has nothing cited from it, and the output does not list it under `unread` with why |
 
@@ -177,10 +178,10 @@ The `authoring` workflow applies them in a gather, draft, challenge, record
 sequence. Its domain selects requirements structuring for a PRD, decision
 framing for a proposal, system architecture for an RFC, or investigative
 research for a research brief. The research domain asks for at least two
-independent sources and takes an optional period and named sources; its
+distinct source locations with different held content (not verified independence) and takes an optional period and named sources; its
 citations are checked against both. Proposal retains its required audience
-and decision-ask check. The former authoring ids remain aliases, listed in
-[workflows and resolution](workflows-and-resolution.md#built-in-workflows).
+and decision-ask check. Former authoring ids are refused; use `authoring` with
+a declared domain. See [workflows and resolution](workflows-and-resolution.md#built-in-workflows).
 What these checks cannot tell is whether a grounded claim is the right claim;
 that is the challenge step's and the person's.
 

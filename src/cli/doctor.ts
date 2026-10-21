@@ -381,6 +381,15 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
 
   const ambient = detectAmbientHost(ctx.env);
   let wiredClients: WirableClient[] = [];
+  const runtimeReadiness: {
+    host: WirableClient;
+    serverProjectBinding: string;
+    hostWorkspace: 'unverified';
+    skillLoading: 'unverified';
+    approvalAvailability: 'unverified';
+    live: 'unmeasured';
+    limitations: readonly string[];
+  }[] = [];
   if (root !== null) {
     const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root, ctx.env)).filter((w) => w.status !== 'absent');
     wiredClients = wired.map((w) => w.client);
@@ -425,6 +434,23 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       });
     }
     for (const w of wired) {
+      runtimeReadiness.push({
+        host: w.client,
+        serverProjectBinding: w.status === 'installed' ? 'configured' : 'invalid',
+        hostWorkspace: 'unverified',
+        skillLoading: 'unverified',
+        approvalAvailability: 'unverified',
+        live: 'unmeasured',
+        limitations:
+          w.client === 'hermes'
+            ? [
+                'MCP --project and server cwd do not establish the Hermes session workspace or loaded project skills.',
+                'Use this trusted project as the session workspace or cron workdir; file presence does not establish Hermes skills trust or loading.',
+                'trust: untrusted requires an available approval surface for writes; unattended execution without an approver must not assume permission.',
+                'Hermes live behavior has not been exercised by this static inspection.',
+              ]
+            : ['Configuration and installed skill bytes do not establish live connection, skill loading or action permission.'],
+      });
       checks.push(hostLaunchCheck(w.client, root, ctx.env));
       const startup = inspectStartup(w.client, root);
       if (startup)
@@ -463,7 +489,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     writeJson({
       healthy: failed === 0,
       scope: 'installation',
-      readiness: { installed: failed === 0, connected: 'unverified', exercised: 'unverified' },
+      readiness: { installed: failed === 0, connected: 'unverified', exercised: 'unverified', hosts: runtimeReadiness },
       checks,
     });
     return failed === 0 ? 0 : 1;
@@ -472,6 +498,12 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   say(
     'Live host connection: unverified. Task execution: unverified. Run bootstrap in the host to check its connection; task evidence establishes execution readiness.',
   );
+  for (const host of runtimeReadiness) {
+    say(
+      `Runtime ${host.host}: unverified (server binding ${host.serverProjectBinding}; workspace, skill loading and approval availability unverified; live unmeasured).`,
+    );
+    if (host.host === 'hermes') for (const limitation of host.limitations) say(`  ${limitation}`);
+  }
   for (const ok of [false, true]) {
     const group = checks.filter((c) => c.ok === ok).sort((a, b) => a.name.localeCompare(b.name));
     if (!group.length) continue;

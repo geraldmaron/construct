@@ -2,12 +2,11 @@
 
 This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
-alpha.33 code; static wiring and structural checks are not broad effectiveness
+alpha.34 code; static wiring and structural checks are not broad effectiveness
 qualification. [Release notes](../CHANGELOG.md) carry measured limits.
-[`internal/`](internal/) holds the release evidence the release gate checks and
-the recorded skill runs, kept apart from the guides. A lint holds
-this list to the directory: a new file here is added below, which is the
-moment someone decides it is documentation rather than a record.
+Private planning, historical trials and generated evidence are kept outside the
+repository and package. This directory contains public usage and contributor
+documentation. A lint checks its index and local links.
 
 ## Start here
 

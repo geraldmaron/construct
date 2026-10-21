@@ -39,7 +39,14 @@ import {
   runExecutionProblems,
   type VerificationReceipt,
 } from './verification.ts';
-import { methodReceipts } from './methods.ts';
+import {
+  methodReceipts,
+  requestedMethodBinding,
+  latestMethodReport,
+  requestedMethodProblems,
+  type RequestedMethod,
+  type MethodReceipt,
+} from './methods.ts';
 import { recordResolvedSkill, recordResolvedWorkflow } from '../state/resolved.ts';
 import { researchCoverage } from '../source/research.ts';
 import type { StateStore } from '../state/open.ts';
@@ -251,6 +258,7 @@ export interface WorkPacket {
   /** The run's reading, when it started from one. */
   readonly intake: WorkIntake | null;
   /** For a step that binds no skill, the method the reading chose, when it is registered. */
+  readonly requestedMethod: (RequestedMethod & { readonly status: string; readonly reason: string | null }) | null;
   readonly methodCatalog: readonly { readonly id: string; readonly title: string }[];
   readonly method: { readonly id: string; readonly version: string; readonly title: string } | null;
 }
@@ -359,7 +367,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   artifacts_exist:
     'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty; a step whose outputs include "changes" may list none ("changes": [], "artifact": null).',
   numbers_grounded:
-    'numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. List computed figures under "derivations" as {value, expression}, where expression is numeric arithmetic over original cited figures, for example {value: "21", expression: "7 * 3"}. Expressions use numbers and arithmetic operators only: no unit labels, prose, comparisons, or references to other derived values; inline the original calculation. Explain units and comparisons in prose.',
+    'numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. Computed figures use bound derivations: {id,claim,value:string,expression,operands:[{value:string,ref,excerpt}|{value:string,derivationId}],decimalPlaces?:0–12}. The exact claim scopes its result; every nonconstant operand needs its own held excerpt or verified intermediate. Arithmetic verifies no semantic labels. Expressions use numbers and arithmetic operators only.',
   template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
   excerpts_match:
     'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter); an excerpt from something Construct holds no text for is not checked and supports nothing.',
@@ -374,7 +382,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   decision_ask_present:
     'decision_ask_present needs "decision": {ask, decider, by}: the decision being asked for, who decides (the audience input, when given) and the YYYY-MM-DD date it is due (the decisionBy input, when given).',
   sources_diverse:
-    'sources_diverse needs citations from at least two independent places that hold content Construct can check (different files, recorded items, or web sites; pages of one site count once).',
+    'sources_diverse needs citations from at least two distinct locations with different held content Construct can check (different files, recorded items, or web sites; pages of one site count once; this establishes no independence).',
   revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
   settled_not_contradicted:
     'settled_not_contradicted refuses a term the person settled against, unless the output lists that statement id in "setAside" because the work knowingly sets the decision aside or discusses it.',
@@ -1503,6 +1511,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return out;
   }
 
+  function requestedMethodOf(run: WorkflowRun): RequestedMethod | null {
+    return (run.bindings as { requestedMethod?: RequestedMethod } | null)?.requestedMethod ?? null;
+  }
+
+  function requestedMethodDrift(run: WorkflowRun): string | null {
+    const id = askedOf(run).declared?.chosenSkill ?? askedOf(run).intake?.skill ?? null;
+    if (!id) return null;
+    const frozen = requestedMethodOf(run);
+    return !frozen || frozen.id !== id || deps.skills.get(id)?.digest !== frozen.digest
+      ? `Requested method ${id} has no matching frozen skill identity. Checkpoint, cancel this run and start a new outcome against current skill bytes; completed work remains recorded.`
+      : null;
+  }
+
+  function methodReportsOf(run: WorkflowRun): MethodReceipt[] {
+    return listSteps(store, run.id)
+      .filter((s) => s.state === 'succeeded')
+      .flatMap((s) => (s.output as { methodReceipts?: { methods?: MethodReceipt[] } } | null)?.methodReceipts?.methods ?? []);
+  }
+
   /** The run's last step, which hands the deliverable back. */
   function isLastStep(run: WorkflowRun, step: WorkflowStep): boolean {
     const frozen = stepsOf(run);
@@ -1714,6 +1741,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       run = transitionRun(store, { id: run.id, to: 'running', at });
     }
     if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return { outcome: null, held, refused };
+    const methodDrift = requestedMethodDrift(run);
+    if (methodDrift) return stop({ kind: 're_resolve', runId: run.id, reason: methodDrift });
     const priorSteps = listSteps(store, run.id);
     const stale = stalePriorEvidence(
       inheritedEvidence(priorSteps),
@@ -1906,6 +1935,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     // A key the step also returns is its own to restate; the rest the deliverable already carries, the period and
     // named sources with what the run's citations cover.
     const method = methodFor(run, step, bound);
+    const requested = requestedMethodOf(run);
+    const reported = requested ? latestMethodReport(requested.id, methodReportsOf(run)) : null;
     const inputs = inputsFor(run, step);
     const handed = Object.keys(handedTo(run, step)).filter((k) => !step.outputs.includes(k));
     const covered = coverageKeys(run);
@@ -1931,7 +1962,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         : '',
       step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
       step.outputs.includes('plan')
-        ? 'Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.'
+        ? 'Reuse the supplied plan and intent.priorWork as content; adopt it into the normal plan outputs and fill only missing execution details. Do not repeat intake or treat the plan as approval. Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.'
         : '',
       Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
@@ -1944,6 +1975,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. For applied methods add obligations: [{obligation, section:"/outputKey", evidence:[ref]}], linking concrete output sections to their project evidence. Put professional-method references in doctrine:[ref]; doctrine informs procedure and is not project-fact support. Explain omissions and unavailable expertise; a report does not establish execution or qualification.'
         : '',
       method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
+      ...(requested
+        ? [
+            `Explicit requested method ${requested.id} (${requested.binding}), status ${reported?.status ?? 'unreported'}${reported ? `: ${reported.why}` : ''}. A different bound skill does not fulfill it. Before completion report applied with obligations, or explicitly skipped with a reason; deferred/unreported cannot complete. Application remains host-reported.`,
+          ]
+        : []),
       ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
       waiverInstruction(waiverOf(leased.id)),
@@ -1991,6 +2027,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       judgment,
       intake: workIntakeOf(askedOf(run)),
       method,
+      requestedMethod: requested ? { ...requested, status: reported?.status ?? 'unreported', reason: reported?.why ?? null } : null,
       methodCatalog: deps.skills
         .list()
         .filter((s) => s.manifest.category === 'method')
@@ -2736,6 +2773,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             digest: workflow.digest,
             version: m.version,
             asked,
+            requestedMethod: requestedMethodBinding(
+              asked?.declared?.chosenSkill ?? asked?.intake?.skill ?? null,
+              deps.skills,
+              m.steps.flatMap((s) => (s.skill ? [s.skill.id] : [])),
+            ),
             semanticContract: semanticContract(
               { input: given, asked },
               deps.semanticReviewer ?? null,
@@ -2831,6 +2873,35 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         const step = stepsOf(run).find((s) => s.id === leased.stepId);
         if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
+        const methodDrift = requestedMethodDrift(run);
+        if (methodDrift)
+          return {
+            step: getStep(store, leased.id)!,
+            validation: [{ validator: 'requested_method_report', ok: false, problems: [methodDrift] }],
+            run,
+            deliverable: null,
+            ignored: [],
+          };
+        const boundMethod = (leased.input as { skill?: { id: string; digest: string } | null } | null)?.skill;
+        const primaryMethod = boundMethod?.id ?? methodFor(run, step, null)?.id ?? null;
+        const methods = methodReceipts(output, primaryMethod, deps.skills, resolve);
+        if (boundMethod && deps.skills.get(boundMethod.id)?.digest !== boundMethod.digest)
+          methods.problems.push('bound method changed since the run was resolved; resolve the work again');
+        const requested = requestedMethodOf(run);
+        const requestedReport = requested ? latestMethodReport(requested.id, [...methodReportsOf(run), ...methods.receipts]) : null;
+        if (requested && isLastStep(run, step)) {
+          const requestedProblems = [...methods.problems, ...requestedMethodProblems(requested, requestedReport)];
+          if (deps.skills.get(requested.id)?.digest !== requested.digest)
+            requestedProblems.push(`Requested method ${requested.id} changed on disk; checkpoint and re-resolve before continuing.`);
+          if (requestedProblems.length)
+            return {
+              step: getStep(store, leased.id)!,
+              validation: [{ validator: 'requested_method_report', ok: false, problems: requestedProblems }],
+              run: getRun(store, run.id)!,
+              deliverable: null,
+              ignored: [],
+            };
+        }
         const currentWorkflow = workflowOf(run);
         const priorSteps = listSteps(store, run.id);
         const priorEvidence = inheritedEvidence(priorSteps);
@@ -2960,11 +3031,6 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         const recordProblems = persistedRecordProblems(store, output);
         if (recordProblems.length) validation.push({ validator: 'persisted_records', ok: false, problems: recordProblems });
-        const boundMethod = (leased.input as { skill?: { id: string; digest: string } | null } | null)?.skill;
-        const primaryMethod = boundMethod?.id ?? methodFor(run, step, null)?.id ?? null;
-        const methods = methodReceipts(output, primaryMethod, deps.skills, resolve);
-        if (boundMethod && deps.skills.get(boundMethod.id)?.digest !== boundMethod.digest)
-          methods.problems.push('bound method changed since the run was resolved; resolve the work again');
         if (methods.problems.length) validation.push({ validator: 'method_reports', ok: false, problems: methods.problems });
         const subjects = [...new Set([...artifactRefs(output), ...listSteps(store, run.id).flatMap((s) => artifactRefs(s.output))])];
         const execution = step.capabilities.includes('run_tests')
@@ -3060,6 +3126,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           // sensitivity, and those of unknown sensitivity) are the kernel's to record: the step's own keys of those
           // names are not kept. A later step's approval question reads them.
           const finalBody = deliverableBody(run, output, handedTo(run, step), evidence, sensitivity, resolve);
+          if (requested)
+            finalBody.requestedMethod = {
+              ...requested,
+              status: requestedReport?.status ?? 'unreported',
+              reason: requestedReport?.why ?? null,
+              provenance: 'host_report',
+            };
           if (waived)
             finalBody.waived = [
               ...runWaivers(run.id),

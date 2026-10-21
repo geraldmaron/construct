@@ -1,3 +1,4 @@
+import { deliverableAssurance } from '../kernel/state/deliverables.ts';
 import { executeSemanticReview } from '../hosts/semantic-review.ts';
 /**
  * cli/run.ts — runs: list, show, cancel, resume.
@@ -176,7 +177,7 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
           say(
             `  step ${esc(s.stepId)}: ${s.state}${s.attempts ? ` after ${String(s.attempts)} attempt(s)` : ''}${s.stateReason ? ` (${esc(s.stateReason)})` : ''}`,
           );
-        for (const d of v.deliverables) say(`  deliverable ${esc(d.id)}: ${d.kind}, ${d.trustState}`);
+        for (const d of v.deliverables) say(`  deliverable ${esc(d.id)}: ${d.kind}, ${d.trustState} (${deliverableAssurance(d).label})`);
         // One line per decision: its question's first line, with the rest in construct inbox show.
         for (const d of v.openDecisions)
           say(

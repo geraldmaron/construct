@@ -18,7 +18,7 @@ import type { ProjectWorktree } from '../work/lanes.ts';
 
 /** Shared request lifecycle, rendered by bootstrap and native startup adapters. */
 export const INTERACTIVE_ENTRY_GUIDANCE =
-  'Answer plain questions directly and record nothing. For a requested artifact or review: find prior context with context_search, report intent outcome/path/acceptance and stakes in classify_request kind=manage, start_outcome, then claim_work/submit_work until the requested file and run complete. Scheduled outcomes use kind=maintain and require an executor. Repair failed calls before proceeding.';
+  'Answer plain questions directly and record nothing. For a bounded reversible local task use work add with request/stakes, claim paths, execute here and complete. For consequential, recurring, multi-agent or substantial resumable work: find prior context with context_search, report intent outcome/path/acceptance and stakes in classify_request kind=manage, start_outcome, then claim_work/submit_work until the requested file and run complete. Scheduled outcomes use kind=maintain and require an executor. Repair failed calls before proceeding.';
 
 export interface BrokerContext {
   readonly surface?: 'interactive' | 'headless';

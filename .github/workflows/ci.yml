@@ -1,7 +1,7 @@
 # Ordinary push and pull request run the real gate: lint, typecheck, full
-# unit suite, sterile read-only HOME, and packaged-install smoke. Live host
-# conformance stays out of PR and release jobs (credentials); release notes
-# disclose that gap.
+# unit suite, sterile read-only HOME, and packaged-install smoke. Host
+# conformance is static/simulated and credential-free. Live delivery is limited
+# to the explicitly recorded Claude Code and Codex walkthroughs.
 
 name: ci
 
@@ -71,3 +71,4 @@ jobs:
           chmod 555 /tmp/readonly-home
           HOME=/tmp/readonly-home npm test
       - run: npm run smoke
+      - run: npm run conformance

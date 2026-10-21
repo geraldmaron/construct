@@ -130,5 +130,7 @@ that originated in this repo is rewritten into the skill in plain language.
   `npm run registry:index` and `npm run docs:generate` have been run, so `registry/index.json` and
   `docs/catalog.md` carry the changed skill; the lint fails while either
   is stale.
-- A pre-registered falsification test and one recorded real-work run under
-  `docs/internal/skill-runs/`, for skills this project claims work.
+- A falsifiable effectiveness claim and a recorded, scoped observation when
+  effectiveness is claimed. Keep private datasets, generated model output and
+  raw trial records outside the repository and package. A single run does not
+  establish general effectiveness or causal benefit.

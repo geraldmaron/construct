@@ -15,6 +15,7 @@ import { Readable } from 'node:stream';
 import { run } from '../../src/cli/index.ts';
 import type { CliContext } from '../../src/cli/context.ts';
 import { CLIENT_WIRINGS } from '../../src/hosts/wiring/clients.ts';
+import { GROUNDING_HOOKS } from '../../src/hosts/wiring/claude-local.ts';
 import { capture, sandbox, type Sandbox } from './support.ts';
 
 const SHIPPED_SKILL = readFileSync(new URL('../../skills/construct/SKILL.md', import.meta.url));
@@ -278,10 +279,28 @@ test('re-running init says the project’s statements are already proposed, and 
   }
 });
 
-test('portable construct hooks committed in .claude/settings.json survive init and count as installed', async () => {
+test('consumer-authored portable hooks survive init and count as installed without maintainer configuration', async () => {
   const box = sandbox();
   try {
-    const committed = readFileSync(new URL('../../.claude/settings.json', import.meta.url), 'utf8');
+    const committed = JSON.stringify({
+      hooks: Object.fromEntries(
+        GROUNDING_HOOKS.map(({ hostEvent, event, matcher }) => [
+          hostEvent,
+          [
+            {
+              ...(matcher ? { matcher } : {}),
+              hooks: [
+                {
+                  type: 'command',
+                  command: `node "\${CLAUDE_PROJECT_DIR}/bin/construct.mjs" hook ${event} --client=claude-code`,
+                  timeout: 20,
+                },
+              ],
+            },
+          ],
+        ]),
+      ),
+    });
     mkdirSync(join(box.cwd, '.claude'), { recursive: true });
     writeFileSync(join(box.cwd, '.claude', 'settings.json'), committed);
     const init = await capture(() => run(['init', '--client=claude-code', '--scale=solo', '--outcome=x', '--constraint=y'], box.ctx));

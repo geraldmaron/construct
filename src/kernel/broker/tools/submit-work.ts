@@ -1,3 +1,5 @@
+import { verifyOutputArithmetic } from '../../workflow/validators.ts';
+import { deliverableAssurance } from '../../state/deliverables.ts';
 import { closed, str, obj, bool } from '../definition.ts';
 import { getStep, heldLease } from '../../state/steps.ts';
 import { settleManagedDelivery } from '../managed-delivery.ts';
@@ -56,12 +58,21 @@ export const submitWork = define<SubmitInput, unknown>({
     return {
       step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason },
       validation: r.validation,
+      arithmetic: {
+        ...verifyOutputArithmetic({ output: r.step.output ?? input.output, evidence: input.evidence, resolve }),
+        semanticSupportVerified: false,
+      },
       ...(r.semanticReview ? { semanticReview: r.semanticReview } : {}),
       // How much of this step rests on what Construct opened itself versus what the host reports it read.
       evidence: provenanceOf(input.evidence, resolve),
       run: { id: r.run.id, state: r.run.state },
       deliverable: r.deliverable
-        ? { id: r.deliverable.id, trust: r.deliverable.trustState, verification: r.deliverable.verification }
+        ? {
+            id: r.deliverable.id,
+            trust: r.deliverable.trustState,
+            assurance: deliverableAssurance(r.deliverable),
+            verification: r.deliverable.verification,
+          }
         : null,
       // Restated keys whose value differs from what the step was handed: the deliverable carries what was handed.
       ...(r.ignored.length > 0 ? { ignored: r.ignored } : {}),

@@ -25,19 +25,28 @@ expect_contains() {
   esac
 }
 
-echo "== building =="
 cd "$repo_root"
-npm run build --silent
-
-echo "== packing =="
-tarball="$(npm pack --silent --pack-destination "$scratch")"
-tarball_path="$scratch/$tarball"
+if [ "$#" -eq 2 ] && [ "$1" = "--tarball" ]; then
+  tarball_path="$(node -e 'process.stdout.write(require("node:path").resolve(process.argv[1]))' "$2")"
+  [ -f "$tarball_path" ] || fail "candidate tarball is absent"
+  # Build the source for module-parity checks without repacking the candidate.
+  npm run build --silent
+elif [ "$#" -eq 0 ]; then
+  echo "== building and packing =="
+  npm run build --silent
+  tarball="$(npm pack --silent --pack-destination "$scratch")"
+  tarball_path="$scratch/$tarball"
+else
+  fail "usage: smoke-packaged-install.sh [--tarball <candidate.tgz>]"
+fi
 
 echo "== every packed module has a source =="
 orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' | while read -r m; do [ -f "src/$m.ts" ] || echo "dist/$m.js"; done)"
 [ -z "$orphans" ] || fail "the tarball ships compiled modules with no source (a stale dist)" "$orphans"
 shipped_evals="$(tar -tzf "$tarball_path" | grep -E '(^|/)evals/' || true)"
 [ -z "$shipped_evals" ] || fail "the tarball ships evals, which are maintainer-local" "$shipped_evals"
+private_surfaces="$(tar -tzf "$tarball_path" | grep -E '^package/(\.(construct|claude|codex|agents|bob)/|\.mcp\.json$|docs/internal/|(STRATEGY|RESEARCH-DECISIONS|HANDOFF|COORDINATION)\.md$)' || true)"
+[ -z "$private_surfaces" ] || fail "the tarball ships private or local-instance surfaces" "$private_surfaces"
 
 echo "== installing into a scratch project =="
 project="$scratch/project"
@@ -293,10 +302,32 @@ const delivered=await submitPortable({verification:{kind:'self_review',checks:['
 must(delivered.run.state==='succeeded' && !delivered.deliverable.verification.semanticSupportVerified,'portable delivery is complete with explicit structural assurance');
 const portableStatus=await call('run_status',{runId:portable.run.id});
 must(portableStatus.delivery.state==='available' && portableStatus.delivery.acceptance==='not_accepted' && portableStatus.checkpoints.length===1,'checkpoint and assurance survive the public ledger');
+const beforeMethodQuality=(await call('project_context',{topic:'quality'})).items.find(r=>r.skill==='adversarial-review');
+const methodReading = await call('classify_request', { words:'Adversarially review the boundary.',kind:'manage',skill:'adversarial-review',deliverable:{kind:'decision/brief'},stakes:{reversible:true,affects:[]} });
+must(methodReading.selectedWorkflow.workflowId==='decision-support' && methodReading.requestedMethod.binding==='supplemental','exact deliverable preserves supplemental requested method');
+const methodRun=await call('start_outcome',{workflowId:'decision-support',intake:methodReading.intake});
+let mw=(await call('claim_work',{runId:methodRun.run.id,includeSkillBody:false})).work;
+const submitMethod=(output)=>call('submit_work',{stepRunId:mw.stepRunId,token:mw.token,output,evidence:[{ref:'design.md'}]});
+await submitMethod({plan:'Inspect the boundary.',assumptions:[],blockers:[]});
+mw=(await call('claim_work',{runId:methodRun.run.id,includeSkillBody:false})).work;
+must(mw.requestedMethod.id==='adversarial-review' && mw.skill.id==='decision-framing','requested method remains visible beside a different bound skill');
+await submitMethod({summary:'The kernel stays host-agnostic.',findings:['Keep the kernel host-agnostic.'],changes:[],artifact:null});
+mw=(await call('claim_work',{runId:methodRun.run.id,includeSkillBody:false})).work;
+const missingMethod=await submitMethod({verification:'Inspected the brief.',limits:[]});
+must(missingMethod.step.state==='leased' && missingMethod.validation.some(v=>v.validator==='requested_method_report'&&!v.ok),'missing requested method is correctable on the same lease');
+const methodDone=await submitMethod({verification:'Inspected the brief.',limits:['This consumer check does not perform independent adversarial review.'],methods:[{id:'adversarial-review',disposition:'skipped',why:'The consumer check exercises explicit skip recovery, not model review.',evidence:[]}]});
+must(methodDone.run.state==='succeeded' && !methodDone.deliverable.verification.semanticSupportVerified,'explicit skip completes with structural assurance only');
+const quality=await call('project_context',{topic:'quality'});
+const supplemental=quality.items.find(r=>r.skill==='adversarial-review');
+must(supplemental.steps===(beforeMethodQuality?.steps??0) && supplemental.applicationReports.skipped===(beforeMethodQuality?.applicationReports.skipped??0)+1 && supplemental.observedExecutionSteps===(beforeMethodQuality?.observedExecutionSteps??0),'supplemental report does not inherit bound-step success or execution');
+execFileSync(process.execPath,[process.argv[2],'init','--client=hermes'],{stdio:'pipe'});
+const runtime=JSON.parse(execFileSync(process.execPath,[process.argv[2],'doctor','--json'],{encoding:'utf8'})).readiness;
+const hermes=runtime.hosts.find(h=>h.host==='hermes');
+must(hermes && hermes.serverProjectBinding==='configured' && hermes.hostWorkspace==='unverified' && hermes.skillLoading==='unverified' && hermes.approvalAvailability==='unverified' && hermes.live==='unmeasured','Hermes static wiring never claims runtime readiness');
 const held = await call('work', { action: 'claim', id: sub.id, agent: 'smoke', paths: ['design.md'] });
 await call('work', { action: 'complete', id: sub.id, agent: 'smoke', token: held.claimToken, reason: 'The fixture applied no schema migration and verified the ledger round trip.' });
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → remember → rooted work claimed/completed → managed steps → draft held for native review → schema-led source report → reported access refused → changed bytes invalidate old citation → immutable history → ranked retrieval → portable chat delivery with checkpoints and explicit assurance: ok');
+console.log('loop: bootstrap → remember → rooted work claimed/completed → managed steps → draft held for native review → schema-led source report → reported access refused → changed bytes invalidate old citation → immutable history → ranked retrieval → portable chat delivery → requested-method recovery → separate application reporting → Hermes readiness limits: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out"

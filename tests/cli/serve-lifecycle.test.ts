@@ -146,11 +146,16 @@ for (const repair of ['init', 'migrate', 'malformed', 'newer', 'foreign'] as con
       const doctor = JSON.parse(cli(box, ['doctor', '--json'])) as {
         healthy: boolean;
         scope: string;
-        readiness: { connected: string; exercised: string };
+        readiness: { installed: boolean; connected: string; exercised: string; hosts: { host: string; live: string }[] };
       };
       assert.equal(doctor.healthy, true);
       assert.equal(doctor.scope, 'installation');
-      assert.deepEqual(doctor.readiness, { installed: true, connected: 'unverified', exercised: 'unverified' });
+      assert.deepEqual(
+        { ...doctor.readiness, hosts: undefined },
+        { installed: true, connected: 'unverified', exercised: 'unverified', hosts: undefined },
+      );
+      assert.equal(doctor.readiness.hosts[0]?.host, 'cursor');
+      assert.equal(doctor.readiness.hosts[0]?.live, 'unmeasured');
     } finally {
       await s.close();
       box.cleanup();

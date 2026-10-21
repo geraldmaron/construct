@@ -124,7 +124,18 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
         summary: 'draft',
         findings: ['429s rose'],
         artifact: 'docs/prd-webhooks.md',
-        derivations: [{ value: '0.8M', expression: '1.6M * 50%' }],
+        derivations: [
+          {
+            id: 'target',
+            claim: 'the target is 0.8M.',
+            value: '0.8M',
+            expression: '1.6M * 50%',
+            operands: [
+              { value: '1.6M', ref: 'docs/metrics.md', excerpt: 'June 1.6M' },
+              { value: '50%', ref: 'docs/okrs.md', excerpt: 'reduce API 429 responses by 50%' },
+            ],
+          },
+        ],
       },
       [{ ref: 'docs/metrics.md' }, { ref: 'docs/okrs.md', excerpt: 'reduce API 429 responses by 50%' }],
     );

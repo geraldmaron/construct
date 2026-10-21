@@ -60,16 +60,26 @@ code or comments (`scripts/lint-no-tracker-refs.mjs` enforces that).
 
 ## Construct in this repository
 
-This repository runs Construct on itself. `.mcp.json` starts
-`node bin/construct.mjs serve --client=claude-code` and `.claude/settings.json`
-runs the hooks through `$CLAUDE_PROJECT_DIR/bin/construct.mjs`, both from
-whichever checkout the session is in, so every git worktree gets Construct
-and runs its own branch's code. Do not run `construct init --client=claude-code`
-here to "fix" them: they are committed on purpose and carry no machine paths.
-Claude Code asks once to approve the project's MCP server.
+Build and deterministic tests do not require a Construct project, a model account,
+or maintainer configuration. To use Construct locally, follow the host setup in
+[the install guide](docs/first-run-and-hosts.md). The generated project identity,
+source map, database and host wiring stay ignored in this repository. Do not copy
+another checkout's project identity or initialize over an orphaned database.
+
+Before switching an existing clone across the cleanup of previously tracked
+configuration, copy its local configuration and runtime state outside the checkout.
+Git can remove files the earlier commit tracked. Restore the configuration matching
+an existing store before running setup. A fresh clone should initialize its own
+identity only when local Construct use is wanted.
 
 ## Agents working here
 
-Agents follow [AGENTS.md](AGENTS.md) and [COORDINATION.md](COORDINATION.md):
-claim work with the paths you will change before editing, one writer per
-path, and update [HANDOFF.md](HANDOFF.md) at the end of a session.
+[AGENTS.md](AGENTS.md) contains portable contributor instructions. Keep session
+handoffs, private planning and generated assessment records outside this repository.
+When using the native ledger, claim paths before editing and settle or hand off
+the claim with the observed checks. Do not add machine-wide preferences here.
+
+Delivery uses the exact candidate tarball plus external Claude Code and Codex
+receipts. See [release verification](docs/release-verification.md). Private
+corpora and generated traces remain local; sterile deterministic regressions
+belong in the normal suite. A structural pass is not semantic qualification.

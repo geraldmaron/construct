@@ -68,6 +68,7 @@ test('classify_request takes a typed reading, records nothing, and names who jud
     assert.match(r.next, UNREGISTERED);
     assert.match(r.next, /First inspect carrierAlternatives/);
     assert.match(r.skills['system-architecture'].useWhen, /\S/);
+    assert.equal(r.skills['governance-risk'], undefined, 'unselected professional skills stay deferred');
     assert.ok(Object.values(r.skills).every((s: any) => s.useWhen.length <= 200));
     assert.deepEqual(
       [r.matches[0].input.period, r.matches[0].input.request],

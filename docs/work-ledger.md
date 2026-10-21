@@ -207,3 +207,14 @@ another project is refused; work moves between projects as new items. Relationsh
 are restored after identities, so later-created parents and blockers are valid.
 Invalid cycles or conflicting relationship identities roll back the restore;
 skipped live items keep their own dependencies and history.
+
+## Bounded local requests
+
+The MCP work tool accepts `action:add` with
+`request:{words:<direct user instruction>,stakes:{reversible:true,affects:[]}}`.
+This admits only a task or defect. Prefer an existing parent or serves link.
+The request remains session-relayed purpose in premises; it is not remembered
+knowledge, an approval, a sensitive-action grant or human acceptance. Unknown
+stakes, consequential work, recurring operation and substantial resumable or
+multi-agent outcomes use the managed path. Claim paths before edits and complete
+with the existing token and observed verification.

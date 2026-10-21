@@ -1,3 +1,4 @@
+import { numericEqual, type BoundDerivation } from './derivations.ts';
 /** Bounded claim checks compare current evidence, not a model's passed flag. */
 import { createHash } from 'node:crypto';
 import type { RefResolver } from '../project/evidence.ts';
@@ -68,7 +69,7 @@ export function assessClaims(input: {
         text: hit?.text ?? '',
       };
     });
-    let derivation: { value: string; expression: string } | undefined;
+    let derivation: BoundDerivation | undefined;
     let status: 'supported' | 'contradicted' | 'unknown' = 'unknown';
     let basis = 'No bounded check establishes this claim; use an independent domain assessment.';
     if (!normalize(input.answer).includes(normalize(c.claim))) problems.push('claim text is not present in this answer');
@@ -110,13 +111,22 @@ export function assessClaims(input: {
           const sum = (values as number[]).reduce((a, b) => a + b, 0);
           if (!Number.isFinite(sum)) problems.push('calculation overflows finite numeric range');
           else {
-            status =
-              Math.abs(sum - calc.expected) <=
-              Number.EPSILON * Math.max(1, Math.abs(sum), Math.abs(calc.expected)) * Math.max(1, values.length)
-                ? 'supported'
-                : 'contradicted';
+            status = numericEqual(sum, calc.expected, values.length) ? 'supported' : 'contradicted';
             if (status === 'supported')
-              derivation = { value: String(calc.expected), expression: (values as number[]).map((n) => `(${String(n)})`).join('+') || '0' };
+              derivation = {
+                id: `mapped-${createHash('sha256').update(c.claim).digest('hex').slice(0, 20)}`,
+                claim: c.claim,
+                value: String(calc.expected),
+                expression: (values as number[]).map((n) => `(${String(n)})`).join('+') || '0',
+                operands: (values as number[]).map((n) => ({
+                  value: String(n),
+                  ref: c.refs.find((ref) => {
+                    const hit = input.resolve(ref);
+                    return hit?.sourceId === calc.sourceId && hit.itemRef === calc.item;
+                  })!,
+                  excerpt: String(n),
+                })),
+              };
             basis = `Mapped sum is ${String(sum)} ${calc.unit}; claim expects ${String(calc.expected)} ${calc.unit}. This verifies the typed calculation, not the surrounding prose.`;
           }
         }

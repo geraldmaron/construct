@@ -69,6 +69,7 @@ export const claimWork = define<{ runId?: string; includeSkillBody: boolean }, u
         inputs: p.inputs,
         intake: p.intake,
         method: p.method,
+        requestedMethod: p.requestedMethod,
         methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
         methodCatalogDetail: "Compact index; skills list/show provides each skill's description and method resources.",
         instructions: p.instructions,

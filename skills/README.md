@@ -123,11 +123,9 @@ Three ways to get a skill into your agent:
    `construct skill update` brings the project's registry lock up to the
    skills and workflows present.
 
-Method folders are designed to be used without the Construct runtime. Dated
-[standalone skill records](../docs/internal/skill-runs/) document earlier trials;
-they do not show the current version works on every host. A recorded run of
-the skill's evals, which are maintainer-local and never ship, does, for the
-host it ran on.
+Method folders can be used without the Construct runtime. Portability describes
+the file format; it does not establish effectiveness on a host. Keep model trials
+and private evaluation material outside the repository and installed skills.
 
 ## Limits
 
@@ -143,7 +141,7 @@ host it ran on.
 
 ## Status
 
-Experimental and actively developed. The test suite checks the shape of each
-skill's evals; only running them against a host shows how a skill does. In a project, `construct skill impact` reports how each
-version's steps did against their checks. These receipts do not establish causal
-method benefit. See [evals and skill impact](../docs/skills-and-packs.md#evals-and-skill-impact).
+Experimental and actively developed. Deterministic tests check product contracts,
+not general skill effectiveness. In a project, `construct skill impact` reports how
+each version's steps did against their checks. Host observations are bounded
+records; neither they nor structural receipts establish causal method benefit. See [evals and skill impact](../docs/skills-and-packs.md#evals-and-skill-impact).

@@ -1,3 +1,4 @@
+import { requestedMethodBinding } from '../../workflow/methods.ts';
 import { closed, ToolInputError } from '../definition.ts';
 import { CORE_EXAMPLE, validateIntake, matchWorkflows, questionsFor, GENERAL_CARRIER, workflowCarries } from '../../workflow/intake.ts';
 import { workflowCandidates } from '../../registry/workflow-domains.ts';
@@ -44,8 +45,8 @@ export const classify = define<Record<string, unknown>, unknown>({
     const { intake } = validated;
     const declared = declaredOf(intake);
     const found = matchWorkflows(intake, catalog);
-    const checked = found.map((m, i) => {
-      const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId, m.domain)!, {}, i === 0);
+    const checked = found.map((m) => {
+      const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId, m.domain)!, {}, false);
       const { preflight } = ctx.workflow.preflight(m.workflowId, input, { declared });
       return {
         match: {
@@ -62,11 +63,24 @@ export const classify = define<Record<string, unknown>, unknown>({
           input,
           missing,
         },
+        inputCompatible: Object.keys(intake.inputs).every((key) =>
+          Object.keys(ctx.workflows.get(m.workflowId, m.domain)!.manifest.inputSchema).includes(key),
+        ),
         judgment: preflight.judgment,
       };
     });
-    const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, found[0] ?? null, catalog));
-    const judgment = checked[0]?.judgment ?? ctx.workflow.judge({ workflowId: null, input: {}, declared });
+    const explicit = intake.workflowId === null ? undefined : checked.find((c) => c.match.workflowId === intake.workflowId);
+    const exact = checked.filter((c) => c.match.deliverableKind === intake.deliverable?.kind);
+    const runnable = (c: (typeof checked)[number]) => c.match.status === 'runnable' && c.match.missing.length === 0 && c.inputCompatible;
+    const chosen = explicit ?? exact.find(runnable) ?? exact[0] ?? checked.find(runnable) ?? checked[0];
+    const selected = chosen ? found.find((m) => m.workflowId === chosen.match.workflowId && m.domain === chosen.match.domain)! : null;
+    if (chosen) {
+      // Only the selected workflow owns the whole explicit input. Alternatives get declared keys only.
+      const mapped = mappedInput(intake, ctx.workflows.get(chosen.match.workflowId, chosen.match.domain)!, {}, true);
+      Object.assign(chosen.match, mapped);
+    }
+    const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, selected, catalog));
+    const judgment = chosen?.judgment ?? ctx.workflow.judge({ workflowId: null, input: {}, declared });
     return {
       recorded: false,
       judgedBy: judgedByHost(ctx),
@@ -75,8 +89,16 @@ export const classify = define<Record<string, unknown>, unknown>({
       resolved: validated.resolved,
       normalized: validated.normalized,
       matches: checked.map((c) => c.match),
+      selectedWorkflow: chosen?.match ?? null,
+      requestedMethod: requestedMethodBinding(
+        intake.skill,
+        ctx.skills,
+        selected
+          ? ctx.workflows.get(selected.workflowId, selected.domain)!.manifest.steps.flatMap((s) => (s.skill ? [s.skill.id] : []))
+          : [],
+      ),
       ...((intake.kind === 'manage' || intake.kind === 'maintain') &&
-      (intake.deliverable?.kind === 'other' || found[0]?.workflowId === GENERAL_CARRIER)
+      (intake.deliverable?.kind === 'other' || selected?.workflowId === GENERAL_CARRIER)
         ? {
             carrierAlternatives: workflowCandidates(catalog.workflows)
               .filter((w) => w.manifest.id !== GENERAL_CARRIER && workflowCarries(w, intake.kind, intake.schedule))
@@ -89,13 +111,13 @@ export const classify = define<Record<string, unknown>, unknown>({
               })),
           }
         : {}),
-      skills: skillCatalog(ctx, intake, found),
+      skills: skillCatalog(ctx, intake, selected ? [selected] : []),
       questions,
       hostQuestions,
       assumptions: validated.assumptions,
       flags: validated.flags,
       judgment,
-      next: classifyNext(validated, found[0]?.workflowId ?? null, questions.length + hostQuestions.length, judgment.challenge),
+      next: classifyNext(validated, selected?.workflowId ?? null, questions.length + hostQuestions.length, judgment.challenge),
     };
   },
 });

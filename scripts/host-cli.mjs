@@ -1,9 +1,7 @@
 /**
  * host-cli.mjs — how Construct's scripts drive a real host CLI: the
  * environment it runs with, its arguments, and how its event stream reads.
- * The maintainer-local live intake runner (evals/, never in git) and
- * `conformance --live` both use it, so a host is
- * invoked one way. The flags are the ones the 2026-10-08 probes ran with on
+ * Conformance and bounded delivery use the same invocation helpers. The flags are the ones the 2026-10-08 probes ran with on
  * claude 2.1.250, codex-cli 0.145.0 and cursor-agent 2026.09.26; where this
  * module departs from them, the comment at the flag says why.
  *
@@ -185,17 +183,20 @@ export function codexEvaluationIsolationArgs(mcpNames = [], { mcpTools = false }
 export function hostArgs(host, opts) {
   known(host);
   const { model, prompt = null, multiTurn = false, effort = null } = opts;
-  if (!model) throw new Error('a run names its model');
+  if (!model && !opts.delivery) throw new Error('a run names its model');
   if (host === 'claude-code') {
-    const allowed = ['mcp__construct', ...(opts.stubs ?? []).map((s) => `mcp__${s.name}`)];
+    const allowed = [
+      ...(opts.delivery ? ['Read', 'Edit', 'Write', 'Bash'] : []),
+      'mcp__construct',
+      ...(opts.stubs ?? []).map((s) => `mcp__${s.name}`),
+    ];
     if (!multiTurn && typeof prompt !== 'string') throw new Error('a one-turn run needs its prompt');
     return [
       ...(multiTurn ? ['-p', '--input-format', 'stream-json'] : ['-p', prompt]),
       '--output-format',
       'stream-json',
       '--verbose',
-      '--model',
-      model,
+      ...(model ? ['--model', model] : []),
       '--strict-mcp-config',
       '--mcp-config',
       opts.mcpConfig,
@@ -203,9 +204,9 @@ export function hostArgs(host, opts) {
       'project,local',
       '--no-session-persistence',
       '--max-turns',
-      String(HOST_RUN_LIMITS.maxTurns),
+      String(opts.delivery ? 40 : HOST_RUN_LIMITS.maxTurns),
       '--max-budget-usd',
-      String(HOST_RUN_LIMITS.claudeBudgetUsd),
+      String(opts.delivery ? 5 : HOST_RUN_LIMITS.claudeBudgetUsd),
       '--allowedTools',
       allowed.join(' '),
     ];
@@ -217,12 +218,11 @@ export function hostArgs(host, opts) {
       '--json',
       '--ephemeral',
       '--skip-git-repo-check',
-      '--ignore-user-config',
+      ...(opts.delivery ? [] : ['--ignore-user-config']),
       ...codexEvaluationIsolationArgs(opts.disabledMcpNames ?? [], { mcpTools: true }),
       '-s',
-      'read-only',
-      '-m',
-      model,
+      opts.delivery ? 'workspace-write' : 'read-only',
+      ...(model ? ['-m', model] : []),
       ...(effort ? ['-c', `model_reasoning_effort=${toml(effort)}`] : []),
       ...codexProviderArgs(opts.provider ?? null),
       ...codexServer('construct', opts.server),
@@ -285,6 +285,7 @@ export function parseHostStream(host, lines) {
     modelSource: 'requested',
     hostVersion: null,
     toolUses: [],
+    commands: [],
     skillLoads: [],
     toolSearch: { available: null, calls: 0 },
     finalText: null,
@@ -298,6 +299,7 @@ export function parseHostStream(host, lines) {
   const list = events(lines);
   if (host === 'claude-code') {
     let results = 0;
+    const shellCalls = new Map();
     for (const e of list) {
       if (e.type === 'system' && e.subtype === 'init') {
         if (typeof e.model === 'string') {
@@ -312,6 +314,7 @@ export function parseHostStream(host, lines) {
         for (const b of e.message.content) {
           if (b?.type !== 'tool_use') continue;
           out.toolUses.push({ name: b.name, input: b.input ?? {} });
+          if (b.name === 'Bash' && typeof b.id === 'string' && typeof b.input?.command === 'string') shellCalls.set(b.id, b.input.command);
           if (b.name === 'ToolSearch') out.toolSearch.calls += 1;
           if (b.name === 'Skill' && typeof b.input?.skill === 'string') out.skillLoads.push(b.input.skill);
           const path = b.input?.file_path ?? b.input?.path ?? b.input?.command;
@@ -319,6 +322,10 @@ export function parseHostStream(host, lines) {
           if (m) out.skillLoads.push(m[1]);
         }
       }
+      if (e.type === 'user' && Array.isArray(e.message?.content))
+        for (const b of e.message.content)
+          if (b?.type === 'tool_result' && shellCalls.has(b.tool_use_id))
+            out.commands.push({ command: shellCalls.get(b.tool_use_id), success: b.is_error !== true, source: 'tool_result' });
       if (e.type === 'result') {
         results += 1;
         out.turns += typeof e.num_turns === 'number' ? e.num_turns : 0;
@@ -342,6 +349,7 @@ export function parseHostStream(host, lines) {
         out.toolUses.push({ name: `mcp__${item.server}__${item.tool}`, input: item.arguments ?? {} });
       if (e.type === 'item.completed' && item?.type === 'command_execution') {
         out.toolUses.push({ name: 'shell', input: { command: item.command } });
+        out.commands.push({ command: item.command, success: item.exit_code === 0, source: 'exit_code' });
         const m = typeof item.command === 'string' ? item.command.match(SKILL_FILE) : null;
         if (m) out.skillLoads.push(m[1]);
       }

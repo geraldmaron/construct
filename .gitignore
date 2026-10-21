@@ -33,7 +33,22 @@ tmp/
 .construct/recovery/
 # Browser-automation console logs written by the Playwright MCP server
 .playwright-mcp/
-# Evals are maintainer-local work: the skill evals, the intake corpus and live
-# record, and the harness that runs them. They never ship and never enter git;
-# evals/ holds its own local history.
+# Private research and generated records live outside this checkout.
 /evals/
+/docs/internal/
+/STRATEGY.md
+/RESEARCH-DECISIONS.md
+/HANDOFF.md
+/COORDINATION.md
+
+# This repository's dogfooding identity, sources and host wiring are local.
+# Public product examples and schemas live under docs/, src/ and tests/.
+/.construct/
+/.mcp.json
+/.claude/
+/.codex/
+/.agents/
+/.bob/
+/.cursor/mcp.json
+/.vscode/mcp.json
+/opencode.json

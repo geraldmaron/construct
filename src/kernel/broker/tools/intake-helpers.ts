@@ -221,17 +221,13 @@ function firstSentence(text: string, cap = 200): string {
   return sentence.length <= cap ? sentence : `${sentence.slice(0, cap - 1).trimEnd()}…`;
 }
 
-/** The skills the matches bind, and the chosen one; for the general carrier with no method chosen, every method and professional skill. */
+/** Metadata for the selected workflow's bound skills and explicit method; alternatives remain deferred. */
 export function skillCatalog(
   ctx: BrokerContext,
   intake: Intake,
   found: readonly WorkflowMatch[],
 ): Record<string, { title: string; category: string; useWhen: string }> {
   const ids = new Set<string>([...(intake.skill ? [intake.skill] : []), ...found.flatMap((m) => m.skills)]);
-  if (found[0]?.workflowId === GENERAL_CARRIER && intake.skill === null) {
-    for (const s of ctx.skills.list())
-      if (s.manifest.category === 'method' || s.manifest.category === 'professional') ids.add(s.manifest.id);
-  }
   const out: Record<string, { title: string; category: string; useWhen: string }> = {};
   for (const id of ids) {
     const s = ctx.skills.get(id);
@@ -268,7 +264,7 @@ export function classifyNext(validated: ValidatedIntake, first: string | null, o
   if (first === 'managed-outcome' && open === 0)
     return `${prefix}The implementation path requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this path only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
   if (open > 0)
-    return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
+    return `${prefix}Resolve these ${String(open)} missing input(s) from available context first; put only the unresolved decisions to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
   return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` start_outcome saves the standing intent without starting work now. The clock and executor still require provisioning; ${scheduleCommand(first, intake.schedule)} is only an alternate definition command, not an executing schedule.` : ''}`;
 }
 
