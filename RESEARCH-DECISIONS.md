@@ -507,3 +507,37 @@ shims for one more release. Rejected: every release so far is an
 experimental alpha with no stability promise, and a shim kept one release
 is the pattern that kept the earlier ones. Verdict: **accepted** by
 Gerald.
+
+
+## 19. Deliver locally through two hosts with bounded assurance (2026-10-21)
+
+Gerald approved the delivery plan after the adversarial audit: finish the existing
+CLI/MCP application, stop further assessment campaigns, validate live only with
+Claude Code and Codex, and simulate other hosts with explicit limits.
+
+**Decision.** Ordinary questions stand down. Bounded reversible local tasks may
+use direct-request admission in the existing ledger, with file claims and known
+stakes. This records relayed purpose, never permission or acceptance. Substantial,
+consequential, recurring or multi-agent outcomes retain managed workflows. Reuse
+supplied plans without treating planning content as approval. Bound arithmetic
+operands to held excerpts and keep structural, arithmetic, execution, semantic
+and human-acceptance observations distinct. Keep sterile deterministic regressions
+in normal tests; private/held-out data and generated traces stay local. Delivery
+requires exact-package receipts for the two allowed hosts, with broadQualification
+false. The qualified tier is retired rather than silently weakened or relabeled.
+Public release still requires a separate direction.
+
+**Challenge.** Strongest failure mode: a smaller delivery check could be mistaken
+for demonstrated effectiveness or semantic correctness, while ordinary host work
+would still be cheaper. Best simpler alternative: direct host execution. Adopt it
+for bounded local work, retaining existing leases and sensitive-action controls.
+The final gate requires both observed host walkthroughs and source/package hashes;
+it checks records and bindings, not the truth of a maintainer's attestation.
+Claude Code's resolved `claude-opus-5-5` challenged the plan; its arithmetic-binding,
+routing-consistency and assurance objections are incorporated. Verdict: **accepted
+with controls** under the approved local-delivery scope.
+
+**History correction.** The wording in decisions 17/18 overstated eval removal.
+Current main and package contents exclude the private corpus, but reachable
+historical alpha tags retain earlier material. No complete history removal is
+claimed, and no further history rewrite is directed.

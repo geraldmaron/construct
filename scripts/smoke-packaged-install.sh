@@ -25,13 +25,20 @@ expect_contains() {
   esac
 }
 
-echo "== building =="
 cd "$repo_root"
-npm run build --silent
-
-echo "== packing =="
-tarball="$(npm pack --silent --pack-destination "$scratch")"
-tarball_path="$scratch/$tarball"
+if [ "$#" -eq 2 ] && [ "$1" = "--tarball" ]; then
+  tarball_path="$(node -e 'process.stdout.write(require("node:path").resolve(process.argv[1]))' "$2")"
+  [ -f "$tarball_path" ] || fail "candidate tarball is absent"
+  # Build the source for module-parity checks without repacking the candidate.
+  npm run build --silent
+elif [ "$#" -eq 0 ]; then
+  echo "== building and packing =="
+  npm run build --silent
+  tarball="$(npm pack --silent --pack-destination "$scratch")"
+  tarball_path="$scratch/$tarball"
+else
+  fail "usage: smoke-packaged-install.sh [--tarball <candidate.tgz>]"
+fi
 
 echo "== every packed module has a source =="
 orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' | while read -r m; do [ -f "src/$m.ts" ] || echo "dist/$m.js"; done)"

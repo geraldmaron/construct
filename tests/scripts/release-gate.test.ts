@@ -344,7 +344,7 @@ test('evidence paths cannot escape the repository through traversal or symlinks'
     rmSync(outside, { recursive: true, force: true });
   }
 });
-test('release CI retains code gates and selects experimental evidence explicitly', () => {
+test('release CI retains code gates and requires exact-package delivery evidence', () => {
   const y = readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf8');
   for (const cmd of [
     'npm ci',
@@ -352,11 +352,11 @@ test('release CI retains code gates and selects experimental evidence explicitly
     'npm run typecheck',
     'npm test',
     'npm run smoke',
-    'npm run release:check -- --tier=experimental-alpha',
-    'npm publish --provenance --tag alpha',
+    'npm run release:check -- --manifest=delivery/bundle/manifest.json --tarball=',
+    'npm publish "${{ steps.candidate.outputs.path }}" --provenance --tag alpha',
   ])
     assert.ok(y.includes(cmd), cmd);
-  assert.ok(y.indexOf('release:check') < y.indexOf('npm publish --provenance'));
+  assert.ok(y.indexOf('release:check') < y.indexOf('npm publish'));
 });
 
 test('a new native attempt makes previous success ineligible until completion', () => {

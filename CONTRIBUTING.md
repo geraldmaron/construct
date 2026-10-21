@@ -73,3 +73,8 @@ Claude Code asks once to approve the project's MCP server.
 Agents follow [AGENTS.md](AGENTS.md) and [COORDINATION.md](COORDINATION.md):
 claim work with the paths you will change before editing, one writer per
 path, and update [HANDOFF.md](HANDOFF.md) at the end of a session.
+
+Delivery uses the exact candidate tarball plus external Claude Code and Codex
+receipts. See [release verification](docs/release-verification.md). Private
+corpora and generated traces remain local; sterile deterministic regressions
+belong in the normal suite. A structural pass is not semantic qualification.

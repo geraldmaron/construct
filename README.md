@@ -5,7 +5,7 @@ It stores admitted context and work, resolves versioned methods and workflows,
 and keeps delivery, verification, review and your acceptance separate. Your host
 provides the model, tools and sandbox.
 
-**Experimental: 3.0.0-alpha.33.** Available under npm’s `alpha` tag; `latest`
+**Experimental: 3.0.0-alpha.34.** This candidate is delivered locally as a tarball; public publication is separate. Published prereleases use npm’s `alpha` tag; `latest`
 remains on the 2.x line. Installation and static host wiring are tested;
 broad host effectiveness, canonical native isolation and measured skill benefit
 remain unqualified. See [verification and limits](#verification-and-limits).
@@ -110,7 +110,7 @@ qualified person, never professional sign-off.
 ## Upgrade
 
 Install the new package, stop the project’s Construct sessions, then follow
-`construct doctor`. Current state format is **5**; run `construct migrate` only
+`construct doctor`. Current state format is **6**; run `construct migrate` only
 when an older supported store needs upgrading. Migration backs up the store;
 do not reset it to upgrade. Run `construct init --client=<host>` to reconcile
 wiring and `construct skill update` to reconcile the registry, then restart
@@ -143,3 +143,17 @@ hand edits. See [architecture](docs/architecture-and-state-model.md) and
 ## License
 
 [Apache-2.0](LICENSE).
+
+### Routine work
+
+Answer ordinary questions through the host. For a bounded reversible local task,
+Construct records its direct request and file claim in the native ledger; no
+workflow or remembered knowledge statement is required. Consequential, recurring,
+multi-agent and substantial resumable outcomes use managed workflows. Bootstrap
+is needed once when first using Construct.
+
+Arithmetic checks bind operands to held excerpts and report their limited scope.
+Structural validation does not prove semantic correctness or human acceptance.
+[Delivery verification](docs/release-verification.md) describes the exact-package,
+Claude Code and Codex acceptance records. Other hosts have static and simulated
+contracts; live parity is unmeasured.

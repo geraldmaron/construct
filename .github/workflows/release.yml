@@ -41,11 +41,34 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run smoke
-      - name: require current experimental-alpha evidence
-        # Explicitly approved experimental tier; rejects stable and non-alpha tags.
-        # Broader readiness still requires release:check -- --tier=qualified.
-        run: npm run release:check -- --tier=experimental-alpha
+      - run: npm run conformance
+      - name: download the explicitly supplied delivery bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir delivery
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --pattern construct-delivery.zip --dir delivery
+          python3 - <<'PYCODE'
+          import pathlib, stat, zipfile
+          with zipfile.ZipFile('delivery/construct-delivery.zip') as archive:
+              for item in archive.infolist():
+                  path = pathlib.PurePosixPath(item.filename)
+                  if path.is_absolute() or '..' in path.parts or stat.S_ISLNK(item.external_attr >> 16):
+                      raise SystemExit('delivery bundle contains an unsafe path')
+              archive.extractall('delivery/bundle')
+          PYCODE
+      - name: select the already packed candidate
+        id: candidate
+        run: |
+          mapfile -t candidates < <(find delivery/bundle -maxdepth 1 -type f -name '*.tgz')
+          if [ "${#candidates[@]}" -ne 1 ]; then
+            echo 'delivery bundle must contain exactly one candidate tarball' >&2
+            exit 1
+          fi
+          echo "path=${candidates[0]}" >> "$GITHUB_OUTPUT"
+      - run: npm run smoke -- --tarball "${{ steps.candidate.outputs.path }}"
+      - name: require both host receipts for these exact bytes
+        run: npm run release:check -- --manifest=delivery/bundle/manifest.json --tarball="${{ steps.candidate.outputs.path }}"
       - name: verify tag matches package.json version
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
@@ -75,4 +98,4 @@ jobs:
       # --tag alpha keeps every alpha off the default `latest` dist-tag, which
       # `npm publish` would otherwise move to whatever it publishes. `latest`
       # moves only when 3.0.0 is promoted deliberately.
-      - run: npm publish --provenance --tag alpha
+      - run: npm publish "${{ steps.candidate.outputs.path }}" --provenance --tag alpha

@@ -30,7 +30,7 @@ test('the conformance run needs no credential and reports every host as passed, 
       assert.ok(['passed', 'failed', 'untested'].includes(c.status), `${c.host}/${c.check}: ${c.status}`);
       if (c.status === 'untested') assert.ok(c.detail.length > 10, `${c.host}/${c.check} is untested without a reason`);
     }
-    for (const host of ['claude-code', 'cursor', 'vscode', 'opencode', 'codex', 'bob']) {
+    for (const host of ['claude-code', 'cursor', 'vscode', 'opencode', 'codex', 'bob', 'hermes']) {
       assert.ok(
         parsed.checks.some((c) => c.host === host && c.check === 'live host call' && c.status === 'untested'),
         `${host}: a static run never claims a live host call`,
