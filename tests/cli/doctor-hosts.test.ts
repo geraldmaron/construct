@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { chmodSync, copyFileSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
+import { WIRABLE_CLIENTS } from '../../src/hosts/wiring/clients.ts';
 import type { CliContext } from '../../src/cli/context.ts';
 import { CHECKOUT_LAUNCHER } from '../harness/sterile.ts';
 import { capture, sandbox, type Sandbox } from './support.ts';
@@ -204,6 +205,33 @@ test('the operational skill is checked once in each project skills directory a w
     const missing = (await doctorWith(box, box.ctx.env.PATH!)).checks.filter((c) => c.name === 'operational-skill' && !c.ok);
     assert.equal(missing.length, 1);
     assert.match(missing[0]!.detail, /^absent in .*\.bob\/skills \(read by bob\): .*; `construct init --client=bob` plants /);
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('doctor separates static Hermes binding from unverified host workspace, skill loading and approval availability', async () => {
+  const box = sandbox();
+  try {
+    await wired(box, ...WIRABLE_CLIENTS);
+    const result = await capture(() => run(['doctor', '--json'], box.ctx));
+    const health = JSON.parse(result.out);
+    assert.equal(health.scope, 'installation');
+    assert.equal(health.readiness.connected, 'unverified');
+    assert.equal(health.readiness.hosts.length, WIRABLE_CLIENTS.length);
+    for (const host of health.readiness.hosts) {
+      assert.equal(host.serverProjectBinding, 'configured');
+      assert.equal(host.hostWorkspace, 'unverified');
+      assert.equal(host.skillLoading, 'unverified');
+      assert.equal(host.approvalAvailability, 'unverified');
+      assert.equal(host.live, 'unmeasured');
+    }
+    const hermes = health.readiness.hosts.find((h: any) => h.host === 'hermes');
+    assert.match(hermes.limitations.join(' '), /trust: untrusted/);
+    assert.match(hermes.limitations.join(' '), /does not establish|do not establish/);
+    const text = await capture(() => run(['doctor'], box.ctx));
+    assert.match(text.out, /Runtime hermes: unverified/);
+    assert.match(text.out, /Hermes live behavior has not been exercised/);
   } finally {
     box.cleanup();
   }

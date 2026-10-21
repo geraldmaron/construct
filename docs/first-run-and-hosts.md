@@ -342,6 +342,15 @@ entry; anything not listed there is untested, not assumed.
 [release-verification.md](release-verification.md) says how live host
 conformance is run.
 
+The MCP server's pinned project and working directory do not establish the host
+session's workspace, loaded skills or approval surface. `doctor --json` reports
+these runtime properties as unverified for every host, separately from installation.
+For Hermes, set the session workspace (or cron `workdir`) to the trusted project;
+run `hermes skills trust` interactively when appropriate. The presence of the
+operational skill on disk does not prove it loaded. Keep `trust: untrusted`:
+interactive or gateway writes need an available approver, and unattended work
+cannot assume write permission. Static conformance does not prove live Hermes parity.
+
 Hermes Agent has no project MCP file: it reads servers only from
 `config.yaml` in its own data directory (`~/.hermes`, or `HERMES_HOME`). So
 its entry is the one host file that names this project by path, lives
