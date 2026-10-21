@@ -11,8 +11,10 @@ and no external tracker in the default local mode.
 
 ## Operating contract
 
-Call `bootstrap` once. Answer plain questions plainly and record nothing.
-Remember only when asked. Manage an outcome through `classify_request`,
+Call `bootstrap` once when Construct is first needed. Answer plain questions plainly and record nothing.
+Remember only when asked. Bounded reversible local tasks use `work add` with a direct `request` and known
+stakes, then claim paths and complete. No remembered fact or workflow is needed.
+Consequential, recurring, multi-agent or substantial resumable work manages an outcome through `classify_request`,
 then `start_outcome`, then `claim_work` / `submit_work` in this session.
 Use `project_context` one topic at a time. Use `work` for the native
 ledger, and file work with its place: a `parent` work item or the decision,

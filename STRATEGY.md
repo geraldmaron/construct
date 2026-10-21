@@ -126,21 +126,18 @@ each exercised path recorded, each untested path named.
    matches workflows by the deliverable each declares, and asks only what is
    missing. It checks the reading again before any run starts. If the host
    never calls, nothing is recorded. If it calls on a plain question, work
-   starts that nobody asked for. Mitigation: the maintainer's live intake
-   evals (kept out of the repository) drive Claude Code, Codex, and Cursor
-   one request at a time against a fresh
-   project. The requests are held out, in ordinary language, and labeled by
-   two model families. Each runs with Construct alone, among competing
-   servers, on a project not yet set up, and with instructions planted in what
-   a connector returns. Any change to what a host model reads from Construct
-   is not merged to main or released until a fresh record covers it and is
-   no worse than the accepted record beyond the noise between runs. That
-   covers server instructions, tool descriptions and schemas, the operational
-   skill, and the skill and workflow text Construct returns.
-   The qualified release tier checks that the record covers the current
-   text. Word-overlap scores may only order options or raise rigor, are
-   labeled lexical, and never veto. A host that cannot be driven headlessly here is
-   listed as unmeasured, not passed.
+   starts that nobody asked for. Mitigation: plain questions stand down;
+   bounded reversible local tasks use request-rooted ledger claims; consequential,
+   recurring, multi-agent and substantial resumable work uses managed workflows.
+   The host reports typed stakes; missing stakes never justify a lightweight path.
+   Reuse supplied plans as content without treating them as permission.
+   Deterministic protocol, routing, scorer and validator regressions are committed
+   and run in the normal gate. Private/held-out data and generated traces stay
+   maintainer-local. Delivery requires the exact candidate package, passing code
+   gates and one final observed walkthrough in each of Claude Code and Codex.
+   Other hosts have static/simulated contracts and remain live-unmeasured.
+   This is bounded delivery assurance, not broad effectiveness or semantic
+   qualification. No further benchmark matrix is a delivery prerequisite.
 2. **Doctrine goes stale.** Pack sources carry review dates and were not
    re-opened in the build that cited them. Mitigation: each source names a
    review-due date; a finding leaning on a clause must open it first.

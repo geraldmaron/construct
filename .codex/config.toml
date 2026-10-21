@@ -1,0 +1,4 @@
+[mcp_servers.construct]
+command = "construct"
+args = ["serve", "--client=codex"]
+tool_timeout_sec = 120

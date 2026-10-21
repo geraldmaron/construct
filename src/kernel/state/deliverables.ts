@@ -33,6 +33,22 @@ export interface Deliverable {
   readonly updatedAt: string;
 }
 
+/** Presentation never lets a structural trust transition imply semantic support or human acceptance. */
+export function deliverableAssurance(d: Pick<Deliverable, 'trustState' | 'verification'>) {
+  const v = d.verification as { assurance?: unknown; executionVerified?: unknown; semanticSupportVerified?: unknown } | null;
+  const structural = v?.assurance === 'structural';
+  const semanticSupportVerified = v?.semanticSupportVerified === true;
+  const executionVerified = v?.executionVerified === true;
+  const humanAccepted = d.trustState === 'accepted' || d.trustState === 'final';
+  return {
+    structural,
+    executionVerified,
+    semanticSupportVerified,
+    humanAccepted,
+    label: `${structural ? 'structural checks recorded' : 'structural checks not recorded'}; ${executionVerified ? 'execution observed' : 'execution unverified'}; ${semanticSupportVerified ? 'semantic review recorded' : 'semantic support unverified'}; ${humanAccepted ? 'human accepted' : 'not human accepted'}`,
+  };
+}
+
 interface Row {
   readonly id: string;
   readonly run_id: string;

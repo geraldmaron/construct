@@ -135,7 +135,7 @@ counts.
 | `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
 | `superseded_acknowledged` | a superseded document is used without saying so |
 | `decision_ask_present` | a proposal has no decision section naming who decides and by when (a `decisionBy` date such as 2026-10-16 is found as written or as "October 16", "Oct 16" or "16 October") |
-| `sources_diverse` | research rests on fewer than two independent places that hold content (pages of one website count once) |
+| `sources_diverse` | research has fewer than two locations with different held content (exact copies deduplicate; pages of one website count once); source independence remains unverified |
 | `within_period` | a cited item was updated after the period the run covers ends, and the output does not list it under `outsidePeriod` with why it belongs |
 | `named_sources_read` | a source the run names has nothing cited from it, and the output does not list it under `unread` with why |
 
@@ -177,10 +177,10 @@ The `authoring` workflow applies them in a gather, draft, challenge, record
 sequence. Its domain selects requirements structuring for a PRD, decision
 framing for a proposal, system architecture for an RFC, or investigative
 research for a research brief. The research domain asks for at least two
-independent sources and takes an optional period and named sources; its
+distinct source locations with different held content (not verified independence) and takes an optional period and named sources; its
 citations are checked against both. Proposal retains its required audience
-and decision-ask check. The former authoring ids remain aliases, listed in
-[workflows and resolution](workflows-and-resolution.md#built-in-workflows).
+and decision-ask check. Former authoring ids are refused; use `authoring` with
+a declared domain. See [workflows and resolution](workflows-and-resolution.md#built-in-workflows).
 What these checks cannot tell is whether a grounded claim is the right claim;
 that is the challenge step's and the person's.
 

@@ -496,9 +496,9 @@ export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
   };
 }
 
-/** The line every session starts with, whatever waits: the person's request is read by the host, through classify_request. */
+/** Every session starts with the bounded operating paths; setup never comes before the request. */
 export const SESSION_START_LINE =
-  'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
+  'Construct is bound to this project: answer ordinary questions directly; use work with request/stakes for bounded reversible local tasks, and classify_request for managed outcomes. Bootstrap once when first needed.';
 
 /**
  * A short note for the start of a session: the classify_request line, then
@@ -524,5 +524,7 @@ export async function onSessionStart(ctx: BrokerContext): Promise<string> {
     parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
   if (waits.setup.length > 0)
     parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
-  return parts.length ? `${SESSION_START_LINE} ${parts.join(' ')} State project facts only after check_answer.` : SESSION_START_LINE;
+  return parts.length
+    ? `${SESSION_START_LINE} ${parts.join(' ')} Use check_answer for Construct-held evidence and governed statements.`
+    : SESSION_START_LINE;
 }

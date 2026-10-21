@@ -5,7 +5,9 @@
  * to exist: an admitted parent work item, an active decision, requirement,
  * initiative, or metric it serves, or the person filing it from a terminal of
  * their own. An outcome is no exception: a session's outcome needs a reason
- * too. Work filed without one is proposed: visible in the ledger, never
+ * too. A bounded reversible task or defect can instead carry a direct
+ * request with known stakes, recorded as relayed purpose, never authority.
+ * Work filed without a purpose is proposed: visible in the ledger, never
  * ready, never claimable. Linking a reason later admits it, so does the
  * person admitting it, and admitting an item admits its proposed children.
  * A reason is a recorded link, not the person's approval: a decision a
@@ -36,7 +38,36 @@ import {
 const FINISHED = new Set(['completed', 'cancelled', 'superseded', 'historical']);
 
 /** Why a work item is in the backlog, or null when nothing yet gives it a reason. */
-export type AdmissionBasis = 'parent' | 'serves' | 'person';
+export type AdmissionBasis = 'parent' | 'serves' | 'person' | 'request';
+
+export interface WorkRequest {
+  readonly words: string;
+  readonly stakes: { readonly reversible: true; readonly affects: readonly [] };
+}
+
+/** A host reports the direct request. This admits purpose, never permission or acceptance. */
+export function workRequest(raw: unknown): WorkRequest {
+  const r = raw as Record<string, unknown> | null;
+  const stakes = r?.stakes as Record<string, unknown> | null;
+  if (
+    !r ||
+    Array.isArray(r) ||
+    Object.keys(r).some((k) => !['words', 'stakes'].includes(k)) ||
+    typeof r.words !== 'string' ||
+    !r.words.trim() ||
+    r.words.length > 16000 ||
+    !stakes ||
+    Array.isArray(stakes) ||
+    Object.keys(stakes).some((k) => !['reversible', 'affects'].includes(k)) ||
+    stakes.reversible !== true ||
+    !Array.isArray(stakes.affects) ||
+    stakes.affects.length !== 0
+  )
+    throw new Error(
+      'request needs direct user words (1–16000 characters) and stakes:{reversible:true,affects:[]}; unknown or consequential stakes require classify_request and a managed outcome',
+    );
+  return { words: r.words, stakes: { reversible: true, affects: [] } };
+}
 
 export interface StructureLinks {
   /** A work item this one is part of. */
@@ -50,6 +81,7 @@ export interface StructureLinks {
 }
 
 export interface FileWorkInput extends StructureLinks {
+  readonly request?: WorkRequest;
   readonly id: string;
   readonly kind: WorkKind;
   readonly title: string;
@@ -105,6 +137,7 @@ export function admissionBasis(store: StateStore, work: WorkItem): AdmissionBasi
     if (parent && parent.status !== 'proposed' && !FINISHED.has(parent.status)) return 'parent';
   }
   if (work.entityId && workReasons(store, work.entityId).length > 0) return 'serves';
+  if ((work.premises as { request?: unknown } | null)?.request && recordedBasis(store, work.id) === 'request') return 'request';
   return null;
 }
 
@@ -148,11 +181,16 @@ function promote(store: StateStore, work: WorkItem, basis: AdmissionBasis, at: s
  */
 export function fileWork(store: StateStore, input: FileWorkInput): Filed {
   requireInstant(input.at, 'work.at');
+  const request = input.request === undefined ? undefined : workRequest(input.request);
+  if (request && !['task', 'defect'].includes(input.kind))
+    throw new Error('request admission is only for a bounded reversible task or defect; use a managed outcome for larger work');
   return store.transaction(() => {
     const parent = input.parentId ? requireParent(store, null, input.parentId) : null;
+    if (request && parent?.status === 'proposed')
+      throw new Error('request admission cannot bypass a proposed parent; use an admitted parent or file a separate bounded root task');
     const reason = input.serves ? resolveWorkReason(store, input.serves) : null;
     const basis: AdmissionBasis | null =
-      parent && parent.status !== 'proposed' ? 'parent' : reason ? 'serves' : input.byPerson ? 'person' : null;
+      parent && parent.status !== 'proposed' ? 'parent' : reason ? 'serves' : input.byPerson ? 'person' : request ? 'request' : null;
     const acceptance = cleanList(input.acceptance);
     const sources = cleanList(input.sources);
     const created = createWork(store, {
@@ -163,7 +201,10 @@ export function fileWork(store: StateStore, input: FileWorkInput): Filed {
       parentId: input.parentId,
       acceptance: acceptance.length > 0 ? acceptance : undefined,
       risk: input.risk?.trim() ? input.risk.trim() : undefined,
-      premises: sources.length > 0 ? { sources } : undefined,
+      premises:
+        sources.length > 0 || request
+          ? { ...(sources.length ? { sources } : {}), ...(request ? { request: { ...request, attestation: 'relayed' } } : {}) }
+          : undefined,
       status: basis ? 'open' : 'proposed',
       at: input.at,
       actor: input.actor,
@@ -288,7 +329,7 @@ function recordedBasis(store: StateStore, id: string): AdmissionBasis | null {
     .get(id) as { payload_json: string } | undefined;
   if (!row) return null;
   const basis = (JSON.parse(row.payload_json) as { basis?: unknown }).basis;
-  return basis === 'parent' || basis === 'serves' || basis === 'person' ? basis : null;
+  return basis === 'parent' || basis === 'serves' || basis === 'person' || basis === 'request' ? basis : null;
 }
 
 /** Everything around one work item, for show. */

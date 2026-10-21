@@ -287,13 +287,13 @@ test('session start says what waits and which sources only the host can read', a
   }
 });
 
-test("session start always says to read the person's request with classify_request, and a setup question is offered after it, never counted as waiting", async () => {
+test('session start distinguishes ordinary answers, local tasks and managed outcomes, and a setup question is offered after it, never counted as waiting', async () => {
   const fx = brokerFixture();
   try {
     assert.equal(await onSessionStart(fx.broker), SESSION_START_LINE, 'nothing waits: the one line');
     assert.equal(
       SESSION_START_LINE,
-      'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.',
+      'Construct is bound to this project: answer ordinary questions directly; use work with request/stakes for bounded reversible local tasks, and classify_request for managed outcomes. Bootstrap once when first needed.',
     );
     const at = fx.broker.now();
     for (const q of ONBOARDING_QUESTIONS)

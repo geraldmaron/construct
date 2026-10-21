@@ -1,3 +1,4 @@
+import { deliverableAssurance } from '../../state/deliverables.ts';
 import { TRUST_STATES, type TrustState, getDeliverable } from '../../state/deliverables.ts';
 import { type Objection, OBJECTION_DISPOSITIONS, VALIDATED_BY_CHECKS, OBJECTIONS_EXAMPLE, readObjections } from '../../workflow/service.ts';
 import { closed, ToolInputError, str } from '../definition.ts';
@@ -78,7 +79,10 @@ export const promote = define<{ deliverableId: string; to: TrustState; reason?: 
       const asked = await askThePerson(ctx, pending.id, null);
       if (asked && (asked.decision as { state: string }).state !== 'open') {
         const d = getDeliverable(ctx.store, deliverableId);
-        return { ...asked, deliverable: { id: deliverableId, trust: d?.trustState ?? 'unchanged' } };
+        return {
+          ...asked,
+          deliverable: { id: deliverableId, trust: d?.trustState ?? 'unchanged', ...(d ? { assurance: deliverableAssurance(d) } : {}) },
+        };
       }
       return {
         deliverable: { id: deliverableId, trust: 'unchanged' },
@@ -90,6 +94,6 @@ export const promote = define<{ deliverableId: string; to: TrustState; reason?: 
     }
     const verification = to === 'challenged' ? { challenge: { objections: objections ?? [] } } : undefined;
     const d = ctx.workflow.promote({ deliverableId, to, by: ctx.actor, channel: 'relay', reason, verification });
-    return { deliverable: { id: d.id, trust: d.trustState } };
+    return { deliverable: { id: d.id, trust: d.trustState, assurance: deliverableAssurance(d) } };
   },
 });

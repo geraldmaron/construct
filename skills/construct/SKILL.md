@@ -1,18 +1,14 @@
 ---
 name: construct
 description: >-
-  Use this whenever the person wants work done in a Construct-bound project:
-  something produced, implemented, fixed, reviewed, kept up on a schedule,
-  recorded, or handed to another agent, as an order or a question.
-  Examples: implement ledger item work-1234; fix the failing release check;
-  put together a Q3 architecture diagram from Jira and GitHub; check this
-  plan against our principles; remember that we decided; every Monday
-  compare the roadmap to the board. For work, call classify_request
-  with your own reading before editing anything. Answer plain questions
-  plainly and record nothing; stand down when nothing is asked of Construct.
+  Use for requested work, memory or coordination in a Construct-bound project.
+  Bounded reversible local tasks use ledger claims; consequential, recurring,
+  multi-agent and substantial resumable outcomes use classify_request and managed
+  workflows. Answer ordinary questions directly, recording nothing. Stand down
+  when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.2.3
+  version: 3.3.0
   source: geraldmaron/construct
 ---
 
@@ -27,7 +23,7 @@ read the section a step needs.
 
 ## Start
 
-Call `bootstrap` once. Ask for details with `project_context` and `skills`,
+Call `bootstrap` once when first using Construct; ordinary questions need no call. Ask for details with `project_context` and `skills`,
 one topic at a time; never load everything. Handle the person's request
 before any setup question, and relay their answers with `decide`.
 
@@ -36,21 +32,31 @@ before any setup question, and relay their answers with `decide`.
 You judge the request; Construct never reads intent from words.
 
 1. **Answer.** A plain question. Answer it, record nothing, start nothing.
-   When the answer states facts about this project, call `check_answer` with
-   what it rests on first.
+   Use `check_answer` when relying on Construct-held evidence, governed
+   project statements, or an explicit evidence-checking request. Ordinary
+   reasoning over facts the user supplied needs no automatic check.
 2. **Remember.** "Remember that…", "Record that…". One `remember` call in the
    person's words, nothing else. Pass `contradicts`, `outdates` or `replaces`
    only for terms and documents the person named.
-3. **Manage an outcome.** Anything to produce, implement, fix, or review,
-   including a ledger item someone hands you. Call `classify_request` with
+3. **Bounded local task.** For a reversible local task or defect, use `work`
+   action `add`, preferably with its existing `parent` or `serves`. Otherwise
+   give `request:{words:<direct user instruction>,stakes:{reversible:true,affects:[]}}`.
+   Claim its paths before editing, do the work through the host, and complete
+   with the token and observed verification. This records purpose, never
+   approval. Missing stakes require managed work. No remembered fact or
+   workflow is needed.
+4. **Manage an outcome.** Consequential, recurring, multi-agent or substantial
+   resumable work, including a managed ledger item someone hands you. Call `classify_request` with
    kind `manage`, their `words`, the `deliverable`, the `intent` (outcome,
    path, acceptance, constraints), the `stakes` (whether it can be undone,
    and what it touches), and any `period`, `sources` and `destination`. Then `start_outcome` with the workflow you choose and the
    same intake.
-4. **Maintain.** A standing outcome on a schedule or event: `classify_request`
+5. **Maintain.** A standing outcome on a schedule or event: `classify_request`
    with kind `maintain` and the `schedule` in their words.
 
-Never promote a question into work, or a note into a run.
+Never promote a question into work, or a note into a run. Reuse supplied plans
+through request and intent.priorWork; fill missing details without repeating
+intake or treating planning content as approval.
 
 ## Do the work
 

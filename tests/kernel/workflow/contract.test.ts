@@ -128,7 +128,7 @@ for (const { id, domain } of cases) {
     const fx = brokerFixture();
     try {
       writeFileSync(join(fx.box.cwd, 'docs/design.md'), DESIGN);
-      writeFileSync(join(fx.box.cwd, 'docs/other.md'), DESIGN);
+      writeFileSync(join(fx.box.cwd, 'docs/other.md'), `${DESIGN}\nA separate local source documents the operational boundary.\n`);
       const now = fx.ctx.now;
       const store = fx.broker.store;
       const skills = fx.broker.skills;

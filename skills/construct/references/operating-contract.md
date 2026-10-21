@@ -124,8 +124,8 @@ After `start_outcome`, loop:
   publish it, the person clears it for its audience (`clearedFor`) and
   approves the exact write; give the location it went to.
 - Where the host supports hooks, Construct records the Jira issues from a
-  declared Jira project that your Jira or Atlassian tools return, and sends
-  a reply back once if it stated project facts unchecked. Treat that as a
+  declared Jira project that your Jira or Atlassian tools return, and nudges once
+  when a reply uses governed or Construct-held project evidence unchecked. Treat that as a
   prompt to check, not as an error.
 - When a question about stale work is answered with revise or re-run,
   `decide` returns the outcome that would do it; offer it, and start it only
@@ -154,6 +154,11 @@ first project-write step, use the held draft and write/checkpoint the file;
 never write in an observe or draft step. Submit its actual reference. A new
 session can reclaim an abandoned step only after observed termination or
 lease expiry; completed steps and their evidence remain held.
+
+For a bounded reversible local task, file it with the existing parent/serves,
+or request:{words,stakes:{reversible:true,affects:[]}}. Request admission
+records relayed purpose, never permission or acceptance; larger or uncertain
+work uses a managed outcome. No knowledge statement is needed.
 
 Before other edits, an agent claims the work with `work`
 (action `claim`, naming itself as `agent` and the files or directories it
@@ -198,5 +203,5 @@ after their request, put each to them and relay confirm or retire with
 Observations, risks, and candidates are not work. Do not open a work item
 for a discovery. Work needs its place (a parent work item, or the
 decision, requirement, initiative, or metric it serves) and a bounded
-result. To root your own work, remember the outcome or decision behind it
-and serve that.
+result. For a bounded reversible local task, use the direct request as its purpose;
+otherwise use its existing parent or governing reason, or a managed outcome.

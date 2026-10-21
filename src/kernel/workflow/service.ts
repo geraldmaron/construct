@@ -359,7 +359,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   artifacts_exist:
     'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty; a step whose outputs include "changes" may list none ("changes": [], "artifact": null).',
   numbers_grounded:
-    'numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. List computed figures under "derivations" as {value, expression}, where expression is numeric arithmetic over original cited figures, for example {value: "21", expression: "7 * 3"}. Expressions use numbers and arithmetic operators only: no unit labels, prose, comparisons, or references to other derived values; inline the original calculation. Explain units and comparisons in prose.',
+    'numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. Computed figures use bound derivations: {id,claim,value:string,expression,operands:[{value:string,ref,excerpt}|{value:string,derivationId}],decimalPlaces?:0–12}. The exact claim scopes its result; every nonconstant operand needs its own held excerpt or verified intermediate. Arithmetic verifies no semantic labels. Expressions use numbers and arithmetic operators only.',
   template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
   excerpts_match:
     'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter); an excerpt from something Construct holds no text for is not checked and supports nothing.',
@@ -374,7 +374,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   decision_ask_present:
     'decision_ask_present needs "decision": {ask, decider, by}: the decision being asked for, who decides (the audience input, when given) and the YYYY-MM-DD date it is due (the decisionBy input, when given).',
   sources_diverse:
-    'sources_diverse needs citations from at least two independent places that hold content Construct can check (different files, recorded items, or web sites; pages of one site count once).',
+    'sources_diverse needs citations from at least two distinct locations with different held content Construct can check (different files, recorded items, or web sites; pages of one site count once; this establishes no independence).',
   revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
   settled_not_contradicted:
     'settled_not_contradicted refuses a term the person settled against, unless the output lists that statement id in "setAside" because the work knowingly sets the decision aside or discusses it.',
@@ -1931,7 +1931,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         : '',
       step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
       step.outputs.includes('plan')
-        ? 'Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.'
+        ? 'Reuse the supplied plan and intent.priorWork as content; adopt it into the normal plan outputs and fill only missing execution details. Do not repeat intake or treat the plan as approval. Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.'
         : '',
       Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',

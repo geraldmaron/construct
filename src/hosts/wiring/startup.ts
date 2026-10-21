@@ -14,7 +14,7 @@ description: Construct project operating contract
 alwaysApply: true
 ---
 
-Call Construct bootstrap once at the beginning of this session. ${INTERACTIVE_ENTRY_GUIDANCE}
+Call Construct bootstrap once when first using it; ordinary questions need no call. ${INTERACTIVE_ENTRY_GUIDANCE}
 
 Use the installed construct skill for the tool contracts. Select methods from the live registry and honor the claim packet. A request for an assessment can finish with clearly reported unknowns; prerequisites for later execution do not prevent delivering that assessment. Select a workflow whose verification you can actually perform with the current permissions. Do not invent execution receipts or widen permissions. If a tool rejects input, repair it before relying on the result. Say explicitly when a requested managed outcome did not finish.
 `;

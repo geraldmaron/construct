@@ -108,12 +108,16 @@ session may do, open decisions, active runs, and a recommended next action.
 It does not receive skill bodies, source contents, or the whole context;
 those are read one topic at a time when a step needs them.
 
-The operational skill then teaches the session four kinds of request:
+The operational skill then teaches the session five kinds of request:
 
 - **Answer.** A plain question gets a plain answer. Nothing is recorded.
 - **Remember.** "Remember that we will not add schema migration until
   stable" records exactly one statement in your wording and nothing else.
-- **Manage an outcome.** "Review this against our design principles"
+- **Bounded local task.** A reversible local task/defect uses `work add` with
+  its parent/serves or direct request and known stakes, then a file claim, host
+  execution and completion. No workflow or remembered fact is required.
+- **Manage an outcome.** Consequential, recurring, multi-agent and substantial
+  resumable work uses the managed path. "Review this against our design principles"
   resolves a workflow, does each step in this session, validates the
   outputs, and hands back a finished deliverable with its evidence.
 - **Maintain a standing outcome.** "Every month, review the governing

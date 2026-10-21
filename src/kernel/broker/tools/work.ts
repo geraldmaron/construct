@@ -24,7 +24,7 @@ import {
 import { leasesFor, normalizeLeasePath, type Overlap, type LeaseMode, LEASE_MODES, findOverlaps, MAIN_LANE } from '../../work/leases.ts';
 import { recordAgent } from '../../state/sessions.ts';
 import { type Handoff, type PeerData, asPeerData } from '../../work/handoff.ts';
-import { fileWork, workStructure, linkWork, unlinkWork } from '../../work/structure.ts';
+import { fileWork, workStructure, linkWork, unlinkWork, workRequest, type WorkRequest } from '../../work/structure.ts';
 import { define } from './shared.ts';
 
 const WORK_ACTIONS = [
@@ -174,6 +174,7 @@ function handoffAsData(h: Handoff): PeerData<Handoff> {
 
 interface WorkToolInput {
   action: WorkAction;
+  request?: WorkRequest;
   id?: string;
   title?: string;
   kind?: string;
@@ -210,7 +211,7 @@ export const work = define<WorkToolInput, unknown>({
   name: 'work',
   title: 'Native work',
   description:
-    "File, query, claim, settle, take over and hand off bounded work in this project's ledger; each action's rules come back as a refusal naming its recovery. File work with its place, a parent or the decision, requirement, initiative or metric it serves, or it waits as proposed; to root your own work, remember the outcome behind it and serve that. A claim returns a token only you see: pass it to renew (claim again), complete, release or hand off, and name the files you will change as paths (with worktree when you edit in another git worktree of this project).",
+    "File, query, claim, settle, take over and hand off bounded work in this project's ledger; each action's rules come back as a refusal naming its recovery. Prefer a parent or the decision, requirement, initiative or metric it serves. A bounded reversible local task/defect may instead carry the direct request and known stakes; its purpose is relayed, never approval. Work without a purpose waits as proposed. A claim returns a token only you see: pass it to renew (claim again), complete, release or hand off, and name the files you will change as paths (with worktree when you edit in another git worktree of this project).",
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -218,6 +219,11 @@ export const work = define<WorkToolInput, unknown>({
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Use prepare_accept before recoverable accept.', enum: [...WORK_ACTIONS] },
+      request: {
+        type: 'object',
+        description:
+          'For add: {words,stakes:{reversible:true,affects:[]}}, bounded local task/defect purpose, never approval. Prefer parent/serves; other stakes require managed work.',
+      },
       id: { type: 'string', description: 'Work id' },
       title: { type: 'string', description: 'Title, for add and update.' },
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
@@ -322,6 +328,18 @@ export const work = define<WorkToolInput, unknown>({
   },
   validate(raw) {
     closed(raw, this.inputSchema);
+    if (raw.request !== undefined && raw.action !== 'add') throw new ToolInputError('request is only for add', { field: 'request' });
+    let request: WorkRequest | undefined;
+    if (raw.request !== undefined) {
+      try {
+        request = workRequest(raw.request);
+      } catch (e) {
+        throw new ToolInputError((e as Error).message, {
+          field: 'request',
+          example: { words: 'Fix this local typo', stakes: { reversible: true, affects: [] } },
+        });
+      }
+    }
     if (raw.acceptanceKey !== undefined && raw.action !== 'accept')
       throw new ToolInputError('"acceptanceKey" is only for accept; prepare_accept generates one before dispatch', {
         field: 'acceptanceKey',
@@ -331,6 +349,7 @@ export const work = define<WorkToolInput, unknown>({
     if (raw.acceptanceKey !== undefined && raw.offerId === undefined)
       throw new ToolInputError('"offerId" from the observed handoff is required with acceptanceKey', { field: 'offerId' });
     return {
+      request,
       action: str(raw, 'action', { oneOf: [...WORK_ACTIONS] }) as WorkAction,
       id: str(raw, 'id', { optional: true }),
       title: str(raw, 'title', { optional: true }),
@@ -380,6 +399,7 @@ export const work = define<WorkToolInput, unknown>({
     ctx,
     {
       action,
+      request,
       id,
       title,
       kind,
@@ -424,6 +444,7 @@ export const work = define<WorkToolInput, unknown>({
       if (!title) throw new ToolInputError('"title" is required for add', { field: 'title' });
       const filed = fileWork(ctx.store, {
         id: ctx.nextId('work'),
+        request,
         kind: (kind as 'outcome' | 'task' | 'defect' | 'plan' | undefined) ?? 'task',
         title,
         description,

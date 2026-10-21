@@ -2,9 +2,8 @@
   "mcpServers": {
     "construct": {
       "type": "stdio",
-      "command": "node",
+      "command": "construct",
       "args": [
-        "bin/construct.mjs",
         "serve",
         "--client=claude-code"
       ]
