@@ -1,8 +1,21 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, copyFileSync, symlinkSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
 /** Synthetic protocol/scorer and receipt regressions. No private corpus, traces or model runs. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkDelivery, digestBytes, DELIVERY_CHECKS, DELIVERY_HOSTS, DELIVERY_SCENARIOS } from '../../scripts/delivery-evidence.mjs';
+import {
+  checkDelivery,
+  digestBytes,
+  sourceDigest,
+  PUBLIC_SOURCE_DIRS,
+  PUBLIC_SOURCE_FILES,
+  DELIVERY_CHECKS,
+  DELIVERY_HOSTS,
+  DELIVERY_SCENARIOS,
+} from '../../scripts/delivery-evidence.mjs';
 import { pairToolCalls, isQuestionResult, isEngagementWrite, redactObservation, type TapFrame } from '../../scripts/tool-observations.ts';
 import { parseHostStream } from '../../scripts/host-cli.mjs';
 import { checkRelease } from '../../scripts/release-gate.mjs';
@@ -79,7 +92,7 @@ test('persisted protocol observations remove capabilities even inside JSON text 
   assert.match(result, /8000/);
 });
 
-function fixture() {
+function fixture(overrides: Record<string, string> = {}) {
   const files = new Map<string, Buffer>();
   const entry = (path: string, raw: unknown) => {
     const bytes = Buffer.from(typeof raw === 'string' ? raw : JSON.stringify(raw));
@@ -91,6 +104,7 @@ function fixture() {
     sourceDigest: 'a'.repeat(64),
     surfaceDigest: 'b'.repeat(64),
     tarballSha256: 'c'.repeat(64),
+    ...overrides,
   };
   const receipt = (host: string) => ({
     format: 'construct-delivery-host-v1',
@@ -189,6 +203,71 @@ test('delivery requires both hosts, every observed scenario and matching externa
   }
   assert.match((await checkRelease({ tier: 'qualified' })).problems.join(' '), /retired/);
   assert.match((await checkRelease()).problems.join(' '), /requires --manifest/);
+});
+
+test('public source identity is reproducible without local state and fails on a missing required input', () => {
+  const roots = [mkdtempSync(join(tmpdir(), 'source-public-a-')), mkdtempSync(join(tmpdir(), 'source-public-b-'))];
+  try {
+    for (const root of roots) {
+      for (const dir of PUBLIC_SOURCE_DIRS) mkdirSync(join(root, dir), { recursive: true });
+      for (const file of PUBLIC_SOURCE_FILES) writeFileSync(join(root, file), 'sterile fixture\n');
+    }
+    const digest = sourceDigest(roots[0]);
+    assert.equal(digest, sourceDigest(roots[1]));
+    mkdirSync(join(roots[0]!, '.construct'), { recursive: true });
+    writeFileSync(join(roots[0]!, '.construct/project.json'), 'local instance, not a public input');
+    writeFileSync(join(roots[0]!, '.mcp.json'), 'local host config');
+    assert.equal(digest, sourceDigest(roots[0]));
+    rmSync(join(roots[1]!, 'README.md'));
+    assert.throws(() => sourceDigest(roots[1]), /required public source input is missing: README.md/);
+    writeFileSync(join(roots[1]!, 'README.md'), 'changed public bytes');
+    assert.notEqual(digest, sourceDigest(roots[1]));
+    mkdirSync(join(roots[0]!, 'docs/internal'));
+    assert.throws(() => sourceDigest(roots[0]), /private records cannot be public release inputs/);
+  } finally {
+    for (const root of roots) rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('release gate reads a supplied bundle and refuses changed bytes or missing real package evidence', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'public-release-bundle-'));
+  try {
+    // Sibling lint tests intentionally write untracked source fixtures. Bind
+    // this regression to an isolated snapshot, not their moving checkout.
+    const repo = fileURLToPath(new URL('../..', import.meta.url));
+    const snapshot = join(root, 'source');
+    for (const name of execFileSync('git', ['ls-files', '-z'], { cwd: repo, encoding: 'utf8' }).split('\0').filter(Boolean)) {
+      mkdirSync(dirname(join(snapshot, name)), { recursive: true });
+      copyFileSync(join(repo, name), join(snapshot, name));
+    }
+    symlinkSync(join(repo, 'node_modules'), join(snapshot, 'node_modules'), 'dir');
+    const gate = await import(pathToFileURL(join(snapshot, 'scripts/release-gate.mjs')).href);
+    const pkg = JSON.parse(readFileSync(join(snapshot, 'package.json'), 'utf8'));
+    mkdirSync(join(root, 'package'));
+    writeFileSync(join(root, 'package/package.json'), JSON.stringify({ name: pkg.name, version: pkg.version }));
+    const tarball = join(root, 'candidate.tgz');
+    execFileSync('tar', ['-czf', tarball, '-C', root, 'package']);
+    const f = fixture({
+      version: pkg.version,
+      sourceDigest: sourceDigest(snapshot),
+      surfaceDigest: gate.surfaceDigest(),
+      tarballSha256: digestBytes(readFileSync(tarball)),
+    });
+    for (const [name, bytes] of f.files) writeFileSync(join(root, name), bytes);
+    const manifest = join(root, 'manifest.json');
+    writeFileSync(manifest, JSON.stringify(f.manifest));
+    const checked = await gate.checkRelease({ manifest, tarball });
+    assert.equal(checked.ok, true, checked.problems.join('; '));
+    writeFileSync(join(root, 'codex.json'), '{}');
+    assert.equal((await gate.checkRelease({ manifest, tarball })).ok, false);
+    writeFileSync(join(root, 'codex.json'), f.files.get('codex.json')!);
+    writeFileSync(tarball, Buffer.concat([readFileSync(tarball), Buffer.from('changed')]));
+    assert.equal((await gate.checkRelease({ manifest, tarball })).ok, false);
+    rmSync(tarball);
+    assert.equal((await gate.checkRelease({ manifest, tarball })).ok, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('release automation validates and publishes the same supplied tarball', () => {

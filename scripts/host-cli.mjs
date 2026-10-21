@@ -1,9 +1,7 @@
 /**
  * host-cli.mjs — how Construct's scripts drive a real host CLI: the
  * environment it runs with, its arguments, and how its event stream reads.
- * The maintainer-local live intake runner (evals/, never in git) and
- * `conformance --live` both use it, so a host is
- * invoked one way. The flags are the ones the 2026-10-08 probes ran with on
+ * Conformance and bounded delivery use the same invocation helpers. The flags are the ones the 2026-10-08 probes ran with on
  * claude 2.1.250, codex-cli 0.145.0 and cursor-agent 2026.09.26; where this
  * module departs from them, the comment at the flag says why.
  *

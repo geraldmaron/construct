@@ -54,7 +54,6 @@
     "docs:generate": "node scripts/generate-docs.mjs",
     "conformance": "node scripts/conformance.mjs",
     "release:check": "node scripts/release-gate.mjs",
-    "release:live": "node scripts/experimental-live.mjs",
     "format": "biome format --write"
   },
   "devDependencies": {

@@ -8,37 +8,47 @@ export const DELIVERY_SCENARIOS = ['ordinary', 'local-task', 'managed', 'recover
 export const DELIVERY_HOSTS = ['claude-code', 'codex'];
 export const digestBytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-/** Source identity includes product, verifier and installation bytes, excluding local evidence and handoff prose. */
+export const SOURCE_DIGEST_FORMAT = 'construct-public-source-v2';
+export const PUBLIC_SOURCE_DIRS = ['bin', 'src', 'skills', 'workflows', 'registry', 'scripts', 'tests', 'docs', '.github', '.githooks'];
+export const PUBLIC_SOURCE_FILES = [
+  'package.json',
+  'package-lock.json',
+  'README.md',
+  'AGENTS.md',
+  'CLAUDE.md',
+  'CONTRIBUTING.md',
+  'CHANGELOG.md',
+  'SECURITY.md',
+  'GLOSSARY.md',
+  'LICENSE',
+  'biome.json',
+  '.gitignore',
+  'tsconfig.json',
+  'tsconfig.build.json',
+];
+
+/** Public product and verifier identity. Missing inputs fail; private local state is never required. */
 export function sourceDigest(root) {
   const files = [];
-  function walk(name) {
-    if (name === 'docs/internal') return;
-    const path = join(root, name),
+  function walk(name, expected) {
+    if (name === 'docs/internal') throw Error('private records cannot be public release inputs: docs/internal');
+    const path = join(root, name);
+    let stat;
+    try {
       stat = lstatSync(path);
+    } catch (error) {
+      if (error.code === 'ENOENT') throw Error(`required public source input is missing: ${name}`);
+      throw error;
+    }
     if (stat.isSymbolicLink()) throw Error(`source identity refuses symlink ${name}`);
+    if ((expected === 'directory' && !stat.isDirectory()) || (expected === 'file' && !stat.isFile()))
+      throw Error(`required public source input must be a ${expected}: ${name}`);
     if (stat.isDirectory()) for (const child of readdirSync(path).sort()) walk(`${name}/${child}`);
     else if (stat.isFile()) files.push([name, digestBytes(readFileSync(path))]);
   }
-  for (const dir of ['bin', 'src', 'skills', 'workflows', 'registry', 'scripts', 'tests', 'docs', '.github']) walk(dir);
-  for (const name of [
-    'package.json',
-    'package-lock.json',
-    'README.md',
-    'AGENTS.md',
-    'STRATEGY.md',
-    'CONTRIBUTING.md',
-    'CHANGELOG.md',
-    'LICENSE',
-    'biome.json',
-    '.gitignore',
-    '.mcp.json',
-    '.claude/settings.json',
-    '.codex/config.toml',
-    'tsconfig.json',
-    'tsconfig.build.json',
-  ])
-    walk(name);
-  return digestBytes(JSON.stringify(files.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))));
+  for (const dir of PUBLIC_SOURCE_DIRS) walk(dir, 'directory');
+  for (const name of PUBLIC_SOURCE_FILES) walk(name, 'file');
+  return digestBytes(JSON.stringify({ format: SOURCE_DIGEST_FORMAT, files: files.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)) }));
 }
 const hex = (s) => typeof s === 'string' && /^[a-f0-9]{64}$/.test(s);
 const text = (s) => typeof s === 'string' && s.trim().length > 0;

@@ -1,12 +1,11 @@
 /**
  * lint-no-tracker-refs.mjs — committed code never references a tracker id.
  *
- * The rule (Gerald, 2026-08-05): lineage lives in commit messages and the
- * work ledger, never in code or code comments. An id in a comment rots the
+ * Lineage lives in commit messages and the work ledger, never in code or
+ * code comments. An id in a comment rots the
  * moment its item closes, sends the reader to a record the code must not
  * depend on, and says nothing the comment could not say in plain language.
- * Root documents (STRATEGY, CHANGELOG, RESEARCH-DECISIONS) are the drift
- * record and keep their dated lineage; this lint covers code and shipped
+ * The changelog may retain dated lineage. This lint covers code and shipped
  * skills: src, tests, scripts, skills.
  *
  * Two id shapes are refused: the native ledger's (`work-` and eight hex

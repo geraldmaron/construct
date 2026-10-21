@@ -4,10 +4,9 @@ This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
 alpha.34 code; static wiring and structural checks are not broad effectiveness
 qualification. [Release notes](../CHANGELOG.md) carry measured limits.
-[`internal/`](internal/) holds historical release evidence and recorded skill runs.
-Current delivery evidence is supplied outside the repository and package. A lint holds
-this list to the directory: a new file here is added below, which is the
-moment someone decides it is documentation rather than a record.
+Private planning, historical trials and generated evidence are kept outside the
+repository and package. This directory contains public usage and contributor
+documentation. A lint checks its index and local links.
 
 ## Start here
 

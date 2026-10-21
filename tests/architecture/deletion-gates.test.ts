@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -55,10 +55,7 @@ function currentFiles(): string[] {
     ],
     { cwd: ROOT, encoding: 'utf8' },
   );
-  return out
-    .split('\n')
-    .filter(Boolean)
-    .filter((f) => !f.startsWith('docs/internal/'));
+  return out.split('\n').filter(Boolean);
 }
 
 test('no product file or current document names a removed store, verb, format, or pack path', () => {
@@ -79,4 +76,21 @@ test('no duplicate hand-maintained catalog of commands, tools, skills, or workfl
   const src = execFileSync('git', ['ls-files', 'src'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
   const duplicates = src.filter((f) => /\b(VERBS|COMMAND_TABLE|TOOL_LIST)\b/.test(readFileSync(join(ROOT, f), 'utf8')));
   assert.deepEqual(duplicates, []);
+});
+
+test('tracked public surfaces exclude local instance state, private notes and generated assessments', () => {
+  const files = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+  const privatePath =
+    /^(?:\.(?:construct|claude|codex|agents|bob)\/|\.mcp\.json$|(?:evals|tmp)\/|docs\/internal\/|(?:STRATEGY|RESEARCH-DECISIONS|HANDOFF|COORDINATION)\.md$)/;
+  assert.deepEqual(
+    files.filter((file) => privatePath.test(file)),
+    [],
+  );
+  const ignored = spawnSync('git', ['check-ignore', '--no-index', '--stdin'], {
+    cwd: ROOT,
+    input: files.join('\n') + '\n',
+    encoding: 'utf8',
+  });
+  assert.equal(ignored.status, 1, ignored.stderr || ignored.stdout);
+  assert.equal(ignored.stdout, '', 'private ignore rules must not hide tracked public assets');
 });

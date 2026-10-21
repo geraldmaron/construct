@@ -45,6 +45,8 @@ orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' 
 [ -z "$orphans" ] || fail "the tarball ships compiled modules with no source (a stale dist)" "$orphans"
 shipped_evals="$(tar -tzf "$tarball_path" | grep -E '(^|/)evals/' || true)"
 [ -z "$shipped_evals" ] || fail "the tarball ships evals, which are maintainer-local" "$shipped_evals"
+private_surfaces="$(tar -tzf "$tarball_path" | grep -E '^package/(\.(construct|claude|codex|agents|bob)/|\.mcp\.json$|docs/internal/|(STRATEGY|RESEARCH-DECISIONS|HANDOFF|COORDINATION)\.md$)' || true)"
+[ -z "$private_surfaces" ] || fail "the tarball ships private or local-instance surfaces" "$private_surfaces"
 
 echo "== installing into a scratch project =="
 project="$scratch/project"

@@ -4,6 +4,15 @@ Each entry lists what a release changed that still describes Construct as it
 is now. Changes later removed or replaced are left out, and so are upgrade
 steps for releases an install can no longer upgrade from.
 
+## Unreleased
+
+- Private planning, session handoffs, historical model assessments and local
+  project/host configuration are no longer tracked in the product checkout.
+  Public guides, portable agent instructions and sterile regressions remain.
+- Historical experimental release execution is retired. Delivery uses required
+  public source inputs under `construct-public-source-v2`; missing inputs fail
+  explicitly. Earlier source-bound receipts remain historical evidence.
+
 ## 3.0.0-alpha.34 — 2026-10-21 (local delivery candidate)
 
 - Ordinary questions stand down. Bounded reversible local tasks can use direct

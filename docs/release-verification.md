@@ -50,11 +50,31 @@ and assessment histories outside the repository and npm package. Use shared
 verification utilities rather than local-only copies. Do not delete failing cases
 to obtain a pass, or restore removed workflow aliases to satisfy stale fixtures.
 
-The qualified tier is retired and fails with an explicit recovery message.
-Historical experimental-alpha manifests remain historical bounded records; they
-cannot satisfy current delivery. Historical tags retain their original content,
+The qualified and experimental-alpha tiers are retired and fail with an explicit
+recovery message. The old model-run release command is removed. Historical
+manifests remain bounded records outside this checkout; they cannot satisfy
+current delivery. Historical tags retain their original content,
 including older evaluation material. Removing files from current main or a package
 does not remove them from reachable history. No history rewrite is required.
+
+### Public source identity
+
+The source digest is domain-separated as `construct-public-source-v2`. It binds
+the public runtime, skills, workflows, registry, scripts, tests, docs, CI and Git
+hooks, plus the required root package, instruction, policy and build files. The
+input lists are declared in `scripts/delivery-evidence.mjs`. A missing required
+file or directory is an error naming that input; it is never skipped.
+
+The earlier input set included this checkout's strategy and local MCP/host
+configuration. Those private or generated files are no longer release inputs.
+Portable `CLAUDE.md`, security and glossary documentation, and Git hooks are now
+explicit inputs. Local identity, host wiring, datasets and session notes stay
+outside this contract. Two clean checkouts must compute the same digest.
+
+This change invalidates earlier source-bound delivery evidence. Preserve old
+receipts unchanged as historical records; do not re-label them or attach them to
+new bytes. Deterministic cleanup checks alone do not establish a new live-host
+delivery receipt or authorize publication.
 
 Structural checks establish citation and arithmetic properties within their
 stated scope. Arithmetic does not establish semantic attribution. Observed commands,

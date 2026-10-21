@@ -1,22 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { sourceDigest, checkDelivery } from './delivery-evidence.mjs';
+import { sourceDigest, checkDelivery, digestBytes } from './delivery-evidence.mjs';
 export { sourceDigest, checkDelivery } from './delivery-evidence.mjs';
-/** Release tiers are explicit. Experimental evidence never becomes full qualification. */
+/** Only current exact-package delivery evidence can satisfy this gate. */
 import { readFileSync, realpathSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { resolve, relative, sep, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { descriptionsDigest } from './host-surface.mjs';
-import {
-  reviewDigest,
-  reviewContractDigest,
-  semanticReviewPrompt,
-  semanticJudgmentProblems,
-  SEMANTIC_OBLIGATIONS,
-} from '../src/kernel/workflow/semantic-review.ts';
-import { CASES, REQUEST, DISCLOSURES } from './experimental-cases.mjs';
+import { reviewDigest } from '../src/kernel/workflow/semantic-review.ts';
 export const ROOT = fileURLToPath(new URL('../', import.meta.url));
-export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+export const sha256 = digestBytes;
 // The runner imports these fixture helpers; they are invocation bytes too.
 export function surfaceDigest() {
   return reviewDigest({
@@ -43,207 +35,14 @@ export function repositoryFile(root, name) {
   if (!rel || rel === '..' || rel.startsWith(`..${sep}`)) throw Error('evidence path escapes repository');
   return readFileSync(path);
 }
-export function validateNativeCase(record, c, digest, now, reviewerModel) {
-  const problems = [],
-    fail = (s) => problems.push(`${c.id}: ${s}`);
-  const { prepared: p, event: e } = record ?? {},
-    b = p?.bundle,
-    i = e?.invocation;
-  if (b?.canonicalization !== undefined && b.canonicalization !== 'utf16-codeunit-v1') fail('unsupported held bundle canonicalization');
-  if (record?.caseId !== c.id || record.surfaceDigest !== digest) fail('case or candidate identity mismatch');
-  if (!b || p.digest !== reviewDigest(b) || e?.bundleDigest !== p.digest || e.preparedRef !== p.ref || e.attempt !== b.attempt)
-    fail('held bundle binding mismatch');
-  if (
-    !b ||
-    b.contractDigest !== reviewContractDigest(b) ||
-    b.contract?.request?.input?.request !== REQUEST ||
-    reviewDigest(b.contract?.obligations) !== reviewDigest(SEMANTIC_OBLIGATIONS)
-  )
-    fail('frozen request or obligations mismatch');
-  if (
-    b?.body?.summary !== c.answer ||
-    b?.artifacts?.find((x) => x.ref === 'answer.md')?.content?.text !== c.answer ||
-    b?.evidence?.find((x) => x.ref === 'source.txt')?.content?.text !== c.source
-  )
-    fail('frozen case text mismatch');
-  if (!Array.isArray(b?.problems) || b.problems.length || record?.filesUnchanged !== true || record?.canaryAbsent !== true)
-    fail('fixture changed or held evidence unavailable');
-  if (
-    !i?.id ||
-    !i.sessionId ||
-    i.host !== 'codex' ||
-    i.hostVersion !== 'codex-cli 0.163.0' ||
-    typeof reviewerModel !== 'string' ||
-    i.model !== reviewerModel ||
-    i.completed !== true ||
-    i.exitStatus !== 0 ||
-    i.timedOut !== false ||
-    e?.profile !== 'codex-app-server-held-text-v2' ||
-    e?.modelSource !== 'requested'
-  )
-    fail('native invocation incomplete or unsupported');
-  if (
-    !/^[a-f0-9]{64}$/.test(e?.binaryDigest ?? '') ||
-    e.binaryDigest !== b?.contract?.reviewer?.digest ||
-    b?.contract?.reviewer?.profile !== e?.profile
-  )
-    fail('native executable identity mismatch');
-  const start = Date.parse(e?.startedAt),
-    end = Date.parse(record?.completedAt);
-  if (
-    !Number.isFinite(start) ||
-    !Number.isFinite(end) ||
-    end < start ||
-    end - start > 300000 ||
-    end > now + 60000 ||
-    now - end > 7 * 86400000
-  )
-    fail('native time window missing, expired or unbounded');
-  const obs = e?.observations;
-  if (!Array.isArray(obs) || reviewDigest(obs) !== i?.transcriptDigest) fail('public transcript digest mismatch');
-  else {
-    const structural = obs.filter((o) => o.type !== 'native.metadata_warning' && o.type !== 'native.fail_closed_warning');
-    const offset = 1;
-    const prompt = b ? semanticReviewPrompt(b) : '';
-    if (
-      structural[1]?.type !== 'native.evidence_staged' ||
-      structural[1].sessionId !== i?.sessionId ||
-      structural[1].characters !== [...prompt].length ||
-      structural[1].digest !== reviewDigest(prompt)
-    )
-      fail('complete staged evidence is not bound to the held prompt');
-    if (
-      structural.length !== 4 + offset ||
-      structural[0]?.type !== 'thread.started' ||
-      structural[0].sessionId !== i?.sessionId ||
-      structural[1 + offset]?.type !== 'turn.started' ||
-      structural[2 + offset]?.type !== 'item.completed' ||
-      structural[2 + offset].itemType !== 'agent_message' ||
-      structural[3 + offset]?.type !== 'turn.completed'
-    )
-      fail('unexpected public events, including possible tool use');
-    try {
-      if (reviewDigest(JSON.parse(structural[2 + offset].text)) !== reviewDigest(e.judgment))
-        fail('judgment differs from native final text');
-    } catch {
-      fail('native final text is not the judgment');
-    }
-  }
-  const checks = e?.judgment?.checks;
-  const allowed = new Set(['body', 'answer.md', 'source.txt']);
-  if (
-    !Array.isArray(checks) ||
-    checks.length !== SEMANTIC_OBLIGATIONS.length ||
-    new Set(checks.map((x) => x.id)).size !== checks.length ||
-    SEMANTIC_OBLIGATIONS.some((o) => !checks.some((x) => x.id === o.id)) ||
-    checks.some(
-      (x) =>
-        !['pass', 'fail'].includes(x.verdict) ||
-        typeof x.reason !== 'string' ||
-        !x.reason.trim() ||
-        !Array.isArray(x.refs) ||
-        !x.refs.length ||
-        x.refs.some((r) => !allowed.has(r)),
-    )
-  )
-    fail('judgment coverage or reasons invalid');
-  const expectedProblems = b ? semanticJudgmentProblems(b, e?.judgment) : ['no bundle'];
-  if (reviewDigest(e?.problems) !== reviewDigest(expectedProblems)) fail('native execution or freshness problems');
-  const before = record?.deliverableBefore,
-    after = record?.deliverableAfter;
-  if (
-    !before?.id ||
-    !b?.runId ||
-    !b?.stepRunId ||
-    before.id !== after?.id ||
-    before.runId !== b.runId ||
-    after?.runId !== b.runId ||
-    before.stepRunId !== b.stepRunId ||
-    after?.stepRunId !== b.stepRunId ||
-    before.trustState !== 'draft' ||
-    after?.trustState !== 'draft' ||
-    reviewDigest(before.body) !== reviewDigest(b.body) ||
-    reviewDigest(after?.body) !== reviewDigest(b.body)
-  )
-    fail('exact persisted draft identity, body or trust was not preserved');
-  if (c.expected === 'pass') {
-    if (expectedProblems.length || record?.finalState !== 'succeeded' || record?.stepState !== 'succeeded')
-      fail('correct control did not complete');
-  } else if (
-    !checks?.some((x) => ['reasoning', 'support'].includes(x.id) && x.verdict === 'fail') ||
-    record?.finalState !== 'running' ||
-    record?.stepState !== 'leased'
-  )
-    fail('incorrect control was not rejected and preserved');
-  return problems;
-}
-export function checkExperimental({ manifest, version, digest, read, now = Date.now() }) {
-  const problems = [];
-  if (!/^\d+\.\d+\.\d+-alpha\.\d+$/.test(version)) problems.push('experimental tier is restricted to numbered alpha versions');
-  if (
-    manifest?.format !== 'construct-experimental-alpha-v1' ||
-    manifest.tier !== 'experimental-alpha' ||
-    manifest.version !== version ||
-    manifest.surfaceDigest !== digest ||
-    manifest.broadQualification !== false
-  )
-    problems.push('manifest identity or tier mismatch');
-  for (const key of DISCLOSURES)
-    if (typeof manifest?.limitations?.[key] !== 'string' || manifest.limitations[key].trim().length < 40)
-      problems.push(`missing substantive ${key} disclosure`);
-  // A release that ran no native review says so, why, and under which decision; it never passes by omission.
-  const unreviewed = manifest?.nativeReview !== undefined;
-  if (unreviewed) {
-    const n = manifest.nativeReview;
-    if (n?.status !== 'unavailable') problems.push('nativeReview may only record that no native review was available');
-    if (typeof n?.reason !== 'string' || n.reason.trim().length < 80) problems.push('nativeReview needs a substantive reason');
-    if (typeof n?.decision !== 'string' || !/§\d+/.test(n.decision))
-      problems.push('nativeReview must name the recorded decision that allows it');
-    if (!Array.isArray(manifest?.cases) || manifest.cases.length !== 0)
-      problems.push('a release without native review carries no review cases');
-  } else if (typeof manifest?.reviewerModel !== 'string' || !manifest.reviewerModel.trim())
-    problems.push('a reviewed release names the model its native reviewer ran on');
-  else if (
-    !Array.isArray(manifest?.cases) ||
-    manifest.cases.length !== CASES.length ||
-    new Set(manifest.cases.map((x) => x.id)).size !== CASES.length
-  )
-    problems.push('exactly three distinct bounded controls required');
-  const sessions = new Set();
-  const entries = Array.isArray(manifest?.cases) ? manifest.cases : [];
-  const fresh = Array.isArray(manifest?.freshUserObservations) ? manifest.freshUserObservations : [];
-  for (const c of unreviewed ? [] : CASES) {
-    const entry = entries.find((x) => x.id === c.id);
-    try {
-      const bytes = read(entry?.path);
-      if (sha256(bytes) !== entry?.sha256) throw Error('evidence hash mismatch');
-      const r = JSON.parse(bytes);
-      problems.push(...validateNativeCase(r, c, digest, now, manifest.reviewerModel));
-      if (sessions.has(r.event?.invocation?.sessionId)) problems.push(`${c.id}: independent session reused`);
-      sessions.add(r.event?.invocation?.sessionId);
-    } catch (e) {
-      problems.push(`${c.id}: ${e.message}`);
-    }
-  }
-  // Failed fresh-user observations are required disclosures, never converted to passes.
-  if (!Array.isArray(manifest?.freshUserObservations) || manifest.freshUserObservations.length < 2)
-    problems.push('fresh-user outcomes and their limits must be retained');
-  for (const entry of fresh) {
-    try {
-      if (sha256(read(entry.path)) !== entry.sha256 || typeof entry.summary !== 'string' || entry.summary.length < 40)
-        throw Error('invalid observation or disclosure');
-    } catch (e) {
-      problems.push(`fresh-user observation: ${e.message}`);
-    }
-  }
-  return { ok: problems.length === 0, problems, tier: 'experimental-alpha', ...(unreviewed ? { nativeReview: 'unavailable' } : {}) };
-}
 /** Delivery consumes supplied evidence, never imports a maintainer-local harness. */
-export async function checkRelease({ tier = 'delivery', root = ROOT, manifest: manifestPath, tarball, now = Date.now() } = {}) {
-  if (tier === 'qualified')
+export async function checkRelease({ tier = 'delivery', root = ROOT, manifest: manifestPath, tarball } = {}) {
+  if (tier === 'qualified' || tier === 'experimental-alpha')
     return {
       ok: false,
-      problems: ['qualified tier is retired; use delivery with --manifest and --tarball. Broad qualification is not established.'],
+      problems: [
+        `${tier} tier is retired; use delivery with --manifest and --tarball. Historical evidence cannot satisfy current delivery.`,
+      ],
     };
   if (tier === 'delivery') {
     try {
@@ -251,7 +50,12 @@ export async function checkRelease({ tier = 'delivery', root = ROOT, manifest: m
       const version = JSON.parse(readFileSync(resolve(root, 'package.json'))).version;
       const archive = resolve(tarball);
       const packed = JSON.parse(
-        execFileSync('tar', ['-xOf', archive, 'package/package.json'], { encoding: 'utf8', maxBuffer: 1024 * 1024, timeout: 30000 }),
+        execFileSync('tar', ['-xOf', archive, 'package/package.json'], {
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'pipe'],
+          maxBuffer: 1024 * 1024,
+          timeout: 30000,
+        }),
       );
       if (packed.name !== '@geraldmaron/construct' || packed.version !== version)
         throw Error('tarball package identity differs from checkout');
@@ -268,14 +72,7 @@ export async function checkRelease({ tier = 'delivery', root = ROOT, manifest: m
       return { ok: false, problems: [e.message], tier: 'delivery' };
     }
   }
-  if (tier !== 'experimental-alpha') return { ok: false, problems: ['unknown release tier'] };
-  try {
-    const version = JSON.parse(readFileSync(resolve(root, 'package.json'))).version;
-    const manifest = JSON.parse(repositoryFile(root, `docs/internal/releases/${version}.json`));
-    return checkExperimental({ manifest, version, digest: surfaceDigest(), read: (name) => repositoryFile(root, name), now });
-  } catch (e) {
-    return { ok: false, problems: [e.message] };
-  }
+  return { ok: false, problems: ['unknown release tier; use delivery with --manifest and --tarball'] };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2),
@@ -284,7 +81,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     args.some((a) => !['--tier=', '--manifest=', '--tarball='].some((prefix) => a.startsWith(prefix))) ||
     ['--tier=', '--manifest=', '--tarball='].some((prefix) => args.filter((a) => a.startsWith(prefix)).length > 1)
   )
-    throw Error('usage: node scripts/release-gate.mjs [--tier=delivery|qualified|experimental-alpha] --manifest=<path> --tarball=<path>');
+    throw Error('usage: node scripts/release-gate.mjs [--tier=delivery] --manifest=<path> --tarball=<path>');
   const r = await checkRelease({
     tier,
     manifest: args.find((a) => a.startsWith('--manifest='))?.slice(11),
@@ -293,8 +90,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   for (const p of r.problems) process.stderr.write(`release gate: ${p}\n`);
   if (r.ok) {
     console.log(`release gate: ${tier} evidence is current and meets its bounded policy; broader qualification is not inferred`);
-    if (r.nativeReview === 'unavailable')
-      console.log('release gate: no native semantic review ran for this release; its manifest says why and under which decision');
   }
   process.exitCode = r.ok ? 0 : 1;
 }

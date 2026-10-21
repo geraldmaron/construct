@@ -45,10 +45,8 @@ test('a stale heading anchor fails instead of silently linking to the top of a p
     f.cleanup();
   }
 });
-test('code examples and historical records are not recursively treated as current documentation', () => {
-  const f = fixture('```md\n[Example](missing.md)\n```\n[History](internal/record.md)', {
-    'docs/internal/record.md': '# History\n[Old](missing.md)',
-  });
+test('code examples do not turn illustrative links into documentation targets', () => {
+  const f = fixture('```md\n[Example](missing.md)\n```');
   try {
     assert.match(f.run(), /clean/);
   } finally {

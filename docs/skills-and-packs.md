@@ -100,11 +100,12 @@ version bump fails the release check.
 
 ## Evals and skill impact
 
-Each skill is evaluated in the Agent Skills shape by maintainer-local evals
-that never ship; [authoring](authoring-and-qualification.md#evals) says
+Skill effectiveness can be studied with external, private evaluations in the
+Agent Skills shape; [authoring](authoring-and-qualification.md#evals) says
 what they cover. The `skills` tool's show action reports lock
 integrity only: whether the bytes are the ones the project locked. It never
-grants permission or claims a skill works; a run of its evals shows that.
+grants permission or claims a skill works. A recorded evaluation supports only
+its measured scope and does not establish general effectiveness.
 
 ```bash
 construct skill impact

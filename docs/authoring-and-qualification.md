@@ -43,8 +43,9 @@ Each skill is evaluated in the Agent Skills shape
 [optimizing skill descriptions](https://agentskills.io/skill-creation/optimizing-descriptions)):
 output cases with checkable assertions, and should- and shouldn't-trigger
 queries on a fixed train/validation split. Those evals, the intake corpus,
-and the live-run harness are maintainer-local work kept in an ignored
-`evals/` folder; they never enter git, the package, or an installed skill.
+and any live-run harness are private research kept outside this checkout,
+the package and installed skills. Sterile deterministic regressions needed to
+reproduce product behavior belong in the normal test suite.
 
 Nothing in Construct matches a request's words to a skill. The host model
 reports its own reading to `classify_request`, which returns the workflows
@@ -95,14 +96,14 @@ construct workflow validate
 The `skills` tool's show action reports whether a skill's bytes are the ones
 the project locked: `current`, `unlocked`, `outdated`, `blocked`, `diverged`
 (the same version with different bytes), or `missing`. That is integrity,
-never quality: how well a skill works is shown by running its evals. A skill
+never quality: measured host observations can support only their stated scope. A skill
 cannot raise Construct's authority by anything its text says; the resolver
 enforces each step's tier ceiling whatever the skill asks for.
 
 Before a skill or workflow ships, its manifest validates and agrees with its
-frontmatter, the registry index is current, its maintainer-local evals have
-the standard shape, a consuming workflow resolves against it, and any effectiveness claim
-rests on a recorded run of its evals. Static conformance checks protocol and wiring;
+frontmatter, the registry index is current, and a consuming workflow resolves
+against it. Any effectiveness claim needs a bounded recorded observation with
+its uncertainty; private datasets and raw model runs are not build prerequisites. Static conformance checks protocol and wiring;
 it cannot establish native effectiveness.
 
 ## Grounding and quality checks
