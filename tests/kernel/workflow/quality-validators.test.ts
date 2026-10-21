@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -895,4 +895,27 @@ test('named_sources_read needs something cited from each named source, or the so
       unread: [{ source: 'wiki', why: 'not signed in' }],
     },
   );
+});
+
+test('template severities and unknown labels cannot evade per-finding citations', () => {
+  const check = (severity: unknown, citations?: unknown, material = false) =>
+    runValidators(['no_uncited_material_findings'], {
+      output: { findings: [{ severity, citations, material }] },
+      expectedKeys: [],
+      evidence: [{ ref: 'docs/metrics.md' }],
+      resolvableRefs: new Set(),
+      resolve,
+    })[0]!;
+  const template = readFileSync(new URL('../../../skills/software-engineering/assets/implementation-review.md', import.meta.url), 'utf8');
+  assert.match(template, /\[fatal \| serious \| minor\]/);
+  for (const severity of ['fatal', 'serious', 'high', 'material', 'critical', 'blocker', 'Fatal', ' SERIOUS ', 'new-level', '']) {
+    assert.equal(check(severity).ok, false, String(severity));
+    assert.equal(check(severity, ['docs/metrics.md']).ok, true, String(severity));
+  }
+  for (const severity of ['minor', 'low', 'info']) {
+    assert.equal(check(severity).ok, true);
+    assert.equal(check(severity, undefined, true).ok, false);
+  }
+  for (const severity of [null, 0, {}, []]) assert.equal(check(severity, ['docs/metrics.md']).ok, false);
+  for (const citations of [['missing.md'], ['docs/template.md'], [null], ['']]) assert.equal(check('fatal', citations).ok, false);
 });

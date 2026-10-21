@@ -1,3 +1,4 @@
+import { requestedMethodBinding } from '../../workflow/methods.ts';
 import { closed, ToolInputError } from '../definition.ts';
 import { CORE_EXAMPLE, validateIntake, matchWorkflows, questionsFor, GENERAL_CARRIER, workflowCarries } from '../../workflow/intake.ts';
 import { workflowCandidates } from '../../registry/workflow-domains.ts';
@@ -89,6 +90,13 @@ export const classify = define<Record<string, unknown>, unknown>({
       normalized: validated.normalized,
       matches: checked.map((c) => c.match),
       selectedWorkflow: chosen?.match ?? null,
+      requestedMethod: requestedMethodBinding(
+        intake.skill,
+        ctx.skills,
+        selected
+          ? ctx.workflows.get(selected.workflowId, selected.domain)!.manifest.steps.flatMap((s) => (s.skill ? [s.skill.id] : []))
+          : [],
+      ),
       ...((intake.kind === 'manage' || intake.kind === 'maintain') &&
       (intake.deliverable?.kind === 'other' || selected?.workflowId === GENERAL_CARRIER)
         ? {

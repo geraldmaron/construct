@@ -205,3 +205,11 @@ for a discovery. Work needs its place (a parent work item, or the
 decision, requirement, initiative, or metric it serves) and a bounded
 result. For a bounded reversible local task, use the direct request as its purpose;
 otherwise use its existing parent or governing reason, or a managed outcome.
+
+
+An explicit intake method is shown as `requestedMethod` even when the carrier
+binds another skill. Before completion report applied with concrete obligations
+or explicitly skipped with a reason. Missing/deferred reports are corrected on
+the current lease; they are never proof of execution. A skipped method stays
+visible as not applied. Installed wiring does not establish the host session's
+workspace, loaded skills or approval availability; inspect these separately.

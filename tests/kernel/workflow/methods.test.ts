@@ -2,7 +2,7 @@ import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
-import { methodReceipts } from '../../../src/kernel/workflow/methods.ts';
+import { methodReceipts, requestedMethodBinding, requestedMethodProblems } from '../../../src/kernel/workflow/methods.ts';
 
 const skills = createSkillRegistry({ projectDir: null });
 test('method assignment cannot masquerade as application or qualification', () => {
@@ -137,4 +137,19 @@ test('equivalence never joins distinct sources, different items, or a directory 
   const same = run('dir/a.ts', 'dir/a.ts');
   assert.deepEqual(same.problems, []);
   assert.deepEqual(same.receipts[0]?.obligations?.[0]?.evidence, ['dir/a.ts']);
+});
+
+test('requested method snapshots distinguish workflow binding and refuse changed report identity', () => {
+  const required = requestedMethodBinding('adversarial-review', skills, [])!;
+  assert.equal(required.binding, 'supplemental');
+  assert.equal(requestedMethodBinding('adversarial-review', skills, ['adversarial-review'])!.binding, 'workflow');
+  const report = methodReceipts(
+    { methods: [{ id: required.id, disposition: 'skipped', why: 'Explicitly not applied.', evidence: [] }] },
+    null,
+    skills,
+  ).receipts[0]!;
+  assert.deepEqual(requestedMethodProblems(required, report), []);
+  assert.match(requestedMethodProblems(required, { ...report, digest: 'changed' }).join(' '), /re-resolve/);
+  assert.match(requestedMethodProblems(required, { ...report, version: 'changed' }).join(' '), /re-resolve/);
+  assert.match(requestedMethodProblems(required, { ...report, status: 'reported_deferred' }).join(' '), /this submission/);
 });

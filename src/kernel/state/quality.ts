@@ -1,17 +1,18 @@
-/**
- * kernel/state/quality.ts — how well each skill version's steps do against
- * their checks, measured from what actually happened.
- *
- * A skill earns its place when the steps bound to it pass their checks on
- * the first attempt more often, need fewer attempts, and are waived less.
- * These are the deterministic half of skill impact; whether the output was
- * right is still the person's call and the blind A/B runs'.
- */
+/** Bound-step/check friction and latest accepted host application reports.
+ * Neither assignment, application reports nor observed commands establish method effectiveness. */
 
 import type { StateStore } from './open.ts';
 import { parseJson } from './rows.ts';
 
 export interface SkillQuality {
+  readonly basis: 'bound_step_checks';
+  readonly applicationReports: {
+    readonly applied: number;
+    readonly skipped: number;
+    readonly deferred: number;
+    readonly unreported: number;
+  };
+  readonly observedExecutionSteps: number;
   readonly skill: string;
   readonly version: string;
   readonly steps: number;
@@ -26,8 +27,15 @@ export interface SkillQuality {
 
 export function skillQuality(store: StateStore, filter: { readonly skill?: string } = {}): SkillQuality[] {
   const steps = store.db
-    .prepare(`SELECT id, state, attempts, input_json, output_json FROM step_runs WHERE input_json LIKE '%"skill"%'`)
-    .all() as unknown as { id: string; state: string; attempts: number; input_json: string | null; output_json: string | null }[];
+    .prepare(`SELECT id, run_id, state, attempts, input_json, output_json FROM step_runs ORDER BY run_id, ordinal`)
+    .all() as unknown as {
+    id: string;
+    run_id: string;
+    state: string;
+    attempts: number;
+    input_json: string | null;
+    output_json: string | null;
+  }[];
   const failures = store.db
     .prepare(`SELECT step_run_id, payload_json FROM activity_events WHERE kind = 'step.validation_failed'`)
     .all() as unknown as { step_run_id: string | null; payload_json: string }[];
@@ -44,6 +52,8 @@ export function skillQuality(store: StateStore, filter: { readonly skill?: strin
   const groups = new Map<
     string,
     {
+      applicationReports: { applied: number; skipped: number; deferred: number; unreported: number };
+      observedExecutionSteps: number;
       skill: string;
       version: string;
       steps: number;
@@ -55,13 +65,11 @@ export function skillQuality(store: StateStore, filter: { readonly skill?: strin
       checks: Map<string, number>;
     }
   >();
-  for (const st of steps) {
-    const skill = (parseJson(st.input_json) as { skill?: { id?: unknown; version?: unknown } | null } | null)?.skill;
-    if (!skill || typeof skill.id !== 'string' || typeof skill.version !== 'string') continue;
-    if (filter.skill && skill.id !== filter.skill) continue;
-    if (st.state === 'pending' || st.state === 'ready') continue;
+  const group = (skill: { id: string; version: string }) => {
     const key = `${skill.id}@${skill.version}`;
-    const g = groups.get(key) ?? {
+    const existing = groups.get(key);
+    if (existing) return existing;
+    const value = {
       skill: skill.id,
       version: skill.version,
       steps: 0,
@@ -70,8 +78,38 @@ export function skillQuality(store: StateStore, filter: { readonly skill?: strin
       attempts: 0,
       waived: 0,
       failed: 0,
-      checks: new Map(),
+      checks: new Map<string, number>(),
+      applicationReports: { applied: 0, skipped: 0, deferred: 0, unreported: 0 },
+      observedExecutionSteps: 0,
     };
+    groups.set(key, value);
+    return value;
+  };
+  const reports = new Map<string, { skill: { id: string; version: string }; status: string }>();
+  for (const st of steps) {
+    if (st.state === 'pending' || st.state === 'ready') continue;
+    const skill = (parseJson(st.input_json) as { skill?: { id?: unknown; version?: unknown } | null } | null)?.skill;
+    const output = parseJson(st.output_json) as {
+      waived?: unknown;
+      methodReceipts?: { provenance?: string; methods?: { id: string; version: string; status: string }[] };
+      executionVerification?: { ok?: boolean; observed?: unknown };
+    } | null;
+    // Raw output.methods is a host input. Only the kernel's accepted receipt participates.
+    if (st.state === 'succeeded' && output?.methodReceipts?.provenance === 'host_report') {
+      for (const report of output.methodReceipts.methods ?? []) {
+        if (typeof report.id !== 'string' || typeof report.version !== 'string') continue;
+        const key = `${st.run_id}:${report.id}:${report.version}`;
+        if (report.status !== 'unreported' || !reports.has(key))
+          reports.set(key, { skill: { id: report.id, version: report.version }, status: report.status });
+      }
+    }
+    if (!skill || typeof skill.id !== 'string' || typeof skill.version !== 'string') continue;
+    const typed = { id: skill.id, version: skill.version };
+    const key = `${st.run_id}:${skill.id}:${skill.version}`;
+    if (!reports.has(key)) reports.set(key, { skill: typed, status: 'unreported' });
+    const g = group(typed);
+    if (st.state === 'succeeded' && output?.executionVerification?.ok === true && output.executionVerification.observed)
+      g.observedExecutionSteps += 1;
     const waived = Array.isArray((parseJson(st.output_json) as { waived?: unknown } | null)?.waived);
     g.steps += 1;
     g.attempts += st.attempts;
@@ -82,10 +120,25 @@ export function skillQuality(store: StateStore, filter: { readonly skill?: strin
     if (waived) g.waived += 1;
     if (st.state === 'failed' || st.state === 'cancelled') g.failed += 1;
     for (const v of failingByStep.get(st.id) ?? []) g.checks.set(v, (g.checks.get(v) ?? 0) + 1);
-    groups.set(key, g);
+  }
+  for (const { skill, status } of reports.values()) {
+    const g = group(skill);
+    const category =
+      status === 'reported_applied'
+        ? 'applied'
+        : status === 'reported_skipped'
+          ? 'skipped'
+          : status === 'reported_deferred'
+            ? 'deferred'
+            : 'unreported';
+    g.applicationReports[category] += 1;
   }
   return [...groups.values()]
+    .filter((g) => !filter.skill || g.skill === filter.skill)
     .map((g) => ({
+      basis: 'bound_step_checks' as const,
+      applicationReports: g.applicationReports,
+      observedExecutionSteps: g.observedExecutionSteps,
       skill: g.skill,
       version: g.version,
       steps: g.steps,

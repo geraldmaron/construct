@@ -115,3 +115,31 @@ construct skill impact --skill=intake
 `skill impact` (and `project_context` topic `quality`) reports, per skill
 version, how often its steps passed their checks first time, mean
 attempts, waivers, and which checks sent them back.
+
+## Requested methods and evidence contracts
+
+The intake `skill` is an explicit host-selected method. Classification reports
+`requestedMethod` with its version, digest and `workflow` or `supplemental` binding.
+An exact deliverable match stays selected even when it binds another skill.
+Claim packets keep the requested method visible. Before completion the host must
+report it as applied (with obligations pointing to existing output sections) or
+explicitly skipped with a reason. Deferred or missing reports receive a correctable
+refusal on the current lease without consuming another attempt. A skip remains
+visible in the deliverable as not applied; a report never establishes semantic
+execution. Requested skill drift requires a checkpoint and re-resolution, just as
+bound skill drift does; the run does not hold an executable frozen skill copy.
+Older open runs without a requested-method snapshot must checkpoint, cancel and
+restart under this contract; historical completed records are not rewritten.
+
+Review templates use `fatal`, `serious`, `minor`. The material-citation gate treats
+only `minor`, `low`, and `info` as non-material, case-insensitively after trimming.
+`material:true` raises any finding. All other severity text, including unknown or
+empty labels, requires per-finding citations submitted as evidence and resolvable
+at submission; non-text severities are refused. Resolution is not semantic support.
+
+Skill impact's original step counters measure bound-step/check friction. Separate
+application counts use the latest accepted kernel-recorded host report per run and
+skill version, including supplemental methods; absent historical reports remain
+unreported. Observed execution counts belong only to the bound step's command,
+not to supplemental methods or causal method benefit. Raw `output.methods` does
+not establish an accepted report. CLI and `project_context` use the same counters.

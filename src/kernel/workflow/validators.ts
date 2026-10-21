@@ -309,6 +309,10 @@ export function sourcesCoverage(
   return { named: [...sources], read: sources.filter((id) => read.has(id)), unread: listed };
 }
 
+/** Canonical review severities are fatal/serious/minor. Every other label requires evidence too,
+ * except these explicit non-material labels; material:true always raises the requirement. */
+export const NON_MATERIAL_FINDING_SEVERITIES: readonly string[] = ['minor', 'low', 'info'];
+
 const VALIDATORS: Readonly<Record<string, Validator>> = {
   schema: ({ output, expectedKeys }) => {
     if (!isRecord(output)) return ['output is not an object'];
@@ -320,12 +324,28 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (resolve) for (const e of evidence) if (e.ref && e.ref.trim() !== '' && !resolve(e.ref)) problems.push(unheld(e.ref));
     return problems;
   },
-  no_uncited_material_findings: ({ output }) => {
+  no_uncited_material_findings: ({ output, evidence, resolve, resolvableRefs }) => {
     const problems: string[] = [];
     for (const [i, f] of findings(output).entries()) {
-      const material = f.material === true || f.severity === 'material' || f.severity === 'high';
-      const cites = Array.isArray(f.citations) && f.citations.length > 0;
-      if (material && !cites) problems.push(`finding ${String(i + 1)} is material but cites nothing`);
+      if (f.severity !== undefined && typeof f.severity !== 'string') {
+        problems.push(`finding ${String(i + 1)} severity must be text`);
+        continue;
+      }
+      // Unknown labels fail closed: a new severity cannot bypass citation requirements.
+      const severity = typeof f.severity === 'string' ? f.severity.trim().toLowerCase() : null;
+      const material = f.material === true || (severity !== null && !NON_MATERIAL_FINDING_SEVERITIES.includes(severity));
+      if (!material) continue;
+      const citations = Array.isArray(f.citations) ? f.citations : [];
+      if (!citations.length) problems.push(`finding ${String(i + 1)} is material but cites nothing`);
+      for (const ref of citations) {
+        if (typeof ref !== 'string' || !ref.trim()) {
+          problems.push(`finding ${String(i + 1)} citations must name submitted evidence`);
+          continue;
+        }
+        const submitted = evidence.some((e) => e.ref === ref || (resolve && sameRef(e.ref, ref, resolve)));
+        const held = resolve ? resolve(ref) : resolvableRefs.has(ref);
+        if (!submitted || !held) problems.push(`finding ${String(i + 1)} citation ${ref} must resolve and be submitted as evidence`);
+      }
     }
     return problems;
   },

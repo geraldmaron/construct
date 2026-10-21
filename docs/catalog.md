@@ -12,7 +12,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | Skill | Version | Category | When it applies |
 |---|---|---|---|
 | `adversarial-review` | 0.3.5 | method | Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. |
-| `construct` | 3.3.0 | operational | Use for requested work, memory or coordination in a Construct-bound project. |
+| `construct` | 3.3.1 | operational | Use for requested work, memory or coordination in a Construct-bound project. |
 | `context-mapping` | 0.4.5 | method | Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. |
 | `decision-framing` | 0.3.5 | method | Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. |
 | `experience-design` | 1.0.5 | professional | Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. |

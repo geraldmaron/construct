@@ -8,7 +8,7 @@ description: >-
   when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.3.0
+  version: 3.3.1
   source: geraldmaron/construct
 ---
 
@@ -59,6 +59,13 @@ through request and intent.priorWork; fill missing details without repeating
 intake or treating planning content as approval.
 
 ## Do the work
+
+An explicitly selected `skill` stays visible as `requestedMethod`, even when the
+workflow binds another method. Before completion report applied with obligations
+and evidence, or explicitly skipped with a reason; a skip remains not applied.
+A missing report can be corrected on the current lease. Binding and application
+reports never establish method effectiveness. Check host workspace, skill loading
+and approval availability separately from installed MCP wiring.
 
 After `start_outcome`, loop: `claim_work` for the next step and its method,
 do it here, then `submit_work` with the declared outputs and the evidence you
