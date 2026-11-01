@@ -1,5 +1,7 @@
 # Documentation
 
+**Sunset — November 1, 2026.** Construct is no longer an active project. These guides are retained for historical reference and may be outdated. See the [project README](../README.md) for context.
+
 This GitHub directory is the Construct docsite. Start with the install guide,
 then choose the guide or reference for your task. Current guides describe
 alpha.34 code; static wiring and structural checks are not broad effectiveness
