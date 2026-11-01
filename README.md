@@ -1,5 +1,7 @@
 # Construct
 
+**Sunset — November 1, 2026.** Construct is no longer an active project. I built it to explore an organization-in-a-box for agent-assisted work: bringing roles, skills, routing, and project context together, with the goal of keeping decisions and permissions with the person. I’m now piloting a more general workflow using Hermes for coordination, Claude Code and Codex for execution, Obsidian for knowledge, and Raycast as an entry point. This is an experiment, not a proven replacement. The code and documentation remain for historical reference; the installation and usage instructions below may be outdated.
+
 Construct is a project-bound operating layer for the agent host you already use.
 It stores admitted context and work, resolves versioned methods and workflows,
 and keeps delivery, verification, review and your acceptance separate. Your host
