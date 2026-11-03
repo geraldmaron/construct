@@ -6,7 +6,7 @@
 
 import { workflowDomainCatalog } from '../../kernel/registry/workflow-domains.ts';
 import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
-import { Readable, Writable } from 'node:stream';
+import { PassThrough, Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { ALWAYS_LOAD, mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
@@ -482,7 +482,13 @@ export function serveHandler(
   stdout: Writable = process.stdout,
   hostRequests?: HostRequests,
 ): Promise<void> {
-  const transport = new StdioServerTransport(stdin, stdout);
+  // The transport closes itself when its input ends, and a closed transport
+  // refuses to send. It reads through a relay that ends only after every call
+  // received before the host's input ended has been answered.
+  const relay = new PassThrough();
+  stdin.pipe(relay, { end: false });
+  const transport = new StdioServerTransport(relay, stdout);
+  stdin.on('error', (error) => transport.onerror?.(error));
   hostRequests?.attach((message) => transport.send(message as never));
   let chain: Promise<void> = Promise.resolve();
   let running: unknown;
@@ -524,14 +530,23 @@ export function serveHandler(
   return transport.start().then(
     () =>
       new Promise<void>((resolve) => {
-        const done = () => {
+        let ending = false;
+        const done = async () => {
+          if (ending) return;
+          ending = true;
           hostRequests?.close();
-          void chain.finally(() => {
-            void transport.close().finally(resolve);
-          });
+          // Let the relay hand its last chunks to the transport, so every
+          // message the host sent is queued before the queue is awaited.
+          do await new Promise((r) => setImmediate(r));
+          while (relay.readableLength > 0);
+          await chain.catch(() => {});
+          stdin.unpipe(relay);
+          await transport.close().catch(() => {});
+          relay.end();
+          resolve();
         };
-        stdin.on('end', done);
-        stdin.on('close', done);
+        stdin.on('end', () => void done());
+        stdin.on('close', () => void done());
       }),
   );
 }

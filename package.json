@@ -62,6 +62,6 @@
     "typescript": "^5.9.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "2.0.0"
+    "@modelcontextprotocol/server": "2.3.1"
   }
 }

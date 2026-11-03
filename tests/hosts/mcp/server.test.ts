@@ -444,6 +444,31 @@ test('a message whose handling throws gets an error reply, and the server keeps 
   assert.match(replies[0]!.error?.message ?? '', /disk I\/O error/);
 });
 
+test('calls still running when the host closes its input are answered before the server stops', async () => {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  const chunks: string[] = [];
+  stdout.on('data', (c: Buffer) => chunks.push(c.toString()));
+  const served = serveHandler(
+    async (m) => {
+      await new Promise((r) => setTimeout(r, 30));
+      return { jsonrpc: '2.0', id: m.id ?? null, result: {} } as never;
+    },
+    stdin,
+    stdout,
+  );
+  stdin.write('{"jsonrpc":"2.0","id":1,"method":"ping"}\n');
+  stdin.write('{"jsonrpc":"2.0","id":2,"method":"ping"}\n');
+  stdin.end();
+  await served;
+  const ids = chunks
+    .join('')
+    .trim()
+    .split('\n')
+    .map((l) => (JSON.parse(l) as { id: number }).id);
+  assert.deepEqual(ids, [1, 2]);
+});
+
 test('a store that fails under the format guard yields an error reply, not a crash', async () => {
   const fx = brokerFixture();
   try {
